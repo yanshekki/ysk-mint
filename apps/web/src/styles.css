@@ -1225,19 +1225,20 @@ table.data tbody tr:hover td {
 .oft-desk {
   flex: 1 0 auto;
   min-height: 100%;
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(300px, 0.72fr);
-  gap: 16px;
-  align-items: start;
-  overflow: visible;
-}
-.oft-main,
-.oft-side {
-  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
   overflow: visible;
+}
+.oft-body {
+  flex: 1 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.9fr);
+  gap: 16px;
+  align-items: start;
+}
+.oft-body-solo {
+  grid-template-columns: 1fr;
 }
 .oft-head {
   flex-shrink: 0;
@@ -1263,94 +1264,38 @@ table.data tbody tr:hover td {
   letter-spacing: -0.02em;
   color: var(--brand-blue);
 }
-.oft-mesh {
-  position: relative;
-  height: 300px;
-  min-height: 300px;
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  background:
-    radial-gradient(ellipse at 50% 42%, rgba(59, 130, 246, 0.08), transparent 58%),
-    radial-gradient(ellipse at 58% 62%, rgba(16, 185, 129, 0.08), transparent 52%),
-    var(--bg-subtle);
-  overflow: hidden;
-}
-.oft-mesh-solo {
-  height: 180px;
-  min-height: 180px;
-}
-.oft-mesh-svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-.oft-mesh-line {
-  stroke: #93c5fd;
-  stroke-width: 0.55;
-  stroke-linecap: round;
-  opacity: 0.85;
-}
-.oft-node {
-  position: absolute;
-  transform: translate(-50%, -50%);
+.oft-meta {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  z-index: 1;
-}
-.oft-node-mark {
-  width: 52px;
-  height: 52px;
-  border-radius: 16px;
-  display: grid;
-  place-items: center;
-  background: var(--bg-white);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-sm);
-}
-.oft-node-mark img {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-}
-.oft-node-name {
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--text-main);
-  background: rgba(255, 255, 255, 0.92);
-  border-radius: 999px;
-  padding: 2px 8px;
-  line-height: 1.3;
-  white-space: nowrap;
+  gap: 12px;
+  min-width: 0;
 }
 .oft-chain-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: 1fr;
   gap: 8px;
 }
-.oft-side .oft-chain-list {
-  grid-template-columns: 1fr;
+.oft-evm-grid {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+  align-content: start;
 }
 .oft-chain {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
-  gap: 10px;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 12px;
   align-items: center;
-  padding: 10px 12px;
+  padding: 14px 16px;
   border: 1px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--bg-white);
 }
 .oft-chain img {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
 }
 .oft-chain b {
@@ -1471,15 +1416,14 @@ table.data tbody tr:hover td {
     overflow: auto;
   }
   .oft-desk {
-    grid-template-columns: 1fr;
     overflow: visible;
     flex: none;
     height: auto;
     min-height: 0;
   }
-  .oft-mesh {
-    height: 260px;
-    min-height: 260px;
+  .oft-body,
+  .oft-evm-grid {
+    grid-template-columns: 1fr;
   }
   .oft-title {
     font-size: 22px;
