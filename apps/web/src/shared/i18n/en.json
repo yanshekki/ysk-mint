@@ -20,10 +20,12 @@
     "rpcError": "RPC read failed. No synthetic rows.",
     "empty": "No LP yet",
     "emptyAll": "No locked LP on any chain yet",
-    "emptyUndeployed": "Factory / manager / locker are still 0x0 on this chain",
-    "emptyAda": "Cardano has no EVM factory",
+    "emptyUndeployed": "Factory / manager / locker are not deployed on this chain",
+    "emptyAda": "Cardano native-asset factory is not deployed yet",
+    "emptyNear": "NEAR mainnet NEP-141 factory is not deployed yet",
     "emptyDetail": "After a deploy and filling packages/config/src/contracts.ts, LiquidityLaunched logs appear here.",
-    "adaDetail": "The Solidity factory cannot mint or lock LP on Cardano. LayerZero Cardano OFT is not wired into this product.",
+    "adaDetail": "ADA uses Cardano native assets, not EVM. LayerZero has no Cardano endpoint yet, so the factory address is empty.",
+    "nearDetail": "NEAR uses mainnet NEP-141, not Aurora. LayerZero has no NEAR mainnet endpoint yet, so the factory address is empty.",
     "timed": "Timed",
     "burn": "Burn LP",
     "open": "Explorer",
@@ -46,6 +48,14 @@
   "wallet": {
     "connect": "Connect",
     "create": "Create trading wallet",
+    "disconnect": "Sign out",
+    "evm": "EVM wallet",
+    "native": "NEAR mainnet / Cardano",
+    "near": "NEAR mainnet",
+    "cardano": "Cardano",
+    "connectNear": "Connect NEAR",
+    "connectCardano": "Connect Cardano wallet",
+    "noCip30": "No CIP-30 wallet detected",
     "privyMissing": "VITE_PRIVY_APP_ID is unset, so an external wallet is used. Set Privy to enable email / Google 1-click create.",
     "wrongNetwork": "Switch to a supported EVM chain."
   },
@@ -66,9 +76,10 @@
       "8": "Live"
     },
     "wallet": {
-      "need": "Create a trading wallet (email / Google / existing wallet). One EOA on ETH, AVAX, Base, Arb, BNB, and NEAR (Aurora).",
+      "need": "EVM uses email / Google / an existing wallet (one EOA on ETH, AVAX, Base, Arb, BNB). NEAR mainnet and Cardano use their native wallets.",
       "ready": "Wallet ready",
-      "idle": "Not connected"
+      "idle": "Not connected",
+      "nativeReady": "Native-chain account connected."
     },
     "basics": {
       "name": "Name",
@@ -108,10 +119,10 @@
       "taxBps": "Tax"
     },
     "chains": {
-      "hint": "Pick launch chains. Cardano has no EVM factory. NEAR uses Aurora EVM. Sign step still blocks while factory is zero.",
+      "hint": "Pick launch chains. NEAR is mainnet NEP-141. Cardano is a native asset. Sign step still blocks while factory is undeployed.",
       "disabled": "Not live",
-      "near": "NEAR (Aurora)",
-      "adaHint": "Non-EVM. Cannot mint or lock LP here.",
+      "nearHint": "NEAR mainnet. Not Aurora. NEP-141 + LP lock. Factory not deployed.",
+      "adaHint": "Cardano native asset + LP lock. Not EVM. Factory not deployed.",
       "testnets": "Testnets"
     },
     "liquidity": {
@@ -139,7 +150,8 @@
     },
     "execute": {
       "simulate": "Simulate then sign",
-      "needContracts": "Factory / manager / locker / router are still zero. Deploy on Base Sepolia, then fill packages/config/src/contracts.ts.",
+      "needContracts": "Factory / manager / locker / router are still zero. Deploy, then fill packages/config/src/contracts.ts.",
+      "nativePath": "You picked NEAR mainnet and/or Cardano. That path is NEP-141 / Cardano native assets, not Aurora and not the Solidity factory. Native factories are undeployed, so this step will not sign.",
       "create": "1. Deploy token",
       "lp": "2. Add LP and lock",
       "simulating": "Simulating…",
@@ -163,7 +175,8 @@
     "pick": "Pick or paste",
     "pickHint": "Click to paste a contract address",
     "amount": "Amount",
-    "dest": "Destination"
+    "dest": "Destination",
+    "nativeDest": "NEAR mainnet and Cardano are not EVM OFT destinations. LayerZero has no endpoint there, so quote and send stay off."
   },
   "me": {
     "title": "Holdings",

@@ -31,7 +31,8 @@ export function TransferPage() {
   const [manual, setManual] = useState(false);
 
   const dst = CHAINS[dstKey as keyof typeof CHAINS];
-  const enabled = Object.values(CHAINS).filter((c) => c.enabled && c.evm);
+  const enabled = Object.values(CHAINS).filter((c) => c.enabled);
+  const destIsNative = dst?.vm === "near" || dst?.vm === "cardano";
 
   async function amountOf(): Promise<bigint> {
     if (!publicClient || !address || !token) return 0n;
@@ -155,8 +156,9 @@ export function TransferPage() {
               ariaLabel="dst"
               value={dstKey}
               onChange={setDstKey}
-              options={enabled.map((c) => ({ value: c.key, label: c.name }))}
+              options={enabled.map((c) => ({ value: c.key, label: c.short }))}
             />
+            {destIsNative ? <p className="mt-2 text-[12px] text-text-muted">{t("transfer.nativeDest")}</p> : null}
           </div>
         </div>
         <div className="split-pane flex flex-col gap-4">
@@ -169,13 +171,13 @@ export function TransferPage() {
             </p>
           ))}
           <div className="mt-auto flex gap-2">
-            <Button type="button" variant="ghost" onClick={() => void doQuote()}>
+            <Button type="button" variant="ghost" disabled={destIsNative} onClick={() => void doQuote()}>
               {t("transfer.quote")}
             </Button>
             <Button
               type="button"
               variant="grad"
-              disabled={busy || !token || token.toLowerCase() === zeroAddress}
+              disabled={destIsNative || busy || !token || token.toLowerCase() === zeroAddress}
               onClick={() => void doSend()}
             >
               {t("transfer.send")}

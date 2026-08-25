@@ -4,6 +4,8 @@ import { useAccount } from "wagmi";
 import { useTranslation } from "react-i18next";
 import { useWizard } from "./store.ts";
 import { ConnectBar } from "../wallet/ConnectBar.tsx";
+import { NativeConnect } from "../wallet/NativeConnect.tsx";
+import { useNativeWallets } from "../../lib/nativeWallets.ts";
 import { ChipGroup } from "../../shared/ui/ChipGroup.tsx";
 import { OptionCard, OptionGrid } from "../../shared/ui/OptionCard.tsx";
 import { Dropzone } from "../../shared/ui/Dropzone.tsx";
@@ -22,18 +24,25 @@ import {
 export function StepWallet() {
   const { t } = useTranslation();
   const { isConnected, address } = useAccount();
+  const native = useNativeWallets();
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <p className="text-[13px] text-text-sub">{t("wizard.wallet.need")}</p>
+      <p className="text-[12px] font-bold">{t("wallet.evm")}</p>
       <ConnectBar showHint />
       <div className="token-row">
-        <div className="grid h-10 w-10 place-items-center rounded-lg bg-bg-subtle text-xs font-black">W</div>
+        <div className="grid h-10 w-10 place-items-center rounded-lg bg-bg-subtle text-xs font-black">EVM</div>
         <div>
           <p className="text-[13px] font-bold">{isConnected ? t("wizard.wallet.ready") : t("wizard.wallet.idle")}</p>
           <p className="num truncate text-[11px] text-text-muted">{isConnected ? address : "—"}</p>
         </div>
         <Badge kind={isConnected ? "ok" : "warn"}>{isConnected ? "ON" : "OFF"}</Badge>
       </div>
+      <p className="text-[12px] font-bold">{t("wallet.native")}</p>
+      <NativeConnect />
+      {native.nearAccount || native.cardanoAddress ? (
+        <p className="text-[12px] text-text-muted">{t("wizard.wallet.nativeReady")}</p>
+      ) : null}
     </div>
   );
 }
@@ -218,18 +227,20 @@ export function StepChains() {
       <div className="opt-grid">
         {featuredChains().map((c) => {
           const on = w.chains.includes(c.key);
-          const live = c.enabled && c.evm;
+          const live = c.enabled;
+          const hint =
+            c.vm === "near"
+              ? t("wizard.chains.nearHint")
+              : c.vm === "cardano"
+                ? t("wizard.chains.adaHint")
+                : `chainId ${c.chainId} · EID ${c.eid}${live ? "" : ` · ${t("wizard.chains.disabled")}`}`;
           return (
             <OptionCard
               key={c.key}
               selected={on && live}
               disabled={!live}
-              title={c.short === "NEAR" ? t("wizard.chains.near") : c.name}
-              hint={
-                !c.evm
-                  ? t("wizard.chains.adaHint")
-                  : `chainId ${c.chainId} · EID ${c.eid}${live ? "" : ` · ${t("wizard.chains.disabled")}`}`
-              }
+              title={c.name}
+              hint={hint}
               onSelect={() => {
                 if (!live) return;
                 w.set({

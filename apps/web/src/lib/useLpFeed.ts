@@ -89,7 +89,7 @@ export function useLpFeed(filter: LpFilter) {
   const targets = useMemo(() => {
     if (filter === "all") return featuredChains().filter((c) => c.evm);
     const one = CHAINS[filter as keyof typeof CHAINS];
-    return one ? [one] : [];
+    return one?.evm ? [one] : [];
   }, [filter]);
 
   const selected = filter === "all" ? undefined : CHAINS[filter as keyof typeof CHAINS];

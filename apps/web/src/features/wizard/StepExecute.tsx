@@ -193,8 +193,16 @@ export function StepExecute() {
     }
   }
 
+  const nativePicked = w.chains.filter((c) => {
+    const def = CHAINS[c as keyof typeof CHAINS];
+    return def && !def.evm;
+  });
+
   return (
     <div className="space-y-4">
+      {nativePicked.length ? (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{t("wizard.execute.nativePath")}</p>
+      ) : null}
       {!isConfigured(contracts) ? (
         <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
           {t("wizard.execute.needContracts")}

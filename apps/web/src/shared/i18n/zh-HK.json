@@ -20,10 +20,12 @@
     "rpcError": "RPC 讀取失敗。無造假資料。",
     "empty": "暫無 LP",
     "emptyAll": "所有鏈都未有已鎖定 LP",
-    "emptyUndeployed": "呢條鏈 Factory／Manager／Locker 仍為 0x0",
-    "emptyAda": "Cardano 未有 EVM factory",
+    "emptyUndeployed": "呢條鏈 Factory／Manager／Locker 仍未部署",
+    "emptyAda": "Cardano 原生資產 factory 仍未部署",
+    "emptyNear": "NEAR 主鏈 NEP-141 factory 仍未部署",
     "emptyDetail": "部署合約並填 packages/config/src/contracts.ts 之後，呢度會出現 LiquidityLaunched 日誌。",
-    "adaDetail": "現有 Solidity factory 無法喺 Cardano 發幣或鎖 LP。LayerZero Cardano OFT 未接呢條產品線。",
+    "adaDetail": "ADA 用 Cardano native asset（唔係 EVM）。LayerZero Cardano Endpoint 未上線，factory 地址仍空。",
+    "nearDetail": "NEAR 用主鏈 NEP-141（唔係 Aurora）。LayerZero 未有 NEAR 主鏈 Endpoint，factory 地址仍空。",
     "timed": "定期鎖",
     "burn": "銷毀 LP",
     "open": "瀏覽器",
@@ -46,6 +48,14 @@
   "wallet": {
     "connect": "連接",
     "create": "建立交易錢包",
+    "disconnect": "登出",
+    "evm": "EVM 錢包",
+    "native": "NEAR 主鏈／Cardano",
+    "near": "NEAR 主鏈",
+    "cardano": "Cardano",
+    "connectNear": "連接 NEAR",
+    "connectCardano": "連接 Cardano 錢包",
+    "noCip30": "未偵測 CIP-30 錢包",
     "privyMissing": "未設 VITE_PRIVY_APP_ID，暫用外置錢包。設好 Privy 後可用電郵／Google 一鍵建立。",
     "wrongNetwork": "請切到支援嘅 EVM 鏈。"
   },
@@ -66,9 +76,10 @@
       "8": "上鏈"
     },
     "wallet": {
-      "need": "一鍵建立交易錢包（電郵／Google／現有錢包），同一 EOA 走 ETH、AVAX、Base、Arb、BNB、NEAR(Aurora)。",
+      "need": "EVM 用電郵／Google／現有錢包（同一 EOA 走 ETH、AVAX、Base、Arb、BNB）。NEAR 主鏈同 Cardano 用各自原生錢包。",
       "ready": "錢包已連接",
-      "idle": "未連接"
+      "idle": "未連接",
+      "nativeReady": "已連接原生鏈帳戶。"
     },
     "basics": {
       "name": "名稱",
@@ -108,10 +119,10 @@
       "taxBps": "稅率"
     },
     "chains": {
-      "hint": "揀要發嘅鏈。Cardano 無 EVM factory。NEAR 用 Aurora EVM。Factory 仍為 0 時簽名步會擋。",
+      "hint": "揀要發嘅鏈。NEAR 係主鏈 NEP-141，Cardano 係 native asset。Factory 未部署時簽名步會擋。",
       "disabled": "未開放",
-      "near": "NEAR (Aurora)",
-      "adaHint": "非 EVM。唔可以喺呢度發幣或鎖 LP。",
+      "nearHint": "NEAR 主鏈。唔係 Aurora。NEP-141 + 鎖 LP。Factory 未部署。",
+      "adaHint": "Cardano native asset + 鎖 LP。唔係 EVM。Factory 未部署。",
       "testnets": "測試網"
     },
     "liquidity": {
@@ -139,7 +150,8 @@
     },
     "execute": {
       "simulate": "模擬後簽名",
-      "needContracts": "Factory／Manager／Locker／Router 仍為零。請先在 Base Sepolia 部署，再填 packages/config/src/contracts.ts。",
+      "needContracts": "Factory／Manager／Locker／Router 仍為零。請先部署，再填 packages/config/src/contracts.ts。",
+      "nativePath": "你揀咗 NEAR 主鏈及／或 Cardano。呢條路徑係 NEP-141／Cardano native asset，唔係 Aurora、唔係 Solidity factory。原生 factory 未部署，呢步唔簽名。",
       "create": "1. 部署代幣",
       "lp": "2. 加入 LP 並鎖定",
       "simulating": "模擬中…",
@@ -163,7 +175,8 @@
     "pick": "揀或貼上",
     "pickHint": "點擊以貼上合約地址",
     "amount": "數量",
-    "dest": "目的鏈"
+    "dest": "目的鏈",
+    "nativeDest": "NEAR 主鏈同 Cardano 唔走 EVM OFT send。LayerZero 未有呢兩條鏈嘅 Endpoint，所以唔報價、唔發送。"
   },
   "me": {
     "title": "持倉",

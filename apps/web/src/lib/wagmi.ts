@@ -7,23 +7,13 @@ import {
   base,
   arbitrum,
   bsc,
-  aurora,
   baseSepolia,
   arbitrumSepolia,
 } from "wagmi/chains";
 
 const projectId = import.meta.env.VITE_WC_PROJECT_ID || "ysk-mint-local";
 
-export const appChains = [
-  mainnet,
-  avalanche,
-  base,
-  arbitrum,
-  bsc,
-  aurora,
-  baseSepolia,
-  arbitrumSepolia,
-] as const;
+export const appChains = [mainnet, avalanche, base, arbitrum, bsc, baseSepolia, arbitrumSepolia] as const;
 
 const transports = {
   [mainnet.id]: http("https://ethereum-rpc.publicnode.com"),
@@ -31,7 +21,6 @@ const transports = {
   [base.id]: http("https://mainnet.base.org"),
   [arbitrum.id]: http("https://arb1.arbitrum.io/rpc"),
   [bsc.id]: http("https://bsc-dataseed.binance.org"),
-  [aurora.id]: http("https://mainnet.aurora.dev"),
   [baseSepolia.id]: http("https://sepolia.base.org"),
   [arbitrumSepolia.id]: http("https://sepolia-rollup.arbitrum.io/rpc"),
 } as const;

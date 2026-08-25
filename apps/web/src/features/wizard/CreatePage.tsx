@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { parseUnits } from "viem";
-import { useAccount, useChainId } from "wagmi";
-import { evmEnabledChains } from "@ysk-mint/config";
+import { useAccount } from "wagmi";
+import { CHAINS, ChainKey } from "@ysk-mint/config";
 import {
   ErrorCode,
   LaunchStep,
@@ -15,6 +15,7 @@ import {
 import { Button } from "../../shared/ui/Button.tsx";
 import { StepRail } from "../../shared/ui/StepRail.tsx";
 import { useWizard } from "./store.ts";
+import { useNativeWallets } from "../../lib/nativeWallets.ts";
 import { lpTokenAmount } from "./presets.ts";
 import {
   STEP_LABELS,
@@ -34,9 +35,8 @@ export function CreatePage() {
   const locale = i18n.language === "zh-HK" ? "zh-HK" : "en";
   const w = useWizard();
   const { address, isConnected } = useAccount();
-  const chainId = useChainId();
+  const native = useNativeWallets();
   const [errors, setErrors] = useState<LaunchError[]>([]);
-  const allowed = new Set(evmEnabledChains().map((c) => c.chainId));
 
   const panel = useMemo(() => {
     switch (w.step) {
@@ -63,8 +63,8 @@ export function CreatePage() {
 
   function validateCurrent(): LaunchError[] {
     if (w.step === LaunchStep.Wallet) {
-      if (!isConnected || !allowed.has(chainId)) {
-        return [{ code: ErrorCode.ChainDisabled, args: [chainId], severity: "user", retryable: false }];
+      if (!isConnected && !native.nearAccount && !native.cardanoAddress) {
+        return [{ code: ErrorCode.RecipientZero, args: [], severity: "user", retryable: false }];
       }
       return [];
     }
@@ -78,7 +78,18 @@ export function CreatePage() {
       return validateBasics({ name: w.name, symbol: w.symbol, decimals: w.decimals, totalSupply: supply }, locale);
     }
     if (w.step === LaunchStep.Chains) {
-      return w.chains.flatMap((c) => validateChainEnabled(c, locale));
+      const list = w.chains.flatMap((c) => validateChainEnabled(c, locale));
+      const needsEvm = w.chains.some((c) => CHAINS[c as keyof typeof CHAINS]?.evm);
+      if (needsEvm && !isConnected) {
+        list.push({ code: ErrorCode.RecipientZero, args: [], severity: "user", retryable: false });
+      }
+      if (w.chains.includes(ChainKey.Near) && !native.nearAccount) {
+        list.push({ code: ErrorCode.RecipientZero, args: [], severity: "user", retryable: false });
+      }
+      if (w.chains.includes(ChainKey.Cardano) && !native.cardanoAddress) {
+        list.push({ code: ErrorCode.RecipientZero, args: [], severity: "user", retryable: false });
+      }
+      return list;
     }
     if (w.step === LaunchStep.Liquidity) {
       let tokenAmt = 0n;
@@ -140,7 +151,12 @@ export function CreatePage() {
                 </Button>
               ) : null}
               {w.step < LaunchStep.Execute ? (
-                <Button variant="grad" type="button" onClick={next} disabled={w.step === LaunchStep.Wallet && !address}>
+                <Button
+                  variant="grad"
+                  type="button"
+                  onClick={next}
+                  disabled={w.step === LaunchStep.Wallet && !address && !native.nearAccount && !native.cardanoAddress}
+                >
                   {t("wizard.next")}
                 </Button>
               ) : null}

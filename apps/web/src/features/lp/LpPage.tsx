@@ -22,8 +22,9 @@ export function LpPage() {
   const tests = testnetChains();
 
   let emptyKey = "lp.empty";
-  if (selected && !selected.evm) emptyKey = "lp.emptyAda";
-  else if (selected && selected.evm && !isConfigured(launchContracts(selected.key))) emptyKey = "lp.emptyUndeployed";
+  if (selected?.vm === "near") emptyKey = "lp.emptyNear";
+  else if (selected?.vm === "cardano") emptyKey = "lp.emptyAda";
+  else if (selected && !isConfigured(launchContracts(selected.key))) emptyKey = "lp.emptyUndeployed";
   else if (filter === "all") emptyKey = "lp.emptyAll";
 
   return (
@@ -67,7 +68,11 @@ export function LpPage() {
         ) : rows.length === 0 ? (
           <div className="empty fill">
             <strong>{t(emptyKey)}</strong>
-            {selected?.key !== undefined && !selected.evm ? t("lp.adaDetail") : t("lp.emptyDetail")}
+            {selected?.vm === "near"
+              ? t("lp.nearDetail")
+              : selected?.vm === "cardano"
+                ? t("lp.adaDetail")
+                : t("lp.emptyDetail")}
           </div>
         ) : (
           <table className="data">

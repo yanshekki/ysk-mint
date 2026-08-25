@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ChainKey, ErrorCode, LockMode, validateLaunchDraft, validateLock } from "../src/index";
 import { validateBasics, validateName, validateSymbol } from "../src/validation/token";
+import { isCardanoAddress, isNearAccountId } from "../src/validation/native";
 
 describe("token validation", () => {
   it("accepts a normal name and symbol", () => {
@@ -15,8 +16,8 @@ describe("token validation", () => {
     expect(validateSymbol("Y S").map((e) => e.code)).toContain(ErrorCode.InvalidSymbol);
   });
 
-  it("rejects non-EVM Cardano in draft", () => {
-    const errors = validateLaunchDraft({
+  it("accepts native Cardano and NEAR in draft", () => {
+    const ada = validateLaunchDraft({
       name: "YSK Token",
       symbol: "YSK",
       decimals: 18,
@@ -26,7 +27,18 @@ describe("token validation", () => {
       owner: "0x0000000000000000000000000000000000000001",
       chains: [ChainKey.Cardano],
     });
-    expect(errors.map((e) => e.code)).toContain(ErrorCode.ChainDisabled);
+    const near = validateLaunchDraft({
+      name: "YSK Token",
+      symbol: "YSK",
+      decimals: 18,
+      totalSupply: 1n,
+      supplyMode: 0,
+      moduleFlags: 0,
+      owner: "0x0000000000000000000000000000000000000001",
+      chains: [ChainKey.Near],
+    });
+    expect(ada).toEqual([]);
+    expect(near).toEqual([]);
   });
 
   it("accepts Base Sepolia draft", () => {
@@ -49,5 +61,11 @@ describe("token validation", () => {
 
   it("accepts burn lock with zero duration", () => {
     expect(validateLock(LockMode.Burn, 0)).toEqual([]);
+  });
+
+  it("accepts NEAR mainnet accounts and Cardano addresses", () => {
+    expect(isNearAccountId("alice.near")).toBe(true);
+    expect(isNearAccountId("not aurora")).toBe(false);
+    expect(isCardanoAddress("addr1qytestaddressxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")).toBe(true);
   });
 });

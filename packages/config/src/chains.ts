@@ -1,5 +1,7 @@
 import { ChainKey } from "./enums";
 
+export type ChainVm = "evm" | "near" | "cardano";
+
 export type ChainDefinition = {
   key: (typeof ChainKey)[keyof typeof ChainKey];
   name: string;
@@ -13,6 +15,7 @@ export type ChainDefinition = {
   enabled: boolean;
   testnet: boolean;
   evm: boolean;
+  vm: ChainVm;
   featured: boolean;
 };
 
@@ -21,8 +24,14 @@ const LZ_TESTNET_ENDPOINT = "0x6EDCE65403992e310A62460808c4b910D972f10f" as cons
 const LZ_MAINNET_ENDPOINT = "0x1a44076050125825900e736c501f859c50fE728c" as const;
 const ZERO = "0x0000000000000000000000000000000000000000" as const;
 
+function evmChain(
+  partial: Omit<ChainDefinition, "evm" | "vm">,
+): ChainDefinition {
+  return { ...partial, evm: true, vm: "evm" };
+}
+
 export const CHAINS: Record<(typeof ChainKey)[keyof typeof ChainKey], ChainDefinition> = {
-  [ChainKey.Ethereum]: {
+  [ChainKey.Ethereum]: evmChain({
     key: ChainKey.Ethereum,
     name: "Ethereum",
     short: "ETH",
@@ -34,10 +43,9 @@ export const CHAINS: Record<(typeof ChainKey)[keyof typeof ChainKey], ChainDefin
     nativeSymbol: "ETH",
     enabled: true,
     testnet: false,
-    evm: true,
     featured: true,
-  },
-  [ChainKey.Base]: {
+  }),
+  [ChainKey.Base]: evmChain({
     key: ChainKey.Base,
     name: "Base",
     short: "Base",
@@ -49,10 +57,9 @@ export const CHAINS: Record<(typeof ChainKey)[keyof typeof ChainKey], ChainDefin
     nativeSymbol: "ETH",
     enabled: true,
     testnet: false,
-    evm: true,
     featured: true,
-  },
-  [ChainKey.Arbitrum]: {
+  }),
+  [ChainKey.Arbitrum]: evmChain({
     key: ChainKey.Arbitrum,
     name: "Arbitrum One",
     short: "Arb",
@@ -64,10 +71,9 @@ export const CHAINS: Record<(typeof ChainKey)[keyof typeof ChainKey], ChainDefin
     nativeSymbol: "ETH",
     enabled: true,
     testnet: false,
-    evm: true,
     featured: true,
-  },
-  [ChainKey.Optimism]: {
+  }),
+  [ChainKey.Optimism]: evmChain({
     key: ChainKey.Optimism,
     name: "Optimism",
     short: "OP",
@@ -79,10 +85,9 @@ export const CHAINS: Record<(typeof ChainKey)[keyof typeof ChainKey], ChainDefin
     nativeSymbol: "ETH",
     enabled: false,
     testnet: false,
-    evm: true,
     featured: false,
-  },
-  [ChainKey.Bnb]: {
+  }),
+  [ChainKey.Bnb]: evmChain({
     key: ChainKey.Bnb,
     name: "BNB Chain",
     short: "BNB",
@@ -94,10 +99,9 @@ export const CHAINS: Record<(typeof ChainKey)[keyof typeof ChainKey], ChainDefin
     nativeSymbol: "BNB",
     enabled: true,
     testnet: false,
-    evm: true,
     featured: true,
-  },
-  [ChainKey.BaseSepolia]: {
+  }),
+  [ChainKey.BaseSepolia]: evmChain({
     key: ChainKey.BaseSepolia,
     name: "Base Sepolia",
     short: "BaseSep",
@@ -109,10 +113,9 @@ export const CHAINS: Record<(typeof ChainKey)[keyof typeof ChainKey], ChainDefin
     nativeSymbol: "ETH",
     enabled: true,
     testnet: true,
-    evm: true,
     featured: false,
-  },
-  [ChainKey.ArbSepolia]: {
+  }),
+  [ChainKey.ArbSepolia]: evmChain({
     key: ChainKey.ArbSepolia,
     name: "Arbitrum Sepolia",
     short: "ArbSep",
@@ -124,10 +127,9 @@ export const CHAINS: Record<(typeof ChainKey)[keyof typeof ChainKey], ChainDefin
     nativeSymbol: "ETH",
     enabled: true,
     testnet: true,
-    evm: true,
     featured: false,
-  },
-  [ChainKey.Avalanche]: {
+  }),
+  [ChainKey.Avalanche]: evmChain({
     key: ChainKey.Avalanche,
     name: "Avalanche",
     short: "AVAX",
@@ -139,37 +141,40 @@ export const CHAINS: Record<(typeof ChainKey)[keyof typeof ChainKey], ChainDefin
     nativeSymbol: "AVAX",
     enabled: true,
     testnet: false,
-    evm: true,
     featured: true,
-  },
+  }),
   [ChainKey.Cardano]: {
     key: ChainKey.Cardano,
     name: "Cardano",
     short: "ADA",
-    chainId: 0,
+    /** BIP44 coin type. Not an EVM chain id. */
+    chainId: 1815,
     eid: 0,
     endpoint: ZERO,
     explorer: "https://cardanoscan.io",
-    rpc: "",
+    rpc: "https://api.koios.rest/api/v1",
     nativeSymbol: "ADA",
-    enabled: false,
+    enabled: true,
     testnet: false,
     evm: false,
+    vm: "cardano",
     featured: true,
   },
   [ChainKey.Near]: {
     key: ChainKey.Near,
-    name: "NEAR (Aurora)",
+    name: "NEAR",
     short: "NEAR",
-    chainId: 1313161554,
-    eid: 30211,
-    endpoint: LZ_MAINNET_ENDPOINT,
-    explorer: "https://explorer.aurora.dev",
-    rpc: "https://mainnet.aurora.dev",
-    nativeSymbol: "ETH",
+    /** CAIP / WalletConnect numeric id for NEAR mainnet. Not Aurora. */
+    chainId: 397,
+    eid: 0,
+    endpoint: ZERO,
+    explorer: "https://nearblocks.io",
+    rpc: "https://rpc.mainnet.near.org",
+    nativeSymbol: "NEAR",
     enabled: true,
     testnet: false,
-    evm: true,
+    evm: false,
+    vm: "near",
     featured: true,
   },
 };
@@ -195,6 +200,10 @@ export function enabledChains(): ChainDefinition[] {
 
 export function evmEnabledChains(): ChainDefinition[] {
   return Object.values(CHAINS).filter((c) => c.enabled && c.evm);
+}
+
+export function nativeChains(): ChainDefinition[] {
+  return Object.values(CHAINS).filter((c) => c.enabled && !c.evm);
 }
 
 export function featuredChains(): ChainDefinition[] {
