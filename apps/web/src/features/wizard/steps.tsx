@@ -9,7 +9,7 @@ import { ChipGroup } from "../../shared/ui/ChipGroup.tsx";
 import { OptionCard, OptionGrid } from "../../shared/ui/OptionCard.tsx";
 import { Badge } from "../../shared/ui/TokenRow.tsx";
 import { useNativeWallets } from "../../lib/nativeWallets.ts";
-import { homeEvm, issuanceGroups, selectedChains, undeployedEvm } from "../../lib/launchTargets.ts";
+import { homeEvm, ISSUANCE_GROUP_TITLE, issuanceGroups, selectedChains, undeployedEvm } from "../../lib/launchTargets.ts";
 import { STEP_FLOW, decimalsOptions, defaultDecimals, hasEvm, selectedVms } from "../../lib/wizardFlow.ts";
 import {
   LOCK_CARDS,
@@ -236,13 +236,6 @@ export function StepTokenomics() {
   );
 }
 
-const CHAIN_GROUP_TITLE = {
-  evm: "wizard.chains.groupEvm",
-  cardano: "wizard.chains.adaHint",
-  near: "wizard.chains.nearHint",
-  solana: "wizard.chains.solHint",
-} as const;
-
 function chainHint(c: ChainDefinition, t: (k: string) => string) {
   if (c.vm === "evm") {
     return c.enabled ? `EID ${c.eid}` : `EID ${c.eid} · ${t("wizard.chains.disabled")}`;
@@ -278,7 +271,7 @@ export function StepChains() {
       <p className="text-[15px] text-text-sub">{t("wizard.chains.hint")}</p>
       {issuanceGroups().map((g) => (
         <section key={g.vm} className="chain-group">
-          <p className="chain-group-title">{t(CHAIN_GROUP_TITLE[g.vm])}</p>
+          <p className="chain-group-title">{t(ISSUANCE_GROUP_TITLE[g.vm])}</p>
           {g.vm === "evm" ? (
             <>
               <div className="chain-row">

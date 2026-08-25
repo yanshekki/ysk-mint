@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
-import { CHAINS, type ChainDefinition } from "@ysk-mint/config";
+import { type ChainDefinition } from "@ysk-mint/config";
 import { useWizard } from "./store.ts";
+import { ISSUANCE_GROUP_TITLE, issuanceGroups } from "../../lib/launchTargets.ts";
 
 function chainIcon(c: ChainDefinition): string {
   if (c.vm === "near") return "/tokens/near.png";
@@ -12,27 +13,27 @@ function chainIcon(c: ChainDefinition): string {
   return "/tokens/eth.png";
 }
 
-function nativeHintKey(c: ChainDefinition) {
-  if (c.vm === "near") return "wizard.chains.nearHint";
-  if (c.vm === "cardano") return "wizard.chains.adaHint";
-  return "wizard.chains.solHint";
-}
-
 export function StepOmnichain() {
   const { t } = useTranslation();
   const w = useWizard();
-  const picked = w.chains
-    .map((k) => CHAINS[k as keyof typeof CHAINS])
-    .filter((c): c is ChainDefinition => Boolean(c));
-  const evm = picked.filter((c) => c.evm && c.eid > 0);
-  const native = picked.filter((c) => !c.evm);
-  const calls = evm.length > 1 ? evm.length * (evm.length - 1) : 0;
+  const selected = new Set(w.chains);
+  const groups = issuanceGroups()
+    .map((g) => ({
+      vm: g.vm,
+      main: g.main.filter((c) => selected.has(c.key)),
+      test: g.test.filter((c) => selected.has(c.key)),
+    }))
+    .filter((g) => g.main.length || g.test.length);
+  const evm = groups.find((g) => g.vm === "evm");
+  const evmCount = (evm?.main.length ?? 0) + (evm?.test.length ?? 0);
+  const nativeCount = groups.filter((g) => g.vm !== "evm").reduce((n, g) => n + g.main.length + g.test.length, 0);
+  const calls = evmCount > 1 ? evmCount * (evmCount - 1) : 0;
   const status =
-    evm.length === 0
+    evmCount === 0
       ? t("wizard.omnichain.none")
-      : evm.length === 1
+      : evmCount === 1
         ? t("wizard.omnichain.single")
-        : t("wizard.omnichain.peerCount", { n: evm.length, calls });
+        : t("wizard.omnichain.peerCount", { n: evmCount, calls });
 
   return (
     <div className="oft-desk">
@@ -43,70 +44,89 @@ export function StepOmnichain() {
         <p className="oft-metric">{status}</p>
       </header>
 
-      <div className={`oft-body${evm.length ? "" : " oft-body-solo"}`}>
-        {evm.length ? (
-          <ul className="oft-chain-list oft-evm-grid">
-            {evm.map((c) => (
-              <li key={c.key} className="oft-chain">
-                <img src={chainIcon(c)} alt="" width={32} height={32} />
-                <div>
-                  <b>{c.name}</b>
-                  <span className="num">{t("wizard.omnichain.eid", { eid: c.eid })}</span>
+      {groups.map((g) => (
+        <section key={g.vm} className="chain-group">
+          <p className="chain-group-title">{t(ISSUANCE_GROUP_TITLE[g.vm])}</p>
+          {g.vm === "evm" ? (
+            <>
+              {g.main.length ? (
+                <div className="chain-row">
+                  {g.main.map((c) => (
+                    <PeerCard key={c.key} c={c} />
+                  ))}
                 </div>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-
-        <div className="oft-meta">
-          {native.length ? (
-            <section className="oft-card">
-              <p className="wallet-kicker">{t("wizard.omnichain.native")}</p>
-              <p className="oft-side-hint">{t("wizard.omnichain.nativeHint")}</p>
-              <ul className="oft-chain-list">
-                {native.map((c) => (
-                  <li key={c.key} className="oft-chain">
-                    <img src={chainIcon(c)} alt="" width={32} height={32} />
-                    <div>
-                      <b>{c.name}</b>
-                      <span>{t(nativeHintKey(c))}</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
-          <section className="oft-card">
-            <p className="wallet-kicker">{t("wizard.omnichain.facts")}</p>
-            <ul className="oft-facts">
-              <li>
-                <b>{t("wizard.omnichain.factRate")}</b>
-                <span>{t("wizard.omnichain.factRateHint")}</span>
-              </li>
-              {calls ? (
-                <li>
-                  <b>{t("wizard.omnichain.factPeer")}</b>
-                  <span>{t("wizard.omnichain.factPeerHint")}</span>
-                </li>
               ) : null}
-              <li>
-                <b>{t("wizard.omnichain.factAddr")}</b>
-                <span>{t("wizard.omnichain.factAddrHint")}</span>
-              </li>
-            </ul>
-          </section>
+              {g.test.length ? (
+                <>
+                  <p className="chain-sub">{t("wizard.chains.testnets")}</p>
+                  <div className="chain-row">
+                    {g.test.map((c) => (
+                      <PeerCard key={c.key} c={c} />
+                    ))}
+                  </div>
+                </>
+              ) : null}
+            </>
+          ) : (
+            <div className="chain-row">
+              {g.main.map((c) => (
+                <PeerCard key={c.key} c={c} />
+              ))}
+              {g.test.map((c) => (
+                <PeerCard key={c.key} c={c} />
+              ))}
+            </div>
+          )}
+        </section>
+      ))}
 
-          <section className="oft-card">
-            <p className="wallet-kicker">{t("wizard.omnichain.run")}</p>
-            <ol className="oft-run">
-              {evm.length ? <li>{t("wizard.omnichain.runOft")}</li> : null}
-              {calls ? <li>{t("wizard.omnichain.runPeer")}</li> : null}
-              {native.length ? <li>{t("wizard.omnichain.runNative")}</li> : null}
-            </ol>
-          </section>
-        </div>
+      <div className="oft-meta">
+        <section className="oft-card">
+          <p className="wallet-kicker">{t("wizard.omnichain.facts")}</p>
+          <ul className="oft-facts">
+            <li>
+              <b>{t("wizard.omnichain.factRate")}</b>
+              <span>{t("wizard.omnichain.factRateHint")}</span>
+            </li>
+            {calls ? (
+              <li>
+                <b>{t("wizard.omnichain.factPeer")}</b>
+                <span>{t("wizard.omnichain.factPeerHint")}</span>
+              </li>
+            ) : null}
+            <li>
+              <b>{t("wizard.omnichain.factAddr")}</b>
+              <span>{t("wizard.omnichain.factAddrHint")}</span>
+            </li>
+          </ul>
+        </section>
+        <section className="oft-card">
+          <p className="wallet-kicker">{t("wizard.omnichain.run")}</p>
+          <ol className="oft-run">
+            {evmCount ? <li>{t("wizard.omnichain.runOft")}</li> : null}
+            {calls ? <li>{t("wizard.omnichain.runPeer")}</li> : null}
+            {nativeCount ? <li>{t("wizard.omnichain.runNative")}</li> : null}
+          </ol>
+        </section>
       </div>
     </div>
+  );
+}
+
+function PeerCard({ c }: { c: ChainDefinition }) {
+  const { t } = useTranslation();
+  const hint = c.evm
+    ? t("wizard.omnichain.eid", { eid: c.eid })
+    : c.testnet
+      ? t("wizard.chains.testnets")
+      : t("wizard.chains.mainnet");
+  return (
+    <article className="oft-chain">
+      <img src={chainIcon(c)} alt="" width={32} height={32} />
+      <div>
+        <b>{c.name}</b>
+        <span className="num">{hint}</span>
+      </div>
+    </article>
   );
 }

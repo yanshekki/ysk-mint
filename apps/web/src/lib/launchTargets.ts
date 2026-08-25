@@ -10,6 +10,13 @@ import {
 
 const ISSUANCE_VMS: ChainVm[] = ["evm", "cardano", "near", "solana"];
 
+export const ISSUANCE_GROUP_TITLE = {
+  evm: "wizard.chains.groupEvm",
+  cardano: "wizard.chains.adaHint",
+  near: "wizard.chains.nearHint",
+  solana: "wizard.chains.solHint",
+} as const;
+
 export function issuanceGroups() {
   const main = featuredChains();
   const tests = testnetChains();

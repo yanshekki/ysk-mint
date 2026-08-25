@@ -1255,18 +1255,8 @@ table.data tbody tr:hover td {
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 22px;
   overflow: visible;
-}
-.oft-body {
-  flex: 1 0 auto;
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.9fr);
-  gap: 16px;
-  align-items: start;
-}
-.oft-body-solo {
-  grid-template-columns: 1fr;
 }
 .oft-head {
   flex-shrink: 0;
@@ -1293,23 +1283,10 @@ table.data tbody tr:hover td {
   color: var(--brand-blue);
 }
 .oft-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  min-width: 0;
-}
-.oft-chain-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-}
-.oft-evm-grid {
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 10px;
-  align-content: start;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: start;
 }
 .oft-chain {
   display: grid;
@@ -1346,12 +1323,6 @@ table.data tbody tr:hover td {
   border-radius: 16px;
   background: var(--bg-white);
   box-shadow: var(--shadow-xs);
-}
-.oft-side-hint {
-  margin: 6px 0 12px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-sub);
 }
 .oft-facts {
   list-style: none;
@@ -1449,10 +1420,7 @@ table.data tbody tr:hover td {
     height: auto;
     min-height: 0;
   }
-  .oft-body,
-  .oft-evm-grid {
-    grid-template-columns: 1fr;
-  }
+  .oft-meta,
   .chain-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
