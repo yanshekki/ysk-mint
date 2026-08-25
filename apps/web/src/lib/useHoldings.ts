@@ -12,6 +12,17 @@ export type HoldingRow = {
   raw: bigint;
   contract?: string;
   native?: boolean;
+  chainTag?: string;
+};
+
+const CHAIN_TAG: Record<number, string> = {
+  1: "ETH",
+  8453: "Base",
+  42161: "Arb",
+  56: "BNB",
+  43114: "AVAX",
+  397: "NEAR",
+  1815: "ADA",
 };
 
 function fmt(raw: bigint, decimals: number) {
@@ -33,29 +44,38 @@ function row(token: TokenRecord, raw: bigint | null, connected: boolean): Holdin
     raw: raw ?? 0n,
     contract: token.address,
     native: token.native,
+    chainTag: CHAIN_TAG[token.chainId],
   };
 }
 
 function sortHoldings(rows: HoldingRow[], connected: boolean) {
   if (!connected) return rows;
   return [...rows].sort((a, b) => {
-    if (a.native !== b.native) return a.native ? -1 : 1;
     if ((a.raw > 0n) !== (b.raw > 0n)) return a.raw > 0n ? -1 : 1;
-    return 0;
+    if (a.native !== b.native) return a.native ? -1 : 1;
+    return (a.chainTag ?? "").localeCompare(b.chainTag ?? "");
   });
 }
 
-export function useEvmHoldings(address: Address | undefined, chainId: number) {
-  const catalog = useMemo(() => tokensFor("evm", chainId), [chainId]);
+export function useEvmHoldings(address: Address | undefined) {
+  const catalog = useMemo(() => tokensFor("evm"), []);
   const erc20s = catalog.filter((t) => t.address);
-  const nativeMeta = catalog.find((t) => t.native);
+  const natives = catalog.filter((t) => t.native);
   const connected = Boolean(address);
 
-  const native = useBalance({
-    address,
-    chainId,
-    query: { enabled: connected },
-  });
+  const eth = useBalance({ address, chainId: 1, query: { enabled: connected } });
+  const base = useBalance({ address, chainId: 8453, query: { enabled: connected } });
+  const arb = useBalance({ address, chainId: 42161, query: { enabled: connected } });
+  const bnb = useBalance({ address, chainId: 56, query: { enabled: connected } });
+  const avax = useBalance({ address, chainId: 43114, query: { enabled: connected } });
+
+  const nativeByChain: Record<number, bigint | undefined> = {
+    1: eth.data?.value,
+    8453: base.data?.value,
+    42161: arb.data?.value,
+    56: bnb.data?.value,
+    43114: avax.data?.value,
+  };
 
   const erc = useReadContracts({
     contracts: erc20s.map((t) => ({
@@ -63,7 +83,7 @@ export function useEvmHoldings(address: Address | undefined, chainId: number) {
       abi: erc20Abi,
       functionName: "balanceOf" as const,
       args: [address as Address],
-      chainId,
+      chainId: t.chainId,
     })),
     query: { enabled: connected && erc20s.length > 0 },
     allowFailure: true,
@@ -71,8 +91,9 @@ export function useEvmHoldings(address: Address | undefined, chainId: number) {
 
   const rows = useMemo(() => {
     const out: HoldingRow[] = [];
-    if (nativeMeta) {
-      out.push(row(nativeMeta, connected ? (native.data?.value ?? null) : null, connected));
+    for (const t of natives) {
+      const raw = connected ? (nativeByChain[t.chainId] ?? null) : null;
+      out.push(row(t, raw, connected));
     }
     erc20s.forEach((t, i) => {
       const r = erc.data?.[i];
@@ -80,10 +101,11 @@ export function useEvmHoldings(address: Address | undefined, chainId: number) {
       out.push(row(t, raw, connected));
     });
     return sortHoldings(out, connected);
-  }, [catalog, connected, erc.data, erc20s, native.data?.value, nativeMeta]);
+  }, [catalog, connected, erc.data, erc20s, natives, eth.data?.value, base.data?.value, arb.data?.value, bnb.data?.value, avax.data?.value]);
 
   const funded = rows.filter((r) => r.raw > 0n).length;
-  return { rows, funded, loading: native.isLoading || erc.isLoading, catalogSize: catalog.length };
+  const loading = eth.isLoading || base.isLoading || arb.isLoading || bnb.isLoading || avax.isLoading || erc.isLoading;
+  return { rows, funded, loading, catalogSize: catalog.length };
 }
 
 export function useNearHoldings(account: string) {

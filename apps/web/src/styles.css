@@ -485,13 +485,8 @@ select {
 }
 .wallet-chips {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 8px;
-  flex-shrink: 0;
-  min-height: 36px;
-  max-height: 36px;
-  overflow-x: auto;
-  overflow-y: hidden;
 }
 .wallet-chip {
   display: inline-flex;
@@ -595,12 +590,35 @@ select {
 .holding-zero {
   opacity: 0.45;
 }
+.holding-ico-wrap {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
 .holding-ico {
   width: 28px;
   height: 28px;
   border-radius: 999px;
   background: var(--bg-white);
   object-fit: cover;
+  display: block;
+}
+.holding-chain-tag {
+  position: absolute;
+  right: -7px;
+  bottom: -5px;
+  min-width: 18px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 4px;
+  border: 1px solid #fff;
+  background: #0f172a;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 12px;
+  text-align: center;
 }
 .holding-meta {
   min-width: 0;

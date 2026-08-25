@@ -27,7 +27,10 @@ export function HoldingsList({
       <ul className="holdings-list">
         {rows.map((r) => (
           <li key={r.id} className={connected && r.raw === 0n ? "holding-zero" : ""}>
-            <img src={r.icon} alt="" width={28} height={28} className="holding-ico" />
+            <span className="holding-ico-wrap">
+              <img src={r.icon} alt="" width={28} height={28} className="holding-ico" />
+              {r.chainTag ? <span className="holding-chain-tag">{r.chainTag}</span> : null}
+            </span>
             <div className="holding-meta">
               <b>{r.symbol}</b>
               <span className="num">{r.contract ? short(r.contract) : t("wallet.nativeCoin")}</span>
