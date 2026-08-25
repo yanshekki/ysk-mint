@@ -6,6 +6,8 @@
   "nav": {
     "home": "Home",
     "create": "Create",
+    "transfer": "Transfer",
+    "me": "My tokens",
     "disclaimer": "Unaudited"
   },
   "home": {
@@ -95,8 +97,22 @@
       "lock": "Lock"
     }
   },
+  "transfer": {
+    "title": "Cross-chain transfer",
+    "body": "Quotes and sends through the OFT on your connected RPC. Same-chain is not used. Progress is the destination balance, not a server.",
+    "quote": "Quote",
+    "send": "Simulate and send",
+    "fee": "nativeFee"
+  },
+  "me": {
+    "title": "My tokens",
+    "body": "Read from Factory Launch logs for this wallet. No account system.",
+    "noFactory": "Factory address is still zero on this chain."
+  },
   "token": {
-    "missing": "Pass a chainId and token address."
+    "missing": "Pass a chainId and token address.",
+    "share": "Download share card",
+    "shareNote": "Generated in the browser. Social crawlers will not see a server-side OG image."
   },
   "lock": {
     "missing": "Pass a chainId and lock id."

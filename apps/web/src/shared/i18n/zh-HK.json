@@ -6,6 +6,8 @@
   "nav": {
     "home": "首頁",
     "create": "發幣",
+    "transfer": "跨鏈",
+    "me": "我的代幣",
     "disclaimer": "未經審計"
   },
   "home": {
@@ -95,8 +97,22 @@
       "lock": "鎖定"
     }
   },
+  "transfer": {
+    "title": "跨鏈轉帳",
+    "body": "報價與發送都經過你連接的 RPC 上的 OFT。不使用同鏈。進度看目的鏈餘額，不是伺服器。",
+    "quote": "報價",
+    "send": "模擬並發送",
+    "fee": "nativeFee"
+  },
+  "me": {
+    "title": "我的代幣",
+    "body": "從此錢包的 Factory Launch 日誌讀取。沒有帳號系統。",
+    "noFactory": "此鏈 Factory 地址仍為零。"
+  },
   "token": {
-    "missing": "請提供 chainId 與代幣地址。"
+    "missing": "請提供 chainId 與代幣地址。",
+    "share": "下載分享卡",
+    "shareNote": "在瀏覽器內生成。社群爬蟲看不到伺服器 OG 圖。"
   },
   "lock": {
     "missing": "請提供 chainId 與鎖定編號。"
