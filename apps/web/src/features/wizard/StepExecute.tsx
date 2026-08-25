@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { keccak256, parseEther, parseUnits, stringToBytes, zeroAddress } from "viem";
-import { useAccount, usePublicClient, useSwitchChain, useWalletClient } from "wagmi";
+import { useAccount, useConfig, useSwitchChain } from "wagmi";
+import { getPublicClient, getWalletClient } from "wagmi/actions";
 import {
-  ChainKey,
   ErrorCode,
   LaunchStep,
   decodeLaunchError,
@@ -12,8 +12,6 @@ import {
   liquidityManagerAbi,
   tokenFactoryAbi,
   yskOftAbi,
-  planPeerCalls,
-  CHAINS,
   validateLaunchDraft,
   validateLock,
   validateLpAmounts,
@@ -23,22 +21,27 @@ import { lpTokenAmount } from "./presets.ts";
 import { packFlags } from "./flags.ts";
 import { Button } from "../../shared/ui/Button.tsx";
 import { useWizard } from "./store.ts";
+import { configuredEvm, homeEvm, selectedChains, undeployedEvm } from "../../lib/launchTargets.ts";
 
 export function StepExecute() {
   const { t, i18n } = useTranslation();
   const locale = i18n.language === "zh-HK" ? "zh-HK" : "en";
   const w = useWizard();
   const { address } = useAccount();
-  const publicClient = usePublicClient();
-  const { data: wallet } = useWalletClient();
+  const config = useConfig();
   const { switchChainAsync } = useSwitchChain();
   const [busy, setBusy] = useState<string | null>(null);
   const [errors, setErrors] = useState<LaunchError[]>([]);
 
-  const contracts = launchContracts(ChainKey.BaseSepolia);
+  const nativePicked = selectedChains(w.chains).filter((c) => !c.evm);
+  const ready = configuredEvm(w.chains);
+  const missing = undeployedEvm(w.chains);
+  const home = homeEvm(w.chains);
+  const homeContracts = home ? launchContracts(home.key) : undefined;
+  const canRun = Boolean(address && home && isConfigured(homeContracts));
 
   async function run() {
-    if (!address || !publicClient || !wallet) {
+    if (!address || !home || !isConfigured(homeContracts)) {
       setErrors([{ code: ErrorCode.RecipientZero, args: [], severity: "user", retryable: false }]);
       return;
     }
@@ -63,63 +66,52 @@ export function StepExecute() {
       ...validateLock(w.lockMode, w.lockDuration, locale),
       ...validateLpAmounts(tokenLp, nativeLp, locale),
     ];
-    if (!isConfigured(contracts)) {
-      setErrors(collected);
-      return;
-    }
     if (collected.length) {
       setErrors(collected);
       return;
     }
     setErrors([]);
-    const salt = keccak256(stringToBytes(`${address}:${w.symbol}:${Date.now()}`));
+    const salt = keccak256(stringToBytes(`${address}:${w.symbol}:${home.chainId}:${Date.now()}`));
     try {
+      await switchChainAsync({ chainId: home.chainId });
+      const publicClient = getPublicClient(config, { chainId: home.chainId });
+      const wallet = await getWalletClient(config, { chainId: home.chainId });
+      if (!publicClient || !wallet) throw new Error("missing client");
+
+      const params = {
+        name: w.name,
+        symbol: w.symbol,
+        decimals: w.decimals,
+        totalSupply: supply,
+        owner: address,
+        supplyMode: w.supplyMode,
+        moduleFlags: flags,
+      } as const;
+
       setBusy("simulating");
       await publicClient.simulateContract({
         account: address,
-        address: contracts.factory,
+        address: homeContracts.factory,
         abi: tokenFactoryAbi,
         functionName: "createToken",
-        args: [
-          {
-            name: w.name,
-            symbol: w.symbol,
-            decimals: w.decimals,
-            totalSupply: supply,
-            owner: address,
-            supplyMode: w.supplyMode,
-            moduleFlags: flags,
-          },
-          salt,
-        ],
+        args: [params, salt],
       });
       setBusy("sending");
       const createHash = await wallet.writeContract({
-        address: contracts.factory,
+        address: homeContracts.factory,
         abi: tokenFactoryAbi,
         functionName: "createToken",
-        args: [
-          {
-            name: w.name,
-            symbol: w.symbol,
-            decimals: w.decimals,
-            totalSupply: supply,
-            owner: address,
-            supplyMode: w.supplyMode,
-            moduleFlags: flags,
-          },
-          salt,
-        ],
+        args: [params, salt],
       });
       const createReceipt = await publicClient.waitForTransactionReceipt({ hash: createHash });
-      const launchLog = createReceipt.logs.find((l) => l.address.toLowerCase() === contracts.factory.toLowerCase());
+      const launchLog = createReceipt.logs.find((l) => l.address.toLowerCase() === homeContracts.factory.toLowerCase());
       const tokenAddress = launchLog?.topics[1]
         ? (`0x${launchLog.topics[1].slice(26)}` as `0x${string}`)
         : undefined;
       if (!tokenAddress || tokenAddress === zeroAddress) throw new Error("missing token");
       const perChain = {
         ...w.perChain,
-        [ChainKey.BaseSepolia]: { token: tokenAddress, tx: createHash },
+        [home.key]: { token: tokenAddress, tx: createHash },
       };
       w.set({ createTx: createHash, tokenAddress, perChain });
 
@@ -129,61 +121,37 @@ export function StepExecute() {
         address: tokenAddress,
         abi: yskOftAbi,
         functionName: "approve",
-        args: [contracts.manager, tokenLp],
+        args: [homeContracts.manager, tokenLp],
       });
       setBusy("sending");
       const approveHash = await wallet.writeContract({
         address: tokenAddress,
         abi: yskOftAbi,
         functionName: "approve",
-        args: [contracts.manager, tokenLp],
+        args: [homeContracts.manager, tokenLp],
       });
       await publicClient.waitForTransactionReceipt({ hash: approveHash });
 
       setBusy("simulating");
       await publicClient.simulateContract({
         account: address,
-        address: contracts.manager,
+        address: homeContracts.manager,
         abi: liquidityManagerAbi,
         functionName: "addAndLock",
-        args: [tokenAddress, contracts.v2Router, tokenLp, 0n, 0n, w.lockMode, BigInt(w.lockDuration)],
+        args: [tokenAddress, homeContracts.v2Router, tokenLp, 0n, 0n, w.lockMode, BigInt(w.lockDuration)],
         value: nativeLp,
       });
       setBusy("sending");
       const lpHash = await wallet.writeContract({
-        address: contracts.manager,
+        address: homeContracts.manager,
         abi: liquidityManagerAbi,
         functionName: "addAndLock",
-        args: [tokenAddress, contracts.v2Router, tokenLp, 0n, 0n, w.lockMode, BigInt(w.lockDuration)],
+        args: [tokenAddress, homeContracts.v2Router, tokenLp, 0n, 0n, w.lockMode, BigInt(w.lockDuration)],
         value: nativeLp,
       });
       const lpReceipt = await publicClient.waitForTransactionReceipt({ hash: lpHash });
-      const launched = lpReceipt.logs.find((l) => l.address.toLowerCase() === contracts.manager.toLowerCase());
+      const launched = lpReceipt.logs.find((l) => l.address.toLowerCase() === homeContracts.manager.toLowerCase());
       const lockId = launched?.data ? BigInt(launched.data.slice(0, 66)).toString() : undefined;
-      const deployed = Object.entries(perChain)
-        .filter(([, v]) => v.token)
-        .map(([key, v]) => ({ chainKey: Number(key), address: v.token as `0x${string}` }));
-      const peerCalls = planPeerCalls(deployed);
-      for (const call of peerCalls) {
-        const chain = CHAINS[call.fromChainKey as keyof typeof CHAINS];
-        if (!chain) continue;
-        setBusy("sending");
-        await switchChainAsync({ chainId: chain.chainId });
-        await publicClient.simulateContract({
-          account: address,
-          address: call.from,
-          abi: yskOftAbi,
-          functionName: "setPeer",
-          args: [call.dstEid, call.peer],
-        });
-        const peerHash = await wallet.writeContract({
-          address: call.from,
-          abi: yskOftAbi,
-          functionName: "setPeer",
-          args: [call.dstEid, call.peer],
-        });
-        await publicClient.waitForTransactionReceipt({ hash: peerHash });
-      }
       w.set({ lpTx: lpHash, lockId, step: LaunchStep.Success });
     } catch (e) {
       const data = (e as { data?: `0x${string}` }).data;
@@ -193,20 +161,32 @@ export function StepExecute() {
     }
   }
 
-  const nativePicked = w.chains.filter((c) => {
-    const def = CHAINS[c as keyof typeof CHAINS];
-    return def && !def.evm;
-  });
-
   return (
     <div className="space-y-4">
-      {nativePicked.length ? (
-        <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{t("wizard.execute.nativePath")}</p>
+      {home ? (
+        <p className="text-[15px] text-text-sub">
+          {t("wizard.execute.home", { name: home.name })}
+        </p>
+      ) : (
+        <p className="text-[15px] text-text-sub">{t("wizard.execute.needEvm")}</p>
+      )}
+      {ready.length ? (
+        <ul className="space-y-1 text-[14px] text-text-sub">
+          {ready.map((c) => (
+            <li key={c.key}>
+              {c.name} · EID {c.eid}
+            </li>
+          ))}
+        </ul>
       ) : null}
-      {!isConfigured(contracts) ? (
+      {missing.length ? (
         <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
           {t("wizard.execute.needContracts")}
+          <span className="mt-1 block">{missing.map((c) => c.name).join(" · ")}</span>
         </p>
+      ) : null}
+      {nativePicked.length ? (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{t("wizard.execute.nativePath")}</p>
       ) : null}
       {errors.length ? (
         <ul className="list-disc pl-5 text-sm text-red-700">
@@ -215,7 +195,7 @@ export function StepExecute() {
           ))}
         </ul>
       ) : null}
-      <Button type="button" disabled={Boolean(busy) || !isConfigured(contracts)} onClick={() => void run()}>
+      <Button type="button" disabled={Boolean(busy) || !canRun} onClick={() => void run()}>
         {busy === "simulating"
           ? t("wizard.execute.simulating")
           : busy === "sending"

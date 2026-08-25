@@ -186,6 +186,8 @@
     },
     "execute": {
       "simulate": "模擬後簽名",
+      "home": "本步喺 {{name}} 部署 OFT 並鎖 LP。其他已揀嘅 EVM 等 Factory 部署後先做 setPeer。",
+      "needEvm": "未揀 EVM 鏈，無法簽名 OFT。",
       "needContracts": "Factory／Manager／Locker／Router 仍為零。請先部署，再填 packages/config/src/contracts.ts。",
       "nativePath": "你揀咗 NEAR、Cardano 或 Solana。呢啲係 NEP-141／native asset／SPL，唔走 EVM OFT。原生 factory／program 未部署，呢步唔簽名。",
       "create": "1. 部署代幣",

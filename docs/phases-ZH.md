@@ -10,7 +10,7 @@ Monorepo、ENUM、錯誤、校驗、可 clone 的 OFT、Factory、錢包 SPA。
 
 ## Phase 1 — 單鏈 Wizard + LP
 
-Base Sepolia。部署 OFT、Uniswap V2 LP、定期或銷毀鎖定。成功頁重新讀取鏈上狀態。
+引導式 Wizard + 鎖 LP。Execute 跟選擇裡第一條已配置嘅 EVM（唔寫死 Base Sepolia）。成功／代幣／鎖定／持倉頁讀嗰條鏈。Factory 地址在測試網部署前仍為零。
 
 ## Phase 2 — 多鏈 + peers
 

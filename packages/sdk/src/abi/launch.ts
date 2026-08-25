@@ -2,7 +2,7 @@ export const tokenFactoryAbi = [
   {
     type: "function",
     name: "createToken",
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
     inputs: [
       {
         name: "params",

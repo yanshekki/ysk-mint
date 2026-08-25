@@ -9,17 +9,18 @@ export function TokenPage() {
   const { t } = useTranslation();
   const { chainId, address } = useParams();
   const token = address as `0x${string}` | undefined;
+  const cid = Number(chainId);
   const reads = useReadContracts({
-    contracts: token
+    contracts: token && Number.isFinite(cid)
       ? [
-          { address: token, abi: yskOftAbi, functionName: "name" },
-          { address: token, abi: yskOftAbi, functionName: "symbol" },
-          { address: token, abi: yskOftAbi, functionName: "decimals" },
-          { address: token, abi: yskOftAbi, functionName: "totalSupply" },
-          { address: token, abi: yskOftAbi, functionName: "owner" },
+          { address: token, abi: yskOftAbi, functionName: "name", chainId: cid },
+          { address: token, abi: yskOftAbi, functionName: "symbol", chainId: cid },
+          { address: token, abi: yskOftAbi, functionName: "decimals", chainId: cid },
+          { address: token, abi: yskOftAbi, functionName: "totalSupply", chainId: cid },
+          { address: token, abi: yskOftAbi, functionName: "owner", chainId: cid },
         ]
       : [],
-    query: { enabled: Boolean(token) },
+    query: { enabled: Boolean(token) && Number.isFinite(cid) },
   });
 
   if (!token || !chainId) return <p className="workspace-scroll">{t("token.missing")}</p>;

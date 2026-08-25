@@ -1,23 +1,28 @@
 import { useParams } from "react-router-dom";
 import { useReadContract } from "wagmi";
 import { useTranslation } from "react-i18next";
-import { ChainKey, launchContracts, liquidityLockerAbi } from "@ysk-mint/sdk";
+import { launchContracts, liquidityLockerAbi } from "@ysk-mint/sdk";
 import { Badge, Metric } from "../../shared/ui/TokenRow.tsx";
+import { chainByEvmId } from "../../lib/launchTargets.ts";
 
 export function LockPage() {
   const { t } = useTranslation();
-  const { lockId } = useParams();
-  const contracts = launchContracts(ChainKey.BaseSepolia);
+  const { chainId, lockId } = useParams();
+  const cid = Number(chainId);
+  const def = Number.isFinite(cid) ? chainByEvmId(cid) : undefined;
+  const contracts = def ? launchContracts(def.key) : undefined;
   const id = lockId ? BigInt(lockId) : undefined;
   const lock = useReadContract({
     address: contracts?.locker,
     abi: liquidityLockerAbi,
     functionName: "getLock",
     args: id !== undefined ? [id] : undefined,
+    chainId: Number.isFinite(cid) ? cid : undefined,
     query: {
       enabled:
         Boolean(contracts?.locker && contracts.locker !== "0x0000000000000000000000000000000000000000") &&
-        id !== undefined,
+        id !== undefined &&
+        Number.isFinite(cid),
     },
   });
 

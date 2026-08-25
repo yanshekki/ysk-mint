@@ -10,7 +10,7 @@ Monorepo, enums, errors, validation, cloneable OFT, factory, wallet SPA.
 
 ## Phase 1 — Single-chain wizard + LP
 
-Base Sepolia. Deploy OFT, Uniswap V2 LP, timed or burn lock. Success page re-reads chain state.
+Guided wizard + LP lock. Execute follows the first configured EVM in the selection (not hardcoded Base Sepolia). Success / token / lock / me pages read that chain. Factory addresses stay zero until a testnet deploy.
 
 ## Phase 2 — Multi-chain + peers
 

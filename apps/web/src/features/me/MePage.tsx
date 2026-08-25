@@ -1,48 +1,66 @@
 import { useTranslation } from "react-i18next";
-import { useAccount, usePublicClient } from "wagmi";
-import { useEffect, useState } from "react";
+import { useAccount, useConfig } from "wagmi";
+import { getPublicClient } from "wagmi/actions";
+import { useEffect, useMemo, useState } from "react";
 import { parseAbiItem } from "viem";
-import { ChainKey, isConfigured, launchContracts } from "@ysk-mint/sdk";
+import { isConfigured, launchContracts, evmEnabledChains } from "@ysk-mint/sdk";
 import { Link } from "react-router-dom";
-import { CHAINS } from "@ysk-mint/config";
 import { Badge, TokenRow } from "../../shared/ui/TokenRow.tsx";
 
 const launchEvent = parseAbiItem(
   "event Launch(address indexed token, address indexed deployer, bytes32 indexed salt, string name, string symbol, uint8 supplyMode)",
 );
 
+type Row = { token: `0x${string}`; name: string; symbol: string; chainId: number; chain: string };
+
 export function MePage() {
   const { t } = useTranslation();
   const { address } = useAccount();
-  const client = usePublicClient();
-  const [rows, setRows] = useState<{ token: `0x${string}`; name: string; symbol: string }[]>([]);
-  const contracts = launchContracts(ChainKey.BaseSepolia);
-  const chainId = CHAINS[ChainKey.BaseSepolia].chainId;
+  const config = useConfig();
+  const [rows, setRows] = useState<Row[]>([]);
+  const live = useMemo(
+    () => evmEnabledChains().filter((c) => isConfigured(launchContracts(c.key))),
+    [],
+  );
 
   useEffect(() => {
-    if (!client || !address || !isConfigured(contracts)) {
+    if (!address || live.length === 0) {
       setRows([]);
       return;
     }
-    void client
-      .getLogs({
-        address: contracts.factory,
-        event: launchEvent,
-        args: { deployer: address },
-        fromBlock: 0n,
-        toBlock: "latest",
-      })
-      .then((logs) => {
-        setRows(
-          logs.map((l) => ({
+    let cancelled = false;
+    void Promise.all(
+      live.map(async (c) => {
+        const contracts = launchContracts(c.key);
+        if (!isConfigured(contracts)) return [];
+        const client = getPublicClient(config, { chainId: c.chainId });
+        if (!client) return [];
+        try {
+          const logs = await client.getLogs({
+            address: contracts.factory,
+            event: launchEvent,
+            args: { deployer: address },
+            fromBlock: 0n,
+            toBlock: "latest",
+          });
+          return logs.map((l) => ({
             token: l.args.token as `0x${string}`,
             name: l.args.name ?? "",
             symbol: l.args.symbol ?? "",
-          })),
-        );
-      })
-      .catch(() => setRows([]));
-  }, [client, address, contracts]);
+            chainId: c.chainId,
+            chain: c.short,
+          }));
+        } catch {
+          return [];
+        }
+      }),
+    ).then((parts) => {
+      if (!cancelled) setRows(parts.flat());
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [address, config, live]);
 
   return (
     <section className="workspace">
@@ -54,17 +72,17 @@ export function MePage() {
         </div>
       </div>
       <div className="table-wrap" style={{ padding: "16px 24px", display: "flex", flexDirection: "column", gap: 8 }}>
-        {!isConfigured(contracts) ? (
+        {live.length === 0 ? (
           <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[15px] text-amber-900">{t("me.noFactory")}</p>
         ) : null}
         {rows.length === 0 ? (
           <div className="empty fill">{t("me.noFactory")}</div>
         ) : (
           rows.map((r) => (
-            <Link key={r.token} to={`/token/${chainId}/${r.token}`}>
+            <Link key={`${r.chainId}-${r.token}`} to={`/token/${r.chainId}/${r.token}`}>
               <TokenRow
                 title={`${r.symbol || "TKN"} · ${r.name}`}
-                subtitle={r.token}
+                subtitle={`${r.chain} · ${r.token}`}
                 right={<Badge kind="info">OFT</Badge>}
               />
             </Link>

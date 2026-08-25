@@ -186,6 +186,8 @@
     },
     "execute": {
       "simulate": "Simulate then sign",
+      "home": "This step deploys the OFT and locks LP on {{name}}. Other selected EVM chains wait for a factory before setPeer.",
+      "needEvm": "No EVM chain selected. Cannot sign an OFT.",
       "needContracts": "Factory / manager / locker / router are still zero. Deploy, then fill packages/config/src/contracts.ts.",
       "nativePath": "You picked NEAR, Cardano or Solana. Those paths are NEP-141 / native asset / SPL, not EVM OFT. Native factories and programs are undeployed, so this step will not sign.",
       "create": "1. Deploy token",
