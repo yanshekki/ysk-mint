@@ -37,7 +37,7 @@ export function TokenPage() {
             {String(name?.result ?? "…")}{" "}
             <span className="text-text-muted">{String(symbol?.result ?? "")}</span>
           </h1>
-          <p className="num mt-1 text-[12px] text-text-muted">{token}</p>
+          <p className="num mt-1 text-[14px] text-text-muted">{token}</p>
         </div>
       </div>
       <div className="workspace-scroll">

@@ -35,10 +35,10 @@ export function NativeConnect() {
   return (
     <div className="grid gap-3 lg:grid-cols-2">
       <div className="token-row">
-        <div className="grid h-10 w-10 place-items-center rounded-lg bg-bg-subtle text-[10px] font-black">NEAR</div>
+        <div className="grid h-10 w-10 place-items-center rounded-lg bg-bg-subtle text-[12px] font-black">NEAR</div>
         <div className="min-w-0">
-          <p className="text-[13px] font-bold">{t("wallet.near")}</p>
-          <p className="num truncate text-[11px] text-text-muted">
+          <p className="text-[15px] font-bold">{t("wallet.near")}</p>
+          <p className="num truncate text-[13px] text-text-muted">
             {native.nearAccount || t("wizard.wallet.idle")}
             {nearHeight ? ` · #${nearHeight}` : ""}
           </p>
@@ -66,10 +66,10 @@ export function NativeConnect() {
         )}
       </div>
       <div className="token-row">
-        <div className="grid h-10 w-10 place-items-center rounded-lg bg-bg-subtle text-[10px] font-black">ADA</div>
+        <div className="grid h-10 w-10 place-items-center rounded-lg bg-bg-subtle text-[12px] font-black">ADA</div>
         <div className="min-w-0">
-          <p className="text-[13px] font-bold">{t("wallet.cardano")}</p>
-          <p className="num truncate text-[11px] text-text-muted">
+          <p className="text-[15px] font-bold">{t("wallet.cardano")}</p>
+          <p className="num truncate text-[13px] text-text-muted">
             {native.cardanoAddress ? short(native.cardanoAddress) : t("wizard.wallet.idle")}
             {adaHeight ? ` · #${adaHeight}` : ""}
           </p>

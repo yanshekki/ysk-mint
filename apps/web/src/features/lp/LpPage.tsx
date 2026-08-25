@@ -47,7 +47,7 @@ export function LpPage() {
               {c.short}
             </button>
           ))}
-          <span className="text-[12px] font-bold text-text-muted">{t("lp.testnets")}</span>
+          <span className="text-[14px] font-bold text-text-muted">{t("lp.testnets")}</span>
           {tests.map((c) => (
             <button
               key={c.key}

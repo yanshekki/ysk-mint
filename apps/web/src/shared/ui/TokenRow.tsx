@@ -20,10 +20,10 @@ export function TokenRow({
       </div>
       <div className="min-w-0">
         <div className="flex items-center gap-2">
-          <p className="truncate text-[13px] font-bold">{title}</p>
+          <p className="truncate text-[15px] font-bold">{title}</p>
           {badges}
         </div>
-        <p className="num truncate text-[11px] text-text-muted">{subtitle}</p>
+        <p className="num truncate text-[13px] text-text-muted">{subtitle}</p>
       </div>
       <div className="text-right">{right}</div>
     </>

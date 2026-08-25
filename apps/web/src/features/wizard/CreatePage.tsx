@@ -116,7 +116,7 @@ export function CreatePage() {
     <section className="workspace">
       <div className="workspace-head">
         <div>
-          <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-text-muted">Launch</p>
+          <p className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-text-muted">Launch</p>
           <h1>{t("wizard.title")}</h1>
         </div>
         <span className="badge badge-warn">{t("nav.disclaimer")}</span>
@@ -134,7 +134,7 @@ export function CreatePage() {
         <div className="workspace-main">
           <div className="workspace-scroll">{panel}</div>
           {errors.length ? (
-            <div className="mx-8 mb-0 rounded-xl border border-red-200 bg-red-50 p-3 text-[13px] text-red-800">
+            <div className="mx-8 mb-0 rounded-xl border border-red-200 bg-red-50 p-3 text-[15px] text-red-800">
               <p className="font-bold">{t("wizard.errors")}</p>
               <ul className="mt-1 space-y-1">
                 {errors.map((e) => (

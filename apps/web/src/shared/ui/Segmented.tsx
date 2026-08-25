@@ -23,7 +23,7 @@ export function Segmented<T extends string | number>({
           aria-checked={value === o.value}
           disabled={o.disabled}
           onClick={() => onChange(o.value)}
-          className={`rounded-full px-3 py-1 text-[12px] font-bold ${
+          className={`rounded-full px-3 py-1 text-[14px] font-bold ${
             value === o.value ? "bg-white text-text-main shadow-sm" : "text-text-sub"
           }`}
         >

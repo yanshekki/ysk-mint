@@ -27,21 +27,21 @@ export function StepWallet() {
   const native = useNativeWallets();
   return (
     <div className="space-y-4">
-      <p className="text-[13px] text-text-sub">{t("wizard.wallet.need")}</p>
-      <p className="text-[12px] font-bold">{t("wallet.evm")}</p>
+      <p className="text-[15px] text-text-sub">{t("wizard.wallet.need")}</p>
+      <p className="text-[14px] font-bold">{t("wallet.evm")}</p>
       <ConnectBar />
       <div className="token-row">
         <div className="grid h-10 w-10 place-items-center rounded-lg bg-bg-subtle text-xs font-black">EVM</div>
         <div>
-          <p className="text-[13px] font-bold">{isConnected ? t("wizard.wallet.ready") : t("wizard.wallet.idle")}</p>
-          <p className="num truncate text-[11px] text-text-muted">{isConnected ? address : "—"}</p>
+          <p className="text-[15px] font-bold">{isConnected ? t("wizard.wallet.ready") : t("wizard.wallet.idle")}</p>
+          <p className="num truncate text-[13px] text-text-muted">{isConnected ? address : "—"}</p>
         </div>
         <Badge kind={isConnected ? "ok" : "warn"}>{isConnected ? "ON" : "OFF"}</Badge>
       </div>
-      <p className="text-[12px] font-bold">{t("wallet.native")}</p>
+      <p className="text-[14px] font-bold">{t("wallet.native")}</p>
       <NativeConnect />
       {native.nearAccount || native.cardanoAddress ? (
-        <p className="text-[12px] text-text-muted">{t("wizard.wallet.nativeReady")}</p>
+        <p className="text-[14px] text-text-muted">{t("wizard.wallet.nativeReady")}</p>
       ) : null}
     </div>
   );
@@ -53,7 +53,7 @@ export function StepBasics() {
   return (
     <div className="grid gap-5">
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="text-[12px] font-bold">
+        <label className="text-[14px] font-bold">
           {t("wizard.basics.name")}
           <input
             className="field-text mt-1"
@@ -62,7 +62,7 @@ export function StepBasics() {
             onChange={(e) => w.set({ name: e.target.value })}
           />
         </label>
-        <label className="text-[12px] font-bold">
+        <label className="text-[14px] font-bold">
           {t("wizard.basics.symbol")}
           <input
             className="field-text mt-1 num uppercase"
@@ -73,7 +73,7 @@ export function StepBasics() {
         </label>
       </div>
       <div>
-        <p className="mb-2 text-[12px] font-bold">{t("wizard.basics.decimals")}</p>
+        <p className="mb-2 text-[14px] font-bold">{t("wizard.basics.decimals")}</p>
         <ChipGroup
           ariaLabel="decimals"
           value={w.decimals}
@@ -82,7 +82,7 @@ export function StepBasics() {
         />
       </div>
       <div>
-        <p className="mb-2 text-[12px] font-bold">{t("wizard.basics.supply")}</p>
+        <p className="mb-2 text-[14px] font-bold">{t("wizard.basics.supply")}</p>
         <ChipGroup
           ariaLabel="supply"
           value={w.totalSupply}
@@ -91,10 +91,10 @@ export function StepBasics() {
         />
       </div>
       <div>
-        <p className="mb-2 text-[12px] font-bold">{t("wizard.basics.logo")}</p>
+        <p className="mb-2 text-[14px] font-bold">{t("wizard.basics.logo")}</p>
         <Dropzone preview={w.logoUri} onFile={(logoUri) => w.set({ logoUri })} />
       </div>
-      <button type="button" className="text-left text-[12px] font-bold text-brand-blue" onClick={() => w.set({ showAdvanced: !w.showAdvanced })}>
+      <button type="button" className="text-left text-[14px] font-bold text-brand-blue" onClick={() => w.set({ showAdvanced: !w.showAdvanced })}>
         {w.showAdvanced ? t("wizard.basics.hideAdvanced") : t("wizard.basics.showAdvanced")}
       </button>
       {w.showAdvanced ? (
@@ -123,7 +123,7 @@ export function StepTokenomics() {
   return (
     <div className="grid gap-5">
       <div>
-        <p className="mb-2 text-[12px] font-bold">{t("wizard.tokenomics.supplyMode")}</p>
+        <p className="mb-2 text-[14px] font-bold">{t("wizard.tokenomics.supplyMode")}</p>
         <OptionGrid>
           <OptionCard
             selected={w.supplyMode === SupplyMode.Fixed}
@@ -140,7 +140,7 @@ export function StepTokenomics() {
         </OptionGrid>
       </div>
       <div>
-        <p className="mb-2 text-[12px] font-bold">{t("wizard.tokenomics.ownership")}</p>
+        <p className="mb-2 text-[14px] font-bold">{t("wizard.tokenomics.ownership")}</p>
         <OptionGrid>
           {(
             [
@@ -170,7 +170,7 @@ export function StepTokenomics() {
         ) : null}
       </div>
       <div>
-        <p className="mb-2 text-[12px] font-bold">{t("wizard.tokenomics.modules")}</p>
+        <p className="mb-2 text-[14px] font-bold">{t("wizard.tokenomics.modules")}</p>
         <OptionGrid>
           <OptionCard
             selected={w.modulePause}
@@ -193,7 +193,7 @@ export function StepTokenomics() {
         </OptionGrid>
         {w.moduleMaxTx ? (
           <div className="mt-3">
-            <p className="mb-2 text-[12px] font-bold">{t("wizard.tokenomics.maxWallet")}</p>
+            <p className="mb-2 text-[14px] font-bold">{t("wizard.tokenomics.maxWallet")}</p>
             <ChipGroup
               ariaLabel="max-wallet"
               value={w.maxWalletBps}
@@ -204,7 +204,7 @@ export function StepTokenomics() {
         ) : null}
         {w.moduleTax ? (
           <div className="mt-3">
-            <p className="mb-2 text-[12px] font-bold">{t("wizard.tokenomics.taxBps")}</p>
+            <p className="mb-2 text-[14px] font-bold">{t("wizard.tokenomics.taxBps")}</p>
             <ChipGroup
               ariaLabel="tax"
               value={w.taxBps}
@@ -223,7 +223,7 @@ export function StepChains() {
   const w = useWizard();
   return (
     <div className="space-y-3">
-      <p className="text-[13px] text-text-sub">{t("wizard.chains.hint")}</p>
+      <p className="text-[15px] text-text-sub">{t("wizard.chains.hint")}</p>
       <div className="opt-grid">
         {featuredChains().map((c) => {
           const on = w.chains.includes(c.key);
@@ -251,7 +251,7 @@ export function StepChains() {
           );
         })}
       </div>
-      <p className="text-[12px] font-bold text-text-muted">{t("wizard.chains.testnets")}</p>
+      <p className="text-[14px] font-bold text-text-muted">{t("wizard.chains.testnets")}</p>
       <div className="opt-grid">
         {testnetChains().map((c) => {
           const on = w.chains.includes(c.key);
@@ -281,19 +281,19 @@ export function StepLiquidity() {
   return (
     <div className="grid gap-5">
       <div>
-        <p className="mb-2 text-[12px] font-bold">{t("wizard.liquidity.tokenBps")}</p>
+        <p className="mb-2 text-[14px] font-bold">{t("wizard.liquidity.tokenBps")}</p>
         <ChipGroup
           ariaLabel="lp-bps"
           value={w.lpBps}
           onChange={(lpBps) => w.set({ lpBps })}
           options={LP_BPS.map((x) => ({ value: x.value, label: x.label }))}
         />
-        <p className="mt-2 num text-[12px] text-text-muted">
+        <p className="mt-2 num text-[14px] text-text-muted">
           {lpAmt} / {w.totalSupply}
         </p>
       </div>
       <div>
-        <p className="mb-2 text-[12px] font-bold">{t("wizard.liquidity.nativeAmount")}</p>
+        <p className="mb-2 text-[14px] font-bold">{t("wizard.liquidity.nativeAmount")}</p>
         <ChipGroup
           ariaLabel="lp-native"
           value={w.lpNativeAmount}
@@ -302,7 +302,7 @@ export function StepLiquidity() {
         />
       </div>
       <div>
-        <p className="mb-2 text-[12px] font-bold">{t("wizard.liquidity.mode")}</p>
+        <p className="mb-2 text-[14px] font-bold">{t("wizard.liquidity.mode")}</p>
         <div className="opt-grid">
           {LOCK_CARDS.map((c) => (
             <OptionCard
@@ -323,7 +323,7 @@ export function StepOmnichain() {
   const { t } = useTranslation();
   const w = useWizard();
   return (
-    <div className="space-y-3 text-[13px] leading-6 text-text-sub">
+    <div className="space-y-3 text-[15px] leading-6 text-text-sub">
       <p>{t("wizard.omnichain.note")}</p>
       <p>{t("wizard.omnichain.addressNote")}</p>
       <div className="flex flex-wrap gap-2">
@@ -347,10 +347,10 @@ export function StepReview() {
           {(w.symbol || "??").slice(0, 2)}
         </div>
         <div>
-          <p className="text-[13px] font-bold">
+          <p className="text-[15px] font-bold">
             {w.name || "—"} <span className="text-text-muted">{w.symbol}</span>
           </p>
-          <p className="num text-[11px] text-text-muted">
+          <p className="num text-[13px] text-text-muted">
             {w.totalSupply} · {w.decimals} dec · LP {w.lpBps / 100}% + {w.lpNativeAmount} ETH
           </p>
         </div>
@@ -358,7 +358,7 @@ export function StepReview() {
           {w.supplyMode === SupplyMode.Fixed ? "FIXED" : "MINT"}
         </Badge>
       </div>
-      <ul className="space-y-1 text-[12px] text-text-sub">
+      <ul className="space-y-1 text-[14px] text-text-sub">
         <li>{t("wizard.review.checklist")}</li>
         <li>{w.supplyMode === SupplyMode.Fixed ? t("wizard.review.fixed") : t("wizard.review.mintableWarn")}</li>
         <li>{t("wizard.review.lock")}</li>

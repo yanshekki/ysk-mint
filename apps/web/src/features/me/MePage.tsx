@@ -48,14 +48,14 @@ export function MePage() {
     <section className="workspace">
       <div className="workspace-head">
         <div>
-          <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-text-muted">Portfolio</p>
+          <p className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-text-muted">Portfolio</p>
           <h1>{t("me.title")}</h1>
-          <p className="mt-1 text-[13px] text-text-sub">{t("me.body")}</p>
+          <p className="mt-1 text-[15px] text-text-sub">{t("me.body")}</p>
         </div>
       </div>
       <div className="table-wrap" style={{ padding: "16px 24px", display: "flex", flexDirection: "column", gap: 8 }}>
         {!isConfigured(contracts) ? (
-          <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] text-amber-900">{t("me.noFactory")}</p>
+          <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[15px] text-amber-900">{t("me.noFactory")}</p>
         ) : null}
         {rows.length === 0 ? (
           <div className="empty fill">{t("me.noFactory")}</div>

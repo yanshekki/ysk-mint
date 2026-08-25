@@ -122,15 +122,15 @@ export function TransferPage() {
     <section className="workspace">
       <div className="workspace-head">
         <div>
-          <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-text-muted">Bridge</p>
+          <p className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-text-muted">Bridge</p>
           <h1>{t("transfer.title")}</h1>
-          <p className="mt-1 text-[13px] text-text-sub">{t("transfer.body")}</p>
+          <p className="mt-1 text-[15px] text-text-sub">{t("transfer.body")}</p>
         </div>
       </div>
       <div className="split">
         <div className="split-pane space-y-6">
           <div>
-            <p className="mb-2 text-[12px] font-bold">{t("transfer.token")}</p>
+            <p className="mb-2 text-[14px] font-bold">{t("transfer.token")}</p>
             {manual ? (
               <input className="field-text num" value={token} onChange={(e) => setToken(e.target.value)} placeholder="0x…" />
             ) : (
@@ -142,7 +142,7 @@ export function TransferPage() {
             )}
           </div>
           <div>
-            <p className="mb-2 text-[12px] font-bold">{t("transfer.amount")}</p>
+            <p className="mb-2 text-[14px] font-bold">{t("transfer.amount")}</p>
             <ChipGroup
               ariaLabel="pct"
               value={pct}
@@ -151,22 +151,22 @@ export function TransferPage() {
             />
           </div>
           <div>
-            <p className="mb-2 text-[12px] font-bold">{t("transfer.dest")}</p>
+            <p className="mb-2 text-[14px] font-bold">{t("transfer.dest")}</p>
             <ChipGroup
               ariaLabel="dst"
               value={dstKey}
               onChange={setDstKey}
               options={enabled.map((c) => ({ value: c.key, label: c.short }))}
             />
-            {destIsNative ? <p className="mt-2 text-[12px] text-text-muted">{t("transfer.nativeDest")}</p> : null}
+            {destIsNative ? <p className="mt-2 text-[14px] text-text-muted">{t("transfer.nativeDest")}</p> : null}
           </div>
         </div>
         <div className="split-pane flex flex-col gap-4">
-          <p className="text-[12px] font-bold">{t("transfer.quote")}</p>
+          <p className="text-[14px] font-bold">{t("transfer.quote")}</p>
           <p className="num text-2xl font-black">{quote ? quote : "—"}</p>
-          {quote ? <p className="num text-[12px] text-text-muted">{t("transfer.fee")}</p> : null}
+          {quote ? <p className="num text-[14px] text-text-muted">{t("transfer.fee")}</p> : null}
           {errors.map((e) => (
-            <p key={e.code} className="text-[13px] text-red-700">
+            <p key={e.code} className="text-[15px] text-red-700">
               {e.message}
             </p>
           ))}
