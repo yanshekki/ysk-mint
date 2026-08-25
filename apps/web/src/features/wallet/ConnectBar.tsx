@@ -15,13 +15,14 @@ export function ConnectBar() {
         }
         if (!account) {
           return (
-            <button type="button" className="wallet-cta" onClick={openConnectModal}>
+            <button type="button" className="ghost-btn" onClick={openConnectModal}>
               {t("wallet.connect")}
             </button>
           );
         }
         return (
-          <button type="button" className="ghost-btn" onClick={openAccountModal}>
+          <button type="button" className="wallet-session-btn" onClick={openAccountModal}>
+            <span className="wallet-dot wallet-dot-on" />
             {account.displayName}
           </button>
         );

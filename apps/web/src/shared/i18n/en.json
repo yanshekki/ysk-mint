@@ -47,14 +47,22 @@
   },
   "wallet": {
     "connect": "Connect wallet",
+    "connectEvm": "Connect EVM wallet",
     "disconnect": "Sign out",
-    "evm": "EVM wallet",
+    "session": "Existing wallets",
+    "count": "{{n}} / 3 connected",
+    "evm": "EVM",
     "native": "NEAR mainnet / Cardano",
     "near": "NEAR mainnet",
     "cardano": "Cardano",
-    "connectNear": "Connect NEAR (Wallet Selector)",
-    "connectCardano": "Connect Cardano wallet",
+    "evmHint": "MetaMask, Rabby, Rainbow and other EIP-6963 wallets you already have.",
+    "nearHint": "Official Wallet Selector. Meteor, MyNearWallet, HERE.",
+    "adaHint": "CIP-30 browser wallets. Lace, Eternl, Vespr.",
+    "connectNear": "Connect NEAR",
+    "connectCardano": "Connect Cardano",
+    "pickCip30": "Pick an installed CIP-30 wallet.",
     "noCip30": "No CIP-30 wallet detected",
+    "installCip30": "Install Lace, Eternl or Vespr, then refresh. This app does not create a wallet.",
     "wrongNetwork": "Switch to a supported EVM chain."
   },
   "wizard": {
@@ -74,7 +82,7 @@
       "8": "Live"
     },
     "wallet": {
-      "need": "Connect an existing wallet. EVM uses MetaMask and similar; NEAR mainnet and Cardano use their native wallets. This app does not create a wallet for you.",
+      "need": "Connect wallets you already have. EVM, NEAR mainnet and Cardano each sign in separately. This app does not create a wallet.",
       "ready": "Wallet ready",
       "idle": "Not connected",
       "nativeReady": "Native-chain account connected."

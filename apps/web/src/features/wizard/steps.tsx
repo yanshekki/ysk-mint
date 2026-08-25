@@ -1,11 +1,8 @@
 import { CHAINS, LaunchStep, LockMode, OwnershipAction, SupplyMode } from "@ysk-mint/sdk";
 import { featuredChains, testnetChains } from "@ysk-mint/config";
-import { useAccount } from "wagmi";
 import { useTranslation } from "react-i18next";
 import { useWizard } from "./store.ts";
-import { ConnectBar } from "../wallet/ConnectBar.tsx";
-import { NativeConnect } from "../wallet/NativeConnect.tsx";
-import { useNativeWallets } from "../../lib/nativeWallets.ts";
+import { WalletDesk } from "../wallet/WalletDesk.tsx";
 import { ChipGroup } from "../../shared/ui/ChipGroup.tsx";
 import { OptionCard, OptionGrid } from "../../shared/ui/OptionCard.tsx";
 import { Dropzone } from "../../shared/ui/Dropzone.tsx";
@@ -22,29 +19,7 @@ import {
 } from "./presets.ts";
 
 export function StepWallet() {
-  const { t } = useTranslation();
-  const { isConnected, address } = useAccount();
-  const native = useNativeWallets();
-  return (
-    <div className="space-y-4">
-      <p className="text-[15px] text-text-sub">{t("wizard.wallet.need")}</p>
-      <p className="text-[14px] font-bold">{t("wallet.evm")}</p>
-      <ConnectBar />
-      <div className="token-row">
-        <div className="grid h-10 w-10 place-items-center rounded-lg bg-bg-subtle text-xs font-black">EVM</div>
-        <div>
-          <p className="text-[15px] font-bold">{isConnected ? t("wizard.wallet.ready") : t("wizard.wallet.idle")}</p>
-          <p className="num truncate text-[13px] text-text-muted">{isConnected ? address : "—"}</p>
-        </div>
-        <Badge kind={isConnected ? "ok" : "warn"}>{isConnected ? "ON" : "OFF"}</Badge>
-      </div>
-      <p className="text-[14px] font-bold">{t("wallet.native")}</p>
-      <NativeConnect />
-      {native.nearAccount || native.cardanoAddress ? (
-        <p className="text-[14px] text-text-muted">{t("wizard.wallet.nativeReady")}</p>
-      ) : null}
-    </div>
-  );
+  return <WalletDesk />;
 }
 
 export function StepBasics() {

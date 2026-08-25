@@ -1,0 +1,31 @@
+#near-wallet-selector-modal {
+  color-scheme: light;
+  --backdrop-bg: #0f172a3d;
+  --heading-color: #0f172a;
+  --text-color: #64748b;
+  --sidebar-border-color: #e2e8f0;
+  --selected-wallet-bg: #3b82f6;
+  --wallet-option-border-color: #e2e8f0;
+  --wallet-option-bg-hover: #dbeafe;
+  --content-bg: #ffffff;
+  --home-button-bg: #f1f5f9;
+  --confirm-button-bg: #3b82f6;
+  --close-button-bg-color: #f1f5f9;
+  --close-button-fill-icon-color: #64748b;
+  --spinner-color: #64748b;
+  --bottom-section: #fafbfc;
+  --mobile-text: #0f172a;
+  --option-wallet-bg-color: #f8fafc;
+  --option-single-wallet-bg-color: #f1f5f9;
+}
+#near-wallet-selector-modal .nws-modal-wrapper .nws-modal {
+  background: #fff;
+  color: #0f172a;
+}
+#near-wallet-selector-modal .nws-modal-wrapper .nws-modal .modal-left,
+#near-wallet-selector-modal .nws-modal-wrapper .nws-modal .modal-right {
+  background: #fff;
+}
+#near-wallet-selector-modal .nws-modal-title {
+  color: #0f172a;
+}

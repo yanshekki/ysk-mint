@@ -145,6 +145,13 @@ export function CreatePage() {
           ) : null}
           {w.step < LaunchStep.Success ? (
             <div className="workspace-actions">
+              {w.step === LaunchStep.Wallet ? (
+                <div className="wallet-action-status">
+                  <span className={isConnected ? "on" : ""}>EVM</span>
+                  <span className={native.nearAccount ? "on" : ""}>NEAR</span>
+                  <span className={native.cardanoAddress ? "on" : ""}>ADA</span>
+                </div>
+              ) : null}
               {w.step > LaunchStep.Wallet ? (
                 <Button variant="ghost" type="button" onClick={() => w.set({ step: w.step - 1 })}>
                   {t("wizard.back")}

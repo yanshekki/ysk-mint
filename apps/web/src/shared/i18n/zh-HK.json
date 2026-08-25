@@ -47,14 +47,22 @@
   },
   "wallet": {
     "connect": "連接錢包",
+    "connectEvm": "連接 EVM 錢包",
     "disconnect": "登出",
-    "evm": "EVM 錢包",
+    "session": "現有錢包",
+    "count": "{{n}} / 3 已連接",
+    "evm": "EVM",
     "native": "NEAR 主鏈／Cardano",
     "near": "NEAR 主鏈",
     "cardano": "Cardano",
-    "connectNear": "連接 NEAR（Wallet Selector）",
-    "connectCardano": "連接 Cardano 錢包",
+    "evmHint": "MetaMask、Rabby、Rainbow 等現有 EIP-6963 錢包。",
+    "nearHint": "官方 Wallet Selector。Meteor、MyNearWallet、HERE。",
+    "adaHint": "CIP-30 瀏覽器錢包。Lace、Eternl、Vespr。",
+    "connectNear": "連接 NEAR",
+    "connectCardano": "連接 Cardano",
+    "pickCip30": "揀一個已安裝嘅 CIP-30 錢包。",
     "noCip30": "未偵測 CIP-30 錢包",
+    "installCip30": "安裝 Lace、Eternl 或 Vespr 之後重新整理。唔會代你開新錢包。",
     "wrongNetwork": "請切到支援嘅 EVM 鏈。"
   },
   "wizard": {
@@ -74,7 +82,7 @@
       "8": "上鏈"
     },
     "wallet": {
-      "need": "請連接現有錢包。EVM 用 MetaMask 等；NEAR 主鏈同 Cardano 用各自原生錢包。唔會代你開新錢包。",
+      "need": "連接你已經有嘅錢包。EVM、NEAR 主鏈、Cardano 分開授權。唔會代你開新錢包。",
       "ready": "錢包已連接",
       "idle": "未連接",
       "nativeReady": "已連接原生鏈帳戶。"
