@@ -52,7 +52,7 @@
     "native": "NEAR mainnet / Cardano",
     "near": "NEAR mainnet",
     "cardano": "Cardano",
-    "connectNear": "Connect NEAR (HOT Connect)",
+    "connectNear": "Connect NEAR (Wallet Selector)",
     "connectCardano": "Connect Cardano wallet",
     "noCip30": "No CIP-30 wallet detected",
     "wrongNetwork": "Switch to a supported EVM chain."

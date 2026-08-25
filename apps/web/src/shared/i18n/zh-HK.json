@@ -52,7 +52,7 @@
     "native": "NEAR 主鏈／Cardano",
     "near": "NEAR 主鏈",
     "cardano": "Cardano",
-    "connectNear": "連接 NEAR（HOT Connect）",
+    "connectNear": "連接 NEAR（Wallet Selector）",
     "connectCardano": "連接 Cardano 錢包",
     "noCip30": "未偵測 CIP-30 錢包",
     "wrongNetwork": "請切到支援嘅 EVM 鏈。"

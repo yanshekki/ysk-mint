@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import "@near-wallet-selector/modal-ui/styles.css";
 import { Badge } from "../../shared/ui/TokenRow.tsx";
 import {
   connectCardano,
