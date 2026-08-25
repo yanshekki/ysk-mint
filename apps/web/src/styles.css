@@ -955,6 +955,7 @@ table.data tbody tr:hover td {
   flex-shrink: 0;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
   padding: 12px 32px;
   border-top: 1px solid var(--border-color);
