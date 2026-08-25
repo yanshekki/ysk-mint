@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ChainKey, ErrorCode } from "../src/index";
+import { ChainKey, ErrorCode, LockMode, validateLaunchDraft, validateLock } from "../src/index";
 import { validateBasics, validateName, validateSymbol } from "../src/validation/token";
-import { validateLaunchDraft } from "../src/validation/launch";
 
 describe("token validation", () => {
   it("accepts a normal name and symbol", () => {
@@ -42,5 +41,13 @@ describe("token validation", () => {
       chains: [ChainKey.BaseSepolia],
     });
     expect(errors).toEqual([]);
+  });
+
+  it("rejects a 1-day timed lock", () => {
+    expect(validateLock(LockMode.Timed, 86400).map((e) => e.code)).toContain(ErrorCode.LockDurationInvalid);
+  });
+
+  it("accepts burn lock with zero duration", () => {
+    expect(validateLock(LockMode.Burn, 0)).toEqual([]);
   });
 });

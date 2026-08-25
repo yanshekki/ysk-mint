@@ -1,6 +1,6 @@
 {
   "name": "ysk-mint",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Guided multi-chain token launcher with native OFT, LP creation, and locking. No backend — on-chain data only.",
   "license": "MIT",

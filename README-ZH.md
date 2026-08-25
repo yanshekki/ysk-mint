@@ -6,7 +6,7 @@
 
 | | |
 |--|--|
-| **版本** | 0.1.0（Phase 0） |
+| **版本** | 0.2.0（Phase 1） |
 | **授權** | MIT |
 | **前端** | Vite + React + TypeScript（無後端） |
 | **合約** | Solidity 0.8.22、Foundry、OpenZeppelin 5.x |
@@ -16,7 +16,7 @@
 
 - 合約**未經審計**。
 - 配置裡有主網 chain key，但**已關閉**。
-- 本階段是地基：ENUM、custom error、校驗、可 clone 的 OFT、Factory、錢包空殼。
+- Phase 1 包含引導式 Wizard、V2 LP + 鎖定合約，以及即時 `eth_call` 成功頁。Factory 地址在測試網部署前仍為零。
 - 產品數據全部從鏈上讀取。沒有應用伺服器。
 
 ## 套件

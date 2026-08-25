@@ -34,4 +34,7 @@ export const launchErrorAbi = [
   { type: "error", name: "NotInitialized", inputs: [] },
   { type: "error", name: "EndpointZero", inputs: [] },
   { type: "error", name: "LengthMismatch", inputs: [] },
+  { type: "error", name: "LockNotFound", inputs: [] },
+  { type: "error", name: "AlreadyWithdrawn", inputs: [] },
+  { type: "error", name: "NativeTransferFailed", inputs: [] },
 ] as const;

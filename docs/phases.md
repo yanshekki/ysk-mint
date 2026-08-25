@@ -4,11 +4,11 @@
 
 Work lives in `/home/ki/文件/ysk-mint`. Each finished phase is merged to `origin/main`.
 
-## Phase 0 — Foundation (this release)
+## Phase 0 — Foundation
 
 Monorepo, enums, errors, validation, cloneable OFT, factory, wallet SPA.
 
-## Phase 1 — Single-chain wizard + LP
+## Phase 1 — Single-chain wizard + LP (this release)
 
 Base Sepolia. Deploy OFT, Uniswap V2 LP, timed or burn lock. Success page re-reads chain state.
 

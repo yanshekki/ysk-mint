@@ -6,7 +6,7 @@ Guided multi-chain token launcher: deploy a native LayerZero OFT, create LP, and
 
 | | |
 |--|--|
-| **Version** | 0.1.0 (Phase 0) |
+| **Version** | 0.2.0 (Phase 1) |
 | **License** | MIT |
 | **Frontend** | Vite + React + TypeScript (no backend) |
 | **Contracts** | Solidity 0.8.22, Foundry, OpenZeppelin 5.x |
@@ -16,7 +16,7 @@ Guided multi-chain token launcher: deploy a native LayerZero OFT, create LP, and
 
 - Contracts are **not audited**.
 - Mainnet chain keys exist in config but are **disabled**.
-- This phase is a foundation: enums, custom errors, validation, cloneable OFT, factory, wallet shell.
+- Phase 1 includes the guided wizard, V2 LP + lock contracts, and live `eth_call` success pages. Factory addresses are still zero until a testnet deploy.
 - All product data is read on-chain. There is no application server.
 
 ## Packages
