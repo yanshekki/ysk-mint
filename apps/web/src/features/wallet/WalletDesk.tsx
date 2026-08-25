@@ -20,6 +20,7 @@ import {
 } from "../../lib/nativeWallets.ts";
 import { useCardanoHoldings, useEvmHoldings, useNearHoldings, useSolanaHoldings } from "../../lib/useHoldings.ts";
 import { HoldingsList } from "./HoldingsList.tsx";
+import { SolanaSelector } from "./SolanaSelector.tsx";
 
 function short(v: string, head = 8, tail = 6) {
   if (!v || v.length <= head + tail + 1) return v || "—";
@@ -40,6 +41,7 @@ export function WalletDesk() {
   const [nearErr, setNearErr] = useState<string | null>(null);
   const [adaErr, setAdaErr] = useState<string | null>(null);
   const [solErr, setSolErr] = useState<string | null>(null);
+  const [solOpen, setSolOpen] = useState(false);
 
   const onCount =
     Number(isConnected) + Number(!!native.nearAccount) + Number(!!native.cardanoAddress) + Number(!!native.solanaAddress);
@@ -267,35 +269,41 @@ export function WalletDesk() {
               <button type="button" className="ghost-btn wallet-cta-block" onClick={() => void disconnectSolanaWallet()}>
                 {t("wallet.disconnect")}
               </button>
-            ) : solWallets.length ? (
-              <div className="wallet-chips">
-                {solWallets.map((w) => (
-                  <button
-                    key={w.id}
-                    type="button"
-                    className={`wallet-chip ${native.solanaWallet === w.id ? "wallet-chip-on" : ""}`}
-                    disabled={busy === "sol"}
-                    onClick={() => {
-                      setBusy("sol");
-                      setSolErr(null);
-                      void connectSolana(w.id)
-                        .catch((err: unknown) => setSolErr(err instanceof Error ? err.message : String(err)))
-                        .finally(() => setBusy(null));
-                    }}
-                  >
-                    {w.icon ? <img src={w.icon} alt="" className="wallet-ico" /> : null}
-                    {w.name}
-                  </button>
-                ))}
-              </div>
             ) : (
-              <button type="button" className="ghost-btn wallet-cta-block" disabled>
-                {t("wallet.noSolana")}
+              <button
+                type="button"
+                className="wallet-cta wallet-cta-block"
+                disabled={busy === "sol"}
+                onClick={() => {
+                  setSolErr(null);
+                  void listSolanaWallets().then(setSolWallets);
+                  setSolOpen(true);
+                }}
+              >
+                {t("wallet.connectSolana")}
               </button>
             )}
           </div>
         </article>
       </div>
+      <SolanaSelector
+        open={solOpen}
+        wallets={solWallets}
+        busy={busy === "sol"}
+        onClose={() => setSolOpen(false)}
+        onPick={(w) => {
+          if (!w.installed) {
+            if (w.url) window.open(w.url, "_blank", "noopener,noreferrer");
+            return;
+          }
+          setBusy("sol");
+          setSolErr(null);
+          void connectSolana(w.id)
+            .then(() => setSolOpen(false))
+            .catch((err: unknown) => setSolErr(err instanceof Error ? err.message : String(err)))
+            .finally(() => setBusy(null));
+        }}
+      />
     </div>
   );
 }

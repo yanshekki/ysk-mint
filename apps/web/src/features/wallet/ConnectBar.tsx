@@ -21,6 +21,7 @@ import {
 } from "../../lib/nativeWallets.ts";
 import "@near-wallet-selector/modal-ui/styles.css";
 import "./nearModal.css";
+import { SolanaSelector } from "./SolanaSelector.tsx";
 
 function short(v: string, head = 6, tail = 4) {
   if (!v || v.length <= head + tail + 1) return v || "—";
@@ -38,6 +39,7 @@ export function ConnectBar() {
   const [busy, setBusy] = useState<string | null>(null);
   const [adaWallets, setAdaWallets] = useState<CardanoWalletInfo[]>([]);
   const [solWallets, setSolWallets] = useState<SolanaWalletInfo[]>([]);
+  const [solOpen, setSolOpen] = useState(false);
   const [pos, setPos] = useState({ top: 72, right: 24 });
   const barRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -212,31 +214,25 @@ export function ConnectBar() {
                 <div className="session-row-copy">
                   <b>Solana</b>
                   <span className="num">{hasSol ? short(native.solanaAddress, 8, 8) : t("wizard.wallet.idle")}</span>
-                  {!hasSol && solWallets.length ? (
-                    <div className="session-ada-wallets">
-                      {solWallets.map((w) => (
-                        <button
-                          key={w.id}
-                          type="button"
-                          className="wallet-chip"
-                          disabled={busy === "sol"}
-                          onClick={() => {
-                            setBusy("sol");
-                            void connectSolana(w.id).finally(() => setBusy(null));
-                          }}
-                        >
-                          {w.name}
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
-                  {!hasSol && !solWallets.length ? <span>{t("wallet.noSolana")}</span> : null}
                 </div>
                 {hasSol ? (
                   <button type="button" className="ghost-btn" onClick={() => void disconnectSolanaWallet()}>
                     {t("wallet.disconnect")}
                   </button>
-                ) : null}
+                ) : (
+                  <button
+                    type="button"
+                    className="wallet-cta"
+                    disabled={busy === "sol"}
+                    onClick={() => {
+                      setOpen(false);
+                      void listSolanaWallets().then(setSolWallets);
+                      setSolOpen(true);
+                    }}
+                  >
+                    {t("wallet.connectSolana")}
+                  </button>
+                )}
               </div>
             </div>
           );
@@ -257,6 +253,22 @@ export function ConnectBar() {
           );
         }}
       </ConnectButton.Custom>
+      <SolanaSelector
+        open={solOpen}
+        wallets={solWallets}
+        busy={busy === "sol"}
+        onClose={() => setSolOpen(false)}
+        onPick={(w) => {
+          if (!w.installed) {
+            if (w.url) window.open(w.url, "_blank", "noopener,noreferrer");
+            return;
+          }
+          setBusy("sol");
+          void connectSolana(w.id)
+            .then(() => setSolOpen(false))
+            .finally(() => setBusy(null));
+        }}
+      />
     </div>
   );
 }

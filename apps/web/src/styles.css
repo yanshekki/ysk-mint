@@ -384,7 +384,7 @@ select {
   flex: 1 1 auto;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
   overflow: hidden;
   align-items: stretch;
@@ -1323,6 +1323,12 @@ table.data tbody tr:hover td {
   color: var(--brand-blue);
 }
 
+@media (max-width: 1400px) {
+  .workspace-scroll:has(.wallet-desk) .wallet-panes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 900px) {
   .top-nav {
     display: none;
@@ -1412,4 +1418,109 @@ table.data tbody tr:hover td {
   .wallet-panes {
     grid-template-columns: 1fr;
   }
+}
+
+.sol-sel {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.sol-sel-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: #0f172a3d;
+  cursor: pointer;
+}
+.sol-sel-panel {
+  position: relative;
+  z-index: 1;
+  width: min(420px, 100%);
+  max-height: min(80vh, 720px);
+  overflow: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background: var(--bg-white);
+  box-shadow: var(--shadow-sm);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.sol-sel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.sol-sel-head h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.sol-sel-label {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.sol-sel-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sol-sel-item {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-white);
+  cursor: pointer;
+}
+.sol-sel-item:hover:not(:disabled) {
+  border-color: var(--brand-blue-light);
+  background: #eff6ff;
+}
+.sol-sel-item img,
+.sol-sel-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+.sol-sel-mark {
+  display: grid;
+  place-items: center;
+  background: #9945ff;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 900;
+}
+.sol-sel-item b {
+  font-size: 14px;
+  font-weight: 800;
+}
+.sol-sel-install {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--brand-blue);
+}
+.sol-sel-empty {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-sub);
 }

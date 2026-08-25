@@ -1,7 +1,29 @@
 import { isSolanaAddress } from "@ysk-mint/sdk";
 import { useNativeWallets } from "./nativeWalletStore.ts";
 
-export type SolanaWalletInfo = { id: string; name: string; icon?: string };
+export type SolanaWalletInfo = {
+  id: string;
+  name: string;
+  icon?: string;
+  installed: boolean;
+  url?: string;
+};
+
+/** Popular Solana wallets. Installed ones come from Wallet Standard / injected providers. */
+export const SOLANA_CATALOG: Array<{ name: string; url: string }> = [
+  { name: "Phantom", url: "https://phantom.app/download" },
+  { name: "Solflare", url: "https://solflare.com/download" },
+  { name: "Backpack", url: "https://backpack.app/download" },
+  { name: "Brave Wallet", url: "https://brave.com/wallet/" },
+  { name: "Glow", url: "https://glow.app/" },
+  { name: "Coinbase Wallet", url: "https://www.coinbase.com/wallet/downloads" },
+  { name: "Ledger", url: "https://www.ledger.com/ledger-live" },
+  { name: "Trust Wallet", url: "https://trustwallet.com/download" },
+  { name: "Exodus", url: "https://www.exodus.com/download" },
+  { name: "OKX Wallet", url: "https://www.okx.com/web3" },
+  { name: "Bitget Wallet", url: "https://web3.bitget.com/en/wallet-download" },
+  { name: "Nightly", url: "https://nightly.app/" },
+];
 
 type StandardAccount = { address: string };
 type StandardWallet = {
@@ -55,25 +77,40 @@ function windowProviders(): Array<{ id: string; name: string; provider: Injected
   return out;
 }
 
+function sameWallet(a: string, b: string) {
+  return a.replace(/\s+/g, "").toLowerCase() === b.replace(/\s+/g, "").toLowerCase();
+}
+
 export async function listSolanaWallets(): Promise<SolanaWalletInfo[]> {
-  const listed: SolanaWalletInfo[] = [];
+  const installed: SolanaWalletInfo[] = [];
   try {
     const { getWallets } = await import("@wallet-standard/app");
     const wallets = getWallets().get() as unknown as StandardWallet[];
     for (const w of wallets) {
       const sol = (w.chains ?? []).some((c) => c.startsWith("solana:"));
       if (!sol || !("standard:connect" in w.features)) continue;
-      listed.push({ id: `std:${w.name}`, name: w.name, icon: typeof w.icon === "string" ? w.icon : undefined });
+      if (installed.some((x) => sameWallet(x.name, w.name))) continue;
+      installed.push({
+        id: `std:${w.name}`,
+        name: w.name,
+        icon: typeof w.icon === "string" ? w.icon : undefined,
+        installed: true,
+      });
     }
   } catch {
     /* package missing or not registered yet */
   }
   for (const p of windowProviders()) {
-    if (!listed.some((w) => w.name.toLowerCase() === p.name.toLowerCase())) {
-      listed.push({ id: p.id, name: p.name });
-    }
+    if (installed.some((w) => sameWallet(w.name, p.name))) continue;
+    installed.push({ id: p.id, name: p.name, installed: true });
   }
-  return listed;
+  const rest = SOLANA_CATALOG.filter((c) => !installed.some((w) => sameWallet(w.name, c.name))).map((c) => ({
+    id: `install:${c.name}`,
+    name: c.name,
+    url: c.url,
+    installed: false,
+  }));
+  return [...installed, ...rest];
 }
 
 async function connectStandard(name: string): Promise<string> {
