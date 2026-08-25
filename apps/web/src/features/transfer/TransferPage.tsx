@@ -118,60 +118,70 @@ export function TransferPage() {
   }
 
   return (
-    <section className="desk-page">
-      <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-text-muted">Bridge</p>
-      <h1 className="text-2xl font-black">{t("transfer.title")}</h1>
-      <p className="mt-1 text-[13px] text-text-sub">{t("transfer.body")}</p>
-      <div className="panel mt-5 space-y-4 p-4">
+    <section className="workspace">
+      <div className="workspace-head">
         <div>
-          <p className="mb-2 text-[12px] font-bold">{t("transfer.token")}</p>
-          {manual ? (
-            <input className="field-text num" value={token} onChange={(e) => setToken(e.target.value)} placeholder="0x…" />
-          ) : (
-            <TokenRow
-              title={token ? token.slice(0, 6) : t("transfer.pick")}
-              subtitle={token || t("transfer.pickHint")}
-              onClick={() => setManual(true)}
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-text-muted">Bridge</p>
+          <h1>{t("transfer.title")}</h1>
+          <p className="mt-1 text-[13px] text-text-sub">{t("transfer.body")}</p>
+        </div>
+      </div>
+      <div className="split">
+        <div className="split-pane space-y-6">
+          <div>
+            <p className="mb-2 text-[12px] font-bold">{t("transfer.token")}</p>
+            {manual ? (
+              <input className="field-text num" value={token} onChange={(e) => setToken(e.target.value)} placeholder="0x…" />
+            ) : (
+              <TokenRow
+                title={token ? token.slice(0, 6) : t("transfer.pick")}
+                subtitle={token || t("transfer.pickHint")}
+                onClick={() => setManual(true)}
+              />
+            )}
+          </div>
+          <div>
+            <p className="mb-2 text-[12px] font-bold">{t("transfer.amount")}</p>
+            <ChipGroup
+              ariaLabel="pct"
+              value={pct}
+              onChange={setPct}
+              options={PCT.map((p) => ({ value: p, label: p === 100 ? "Max" : `${p}%` }))}
             />
-          )}
+          </div>
+          <div>
+            <p className="mb-2 text-[12px] font-bold">{t("transfer.dest")}</p>
+            <ChipGroup
+              ariaLabel="dst"
+              value={dstKey}
+              onChange={setDstKey}
+              options={enabled.map((c) => ({ value: c.key, label: c.name }))}
+            />
+          </div>
         </div>
-        <div>
-          <p className="mb-2 text-[12px] font-bold">{t("transfer.amount")}</p>
-          <ChipGroup
-            ariaLabel="pct"
-            value={pct}
-            onChange={setPct}
-            options={PCT.map((p) => ({ value: p, label: p === 100 ? "Max" : `${p}%` }))}
-          />
+        <div className="split-pane flex flex-col gap-4">
+          <p className="text-[12px] font-bold">{t("transfer.quote")}</p>
+          <p className="num text-2xl font-black">{quote ? quote : "—"}</p>
+          {quote ? <p className="num text-[12px] text-text-muted">{t("transfer.fee")}</p> : null}
+          {errors.map((e) => (
+            <p key={e.code} className="text-[13px] text-red-700">
+              {e.message}
+            </p>
+          ))}
+          <div className="mt-auto flex gap-2">
+            <Button type="button" variant="ghost" onClick={() => void doQuote()}>
+              {t("transfer.quote")}
+            </Button>
+            <Button
+              type="button"
+              variant="grad"
+              disabled={busy || !token || token.toLowerCase() === zeroAddress}
+              onClick={() => void doSend()}
+            >
+              {t("transfer.send")}
+            </Button>
+          </div>
         </div>
-        <div>
-          <p className="mb-2 text-[12px] font-bold">{t("transfer.dest")}</p>
-          <ChipGroup
-            ariaLabel="dst"
-            value={dstKey}
-            onChange={setDstKey}
-            options={enabled.map((c) => ({ value: c.key, label: c.name }))}
-          />
-        </div>
-        <div className="flex gap-2">
-          <Button type="button" variant="ghost" onClick={() => void doQuote()}>
-            {t("transfer.quote")}
-          </Button>
-          <Button
-            type="button"
-            variant="grad"
-            disabled={busy || !token || token.toLowerCase() === zeroAddress}
-            onClick={() => void doSend()}
-          >
-            {t("transfer.send")}
-          </Button>
-        </div>
-        {quote ? <p className="num text-[12px] text-text-muted">{t("transfer.fee")} {quote}</p> : null}
-        {errors.map((e) => (
-          <p key={e.code} className="text-[13px] text-red-700">
-            {e.message}
-          </p>
-        ))}
       </div>
     </section>
   );

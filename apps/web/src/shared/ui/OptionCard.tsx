@@ -32,5 +32,5 @@ export function OptionCard({
 }
 
 export function OptionGrid({ children }: { children: ReactNode }) {
-  return <div className="grid gap-2 sm:grid-cols-2">{children}</div>;
+  return <div className="opt-grid">{children}</div>;
 }

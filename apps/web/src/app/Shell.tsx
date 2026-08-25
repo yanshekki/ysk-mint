@@ -61,7 +61,9 @@ export function Shell() {
           <ConnectBar />
         </div>
       </header>
-      <Outlet />
+      <main className="stage">
+        <Outlet />
+      </main>
       <footer className="botbar">
         <span>{t("nav.lp")}</span>
         <span>{t("nav.create")}</span>

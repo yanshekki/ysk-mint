@@ -22,27 +22,43 @@ export function TokenPage() {
     query: { enabled: Boolean(token) },
   });
 
-  if (!token || !chainId) return <p className="p-8">{t("token.missing")}</p>;
+  if (!token || !chainId) return <p className="workspace-scroll">{t("token.missing")}</p>;
   const [name, symbol, decimals, supply, owner] = reads.data ?? [];
 
   return (
-    <section className="desk-page">
-      <div className="mb-3 flex items-center gap-2">
-        <Badge kind="info">OFT</Badge>
-        <Badge kind="warn">{t("nav.disclaimer")}</Badge>
+    <section className="workspace">
+      <div className="workspace-head">
+        <div>
+          <div className="mb-1 flex items-center gap-2">
+            <Badge kind="info">OFT</Badge>
+            <Badge kind="warn">{t("nav.disclaimer")}</Badge>
+          </div>
+          <h1>
+            {String(name?.result ?? "…")}{" "}
+            <span className="text-text-muted">{String(symbol?.result ?? "")}</span>
+          </h1>
+          <p className="num mt-1 text-[12px] text-text-muted">{token}</p>
+        </div>
       </div>
-      <h1 className="text-2xl font-black">
-        {String(name?.result ?? "…")}{" "}
-        <span className="text-text-muted">{String(symbol?.result ?? "")}</span>
-      </h1>
-      <p className="num mt-1 text-[12px] text-text-muted">{token}</p>
-      <div className="mt-4 grid grid-cols-3 gap-2 rounded-xl bg-white p-4 ring-1 ring-border">
-        <Metric k="chain" v={chainId} />
-        <Metric k="dec" v={decimals?.result?.toString() ?? "…"} />
-        <Metric k="supply" v={supply?.result?.toString() ?? "…"} />
+      <div className="workspace-scroll">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="rounded-xl bg-bg-subtle p-4">
+            <Metric k="chain" v={chainId} />
+          </div>
+          <div className="rounded-xl bg-bg-subtle p-4">
+            <Metric k="dec" v={decimals?.result?.toString() ?? "…"} />
+          </div>
+          <div className="rounded-xl bg-bg-subtle p-4">
+            <Metric k="supply" v={supply?.result?.toString() ?? "…"} />
+          </div>
+          <div className="rounded-xl bg-bg-subtle p-4">
+            <Metric k="owner" v={String(owner?.result ?? "…")} />
+          </div>
+        </div>
+        <div className="mt-6">
+          <ShareCard name={String(name?.result ?? "")} address={token} />
+        </div>
       </div>
-      <p className="num mt-3 truncate text-[11px] text-text-muted">owner {String(owner?.result ?? "…")}</p>
-      <ShareCard name={String(name?.result ?? "")} address={token} />
     </section>
   );
 }

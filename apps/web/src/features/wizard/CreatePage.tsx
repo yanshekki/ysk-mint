@@ -102,30 +102,28 @@ export function CreatePage() {
   }
 
   return (
-    <section className="desk-page">
-      <div className="mb-4 flex items-end justify-between gap-3">
+    <section className="workspace">
+      <div className="workspace-head">
         <div>
           <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-text-muted">Launch</p>
-          <h1 className="text-2xl font-black tracking-tight">{t("wizard.title")}</h1>
+          <h1>{t("wizard.title")}</h1>
         </div>
         <span className="badge badge-warn">{t("nav.disclaimer")}</span>
       </div>
-      <div className="desk flex gap-4">
-        <aside className="w-full shrink-0 md:w-[220px]">
-          <div className="panel p-2">
-            <StepRail
-              current={w.step}
-              onJump={(id) => {
-                if (id <= w.step) w.set({ step: id });
-              }}
-              steps={STEP_LABELS.map((id) => ({ id, label: t(`wizard.steps.${id}`) }))}
-            />
-          </div>
+      <div className="workspace-body">
+        <aside className="workspace-rail">
+          <StepRail
+            current={w.step}
+            onJump={(id) => {
+              if (id <= w.step) w.set({ step: id });
+            }}
+            steps={STEP_LABELS.map((id) => ({ id, label: t(`wizard.steps.${id}`) }))}
+          />
         </aside>
-        <div className="min-w-0 flex-1">
-          <div className="panel p-5">{panel}</div>
+        <div className="workspace-main">
+          <div className="workspace-scroll">{panel}</div>
           {errors.length ? (
-            <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-[13px] text-red-800">
+            <div className="mx-8 mb-0 rounded-xl border border-red-200 bg-red-50 p-3 text-[13px] text-red-800">
               <p className="font-bold">{t("wizard.errors")}</p>
               <ul className="mt-1 space-y-1">
                 {errors.map((e) => (
@@ -134,18 +132,20 @@ export function CreatePage() {
               </ul>
             </div>
           ) : null}
-          <div className="mt-4 flex gap-2">
-            {w.step > LaunchStep.Wallet && w.step < LaunchStep.Success ? (
-              <Button variant="ghost" type="button" onClick={() => w.set({ step: w.step - 1, })}>
-                {t("wizard.back")}
-              </Button>
-            ) : null}
-            {w.step < LaunchStep.Execute ? (
-              <Button variant="grad" type="button" onClick={next} disabled={w.step === LaunchStep.Wallet && !address}>
-                {t("wizard.next")}
-              </Button>
-            ) : null}
-          </div>
+          {w.step < LaunchStep.Success ? (
+            <div className="workspace-actions">
+              {w.step > LaunchStep.Wallet ? (
+                <Button variant="ghost" type="button" onClick={() => w.set({ step: w.step - 1 })}>
+                  {t("wizard.back")}
+                </Button>
+              ) : null}
+              {w.step < LaunchStep.Execute ? (
+                <Button variant="grad" type="button" onClick={next} disabled={w.step === LaunchStep.Wallet && !address}>
+                  {t("wizard.next")}
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
     </section>

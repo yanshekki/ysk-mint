@@ -25,7 +25,7 @@ export function StepWallet() {
   return (
     <div className="space-y-3">
       <p className="text-[13px] text-text-sub">{t("wizard.wallet.need")}</p>
-      <ConnectBar />
+      <ConnectBar showHint />
       <div className="token-row">
         <div className="grid h-10 w-10 place-items-center rounded-lg bg-bg-subtle text-xs font-black">W</div>
         <div>
@@ -215,7 +215,7 @@ export function StepChains() {
   return (
     <div className="space-y-3">
       <p className="text-[13px] text-text-sub">{t("wizard.chains.hint")}</p>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="opt-grid">
         {featuredChains().map((c) => {
           const on = w.chains.includes(c.key);
           const live = c.enabled && c.evm;
@@ -241,7 +241,7 @@ export function StepChains() {
         })}
       </div>
       <p className="text-[12px] font-bold text-text-muted">{t("wizard.chains.testnets")}</p>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="opt-grid">
         {testnetChains().map((c) => {
           const on = w.chains.includes(c.key);
           return (
@@ -292,7 +292,7 @@ export function StepLiquidity() {
       </div>
       <div>
         <p className="mb-2 text-[12px] font-bold">{t("wizard.liquidity.mode")}</p>
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="opt-grid">
           {LOCK_CARDS.map((c) => (
             <OptionCard
               key={`${c.mode}-${c.duration}`}

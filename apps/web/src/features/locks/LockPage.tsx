@@ -21,20 +21,32 @@ export function LockPage() {
     },
   });
 
-  if (!lockId) return <p className="p-8">{t("lock.missing")}</p>;
+  if (!lockId) return <p className="workspace-scroll">{t("lock.missing")}</p>;
 
   return (
-    <section className="desk-page">
-      <div className="mb-3 flex gap-2">
-        <Badge kind="ok">LOCK</Badge>
-        {lock.data?.withdrawn ? <Badge kind="warn">OUT</Badge> : <Badge kind="info">HELD</Badge>}
+    <section className="workspace">
+      <div className="workspace-head">
+        <div>
+          <div className="mb-1 flex gap-2">
+            <Badge kind="ok">LOCK</Badge>
+            {lock.data?.withdrawn ? <Badge kind="warn">OUT</Badge> : <Badge kind="info">HELD</Badge>}
+          </div>
+          <h1>#{lockId}</h1>
+        </div>
       </div>
-      <h1 className="text-2xl font-black">#{lockId}</h1>
-      <div className="mt-4 grid grid-cols-2 gap-2 rounded-xl bg-white p-4 ring-1 ring-border">
-        <Metric k="amount" v={lock.data?.amount.toString() ?? "…"} />
-        <Metric k="unlock" v={lock.data?.unlockAt.toString() ?? "…"} />
+      <div className="workspace-scroll">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+          <div className="rounded-xl bg-bg-subtle p-4">
+            <Metric k="amount" v={lock.data?.amount.toString() ?? "…"} />
+          </div>
+          <div className="rounded-xl bg-bg-subtle p-4">
+            <Metric k="unlock" v={lock.data?.unlockAt.toString() ?? "…"} />
+          </div>
+          <div className="rounded-xl bg-bg-subtle p-4">
+            <Metric k="token" v={lock.data?.token ?? "…"} />
+          </div>
+        </div>
       </div>
-      <p className="num mt-3 truncate text-[11px] text-text-muted">{lock.data?.token ?? "…"}</p>
     </section>
   );
 }

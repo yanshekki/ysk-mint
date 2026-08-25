@@ -27,7 +27,7 @@ export function LpPage() {
   else if (filter === "all") emptyKey = "lp.emptyAll";
 
   return (
-    <div className="stage">
+    <div className="workspace">
       <div className="subbar">
         <span className="subbar-title">{t("nav.lp")}</span>
         <span>{t("lp.hint")}</span>
@@ -46,58 +46,44 @@ export function LpPage() {
               {c.short}
             </button>
           ))}
+          <span className="text-[12px] font-bold text-text-muted">{t("lp.testnets")}</span>
+          {tests.map((c) => (
+            <button
+              key={c.key}
+              type="button"
+              className={`pill ${filter === c.key ? "pill-on" : ""}`}
+              onClick={() => setFilter(c.key)}
+            >
+              {c.short}
+            </button>
+          ))}
         </div>
       </div>
-      <div className="subbar" style={{ minHeight: 40 }}>
-        <span className="text-[12px] font-bold">{t("lp.testnets")}</span>
-        {tests.map((c) => (
-          <button
-            key={c.key}
-            type="button"
-            className={`pill ${filter === c.key ? "pill-on" : ""}`}
-            onClick={() => setFilter(c.key)}
-          >
-            {c.short}
-          </button>
-        ))}
-      </div>
       <div className="table-wrap">
-        <table className="data">
-          <thead>
-            <tr>
-              <th>{t("lp.cols.chain")}</th>
-              <th>{t("lp.cols.token")}</th>
-              <th>{t("lp.cols.lp")}</th>
-              <th>{t("lp.cols.lock")}</th>
-              <th>{t("lp.cols.unlock")}</th>
-              <th>{t("lp.cols.amount")}</th>
-              <th>{t("lp.cols.explorer")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
+        {loading ? (
+          <div className="empty fill">{t("lp.loading")}</div>
+        ) : error ? (
+          <div className="empty fill">{t("lp.rpcError")}</div>
+        ) : rows.length === 0 ? (
+          <div className="empty fill">
+            <strong>{t(emptyKey)}</strong>
+            {selected?.key !== undefined && !selected.evm ? t("lp.adaDetail") : t("lp.emptyDetail")}
+          </div>
+        ) : (
+          <table className="data">
+            <thead>
               <tr>
-                <td colSpan={7}>
-                  <div className="empty">{t("lp.loading")}</div>
-                </td>
+                <th>{t("lp.cols.chain")}</th>
+                <th>{t("lp.cols.token")}</th>
+                <th>{t("lp.cols.lp")}</th>
+                <th>{t("lp.cols.lock")}</th>
+                <th>{t("lp.cols.unlock")}</th>
+                <th>{t("lp.cols.amount")}</th>
+                <th>{t("lp.cols.explorer")}</th>
               </tr>
-            ) : error ? (
-              <tr>
-                <td colSpan={7}>
-                  <div className="empty">{t("lp.rpcError")}</div>
-                </td>
-              </tr>
-            ) : rows.length === 0 ? (
-              <tr>
-                <td colSpan={7}>
-                  <div className="empty">
-                    <strong>{t(emptyKey)}</strong>
-                    {selected?.key !== undefined && !selected.evm ? t("lp.adaDetail") : t("lp.emptyDetail")}
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              rows.map((r) => (
+            </thead>
+            <tbody>
+              {rows.map((r) => (
                 <tr key={`${r.chainId}-${r.lockId}-${r.lpToken}`}>
                   <td>
                     <span className="badge badge-info">{r.chainShort}</span>
@@ -117,10 +103,10 @@ export function LpPage() {
                     </a>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

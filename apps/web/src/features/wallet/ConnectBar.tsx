@@ -34,10 +34,10 @@ function PrivyConnectBar() {
   );
 }
 
-function RainbowConnectBar() {
+function RainbowConnectBar({ showHint }: { showHint?: boolean }) {
   const { t } = useTranslation();
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <ConnectButton.Custom>
         {({ account, mounted, openConnectModal, openAccountModal }) => {
           if (!mounted) {
@@ -61,12 +61,12 @@ function RainbowConnectBar() {
           );
         }}
       </ConnectButton.Custom>
-      <span className="wallet-hint">{t("wallet.privyMissing")}</span>
+      {showHint && !privyAppId ? <span className="wallet-hint">{t("wallet.privyMissing")}</span> : null}
     </div>
   );
 }
 
-export function ConnectBar() {
+export function ConnectBar({ showHint = false }: { showHint?: boolean }) {
   if (privyAppId) return <PrivyConnectBar />;
-  return <RainbowConnectBar />;
+  return <RainbowConnectBar showHint={showHint} />;
 }
