@@ -21,6 +21,8 @@ A static React app talks to wallets and RPC. Smart contracts hold all launch sta
 
 `YskOFT.send` burns on the source chain and calls EndpointV2. `lzReceive` mints on the destination. Tax modules (Phase 3) must skip this path.
 
+Peer wiring is `setPeer(dstEid, bytes32(peer))` in both directions. CREATE2 clone addresses **differ across chains** because each factory’s implementation is constructed with that chain’s endpoint.
+
 ## No backend
 
 Drafts may sit in `localStorage`. Token pages, locks, and “my tokens” read `view` functions and `eth_getLogs`.

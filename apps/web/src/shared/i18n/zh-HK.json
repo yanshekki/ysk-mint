@@ -69,7 +69,8 @@
       "duration": "鎖定期"
     },
     "omnichain": {
-      "note": "本階段只在單鏈部署 OFT。Peer 接線在 Phase 2。跨鏈 send 維持 1:1，不抽稅。"
+      "note": "可多選已開放的測試網，執行時按鏈切換錢包。全部部署後會雙向 setPeer。跨鏈 send 維持 1:1，不抽稅。",
+      "addressNote": "各鏈代幣地址並不相同：implementation 在 constructor 寫入該鏈 LayerZero endpoint，因此 CREATE2 clone 地址會變。介面不會假裝全鏈同址。"
     },
     "review": {
       "checklist": "Anti-rug 清單（產品意圖，不是審計）",

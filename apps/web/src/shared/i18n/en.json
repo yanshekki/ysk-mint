@@ -69,7 +69,8 @@
       "duration": "Lock duration"
     },
     "omnichain": {
-      "note": "This phase deploys a single-chain OFT. Peers are wired in Phase 2. Cross-chain send stays 1:1 with no tax."
+      "note": "Select every testnet you want, then switch the wallet per chain during Execute. After all deploys, setPeer is called both ways. Cross-chain send stays 1:1 with no tax.",
+      "addressNote": "Token addresses are not the same across chains: the OFT implementation bakes in that chain’s LayerZero endpoint, so CREATE2 clones differ. The UI never pretends they match."
     },
     "review": {
       "checklist": "Anti-rug checklist (intent, not an audit)",

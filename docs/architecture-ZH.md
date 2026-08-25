@@ -21,6 +21,8 @@
 
 `YskOFT.send` 在源鏈銷毀並呼叫 EndpointV2。`lzReceive` 在目的鏈增發。Phase 3 的稅務模組必須跳過這條路徑。
 
+Peer 接線是雙向 `setPeer(dstEid, bytes32(peer))`。CREATE2 clone 地址**在不同鏈上並不相同**，因為每條鏈的 implementation 在 constructor 寫入該鏈 endpoint。
+
 ## 無後端
 
 草稿可放在 `localStorage`。代幣頁、鎖定與「我的代幣」只讀 `view` 與 `eth_getLogs`。

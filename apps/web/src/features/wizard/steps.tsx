@@ -1,4 +1,4 @@
-import { CHAINS, ChainKey, LaunchStep, LockMode, OwnershipAction, SupplyMode, LOCK_MIN_SECONDS } from "@ysk-mint/sdk";
+import { CHAINS, LaunchStep, LockMode, OwnershipAction, SupplyMode, LOCK_MIN_SECONDS } from "@ysk-mint/sdk";
 import { useAccount } from "wagmi";
 import { useTranslation } from "react-i18next";
 import { useWizard } from "./store.ts";
@@ -125,7 +125,7 @@ export function StepChains() {
     <div className="space-y-3">
       <p className="text-sm text-text-sub">{t("wizard.chains.hint")}</p>
       {Object.values(CHAINS).map((c) => {
-        const enabled = c.key === ChainKey.BaseSepolia;
+        const enabled = c.enabled;
         const checked = w.chains.includes(c.key);
         return (
           <label key={c.chainId} className="flex items-center justify-between rounded-xl border border-border bg-white p-3">
@@ -137,7 +137,12 @@ export function StepChains() {
               type="checkbox"
               checked={checked && enabled}
               disabled={!enabled}
-              onChange={(e) => w.set({ chains: e.target.checked ? [c.key] : [] })}
+              onChange={(e) => {
+                const next = e.target.checked
+                  ? Array.from(new Set([...w.chains, c.key]))
+                  : w.chains.filter((k) => k !== c.key);
+                w.set({ chains: next });
+              }}
             />
           </label>
         );
@@ -193,7 +198,12 @@ export function StepLiquidity() {
 
 export function StepOmnichain() {
   const { t } = useTranslation();
-  return <p className="text-sm leading-6 text-text-sub">{t("wizard.omnichain.note")}</p>;
+  return (
+    <div className="space-y-3 text-sm leading-6 text-text-sub">
+      <p>{t("wizard.omnichain.note")}</p>
+      <p>{t("wizard.omnichain.addressNote")}</p>
+    </div>
+  );
 }
 
 export function StepReview() {
