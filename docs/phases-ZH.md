@@ -14,7 +14,7 @@ Monorepo、ENUM、錯誤、校驗、可 clone 的 OFT、Factory、錢包 SPA。
 
 ## Phase 2 — 多鏈 + peers
 
-順序部署、`setPeer`、供應分配、LayerZero 報價。
+已配置 EVM 順序部署。Home 鏈鑄全量並鎖 LP。Spoke mint 0。然後雙向 `setPeer`。Factory 未上線前唔報價。
 
 ## Phase 3 — 模組與 DEX 矩陣
 

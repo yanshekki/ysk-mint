@@ -14,7 +14,7 @@ Guided wizard + LP lock. Execute follows the first configured EVM in the selecti
 
 ## Phase 2 — Multi-chain + peers
 
-Sequential deploys, `setPeer`, supply split, LayerZero quotes.
+Sequential deploys on configured EVM chains. Home chain mints full supply and locks LP. Spokes mint 0. Then bidirectional `setPeer`. Quotes stay off until factories are live.
 
 ## Phase 3 — Modules and DEX matrix
 

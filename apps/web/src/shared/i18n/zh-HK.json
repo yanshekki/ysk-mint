@@ -173,7 +173,7 @@
       "native": "原生發行",
       "nativeHint": "獨立資產，不走 LayerZero",
       "run": "執行順序",
-      "runOft": "每條 EVM 部署 OFT",
+      "runOft": "Home 鑄全量；spoke mint 0",
       "runPeer": "按鏈切錢包，雙向 setPeer",
       "runNative": "Cardano／NEAR／Solana 獨立發行"
     },
@@ -186,7 +186,9 @@
     },
     "execute": {
       "simulate": "模擬後簽名",
-      "home": "本步喺 {{name}} 部署 OFT 並鎖 LP。其他已揀嘅 EVM 等 Factory 部署後先做 setPeer。",
+      "home": "Home {{name}} 鑄全量並鎖 LP。其餘已配置 EVM mint 0，之後雙向 setPeer。",
+      "homeTag": "home · 全量 + LP",
+      "spokeTag": "spoke · 0 供應",
       "needEvm": "未揀 EVM 鏈，無法簽名 OFT。",
       "needContracts": "Factory／Manager／Locker／Router 仍為零。請先部署，再填 packages/config/src/contracts.ts。",
       "nativePath": "你揀咗 NEAR、Cardano 或 Solana。呢啲係 NEP-141／native asset／SPL，唔走 EVM OFT。原生 factory／program 未部署，呢步唔簽名。",

@@ -98,7 +98,6 @@ contract LaunchValidationTest is Test {
     }
 
     function test_supply_zeroAndOverflow() public {
-        vm.expectRevert(LaunchErrors.SupplyZero.selector);
         h.supply(0);
         vm.expectRevert(LaunchErrors.SupplyOverflow.selector);
         h.supply(uint256(type(uint128).max) + 1);

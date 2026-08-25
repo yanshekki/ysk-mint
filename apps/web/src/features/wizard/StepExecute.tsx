@@ -12,9 +12,13 @@ import {
   liquidityManagerAbi,
   tokenFactoryAbi,
   yskOftAbi,
+  planPeerCalls,
+  CHAINS,
   validateLaunchDraft,
   validateLock,
   validateLpAmounts,
+  type ChainDefinition,
+  type LaunchContracts,
   type LaunchError,
 } from "@ysk-mint/sdk";
 import { lpTokenAmount } from "./presets.ts";
@@ -37,11 +41,10 @@ export function StepExecute() {
   const ready = configuredEvm(w.chains);
   const missing = undeployedEvm(w.chains);
   const home = homeEvm(w.chains);
-  const homeContracts = home ? launchContracts(home.key) : undefined;
-  const canRun = Boolean(address && home && isConfigured(homeContracts));
+  const canRun = Boolean(address && ready.length);
 
   async function run() {
-    if (!address || !home || !isConfigured(homeContracts)) {
+    if (!address || !home || ready.length === 0) {
       setErrors([{ code: ErrorCode.RecipientZero, args: [], severity: "user", retryable: false }]);
       return;
     }
@@ -71,88 +74,63 @@ export function StepExecute() {
       return;
     }
     setErrors([]);
-    const salt = keccak256(stringToBytes(`${address}:${w.symbol}:${home.chainId}:${Date.now()}`));
+    const stamp = Date.now();
+    const perChain: Record<number, { token?: `0x${string}`; tx?: `0x${string}` }> = { ...w.perChain };
+    let lastCreate: `0x${string}` | undefined;
+    let lastLp: `0x${string}` | undefined;
+    let lockId: string | undefined;
+    let homeToken: `0x${string}` | undefined;
+
     try {
-      await switchChainAsync({ chainId: home.chainId });
-      const publicClient = getPublicClient(config, { chainId: home.chainId });
-      const wallet = await getWalletClient(config, { chainId: home.chainId });
-      if (!publicClient || !wallet) throw new Error("missing client");
+      for (const chain of ready) {
+        const contracts = launchContracts(chain.key);
+        if (!isConfigured(contracts)) continue;
+        const isHome = chain.key === home.key;
+        const created = await deployOFT({
+          chain,
+          contracts,
+          amount: isHome ? supply : 0n,
+          stamp,
+        });
+        perChain[chain.key] = { token: created.token, tx: created.createHash };
+        lastCreate = created.createHash;
+        if (isHome) {
+          homeToken = created.token;
+          const lp = await lockLp({ chain, contracts, token: created.token, tokenLp, nativeLp });
+          lastLp = lp.lpHash;
+          lockId = lp.lockId;
+        }
+        w.set({ perChain, createTx: lastCreate, tokenAddress: homeToken, lpTx: lastLp, lockId });
+      }
 
-      const params = {
-        name: w.name,
-        symbol: w.symbol,
-        decimals: w.decimals,
-        totalSupply: supply,
-        owner: address,
-        supplyMode: w.supplyMode,
-        moduleFlags: flags,
-      } as const;
-
-      setBusy("simulating");
-      await publicClient.simulateContract({
-        account: address,
-        address: homeContracts.factory,
-        abi: tokenFactoryAbi,
-        functionName: "createToken",
-        args: [params, salt],
-      });
-      setBusy("sending");
-      const createHash = await wallet.writeContract({
-        address: homeContracts.factory,
-        abi: tokenFactoryAbi,
-        functionName: "createToken",
-        args: [params, salt],
-      });
-      const createReceipt = await publicClient.waitForTransactionReceipt({ hash: createHash });
-      const launchLog = createReceipt.logs.find((l) => l.address.toLowerCase() === homeContracts.factory.toLowerCase());
-      const tokenAddress = launchLog?.topics[1]
-        ? (`0x${launchLog.topics[1].slice(26)}` as `0x${string}`)
-        : undefined;
-      if (!tokenAddress || tokenAddress === zeroAddress) throw new Error("missing token");
-      const perChain = {
-        ...w.perChain,
-        [home.key]: { token: tokenAddress, tx: createHash },
-      };
-      w.set({ createTx: createHash, tokenAddress, perChain });
-
-      setBusy("simulating");
-      await publicClient.simulateContract({
-        account: address,
-        address: tokenAddress,
-        abi: yskOftAbi,
-        functionName: "approve",
-        args: [homeContracts.manager, tokenLp],
-      });
-      setBusy("sending");
-      const approveHash = await wallet.writeContract({
-        address: tokenAddress,
-        abi: yskOftAbi,
-        functionName: "approve",
-        args: [homeContracts.manager, tokenLp],
-      });
-      await publicClient.waitForTransactionReceipt({ hash: approveHash });
-
-      setBusy("simulating");
-      await publicClient.simulateContract({
-        account: address,
-        address: homeContracts.manager,
-        abi: liquidityManagerAbi,
-        functionName: "addAndLock",
-        args: [tokenAddress, homeContracts.v2Router, tokenLp, 0n, 0n, w.lockMode, BigInt(w.lockDuration)],
-        value: nativeLp,
-      });
-      setBusy("sending");
-      const lpHash = await wallet.writeContract({
-        address: homeContracts.manager,
-        abi: liquidityManagerAbi,
-        functionName: "addAndLock",
-        args: [tokenAddress, homeContracts.v2Router, tokenLp, 0n, 0n, w.lockMode, BigInt(w.lockDuration)],
-        value: nativeLp,
-      });
-      const lpReceipt = await publicClient.waitForTransactionReceipt({ hash: lpHash });
-      const launched = lpReceipt.logs.find((l) => l.address.toLowerCase() === homeContracts.manager.toLowerCase());
-      const lockId = launched?.data ? BigInt(launched.data.slice(0, 66)).toString() : undefined;
-      w.set({ lpTx: lpHash, lockId, step: LaunchStep.Success });
+      const deployed = Object.entries(perChain)
+        .filter(([, v]) => v.token)
+        .map(([key, v]) => ({ chainKey: Number(key), address: v.token as `0x${string}` }));
+      const peerCalls = planPeerCalls(deployed);
+      for (const call of peerCalls) {
+        const chain = CHAINS[call.fromChainKey as keyof typeof CHAINS];
+        if (!chain?.evm) continue;
+        setBusy("sending");
+        await switchChainAsync({ chainId: chain.chainId });
+        const publicClient = getPublicClient(config, { chainId: chain.chainId });
+        const wallet = await getWalletClient(config, { chainId: chain.chainId });
+        if (!publicClient || !wallet) continue;
+        await publicClient.simulateContract({
+          account: address,
+          address: call.from,
+          abi: yskOftAbi,
+          functionName: "setPeer",
+          args: [call.dstEid, call.peer],
+        });
+        const peerHash = await wallet.writeContract({
+          address: call.from,
+          abi: yskOftAbi,
+          functionName: "setPeer",
+          args: [call.dstEid, call.peer],
+        });
+        await publicClient.waitForTransactionReceipt({ hash: peerHash });
+      }
+      w.set({ step: LaunchStep.Success, perChain, createTx: lastCreate, tokenAddress: homeToken, lpTx: lastLp, lockId });
     } catch (e) {
       const data = (e as { data?: `0x${string}` }).data;
       setErrors([data ? decodeLaunchError(data, locale) : decodeLaunchError("0x", locale)]);
@@ -161,12 +139,115 @@ export function StepExecute() {
     }
   }
 
+  async function deployOFT({
+    chain,
+    contracts,
+    amount,
+    stamp,
+  }: {
+    chain: ChainDefinition;
+    contracts: LaunchContracts;
+    amount: bigint;
+    stamp: number;
+  }) {
+    if (!address) throw new Error("no account");
+    setBusy("sending");
+    await switchChainAsync({ chainId: chain.chainId });
+    const publicClient = getPublicClient(config, { chainId: chain.chainId });
+    const wallet = await getWalletClient(config, { chainId: chain.chainId });
+    if (!publicClient || !wallet) throw new Error("missing client");
+    const salt = keccak256(stringToBytes(`${address}:${w.symbol}:${chain.chainId}:${stamp}`));
+    const params = {
+      name: w.name,
+      symbol: w.symbol,
+      decimals: w.decimals,
+      totalSupply: amount,
+      owner: address,
+      supplyMode: w.supplyMode,
+      moduleFlags: packFlags(w),
+    } as const;
+    setBusy("simulating");
+    await publicClient.simulateContract({
+      account: address,
+      address: contracts.factory,
+      abi: tokenFactoryAbi,
+      functionName: "createToken",
+      args: [params, salt],
+    });
+    setBusy("sending");
+    const createHash = await wallet.writeContract({
+      address: contracts.factory,
+      abi: tokenFactoryAbi,
+      functionName: "createToken",
+      args: [params, salt],
+    });
+    const createReceipt = await publicClient.waitForTransactionReceipt({ hash: createHash });
+    const launchLog = createReceipt.logs.find((l) => l.address.toLowerCase() === contracts.factory.toLowerCase());
+    const token = launchLog?.topics[1] ? (`0x${launchLog.topics[1].slice(26)}` as `0x${string}`) : undefined;
+    if (!token || token === zeroAddress) throw new Error("missing token");
+    return { token, createHash };
+  }
+
+  async function lockLp({
+    chain,
+    contracts,
+    token,
+    tokenLp,
+    nativeLp,
+  }: {
+    chain: ChainDefinition;
+    contracts: LaunchContracts;
+    token: `0x${string}`;
+    tokenLp: bigint;
+    nativeLp: bigint;
+  }) {
+    if (!address) throw new Error("no account");
+    const publicClient = getPublicClient(config, { chainId: chain.chainId });
+    const wallet = await getWalletClient(config, { chainId: chain.chainId });
+    if (!publicClient || !wallet) throw new Error("missing client");
+    setBusy("simulating");
+    await publicClient.simulateContract({
+      account: address,
+      address: token,
+      abi: yskOftAbi,
+      functionName: "approve",
+      args: [contracts.manager, tokenLp],
+    });
+    setBusy("sending");
+    const approveHash = await wallet.writeContract({
+      address: token,
+      abi: yskOftAbi,
+      functionName: "approve",
+      args: [contracts.manager, tokenLp],
+    });
+    await publicClient.waitForTransactionReceipt({ hash: approveHash });
+    setBusy("simulating");
+    await publicClient.simulateContract({
+      account: address,
+      address: contracts.manager,
+      abi: liquidityManagerAbi,
+      functionName: "addAndLock",
+      args: [token, contracts.v2Router, tokenLp, 0n, 0n, w.lockMode, BigInt(w.lockDuration)],
+      value: nativeLp,
+    });
+    setBusy("sending");
+    const lpHash = await wallet.writeContract({
+      address: contracts.manager,
+      abi: liquidityManagerAbi,
+      functionName: "addAndLock",
+      args: [token, contracts.v2Router, tokenLp, 0n, 0n, w.lockMode, BigInt(w.lockDuration)],
+      value: nativeLp,
+    });
+    const lpReceipt = await publicClient.waitForTransactionReceipt({ hash: lpHash });
+    const launched = lpReceipt.logs.find((l) => l.address.toLowerCase() === contracts.manager.toLowerCase());
+    const lockId = launched?.data ? BigInt(launched.data.slice(0, 66)).toString() : undefined;
+    return { lpHash, lockId };
+  }
+
   return (
     <div className="space-y-4">
       {home ? (
-        <p className="text-[15px] text-text-sub">
-          {t("wizard.execute.home", { name: home.name })}
-        </p>
+        <p className="text-[15px] text-text-sub">{t("wizard.execute.home", { name: home.name })}</p>
       ) : (
         <p className="text-[15px] text-text-sub">{t("wizard.execute.needEvm")}</p>
       )}
@@ -174,7 +255,8 @@ export function StepExecute() {
         <ul className="space-y-1 text-[14px] text-text-sub">
           {ready.map((c) => (
             <li key={c.key}>
-              {c.name} · EID {c.eid}
+              {c.name}
+              {home && c.key === home.key ? ` · ${t("wizard.execute.homeTag")}` : ` · ${t("wizard.execute.spokeTag")}`}
             </li>
           ))}
         </ul>

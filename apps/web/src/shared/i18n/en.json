@@ -173,7 +173,7 @@
       "native": "Native issuance",
       "nativeHint": "Standalone assets. Not LayerZero.",
       "run": "Execute order",
-      "runOft": "Deploy OFT on each EVM",
+      "runOft": "Home mints full supply; spokes mint 0",
       "runPeer": "Switch wallet per chain, setPeer both ways",
       "runNative": "Issue Cardano / NEAR / Solana independently"
     },
@@ -186,7 +186,9 @@
     },
     "execute": {
       "simulate": "Simulate then sign",
-      "home": "This step deploys the OFT and locks LP on {{name}}. Other selected EVM chains wait for a factory before setPeer.",
+      "home": "Home {{name}} mints full supply and locks LP. Other configured EVM chains mint 0, then setPeer both ways.",
+      "homeTag": "home · full supply + LP",
+      "spokeTag": "spoke · zero supply",
       "needEvm": "No EVM chain selected. Cannot sign an OFT.",
       "needContracts": "Factory / manager / locker / router are still zero. Deploy, then fill packages/config/src/contracts.ts.",
       "nativePath": "You picked NEAR, Cardano or Solana. Those paths are NEP-141 / native asset / SPL, not EVM OFT. Native factories and programs are undeployed, so this step will not sign.",

@@ -45,8 +45,8 @@ library LaunchValidation {
         }
     }
 
+    /// @notice Zero is allowed so OFT spoke chains can mint nothing at create and receive via lzReceive.
     function validateSupply(uint256 supply) internal pure {
-        if (supply == 0) revert LaunchErrors.SupplyZero();
         if (supply > MAX_SUPPLY) revert LaunchErrors.SupplyOverflow();
     }
 
