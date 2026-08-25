@@ -1,0 +1,32 @@
+node_modules/
+dist/
+build/
+out/
+cache/
+broadcast/
+*.env
+.env.*
+!.env.example
+coverage/
+.vite/
+.DS_Store
+*.log
+.idea/
+.vscode/
+lcov.info
+typechain-types/
+# Foundry cache at repo root
+cache/
+
+# OpenZeppelin extras (we only need contracts/)
+lib/openzeppelin-contracts/lib/
+lib/openzeppelin-contracts/test/
+lib/openzeppelin-contracts/docs/
+lib/openzeppelin-contracts/audits/
+lib/openzeppelin-contracts/certora/
+lib/openzeppelin-contracts/scripts/
+lib/openzeppelin-contracts/fv/
+lib/openzeppelin-contracts/.github/
+apps/web/dist/
+*.tsbuildinfo
+.pnpm-store/

@@ -1,0 +1,35 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Forge test
+        run: forge test -vv
+
+  sdk-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @ysk-mint/sdk test
+      - run: pnpm --filter @ysk-mint/sdk typecheck
+      - run: pnpm --filter @ysk-mint/config typecheck
+      - run: pnpm --filter @ysk-mint/web typecheck
+      - run: node scripts/docs-bilingual-check.mjs
