@@ -1500,6 +1500,8 @@ table.data tbody tr:hover td {
   width: 32px;
   height: 32px;
   border-radius: 8px;
+  object-fit: contain;
+  background: #fff;
 }
 .sol-sel-mark {
   display: grid;

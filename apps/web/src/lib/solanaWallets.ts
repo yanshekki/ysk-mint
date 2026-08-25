@@ -10,20 +10,33 @@ export type SolanaWalletInfo = {
 };
 
 /** Popular Solana wallets. Installed ones come from Wallet Standard / injected providers. */
-export const SOLANA_CATALOG: Array<{ name: string; url: string }> = [
-  { name: "Phantom", url: "https://phantom.app/download" },
-  { name: "Solflare", url: "https://solflare.com/download" },
-  { name: "Backpack", url: "https://backpack.app/download" },
-  { name: "Brave Wallet", url: "https://brave.com/wallet/" },
-  { name: "Glow", url: "https://glow.app/" },
-  { name: "Coinbase Wallet", url: "https://www.coinbase.com/wallet/downloads" },
-  { name: "Ledger", url: "https://www.ledger.com/ledger-live" },
-  { name: "Trust Wallet", url: "https://trustwallet.com/download" },
-  { name: "Exodus", url: "https://www.exodus.com/download" },
-  { name: "OKX Wallet", url: "https://www.okx.com/web3" },
-  { name: "Bitget Wallet", url: "https://web3.bitget.com/en/wallet-download" },
-  { name: "Nightly", url: "https://nightly.app/" },
+export const SOLANA_CATALOG: Array<{ name: string; url: string; icon: string }> = [
+  { name: "Phantom", url: "https://phantom.app/download", icon: "/wallets/phantom.svg" },
+  { name: "Solflare", url: "https://solflare.com/download", icon: "/wallets/solflare.svg" },
+  { name: "Backpack", url: "https://backpack.app/download", icon: "/wallets/backpack.png" },
+  { name: "Brave Wallet", url: "https://brave.com/wallet/", icon: "/wallets/brave.svg" },
+  { name: "Glow", url: "https://glow.app/", icon: "/wallets/glow.png" },
+  { name: "Coinbase Wallet", url: "https://www.coinbase.com/wallet/downloads", icon: "/wallets/coinbase.svg" },
+  { name: "Ledger", url: "https://www.ledger.com/ledger-live", icon: "/wallets/ledger.svg" },
+  { name: "Trust Wallet", url: "https://trustwallet.com/download", icon: "/wallets/trust.svg" },
+  { name: "Exodus", url: "https://www.exodus.com/download", icon: "/wallets/exodus.svg" },
+  { name: "OKX Wallet", url: "https://www.okx.com/web3", icon: "/wallets/okx.svg" },
+  { name: "Bitget Wallet", url: "https://web3.bitget.com/en/wallet-download", icon: "/wallets/bitget.svg" },
+  { name: "Nightly", url: "https://nightly.app/", icon: "/wallets/nightly.svg" },
 ];
+
+function catalogIcon(name: string): string | undefined {
+  return SOLANA_CATALOG.find((c) => sameWallet(c.name, name))?.icon;
+}
+
+function readIcon(icon: unknown, name: string): string | undefined {
+  const local = catalogIcon(name);
+  if (local) return local;
+  if (typeof icon === "string" && (icon.startsWith("data:") || icon.startsWith("/") || icon.startsWith("http"))) {
+    return icon;
+  }
+  return undefined;
+}
 
 type StandardAccount = { address: string };
 type StandardWallet = {
@@ -78,7 +91,8 @@ function windowProviders(): Array<{ id: string; name: string; provider: Injected
 }
 
 function sameWallet(a: string, b: string) {
-  return a.replace(/\s+/g, "").toLowerCase() === b.replace(/\s+/g, "").toLowerCase();
+  const norm = (s: string) => s.replace(/\s+/g, "").toLowerCase().replace(/wallet/g, "");
+  return norm(a) === norm(b) || norm(a).includes(norm(b)) || norm(b).includes(norm(a));
 }
 
 export async function listSolanaWallets(): Promise<SolanaWalletInfo[]> {
@@ -93,7 +107,7 @@ export async function listSolanaWallets(): Promise<SolanaWalletInfo[]> {
       installed.push({
         id: `std:${w.name}`,
         name: w.name,
-        icon: typeof w.icon === "string" ? w.icon : undefined,
+        icon: readIcon(w.icon, w.name),
         installed: true,
       });
     }
@@ -102,12 +116,13 @@ export async function listSolanaWallets(): Promise<SolanaWalletInfo[]> {
   }
   for (const p of windowProviders()) {
     if (installed.some((w) => sameWallet(w.name, p.name))) continue;
-    installed.push({ id: p.id, name: p.name, installed: true });
+    installed.push({ id: p.id, name: p.name, icon: catalogIcon(p.name), installed: true });
   }
   const rest = SOLANA_CATALOG.filter((c) => !installed.some((w) => sameWallet(w.name, c.name))).map((c) => ({
     id: `install:${c.name}`,
     name: c.name,
     url: c.url,
+    icon: c.icon,
     installed: false,
   }));
   return [...installed, ...rest];

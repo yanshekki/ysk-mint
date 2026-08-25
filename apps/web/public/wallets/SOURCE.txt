@@ -1,0 +1,5 @@
+Solana wallet icons stored locally so the selector does not hotlink.
+
+- phantom, solflare, backpack, coinbase, ledger, trust, exodus, nightly, glow, brave, bitget:
+  extracted from published @solana/wallet-adapter-* packages (Anza wallet-adapter).
+- okx: local mark (adapter package not published on unpkg).

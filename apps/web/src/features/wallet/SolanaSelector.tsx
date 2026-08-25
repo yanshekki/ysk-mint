@@ -57,7 +57,7 @@ export function SolanaSelector({
               {more.map((w) => (
                 <li key={w.id}>
                   <button type="button" className="sol-sel-item" onClick={() => onPick(w)}>
-                    <span className="sol-sel-mark">SOL</span>
+                    {w.icon ? <img src={w.icon} alt="" /> : <span className="sol-sel-mark">SOL</span>}
                     <b>{w.name}</b>
                     <span className="sol-sel-install">{t("wallet.solInstall")}</span>
                   </button>
