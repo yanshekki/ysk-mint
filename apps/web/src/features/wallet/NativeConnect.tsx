@@ -2,14 +2,15 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "../../shared/ui/TokenRow.tsx";
 import {
-  captureNearRedirect,
   connectCardano,
-  connectNearInjected,
+  connectNear,
+  disconnectNearWallet,
   listCardanoWallets,
-  openMyNearWallet,
   pingCardanoTip,
   pingNearRpc,
+  restoreNearSession,
   useNativeWallets,
+  type CardanoWalletInfo,
 } from "../../lib/nativeWallets.ts";
 
 function short(v: string) {
@@ -20,13 +21,13 @@ function short(v: string) {
 export function NativeConnect() {
   const { t } = useTranslation();
   const native = useNativeWallets();
-  const [adaWallets, setAdaWallets] = useState<{ key: string; name: string }[]>([]);
+  const [adaWallets, setAdaWallets] = useState<CardanoWalletInfo[]>([]);
   const [nearHeight, setNearHeight] = useState<string | null>(null);
   const [adaHeight, setAdaHeight] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
   useEffect(() => {
-    captureNearRedirect();
+    void restoreNearSession();
     setAdaWallets(listCardanoWallets());
     void pingNearRpc().then(setNearHeight);
     void pingCardanoTip().then(setAdaHeight);
@@ -44,7 +45,7 @@ export function NativeConnect() {
           </p>
         </div>
         {native.nearAccount ? (
-          <button type="button" className="ghost-btn" onClick={() => native.disconnectNear()}>
+          <button type="button" className="ghost-btn" onClick={() => void disconnectNearWallet()}>
             {t("wallet.disconnect")}
           </button>
         ) : (
@@ -54,11 +55,7 @@ export function NativeConnect() {
             disabled={busy === "near"}
             onClick={() => {
               setBusy("near");
-              void connectNearInjected()
-                .then((id) => {
-                  if (!id) openMyNearWallet();
-                })
-                .finally(() => setBusy(null));
+              void connectNear().finally(() => setBusy(null));
             }}
           >
             {t("wallet.connectNear")}
@@ -79,23 +76,22 @@ export function NativeConnect() {
             {t("wallet.disconnect")}
           </button>
         ) : adaWallets.length ? (
-          <select
-            className="chain-dd"
-            defaultValue=""
-            onChange={(e) => {
-              const key = e.target.value;
-              if (!key) return;
-              setBusy("ada");
-              void connectCardano(key).finally(() => setBusy(null));
-            }}
-          >
-            <option value="">{t("wallet.connectCardano")}</option>
+          <div className="flex flex-wrap gap-2">
             {adaWallets.map((w) => (
-              <option key={w.key} value={w.key}>
+              <button
+                key={w.name}
+                type="button"
+                className="ghost-btn"
+                disabled={busy === "ada"}
+                onClick={() => {
+                  setBusy("ada");
+                  void connectCardano(w.name).finally(() => setBusy(null));
+                }}
+              >
                 {w.name}
-              </option>
+              </button>
             ))}
-          </select>
+          </div>
         ) : (
           <Badge kind="warn">{t("wallet.noCip30")}</Badge>
         )}

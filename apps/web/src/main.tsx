@@ -5,9 +5,6 @@ import "./styles.css";
 import "./lib/i18n.ts";
 import { router } from "./app/router.tsx";
 import { WalletProviders } from "./app/WalletProviders.tsx";
-import { captureNearRedirect } from "./lib/nativeWallets.ts";
-
-captureNearRedirect();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

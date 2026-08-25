@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { NearConnector } from "@hot-labs/near-connect";
+import { CardanoBrowserWallet, MeshCardanoBrowserWallet } from "@meshsdk/wallet";
 import { isCardanoAddress, isNearAccountId } from "@ysk-mint/sdk";
 
 type NativeState = {
@@ -27,75 +29,81 @@ export const useNativeWallets = create<NativeState>()(
   ),
 );
 
-export function captureNearRedirect() {
-  if (typeof window === "undefined") return;
-  const q = new URLSearchParams(window.location.search);
-  const account = q.get("account_id");
-  if (account && isNearAccountId(account)) {
-    useNativeWallets.getState().setNear(account);
-    q.delete("account_id");
-    q.delete("all_keys");
-    q.delete("public_key");
-    const url = `${window.location.pathname}${q.toString() ? `?${q}` : ""}${window.location.hash}`;
-    window.history.replaceState({}, "", url);
+let nearConnector: NearConnector | null = null;
+let nearListenersBound = false;
+
+/** Official NEAR connector (docs.near.org Wallet Login, 2026-08). Not MyNearWallet /login. */
+export function getNearConnector(): NearConnector {
+  if (!nearConnector) {
+    nearConnector = new NearConnector({
+      network: "mainnet",
+      autoConnect: true,
+      features: {
+        signAndSendTransaction: true,
+        signInWithoutAddKey: true,
+      },
+    });
+  }
+  if (!nearListenersBound) {
+    nearListenersBound = true;
+    nearConnector.on("wallet:signIn", ({ accounts, success }) => {
+      const id = success ? accounts[0]?.accountId ?? "" : "";
+      if (id && isNearAccountId(id)) useNativeWallets.getState().setNear(id);
+    });
+    nearConnector.on("wallet:signOut", () => {
+      useNativeWallets.getState().disconnectNear();
+    });
+  }
+  return nearConnector;
+}
+
+export async function restoreNearSession() {
+  try {
+    const { accounts } = await getNearConnector().getConnectedWallet();
+    const id = accounts[0]?.accountId ?? "";
+    if (id && isNearAccountId(id)) useNativeWallets.getState().setNear(id);
+  } catch {
+    /* not connected */
   }
 }
 
-type CardanoInjected = {
-  name?: string;
-  icon?: string;
-  enable: () => Promise<{
-    getUsedAddresses?: () => Promise<string[]>;
-    getChangeAddress?: () => Promise<string>;
-  }>;
-};
-
-export function listCardanoWallets(): { key: string; name: string }[] {
-  if (typeof window === "undefined" || !window.cardano) return [];
-  return Object.entries(window.cardano)
-    .filter(([, w]) => w && typeof (w as CardanoInjected).enable === "function")
-    .map(([key, w]) => ({ key, name: (w as CardanoInjected).name || key }));
+export async function connectNear(): Promise<string> {
+  const connector = getNearConnector();
+  await connector.connect();
+  const { accounts } = await connector.getConnectedWallet();
+  const id = accounts[0]?.accountId ?? "";
+  if (id && isNearAccountId(id)) useNativeWallets.getState().setNear(id);
+  return id;
 }
 
-export async function connectCardano(key: string): Promise<string> {
-  const w = window.cardano?.[key] as CardanoInjected | undefined;
-  if (!w) throw new Error("wallet");
-  const api = await w.enable();
-  const change = api.getChangeAddress ? await api.getChangeAddress() : "";
-  const used = api.getUsedAddresses ? await api.getUsedAddresses() : [];
-  const raw = change || used[0] || "";
-  if (!raw) throw new Error("address");
-  useNativeWallets.getState().setCardano(raw, key);
-  return raw;
-}
-
-export async function connectNearInjected(): Promise<string | null> {
-  const near = window.near;
-  if (near?.requestSignIn) {
-    await near.requestSignIn({});
-    const id = near.getAccountId?.() || "";
-    if (id && isNearAccountId(id)) {
-      useNativeWallets.getState().setNear(id);
-      return id;
-    }
+export async function disconnectNearWallet() {
+  try {
+    await getNearConnector().disconnect();
+  } finally {
+    useNativeWallets.getState().disconnectNear();
   }
-  if (near?.isSignedIn?.() && near.getAccountId) {
-    const id = near.getAccountId();
-    if (id && isNearAccountId(id)) {
-      useNativeWallets.getState().setNear(id);
-      return id;
-    }
-  }
-  return null;
 }
 
-export function openMyNearWallet() {
-  const success = new URL(window.location.href);
-  const url = new URL("https://app.mynearwallet.com/login/");
-  url.searchParams.set("title", "ysk-mint");
-  url.searchParams.set("success_url", success.toString());
-  url.searchParams.set("failure_url", success.toString());
-  window.location.assign(url.toString());
+export type CardanoWalletInfo = { name: string; icon?: string };
+
+export function listCardanoWallets(): CardanoWalletInfo[] {
+  try {
+    const wallets = CardanoBrowserWallet.getInstalledWallets() as Array<{
+      name: string;
+      icon?: string;
+    }>;
+    return wallets.map((w) => ({ name: w.name, icon: w.icon }));
+  } catch {
+    return [];
+  }
+}
+
+export async function connectCardano(walletName: string): Promise<string> {
+  const wallet = await MeshCardanoBrowserWallet.enable(walletName);
+  const addr = await wallet.getChangeAddressBech32();
+  if (!addr || !isCardanoAddress(addr)) throw new Error("address");
+  useNativeWallets.getState().setCardano(addr, walletName);
+  return addr;
 }
 
 export async function pingNearRpc(): Promise<string | null> {
@@ -125,15 +133,3 @@ export async function pingCardanoTip(): Promise<string | null> {
 }
 
 export { isNearAccountId, isCardanoAddress };
-
-declare global {
-  interface Window {
-    cardano?: Record<string, CardanoInjected>;
-    near?: {
-      requestSignIn?: (opts?: { contractId?: string }) => Promise<void>;
-      isSignedIn?: () => boolean;
-      getAccountId?: () => string;
-      signOut?: () => void;
-    };
-  }
-}
