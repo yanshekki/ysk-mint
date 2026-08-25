@@ -54,15 +54,23 @@
 }
 html,
 body,
-#root,
-#root > *:not(#near-wallet-selector-modal),
-[data-rk] {
+#root {
   height: 100%;
   max-height: 100%;
 }
+#root > [data-rk] {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+#root > [data-rk] > .app {
+  flex: 1;
+  min-height: 0;
+}
 #near-wallet-selector-modal,
 #near-wallet-selector-modal .nws-modal-wrapper {
-  z-index: 100000 !important;
+  z-index: 2147483000 !important;
 }
 html,
 body,
@@ -146,6 +154,7 @@ select {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 .chain-dd {
   height: 42px;
@@ -165,9 +174,6 @@ select {
   font-size: 15px;
   cursor: pointer;
   white-space: nowrap;
-}
-.top-right {
-  flex-shrink: 0;
 }
 .ghost-btn {
   border: 1px solid var(--border-color);
@@ -234,15 +240,18 @@ select {
 .workspace-scroll:has(.wallet-desk) {
   display: flex;
   flex-direction: column;
-  padding: 18px 20px;
+  padding: 16px 20px;
+  overflow: hidden;
 }
 .wallet-desk {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
+  max-height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
   width: 100%;
+  overflow: hidden;
 }
 .wallet-desk-head {
   display: flex;
@@ -276,22 +285,27 @@ select {
   white-space: nowrap;
 }
 .wallet-panes {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  gap: 14px;
+  overflow: hidden;
+  align-items: stretch;
 }
 .wallet-pane {
   min-height: 0;
+  max-height: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 22px;
+  gap: 12px;
+  padding: 18px;
   border: 1px solid var(--border-color);
   border-radius: 16px;
   background: var(--bg-white);
   box-shadow: var(--shadow-xs);
+  overflow: hidden;
 }
 .wallet-pane-on {
   border-color: var(--brand-green);
@@ -391,13 +405,15 @@ select {
   border-radius: 4px;
 }
 .wallet-pane-main {
-  flex: 1;
-  min-height: 72px;
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-end;
   gap: 8px;
-  padding: 16px;
+}
+.wallet-addr-box {
+  padding: 14px 16px;
   border-radius: 12px;
   background: var(--bg-subtle);
 }
@@ -425,6 +441,7 @@ select {
 }
 .wallet-pane-foot {
   flex-shrink: 0;
+  margin-top: auto;
 }
 .wallet-foot-hint {
   margin: 0;
@@ -923,11 +940,24 @@ table.data tbody tr:hover td {
     padding-left: 16px;
     padding-right: 16px;
   }
+  .workspace-scroll:has(.wallet-desk) {
+    overflow: auto;
+  }
+  .wallet-desk,
+  .wallet-panes {
+    overflow: visible;
+    max-height: none;
+    flex: none;
+    height: auto;
+  }
   .wallet-panes {
     grid-template-columns: 1fr;
   }
   .wallet-pane {
-    min-height: 280px;
+    min-height: 0;
+    height: auto;
+    max-height: none;
+    overflow: visible;
   }
   .wallet-desk-title {
     font-size: 18px;
