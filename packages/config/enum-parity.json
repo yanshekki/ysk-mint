@@ -6,7 +6,10 @@
     "Optimism": 3,
     "Bnb": 4,
     "BaseSepolia": 5,
-    "ArbSepolia": 6
+    "ArbSepolia": 6,
+    "Avalanche": 7,
+    "Cardano": 8,
+    "Near": 9
   },
   "DexKind": {
     "UniswapV2": 0,

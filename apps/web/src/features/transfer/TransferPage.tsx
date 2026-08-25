@@ -31,7 +31,7 @@ export function TransferPage() {
   const [manual, setManual] = useState(false);
 
   const dst = CHAINS[dstKey as keyof typeof CHAINS];
-  const enabled = Object.values(CHAINS).filter((c) => c.enabled);
+  const enabled = Object.values(CHAINS).filter((c) => c.enabled && c.evm);
 
   async function amountOf(): Promise<bigint> {
     if (!publicClient || !address || !token) return 0n;

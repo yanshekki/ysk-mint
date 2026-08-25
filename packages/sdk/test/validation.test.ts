@@ -15,7 +15,7 @@ describe("token validation", () => {
     expect(validateSymbol("Y S").map((e) => e.code)).toContain(ErrorCode.InvalidSymbol);
   });
 
-  it("rejects disabled mainnet chain in draft", () => {
+  it("rejects non-EVM Cardano in draft", () => {
     const errors = validateLaunchDraft({
       name: "YSK Token",
       symbol: "YSK",
@@ -24,7 +24,7 @@ describe("token validation", () => {
       supplyMode: 0,
       moduleFlags: 0,
       owner: "0x0000000000000000000000000000000000000001",
-      chains: [ChainKey.Ethereum],
+      chains: [ChainKey.Cardano],
     });
     expect(errors.map((e) => e.code)).toContain(ErrorCode.ChainDisabled);
   });

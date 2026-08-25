@@ -4,50 +4,50 @@
     "tagline": "Guided multi-chain token launch. Native OFT. LP + lock. On-chain data only."
   },
   "nav": {
-    "home": "Trenches",
-    "trenches": "Trenches",
-    "hot": "Trending",
-    "board": "Leaders",
+    "home": "LP",
+    "lp": "LP",
     "create": "Launch",
     "transfer": "Bridge",
     "me": "Holdings",
     "disclaimer": "Unaudited",
     "search": "Search ticker, CA, wallet"
   },
-  "trenches": {
-    "hint": "On-chain factory logs only. No fake tape.",
-    "new": "New",
-    "pending": "Pending LP lock",
-    "live": "Live",
-    "empty": "No data"
-  },
-  "hot": {
-    "buy": "Buy",
-    "tabs": { "new": "New", "hot": "Trending", "search": "Search", "pump": "Pump", "blue": "Blue chip" },
+  "lp": {
+    "hint": "On-chain Manager / Locker logs from this product only. Not a global DEX tape.",
+    "all": "All",
+    "testnets": "Testnets",
+    "loading": "Reading on-chain logs…",
+    "rpcError": "RPC read failed. No synthetic rows.",
+    "empty": "No LP yet",
+    "emptyAll": "No locked LP on any chain yet",
+    "emptyUndeployed": "Factory / manager / locker are still 0x0 on this chain",
+    "emptyAda": "Cardano has no EVM factory",
+    "emptyDetail": "After a deploy and filling packages/config/src/contracts.ts, LiquidityLaunched logs appear here.",
+    "adaDetail": "The Solidity factory cannot mint or lock LP on Cardano. LayerZero Cardano OFT is not wired into this product.",
+    "timed": "Timed",
+    "burn": "Burn LP",
+    "open": "Explorer",
     "cols": {
+      "chain": "Chain",
       "token": "Token",
-      "mc": "MC",
-      "ath": "ATH",
-      "pool": "Pool",
-      "vol": "Volume",
-      "tx": "Txns",
-      "holders": "Holders",
-      "fee": "Fees"
+      "lp": "LP",
+      "lock": "Lock",
+      "unlock": "Unlock",
+      "amount": "LP amount",
+      "explorer": "Explorer"
     }
-  },
-  "board": {
-    "tabs": { "alpha": "Alpha", "smart": "Smart", "kol": "KOL" },
-    "cols": { "wallet": "Wallet", "win": "Win", "tx": "Txns", "flow": "Flow" }
   },
   "home": {
     "title": "Launch an omnichain token. Lock LP. No backend.",
-    "body": "Terminal-style flow: pick options, sign on-chain. Every number after launch is an eth_call.",
+    "body": "All-chain LP table plus a guided launch. Every number is an eth_call.",
     "cta": "Open launch desk",
-    "honesty": "Contracts are not audited. Mainnet keys exist but are disabled."
+    "honesty": "Contracts are not audited. Mainnet factory addresses are still zero."
   },
   "wallet": {
     "connect": "Connect",
-    "wrongNetwork": "Switch to a live testnet."
+    "create": "Create trading wallet",
+    "privyMissing": "VITE_PRIVY_APP_ID is unset, so an external wallet is used. Set Privy to enable email / Google 1-click create.",
+    "wrongNetwork": "Switch to a supported EVM chain."
   },
   "wizard": {
     "title": "Launch desk",
@@ -66,7 +66,7 @@
       "8": "Live"
     },
     "wallet": {
-      "need": "Connect on Base Sepolia or Arbitrum Sepolia.",
+      "need": "Create a trading wallet (email / Google / existing wallet). One EOA on ETH, AVAX, Base, Arb, BNB, and NEAR (Aurora).",
       "ready": "Wallet ready",
       "idle": "Not connected"
     },
@@ -108,8 +108,11 @@
       "taxBps": "Tax"
     },
     "chains": {
-      "hint": "Pick every live testnet. Mainnet cards stay disabled.",
-      "disabled": "Not live"
+      "hint": "Pick launch chains. Cardano has no EVM factory. NEAR uses Aurora EVM. Sign step still blocks while factory is zero.",
+      "disabled": "Not live",
+      "near": "NEAR (Aurora)",
+      "adaHint": "Non-EVM. Cannot mint or lock LP here.",
+      "testnets": "Testnets"
     },
     "liquidity": {
       "tokenBps": "Token into LP",

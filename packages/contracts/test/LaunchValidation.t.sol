@@ -109,10 +109,11 @@ contract LaunchValidationTest is Test {
     function test_enum_outOfRange() public {
         vm.expectRevert(abi.encodeWithSelector(LaunchErrors.InvalidSupplyMode.selector, uint8(2)));
         h.supplyMode(2);
-        vm.expectRevert(abi.encodeWithSelector(LaunchErrors.InvalidChainKey.selector, uint8(7)));
-        h.chainKey(7);
+        uint8 unknownChain = uint8(type(LaunchEnums.ChainKey).max) + 1;
+        vm.expectRevert(abi.encodeWithSelector(LaunchErrors.InvalidChainKey.selector, unknownChain));
+        h.chainKey(unknownChain);
         h.supplyMode(uint8(LaunchEnums.SupplyMode.Mintable));
-        h.chainKey(uint8(LaunchEnums.ChainKey.ArbSepolia));
+        h.chainKey(uint8(LaunchEnums.ChainKey.Near));
     }
 
     function test_unknownModuleBit() public {

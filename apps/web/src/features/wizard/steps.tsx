@@ -1,7 +1,9 @@
 import { CHAINS, LaunchStep, LockMode, OwnershipAction, SupplyMode } from "@ysk-mint/sdk";
+import { featuredChains, testnetChains } from "@ysk-mint/config";
 import { useAccount } from "wagmi";
 import { useTranslation } from "react-i18next";
 import { useWizard } from "./store.ts";
+import { ConnectBar } from "../wallet/ConnectBar.tsx";
 import { ChipGroup } from "../../shared/ui/ChipGroup.tsx";
 import { OptionCard, OptionGrid } from "../../shared/ui/OptionCard.tsx";
 import { Dropzone } from "../../shared/ui/Dropzone.tsx";
@@ -23,6 +25,7 @@ export function StepWallet() {
   return (
     <div className="space-y-3">
       <p className="text-[13px] text-text-sub">{t("wizard.wallet.need")}</p>
+      <ConnectBar />
       <div className="token-row">
         <div className="grid h-10 w-10 place-items-center rounded-lg bg-bg-subtle text-xs font-black">W</div>
         <div>
@@ -213,17 +216,41 @@ export function StepChains() {
     <div className="space-y-3">
       <p className="text-[13px] text-text-sub">{t("wizard.chains.hint")}</p>
       <div className="grid gap-2 sm:grid-cols-2">
-        {Object.values(CHAINS).map((c) => {
+        {featuredChains().map((c) => {
+          const on = w.chains.includes(c.key);
+          const live = c.enabled && c.evm;
+          return (
+            <OptionCard
+              key={c.key}
+              selected={on && live}
+              disabled={!live}
+              title={c.short === "NEAR" ? t("wizard.chains.near") : c.name}
+              hint={
+                !c.evm
+                  ? t("wizard.chains.adaHint")
+                  : `chainId ${c.chainId} · EID ${c.eid}${live ? "" : ` · ${t("wizard.chains.disabled")}`}`
+              }
+              onSelect={() => {
+                if (!live) return;
+                w.set({
+                  chains: on ? w.chains.filter((k) => k !== c.key) : [...w.chains, c.key],
+                });
+              }}
+            />
+          );
+        })}
+      </div>
+      <p className="text-[12px] font-bold text-text-muted">{t("wizard.chains.testnets")}</p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {testnetChains().map((c) => {
           const on = w.chains.includes(c.key);
           return (
             <OptionCard
-              key={c.chainId}
-              selected={on && c.enabled}
-              disabled={!c.enabled}
+              key={c.key}
+              selected={on}
               title={c.name}
-              hint={`chainId ${c.chainId} · EID ${c.eid}${c.enabled ? "" : ` · ${t("wizard.chains.disabled")}`}`}
+              hint={`chainId ${c.chainId} · EID ${c.eid}`}
               onSelect={() => {
-                if (!c.enabled) return;
                 w.set({
                   chains: on ? w.chains.filter((k) => k !== c.key) : [...w.chains, c.key],
                 });

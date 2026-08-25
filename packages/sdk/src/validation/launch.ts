@@ -26,7 +26,7 @@ export function validateChainKey(chain: number, locale: Locale = "en"): LaunchEr
 export function validateChainEnabled(chain: number, locale: Locale = "en"): LaunchError[] {
   const def = CHAINS[chain as (typeof ChainKey)[ChainKeyName]];
   if (!def) return [err(ErrorCode.InvalidChainKey, [chain], locale)];
-  if (!def.enabled) return [err(ErrorCode.ChainDisabled, [chain], locale)];
+  if (!def.enabled || !def.evm) return [err(ErrorCode.ChainDisabled, [chain], locale)];
   return [];
 }
 

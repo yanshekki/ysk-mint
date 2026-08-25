@@ -10,7 +10,10 @@ library LaunchEnums {
         Optimism,
         Bnb,
         BaseSepolia,
-        ArbSepolia
+        ArbSepolia,
+        Avalanche,
+        Cardano,
+        Near
     }
 
     enum DexKind {

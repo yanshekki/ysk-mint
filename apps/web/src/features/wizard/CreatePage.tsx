@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { parseUnits } from "viem";
 import { useAccount, useChainId } from "wagmi";
-import { enabledChains } from "@ysk-mint/config";
+import { evmEnabledChains } from "@ysk-mint/config";
 import {
   ErrorCode,
   LaunchStep,
@@ -36,7 +36,7 @@ export function CreatePage() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const [errors, setErrors] = useState<LaunchError[]>([]);
-  const allowed = new Set(enabledChains().map((c) => c.chainId));
+  const allowed = new Set(evmEnabledChains().map((c) => c.chainId));
 
   const panel = useMemo(() => {
     switch (w.step) {
