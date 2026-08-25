@@ -1,0 +1,61 @@
+{
+  "ChainKey": {
+    "Ethereum": 0,
+    "Base": 1,
+    "Arbitrum": 2,
+    "Optimism": 3,
+    "Bnb": 4,
+    "BaseSepolia": 5,
+    "ArbSepolia": 6
+  },
+  "DexKind": {
+    "UniswapV2": 0,
+    "PancakeV2": 1,
+    "UniswapV3": 2
+  },
+  "LockMode": {
+    "Timed": 0,
+    "Burn": 1
+  },
+  "OwnershipAction": {
+    "Keep": 0,
+    "Renounce": 1,
+    "TransferSafe": 2,
+    "TransferTimelock": 3
+  },
+  "SupplyMode": {
+    "Fixed": 0,
+    "Mintable": 1
+  },
+  "LaunchStep": {
+    "Wallet": 0,
+    "Basics": 1,
+    "Tokenomics": 2,
+    "Chains": 3,
+    "Liquidity": 4,
+    "Omnichain": 5,
+    "Review": 6,
+    "Execute": 7,
+    "Success": 8
+  },
+  "LaunchStatus": {
+    "Draft": 0,
+    "Simulating": 1,
+    "AwaitingSignature": 2,
+    "Submitted": 3,
+    "Confirming": 4,
+    "Partial": 5,
+    "Failed": 6,
+    "Complete": 7
+  },
+  "ModuleFlag": {
+    "Pause": 0,
+    "MaxTx": 1,
+    "MaxWallet": 2,
+    "Blacklist": 3,
+    "Whitelist": 4,
+    "AntiSnipe": 5,
+    "BuyTax": 6,
+    "SellTax": 7
+  }
+}

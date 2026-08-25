@@ -1,0 +1,25 @@
+{
+  "app": {
+    "name": "ysk-mint",
+    "tagline": "Guided multi-chain token launch. Native OFT. LP + lock. On-chain data only."
+  },
+  "nav": {
+    "home": "Home",
+    "create": "Create",
+    "disclaimer": "Unaudited"
+  },
+  "home": {
+    "title": "Launch an omnichain token in guided steps",
+    "body": "Connect a wallet, deploy a LayerZero OFT, add liquidity, and lock LP. No backend — every number is read from the chain.",
+    "cta": "Start on Base Sepolia",
+    "honesty": "Contracts are not audited. Mainnet is disabled. Testnet only in this phase."
+  },
+  "create": {
+    "title": "Create token",
+    "phase": "Phase 0: wallet shell. The full wizard ships in Phase 1."
+  },
+  "wallet": {
+    "connect": "Connect wallet",
+    "wrongNetwork": "Switch to Base Sepolia or Arbitrum Sepolia."
+  }
+}

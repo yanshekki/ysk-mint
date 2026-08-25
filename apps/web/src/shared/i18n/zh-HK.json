@@ -1,0 +1,25 @@
+{
+  "app": {
+    "name": "ysk-mint",
+    "tagline": "引導式多鏈發幣。原生 OFT。創建並鎖定 LP。只讀鏈上數據。"
+  },
+  "nav": {
+    "home": "首頁",
+    "create": "發幣",
+    "disclaimer": "未經審計"
+  },
+  "home": {
+    "title": "按步驟發行原生多鏈代幣",
+    "body": "連接錢包、部署 LayerZero OFT、加入流動性並鎖定 LP。沒有後端——所有數字都從鏈上讀取。",
+    "cta": "在 Base Sepolia 開始",
+    "honesty": "合約未經審計。主網已關閉。本階段只支援測試網。"
+  },
+  "create": {
+    "title": "創建代幣",
+    "phase": "Phase 0：錢包空殼。完整 Wizard 於 Phase 1 交付。"
+  },
+  "wallet": {
+    "connect": "連接錢包",
+    "wrongNetwork": "請切換到 Base Sepolia 或 Arbitrum Sepolia。"
+  }
+}
