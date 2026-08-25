@@ -37,6 +37,10 @@ export const ErrorCode = {
   LockNotFound: "LockNotFound",
   AlreadyWithdrawn: "AlreadyWithdrawn",
   NativeTransferFailed: "NativeTransferFailed",
+  Paused: "Paused",
+  MaxTxExceeded: "MaxTxExceeded",
+  MaxWalletExceeded: "MaxWalletExceeded",
+  Blacklisted: "Blacklisted",
   Unknown: "Unknown",
   SimulationFailed: "SimulationFailed",
 } as const;
@@ -74,6 +78,10 @@ export const USER_CODES: ReadonlySet<string> = new Set([
   ErrorCode.LengthMismatch,
   ErrorCode.LockNotFound,
   ErrorCode.AlreadyWithdrawn,
+  ErrorCode.Paused,
+  ErrorCode.MaxTxExceeded,
+  ErrorCode.MaxWalletExceeded,
+  ErrorCode.Blacklisted,
 ]);
 
 export const RETRYABLE_CODES: ReadonlySet<string> = new Set([
