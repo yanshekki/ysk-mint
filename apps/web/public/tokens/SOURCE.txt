@@ -2,8 +2,12 @@ Token icons copied from CoinMarketCap public 64×64 CDN
 (https://s2.coinmarketcap.com/static/img/coins/64x64/{id}.png)
 into this folder so the SPA does not hotlink at runtime.
 
-Contract addresses in tokenRegistry.ts are CMC platform contracts
-fetched 2026-08-25. Decimals are on-chain (CMC contractDecimals is often wrong).
+cmcCatalog.json is CMC top ~500 coins' platform contracts on
+ETH / Base / Arb / BNB / AVAX / Solana / NEAR / Cardano, snapshotted
+2026-08-26. This is not the entire CMC universe. Named files below
+are reused when the CMC id is known; others are cmc-{id}.png.
+
+EVM decimals are on-chain eth_call. CMC contractDecimals is often wrong.
 
 CMC IDs:
   btc=1 eth=1027 usdt=825 bnb=1839 usdc=3408 ada=2010

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { erc20Abi, formatUnits, type Address } from "viem";
 import { useBalance, useReadContracts } from "wagmi";
 import { addressToHex, readCardanoValue, stakeFromPayment } from "./cardanoCip30.ts";
-import { cardanoByUnit, tokensFor, type TokenRecord } from "./tokenRegistry.ts";
+import { cardanoByUnit, solByMint, tokensFor, type TokenRecord } from "./tokenRegistry.ts";
 
 export type HoldingRow = {
   id: string;
@@ -51,8 +51,8 @@ function row(token: TokenRecord, raw: bigint | null, connected: boolean): Holdin
 }
 
 function sortHoldings(rows: HoldingRow[], connected: boolean) {
-  if (!connected) return rows;
-  return [...rows].sort((a, b) => {
+  const list = connected ? rows.filter((r) => r.native || r.raw > 0n) : rows.filter((r) => r.native);
+  return [...list].sort((a, b) => {
     if ((a.raw > 0n) !== (b.raw > 0n)) return a.raw > 0n ? -1 : 1;
     if (a.native !== b.native) return a.native ? -1 : 1;
     return (a.chainTag ?? "").localeCompare(b.chainTag ?? "");
@@ -468,12 +468,13 @@ export function useSolanaHoldings(address: string) {
         const extras = [...byMint.entries()].filter(([mint, bal]) => !known.has(mint) && bal.raw > 0n);
         const meta = await Promise.all(extras.map(([mint]) => solMintMeta(mint)));
         extras.forEach(([mint, bal], i) => {
+          const listed = solByMint(mint);
           const info = meta[i];
           next.push({
             id: `sol-${mint}`,
-            symbol: info?.symbol || mint.slice(0, 4).toUpperCase(),
-            name: info?.name || mint,
-            icon: "/tokens/sol.png",
+            symbol: listed?.symbol || info?.symbol || mint.slice(0, 4).toUpperCase(),
+            name: listed?.name || info?.name || mint,
+            icon: listed?.icon || "/tokens/sol.png",
             amount: fmt(bal.raw, bal.decimals),
             raw: bal.raw,
             contract: mint,

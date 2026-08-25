@@ -1,3 +1,5 @@
+import cmc from "./cmcCatalog.json";
+
 export type TokenVm = "evm" | "near" | "cardano" | "solana";
 
 export type TokenRecord = {
@@ -7,24 +9,12 @@ export type TokenRecord = {
   symbol: string;
   name: string;
   decimals: number;
-  /** Native coin when omitted. */
   address?: string;
   icon: string;
   native?: boolean;
 };
 
 const I = (file: string) => `/tokens/${file}.png`;
-
-const EVM = (chainId: number, id: string, symbol: string, name: string, decimals: number, address: string, icon: string): TokenRecord => ({
-  id,
-  vm: "evm",
-  chainId,
-  symbol,
-  name,
-  decimals,
-  address,
-  icon: I(icon),
-});
 
 const NAT = (vm: TokenVm, chainId: number, id: string, symbol: string, name: string, decimals: number, icon: string): TokenRecord => ({
   id,
@@ -38,352 +28,24 @@ const NAT = (vm: TokenVm, chainId: number, id: string, symbol: string, name: str
 });
 
 /**
- * Curated holdings catalog. Contract addresses from CoinMarketCap platform lists
- * (2026-08-25). Icons are CMC 64×64 files in public/tokens — not hotlinked.
- * Decimals are the on-chain values (CMC contractDecimals is often wrong).
+ * Native coins (always queried) plus CMC top-500 platform contracts
+ * snapshotted 2026-08-26. Not the entire CMC universe.
+ * Icons are local 64×64 copies. EVM decimals from on-chain eth_call.
  */
-export const TOKEN_CATALOG: TokenRecord[] = [
+const NATIVES: TokenRecord[] = [
   NAT("evm", 1, "eth-native", "ETH", "Ethereum", 18, "eth"),
-  EVM(1, "eth-weth", "WETH", "Wrapped Ether", 18, "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", "eth"),
-  EVM(1, "eth-usdt", "USDT", "Tether", 6, "0xdAC17F958D2ee523a2206206994597C13D831ec7", "usdt"),
-  EVM(1, "eth-usdc", "USDC", "USD Coin", 6, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", "usdc"),
-  EVM(1, "eth-dai", "DAI", "Dai", 18, "0x6B175474E89094C44Da98b954EedeAC495271d0F", "dai"),
-  EVM(1, "eth-wbtc", "WBTC", "Wrapped Bitcoin", 8, "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", "wbtc"),
-  EVM(1, "eth-link", "LINK", "Chainlink", 18, "0x514910771AF9Ca656af840dff83E8264EcF986CA", "link"),
-  EVM(1, "eth-uni", "UNI", "Uniswap", 18, "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", "uni"),
-  EVM(1, "eth-aave", "AAVE", "Aave", 18, "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", "aave"),
-  EVM(1, "eth-steth", "stETH", "Lido Staked ETH", 18, "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84", "steth"),
-  EVM(1, "eth-wsteth", "wstETH", "Lido wstETH", 18, "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0", "wsteth"),
-  EVM(1, "eth-cbbtc", "cbBTC", "Coinbase Wrapped BTC", 8, "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf", "cbbtc"),
-  EVM(1, "eth-shib", "SHIB", "Shiba Inu", 18, "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE", "shib"),
-  EVM(1, "eth-pepe", "PEPE", "Pepe", 18, "0x6982508145454Ce325dDBe47a25d4ec3d2311933", "pepe"),
-
   NAT("evm", 8453, "base-native", "ETH", "Ethereum", 18, "eth"),
-  EVM(8453, "base-weth", "WETH", "Wrapped Ether", 18, "0x4200000000000000000000000000000000000006", "eth"),
-  EVM(8453, "base-usdc", "USDC", "USD Coin", 6, "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", "usdc"),
-  EVM(8453, "base-usdt", "USDT", "Tether", 6, "0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2", "usdt"),
-  EVM(8453, "base-dai", "DAI", "Dai", 18, "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb", "dai"),
-  EVM(8453, "base-link", "LINK", "Chainlink", 18, "0x88Fb150BDc53A65fe94Dea0c9BA0a6dAf8C6e196", "link"),
-  EVM(8453, "base-aero", "AERO", "Aerodrome Finance", 18, "0x940181a94A35A4569E4529A3CDfB74e38FD98631", "aero"),
-  EVM(8453, "base-cake", "CAKE", "PancakeSwap", 18, "0x3055913c90Fcc1A6CE9a358911721eEb942013A1", "cake"),
-  EVM(8453, "base-cbbtc", "cbBTC", "Coinbase Wrapped BTC", 8, "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf", "cbbtc"),
-  EVM(8453, "base-wsteth", "wstETH", "Lido wstETH", 18, "0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452", "wsteth"),
-  EVM(8453, "base-degen", "DEGEN", "Degen", 18, "0x4ed4E862860bed51a9570b96d89aF5E1B0Efefed", "degen"),
-  EVM(8453, "base-virtual", "VIRTUAL", "Virtuals Protocol", 18, "0x0b3e328455c4059EEb9e3f84b5543F74E24e7E1b", "virtual"),
-
   NAT("evm", 42161, "arb-native", "ETH", "Ethereum", 18, "eth"),
-  EVM(42161, "arb-weth", "WETH", "Wrapped Ether", 18, "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1", "eth"),
-  EVM(42161, "arb-arb", "ARB", "Arbitrum", 18, "0x912CE59144191C1204E64559FE8253a0e49E6548", "arb"),
-  EVM(42161, "arb-usdc", "USDC", "USD Coin", 6, "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", "usdc"),
-  EVM(42161, "arb-usdt", "USDT", "Tether", 6, "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9", "usdt"),
-  EVM(42161, "arb-wbtc", "WBTC", "Wrapped Bitcoin", 8, "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f", "wbtc"),
-  EVM(42161, "arb-dai", "DAI", "Dai", 18, "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1", "dai"),
-  EVM(42161, "arb-link", "LINK", "Chainlink", 18, "0xf97f4df75117a78c1A5a0DBb814Af92458539FB4", "link"),
-  EVM(42161, "arb-uni", "UNI", "Uniswap", 18, "0xFa7F8980b0f1E64A2062791cc3b0871572f1F7f0", "uni"),
-  EVM(42161, "arb-aave", "AAVE", "Aave", 18, "0xba5DdD1f9d7F570dc94a51479A000E3BCE967196", "aave"),
-  EVM(42161, "arb-gmx", "GMX", "GMX", 18, "0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a", "gmx"),
-  EVM(42161, "arb-wsteth", "wstETH", "Lido wstETH", 18, "0x5979D7B546E38E414F7E9822514be443A4800529", "wsteth"),
-
   NAT("evm", 56, "bnb-native", "BNB", "BNB", 18, "bnb"),
-  EVM(56, "bnb-wbnb", "WBNB", "Wrapped BNB", 18, "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c", "bnb"),
-  EVM(56, "bnb-usdt", "USDT", "Tether", 18, "0x55d398326f99059fF775485246999027B3197955", "usdt"),
-  EVM(56, "bnb-usdc", "USDC", "USD Coin", 18, "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d", "usdc"),
-  EVM(56, "bnb-btcb", "BTCB", "Bitcoin BEP20", 18, "0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c", "btc"),
-  EVM(56, "bnb-dai", "DAI", "Dai", 18, "0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3", "dai"),
-  EVM(56, "bnb-link", "LINK", "Chainlink", 18, "0xF8A0BF9cF54Bb92F17374d9e9A321E6a111a51bD", "link"),
-  EVM(56, "bnb-uni", "UNI", "Uniswap", 18, "0xBf5140a22578168FD562dCcF235E5D43A02ce9B1", "uni"),
-  EVM(56, "bnb-aave", "AAVE", "Aave", 18, "0xfb6115445Bff7b52FeB98650C87f44907E58f802", "aave"),
-  EVM(56, "bnb-cake", "CAKE", "PancakeSwap", 18, "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82", "cake"),
-  EVM(56, "bnb-shib", "SHIB", "Shiba Inu", 18, "0x2859e4544C4bB03966803b044A93563Bd2D0dD4D", "shib"),
-
   NAT("evm", 43114, "avax-native", "AVAX", "Avalanche", 18, "avax"),
-  EVM(43114, "avax-wavax", "WAVAX", "Wrapped AVAX", 18, "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7", "avax"),
-  EVM(43114, "avax-usdt", "USDT", "Tether", 6, "0x9702230A8Ea53601f5cD2dc00f7C169313d453e7", "usdt"),
-  EVM(43114, "avax-usdc", "USDC", "USD Coin", 6, "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9dcd18e", "usdc"),
-  EVM(43114, "avax-dai", "DAI", "Dai", 18, "0xd586E7F844cEa2F87f50152665BCbc2C279D8d70", "dai"),
-  EVM(43114, "avax-wbtc", "WBTC", "Wrapped Bitcoin", 8, "0x408D4cD0ADb7ceBd1F1A1C33a0Ba2098E1295bAB", "wbtc"),
-  EVM(43114, "avax-link", "LINK", "Chainlink", 18, "0x5947BB275c521040051D82396192181b413227A3", "link"),
-  EVM(43114, "avax-uni", "UNI", "Uniswap", 18, "0x8eBAf22B6F053dFFeaf46f4Dd9eFA95D89ba8580", "uni"),
-  EVM(43114, "avax-joe", "JOE", "JOE", 18, "0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd", "joe"),
-  EVM(43114, "avax-png", "PNG", "Pangolin", 18, "0x60781C2586D68229fde47564546784ab3fACA982", "png"),
-  EVM(43114, "avax-gmx", "GMX", "GMX", 18, "0x62edc0692BD897D2295872a9FFCac5425011c661", "gmx"),
-
   NAT("near", 397, "near-native", "NEAR", "NEAR", 24, "near"),
-  {
-    id: "near-usdt",
-    vm: "near",
-    chainId: 397,
-    symbol: "USDT",
-    name: "Tether",
-    decimals: 6,
-    address: "usdt.tether-token.near",
-    icon: I("usdt"),
-  },
-  {
-    id: "near-usdc",
-    vm: "near",
-    chainId: 397,
-    symbol: "USDC",
-    name: "USD Coin",
-    decimals: 6,
-    address: "17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
-    icon: I("usdc"),
-  },
-  {
-    id: "near-ref",
-    vm: "near",
-    chainId: 397,
-    symbol: "REF",
-    name: "Ref Finance",
-    decimals: 18,
-    address: "token.v2.ref-finance.near",
-    icon: I("ref"),
-  },
-  {
-    id: "near-aurora",
-    vm: "near",
-    chainId: 397,
-    symbol: "AURORA",
-    name: "Aurora",
-    decimals: 18,
-    address: "aaaaaa20d9e0e2461697782ef11675f668207961.factory.bridge.near",
-    icon: I("aurora"),
-  },
-
   NAT("cardano", 1815, "ada-native", "ADA", "Cardano", 6, "ada"),
-  {
-    id: "ada-min",
-    vm: "cardano",
-    chainId: 1815,
-    symbol: "MIN",
-    name: "Minswap",
-    decimals: 6,
-    address: "29d222ce763455e3d7a09a665ce554f00ac89d2e99a1a83d267170c64d494e",
-    icon: I("min"),
-  },
-  {
-    id: "ada-djed",
-    vm: "cardano",
-    chainId: 1815,
-    symbol: "DJED",
-    name: "Djed",
-    decimals: 6,
-    address: "8db269c3ec630e06ae29f74bc39edd1f87c819f1056206e879a1cd61446a65644d6963726f555344",
-    icon: I("djed"),
-  },
-  {
-    id: "ada-snek",
-    vm: "cardano",
-    chainId: 1815,
-    symbol: "SNEK",
-    name: "Snek",
-    decimals: 0,
-    address: "279c909f348e533da5808898f87f9a14bb2c3dfbbacccd631d927a3f534e454b",
-    icon: I("snek"),
-  },
-  {
-    id: "ada-hosky",
-    vm: "cardano",
-    chainId: 1815,
-    symbol: "HOSKY",
-    name: "HOSKY Token",
-    decimals: 0,
-    address: "a0028f350aaabe0545fdcb56b039bfb08e4bb4d8c4d7c3c7d481c235484f534b59",
-    icon: I("hosky"),
-  },
-  {
-    id: "ada-sundae",
-    vm: "cardano",
-    chainId: 1815,
-    symbol: "SUNDAE",
-    name: "SundaeSwap",
-    decimals: 6,
-    address: "9a9693a9a37912a5097918f97918d15240c92ab729a0b7c4aa144d7753554e444145",
-    icon: I("sundae"),
-  },
-  {
-    id: "ada-indy",
-    vm: "cardano",
-    chainId: 1815,
-    symbol: "INDY",
-    name: "Indigo Protocol",
-    decimals: 6,
-    address: "533bb94a8850ee3ccbe483106489399112b74c905342cb1792a797a0494e4459",
-    icon: I("indy"),
-  },
-  {
-    id: "ada-iag",
-    vm: "cardano",
-    chainId: 1815,
-    symbol: "IAG",
-    name: "IAGON",
-    decimals: 6,
-    address: "5d16cc1a177b5d9ba9cfa9793b07e60f1fb70fea1f8aef064415d114494147",
-    icon: I("iag"),
-  },
-  {
-    id: "ada-night",
-    vm: "cardano",
-    chainId: 1815,
-    symbol: "NIGHT",
-    name: "Midnight",
-    decimals: 6,
-    address: "0691b2fecca1ac4f53cb6dfb00b7013e561d1f34403b957cbb5af1fa4e49474854",
-    icon: I("night"),
-  },
-  {
-    id: "ada-wmtx",
-    vm: "cardano",
-    chainId: 1815,
-    symbol: "WMTX",
-    name: "World Mobile Token",
-    decimals: 6,
-    address: "e5a42a1a1d3d1da71b0449663c32798725888d2eb0843c4dabeca05a576f726c644d6f62696c65546f6b656e58",
-    icon: I("wmtx"),
-  },
-
   NAT("solana", 101, "sol-native", "SOL", "Solana", 9, "sol"),
-  {
-    id: "sol-wsol",
-    vm: "solana",
-    chainId: 101,
-    symbol: "WSOL",
-    name: "Wrapped SOL",
-    decimals: 9,
-    address: "So11111111111111111111111111111111111111112",
-    icon: I("sol"),
-  },
-  {
-    id: "sol-usdc",
-    vm: "solana",
-    chainId: 101,
-    symbol: "USDC",
-    name: "USD Coin",
-    decimals: 6,
-    address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-    icon: I("usdc"),
-  },
-  {
-    id: "sol-usdt",
-    vm: "solana",
-    chainId: 101,
-    symbol: "USDT",
-    name: "Tether",
-    decimals: 6,
-    address: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
-    icon: I("usdt"),
-  },
-  {
-    id: "sol-jup",
-    vm: "solana",
-    chainId: 101,
-    symbol: "JUP",
-    name: "Jupiter",
-    decimals: 6,
-    address: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
-    icon: I("jup"),
-  },
-  {
-    id: "sol-ray",
-    vm: "solana",
-    chainId: 101,
-    symbol: "RAY",
-    name: "Raydium",
-    decimals: 6,
-    address: "4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R",
-    icon: I("ray"),
-  },
-  {
-    id: "sol-bonk",
-    vm: "solana",
-    chainId: 101,
-    symbol: "BONK",
-    name: "Bonk",
-    decimals: 5,
-    address: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
-    icon: I("bonk"),
-  },
-  {
-    id: "sol-wif",
-    vm: "solana",
-    chainId: 101,
-    symbol: "WIF",
-    name: "dogwifhat",
-    decimals: 6,
-    address: "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
-    icon: I("wif"),
-  },
-  {
-    id: "sol-pyth",
-    vm: "solana",
-    chainId: 101,
-    symbol: "PYTH",
-    name: "Pyth Network",
-    decimals: 6,
-    address: "HZ1JovNiVvGrGNiiYvEozEVgZ58xaU3RKwX8eACQBCt3",
-    icon: I("pyth"),
-  },
-  {
-    id: "sol-jto",
-    vm: "solana",
-    chainId: 101,
-    symbol: "JTO",
-    name: "Jito",
-    decimals: 9,
-    address: "jtojtomepa8beP8AuQc6eXt5FriJwfFMwQx2v2f9mCL",
-    icon: I("jto"),
-  },
-  {
-    id: "sol-orca",
-    vm: "solana",
-    chainId: 101,
-    symbol: "ORCA",
-    name: "Orca",
-    decimals: 6,
-    address: "orcaEKTdK7LKz57vaAYr9QeNsVEPfiu6QeMU1kektZE",
-    icon: I("orca"),
-  },
-  {
-    id: "sol-render",
-    vm: "solana",
-    chainId: 101,
-    symbol: "RENDER",
-    name: "Render",
-    decimals: 8,
-    address: "rndrizKT3MK1iimdxRdWabcF7Zg7AR5T4nud4EkHBof",
-    icon: I("render"),
-  },
-  {
-    id: "sol-msol",
-    vm: "solana",
-    chainId: 101,
-    symbol: "mSOL",
-    name: "Marinade Staked SOL",
-    decimals: 9,
-    address: "mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So",
-    icon: I("msol"),
-  },
-  {
-    id: "sol-jitosol",
-    vm: "solana",
-    chainId: 101,
-    symbol: "JitoSOL",
-    name: "Jito Staked SOL",
-    decimals: 9,
-    address: "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn",
-    icon: I("jitosol"),
-  },
-  {
-    id: "sol-cbbtc",
-    vm: "solana",
-    chainId: 101,
-    symbol: "cbBTC",
-    name: "Coinbase Wrapped BTC",
-    decimals: 8,
-    address: "cbbtcf3aa214zXHbiAZQwf4122FBYbraNdFqgw4iMij",
-    icon: I("cbbtc"),
-  },
 ];
+
+const fromCmc = (cmc as TokenRecord[]).filter((t) => t.address);
+
+export const TOKEN_CATALOG: TokenRecord[] = [...NATIVES, ...fromCmc];
 
 export function tokensFor(vm: TokenVm, chainId?: number) {
   return TOKEN_CATALOG.filter((t) => t.vm === vm && (chainId == null || t.chainId === chainId));
@@ -391,5 +53,13 @@ export function tokensFor(vm: TokenVm, chainId?: number) {
 
 export function cardanoByUnit(unit: string) {
   const compact = unit.replace(".", "").toLowerCase();
-  return TOKEN_CATALOG.find((t) => t.vm === "cardano" && t.address && t.address.toLowerCase() === compact);
+  return TOKEN_CATALOG.find((t) => {
+    if (t.vm !== "cardano" || !t.address) return false;
+    const a = t.address.toLowerCase();
+    return compact === a || compact.startsWith(a) || a.startsWith(compact);
+  });
+}
+
+export function solByMint(mint: string) {
+  return TOKEN_CATALOG.find((t) => t.vm === "solana" && t.address === mint);
 }
