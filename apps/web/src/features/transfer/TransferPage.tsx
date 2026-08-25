@@ -118,7 +118,7 @@ export function TransferPage() {
   }
 
   return (
-    <section className="mx-auto max-w-xl px-4 py-8">
+    <section className="desk-page">
       <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-text-muted">Bridge</p>
       <h1 className="text-2xl font-black">{t("transfer.title")}</h1>
       <p className="mt-1 text-[13px] text-text-sub">{t("transfer.body")}</p>

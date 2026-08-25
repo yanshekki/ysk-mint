@@ -1,68 +1,77 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useAccount, useChainId, useSwitchChain } from "wagmi";
+import { useAccount, useBalance, useChainId, useSwitchChain } from "wagmi";
 import { enabledChains } from "@ysk-mint/config";
 import { ConnectBar } from "../features/wallet/ConnectBar.tsx";
-import { Segmented } from "../shared/ui/Segmented.tsx";
 import i18n from "../lib/i18n.ts";
 
 export function Shell() {
   const { t } = useTranslation();
   const loc = useLocation();
   const chainId = useChainId();
-  const { isConnected } = useAccount();
+  const { address, isConnected } = useAccount();
   const { switchChain } = useSwitchChain();
+  const bal = useBalance({ address });
   const chains = enabledChains();
 
-  const links = [
-    ["/", "nav.home"],
+  const nav = [
+    ["/", "nav.trenches"],
+    ["/hot", "nav.hot"],
+    ["/board", "nav.board"],
     ["/create", "nav.create"],
     ["/transfer", "nav.transfer"],
     ["/me", "nav.me"],
   ] as const;
 
   return (
-    <div className="min-h-screen">
-      <div className="hairline" />
-      <header className="shell-header sticky top-0 z-20">
-        <div className="mx-auto flex h-full max-w-[1200px] items-center gap-4 px-4">
-          <Link to="/" className="shrink-0 text-[15px] font-black tracking-tight">
-            ysk<span className="text-brand-blue">-</span>mint
-          </Link>
-          <nav className="hidden items-center md:flex">
-            {links.map(([href, key]) => (
-              <Link
-                key={href}
-                to={href}
-                className={`nav-link ${loc.pathname === href || (href !== "/" && loc.pathname.startsWith(href)) ? "nav-link-on" : ""}`}
-              >
-                {t(key)}
-              </Link>
+    <div className="app">
+      <header className="topbar">
+        <Link to="/" className="logo">
+          <span className="logo-mark" />
+          ysk-mint
+        </Link>
+        <nav className="top-nav">
+          {nav.map(([href, key]) => (
+            <Link key={href} to={href} className={loc.pathname === href || (href !== "/" && loc.pathname.startsWith(href)) ? "on" : ""}>
+              {t(key)}
+            </Link>
+          ))}
+        </nav>
+        <input className="search" placeholder={t("nav.search")} readOnly />
+        <div className="top-right">
+          <select
+            className="chain-dd"
+            value={chainId}
+            onChange={(e) => switchChain({ chainId: Number(e.target.value) })}
+          >
+            {chains.map((c) => (
+              <option key={c.chainId} value={c.chainId}>
+                {c.name}
+              </option>
             ))}
-          </nav>
-          <div className="ml-auto flex items-center gap-2">
-            {isConnected ? (
-              <Segmented
-                ariaLabel="chain"
-                value={chainId}
-                onChange={(id) => switchChain({ chainId: id })}
-                options={chains.map((c) => ({ value: c.chainId, label: c.name.replace(" Sepolia", "") }))}
-              />
-            ) : null}
-            <button
-              type="button"
-              className="chip"
-              onClick={() => void i18n.changeLanguage(i18n.language === "zh-HK" ? "en" : "zh-HK")}
-            >
-              {i18n.language === "zh-HK" ? "EN" : "中文"}
-            </button>
-            <ConnectBar />
-          </div>
+          </select>
+          <button type="button" className="ghost-btn" onClick={() => void i18n.changeLanguage(i18n.language === "zh-HK" ? "en" : "zh-HK")}>
+            {i18n.language === "zh-HK" ? "EN" : "中文"}
+          </button>
+          <ConnectBar />
         </div>
       </header>
-      <main className="pb-16">
-        <Outlet />
-      </main>
+      <Outlet />
+      <footer className="botbar">
+        <span>{t("nav.trenches")}</span>
+        <span>{t("nav.create")}</span>
+        <span>{t("nav.me")}</span>
+        <span>
+          {isConnected ? (
+            <>
+              ETH <b>{bal.data ? Number(bal.data.formatted).toFixed(4) : "—"}</b>
+            </>
+          ) : (
+            t("wallet.connect")
+          )}
+        </span>
+        <span className="bot-dot">● {t("nav.disclaimer")}</span>
+      </footer>
     </div>
   );
 }
