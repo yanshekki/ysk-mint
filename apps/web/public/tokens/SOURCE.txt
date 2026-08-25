@@ -5,4 +5,5 @@ into this folder so the SPA does not hotlink at runtime.
 CMC IDs:
   btc=1 eth=1027 usdt=825 bnb=1839 usdc=3408 ada=2010
   avax=5805 dai=4943 wbtc=3717 link=1975 uni=7083
-  arb=11841 op=11840 near=4846 aave=7278
+  arb=11841 op=11840 near=6535 aave=7278
+  (4846 is Kusama — do not use)

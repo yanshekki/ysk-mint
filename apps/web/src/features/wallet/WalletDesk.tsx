@@ -11,7 +11,6 @@ import {
   disconnectNearWallet,
   listCardanoWallets,
   pingCardanoTip,
-  pingNearRpc,
   restoreNearSession,
   useNativeWallets,
   type CardanoWalletInfo,
@@ -34,7 +33,6 @@ export function WalletDesk() {
   const chainId = useChainId();
   const native = useNativeWallets();
   const [adaWallets, setAdaWallets] = useState<CardanoWalletInfo[]>([]);
-  const [nearHeight, setNearHeight] = useState<string | null>(null);
   const [adaHeight, setAdaHeight] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [nearErr, setNearErr] = useState<string | null>(null);
@@ -51,7 +49,6 @@ export function WalletDesk() {
     const scan = () => setAdaWallets(listCardanoWallets());
     scan();
     const timers = [400, 1200, 3000].map((ms) => window.setTimeout(scan, ms));
-    void pingNearRpc().then(setNearHeight);
     void pingCardanoTip().then(setAdaHeight);
     return () => timers.forEach((id) => window.clearTimeout(id));
   }, []);
@@ -145,11 +142,7 @@ export function WalletDesk() {
               <p>{t("wallet.nearHint")}</p>
             </div>
           </div>
-          <div className="wallet-chips">
-            <span className="wallet-chip wallet-chip-static">NEAR</span>
-            <span className="wallet-chip wallet-chip-static">mainnet</span>
-            {nearHeight ? <span className="wallet-chip wallet-chip-static num">#{nearHeight}</span> : null}
-          </div>
+          <div className="wallet-chips" aria-hidden="true" />
           <div className="wallet-pane-main">
             <p className={`wallet-addr num ${native.nearAccount ? "" : "wallet-addr-idle"}`}>
               {native.nearAccount ? short(native.nearAccount, 10, 8) : t("wizard.wallet.idle")}
