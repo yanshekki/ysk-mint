@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { MiniSpark } from "./MiniSpark.tsx";
 
 export type CardToken = {
@@ -11,6 +12,7 @@ export type CardToken = {
 };
 
 export function TokenCard({ token }: { token: CardToken }) {
+  const { t } = useTranslation();
   return (
     <article className="tcard">
       <div className="tcard-av">{token.ticker.slice(0, 2)}</div>
@@ -36,10 +38,10 @@ export function TokenCard({ token }: { token: CardToken }) {
         <MiniSpark />
         <div className="buys">
           <Link className="buy" to={token.href}>
-            買入
+            {t("token.buy")}
           </Link>
           <Link className="buy" to="/transfer">
-            買入
+            {t("token.buy")}
           </Link>
         </div>
       </div>

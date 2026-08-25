@@ -1049,6 +1049,66 @@ table.data tbody tr:hover td {
   line-height: 1.45;
   color: var(--text-sub);
 }
+.basics-chain-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.basics-chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-color);
+  font-size: 12px;
+  font-weight: 800;
+}
+.vm-cards {
+  display: grid;
+  gap: 10px;
+}
+@media (min-width: 800px) {
+  .vm-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.vm-card {
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: var(--bg-white);
+}
+.vm-card h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 800;
+}
+.vm-card p {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--text-sub);
+}
+.gap-box {
+  border: 1px solid #fde68a;
+  background: #fffbeb;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.gap-box-title {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #92400e;
+}
+.gap-box ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #78350f;
+}
 .dropzone {
   border: 1px dashed var(--border-color);
   border-radius: var(--radius-md);

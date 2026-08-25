@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "ysk-mint",
-    "tagline": "引導式多鏈發幣。原生 OFT。創建並鎖定 LP。只讀鏈上數據。"
+    "tagline": "引導式多鏈發幣。原生 OFT。建立並鎖定 LP。只讀鏈上數據。"
   },
   "nav": {
     "home": "LP",
@@ -28,10 +28,10 @@
     "emptyDetail": "部署合約並填 packages/config/src/contracts.ts 之後，呢度會出現 LiquidityLaunched 日誌。",
     "adaDetail": "ADA 用 Cardano native asset（唔係 EVM）。LayerZero Cardano Endpoint 未上線，factory 地址仍空。",
     "nearDetail": "NEAR 用主鏈 NEP-141（唔係 Aurora）。LayerZero 未有 NEAR 主鏈 Endpoint，factory 地址仍空。",
-    "solDetail": "SOL 用經典 SPL Token。獨立發行，不走 LayerZero OFT。program 地址仍空。",
+    "solDetail": "SOL 用經典 SPL Token。獨立發行，唔走 LayerZero OFT。program 地址仍空。",
     "timed": "定期鎖",
     "burn": "銷毀 LP",
-    "open": "瀏覽器",
+    "open": "區塊瀏覽器",
     "cols": {
       "chain": "鏈",
       "token": "代幣",
@@ -43,7 +43,7 @@
     }
   },
   "home": {
-    "title": "發原生多鏈幣。鎖 LP。沒有後端。",
+    "title": "發原生多鏈幣。鎖 LP。冇後端。",
     "body": "全鏈 LP 表＋引導式發幣。每個數字都係 eth_call。",
     "cta": "打開發幣檯",
     "honesty": "合約未經審計。主網 factory 地址仍為零。"
@@ -101,22 +101,50 @@
       "nativeReady": "已連接原生鏈帳戶。"
     },
     "basics": {
+      "lede": "只填會上鏈嘅欄。本站冇後端，合約亦冇說明、網站、logo 欄，所以唔收集——收集咗都無處可存、無處可顯示。",
       "name": "名稱",
-      "nameHint": "寫入合約 name()。錢包、區塊瀏覽器會顯示。上鏈後改唔到。",
+      "nameHintEvm": "寫入 EVM 合約 name()。錢包同區塊瀏覽器會顯示。上鏈後改唔到。",
+      "nameHintNear": "NEP-141 metadata 名稱。唔係 ERC-20。Factory 未部署，填完都簽唔到。",
+      "nameHintAda": "Cardano native asset 顯示名。冇 EVM 合約地址。Factory 未部署，填完都簽唔到。",
+      "nameHintSol": "SPL 名稱。Metaplex 圖／說明要 URI 託管；本站冇後端，所以唔提供。Program 未部署，填完都簽唔到。",
       "symbol": "代號",
-      "symbolHint": "寫入合約 symbol()。上鏈後改唔到。",
+      "symbolHint": "EVM 寫入 symbol()，A–Z0–9，最多 11 個字元。上鏈後改唔到。",
+      "symbolHintAda": "會用嚟做 native asset name（最多 32 bytes）。冇 ERC-20 合約。",
       "decimals": "Decimals",
-      "decimalsHint": "寫入合約。上鏈後改唔到。",
+      "decimalsHintEvm": "寫入 EVM 合約，只准 6／8／9／18。上鏈後改唔到。",
+      "decimalsHintNative": "跟已選原生鏈常用值。同時揀咗 EVM 就要用 6–18（EVM 合約限制）。",
       "supply": "總供應",
-      "description": "說明（可選）",
-      "descriptionHint": "唔寫入合約。錢包、Etherscan、CoinMarketCap、DEX 都唔會自動顯示。只會出現喺本站總覽。上鏈前可以改；之後要自己去各平台提交，嗰度先改到。",
-      "logo": "Logo",
-      "logoHint": "拖放圖片或點擊選擇。只存在本機，唔上鏈。錢包／CMC 要另外上傳。",
-      "website": "網站（可選）",
-      "websiteHint": "唔寫入合約。本站總覽可以顯示連結。瀏覽器同 CMC 唔會自動讀。上鏈前可以改；之後要自己去各平台更新。",
-      "optionalNote": "說明同網站都唔會寫入代幣合約，所以合約層面冇得改。上鏈嘅只有名稱、代號、decimals，簽完名就改唔到。",
-      "showAdvanced": "可選資料",
-      "hideAdvanced": "收起可選資料"
+      "supplyHint": "EVM home 鏈鑄呢個數量；OFT spoke 喺簽名步 mint 0。原生鏈各自獨立發行，數量唔共用。",
+      "gapsTitle": "而家填漏／做唔到",
+      "gapWalletEvm": "已揀 EVM，但仍未連接 EVM 錢包。",
+      "gapWalletNear": "已揀 NEAR，但仍未連接 NEAR 錢包。",
+      "gapWalletAda": "已揀 Cardano，但仍未連接 CIP-30 錢包。",
+      "gapWalletSol": "已揀 Solana，但仍未連接 Solana 錢包。",
+      "gapUndeployedEvm": "EVM Factory 仍為零（{{names}}）。填完都簽唔到。",
+      "gapNearFactory": "NEAR NEP-141 factory 未部署。",
+      "gapAdaFactory": "Cardano native asset factory 未部署。",
+      "gapSolProgram": "Solana SPL program 未部署。",
+      "gapAdaDecimals": "同時揀咗 EVM，decimals 要 6–18，Cardano 常見嘅 0 位而家用唔到。",
+      "gapSpoke": "OFT spoke 供應 0 喺簽名步先處理。呢度填嘅係 home 全量。",
+      "gapNativeNoEvm": "只揀原生鏈：DEX 稅、錢包上限、Uniswap LP 唔適用。",
+      "vm": {
+        "evm": {
+          "title": "EVM · LayerZero OFT",
+          "body": "上鏈欄：name、symbol、decimals、供應。Home 鑄全量；其他已配置 EVM mint 0，再雙向 setPeer。說明／網站／logo 合約冇 slot。"
+        },
+        "near": {
+          "title": "NEAR · NEP-141",
+          "body": "獨立主鏈資產，唔走 OFT、唔係 Aurora。Factory 未部署。"
+        },
+        "cardano": {
+          "title": "Cardano · native asset",
+          "body": "政策加 asset name，冇 ERC-20 地址。Factory 未部署。圖同說明要 CIP-25 metadata，本站唔代存。"
+        },
+        "solana": {
+          "title": "Solana · SPL",
+          "body": "獨立 SPL mint。Metaplex 圖要自己嘅 URI，本站冇後端所以唔收集。Program 未部署。"
+        }
+      }
     },
     "tokenomics": {
       "supplyMode": "供應",
@@ -139,12 +167,15 @@
       "maxTx": "錢包上限",
       "maxTxHint": "單筆／單錢包上限。OFT 路徑會跳過。",
       "tax": "DEX 稅",
-      "taxHint": "只喺 DEX 對抽稅。OFT 維持 1:1。",
+      "taxHint": "只喺 DEX 對抽稅。OFT send 維持 1:1。",
       "maxWallet": "單錢包上限",
-      "taxBps": "稅率"
+      "taxBps": "稅率",
+      "nativeOnly": "你只揀咗原生鏈。供應模式、所有權、暫停、稅、錢包上限都係 EVM 合約模組，呢度唔適用。原生 factory／program 仍未部署。",
+      "evmOnlyNote": "以下只寫入 EVM OFT。唔影響 Cardano／NEAR／Solana 獨立發行。稅同上限唔抽 OFT send。"
     },
     "chains": {
-      "hint": "選擇發行網絡。未部署 Factory 的鏈無法完成簽名。",
+      "hint": "揀發行網絡。未部署 Factory 嘅鏈簽唔到。",
+      "needOne": "至少揀一條鏈。",
       "disabled": "未開放",
       "nearHint": "NEAR Protocol · NEP-141",
       "adaHint": "Cardano · native asset",
@@ -152,8 +183,8 @@
       "testnets": "測試網"
     },
     "liquidity": {
-      "tokenBps": "放入 LP 的代幣",
-      "nativeAmount": "放入 LP 的原生幣",
+      "tokenBps": "放入 LP 嘅代幣",
+      "nativeAmount": "放入 LP 嘅原生幣",
       "mode": "鎖定",
       "burn": "銷毀 LP",
       "burnHint": "轉到 dead。不可逆。",
@@ -161,7 +192,8 @@
       "d90": "90 日",
       "d180": "180 日",
       "d365": "365 日",
-      "timedHint": "鏈上定期鎖定。"
+      "timedHint": "鏈上定期鎖定。",
+      "nativeOnly": "你只揀咗原生鏈。Uniswap V2 LP 同 Locker 只用於 EVM。原生 factory／program 未部署，呢步冇嘢簽。"
     },
     "omnichain": {
       "kicker": "LayerZero OFT",
@@ -169,38 +201,37 @@
       "lede": "EVM 雙向 setPeer。OFT send 1:1。",
       "peerCount": "{{n}} 條 EVM · {{calls}} 次 setPeer",
       "single": "單鏈發行，無需 setPeer",
-      "none": "未選擇 EVM 鏈",
+      "none": "未揀 EVM 鏈",
       "eid": "EID {{eid}}",
       "facts": "規則",
       "factRate": "1:1",
-      "factRateHint": "OFT send 不抽 DEX 稅",
+      "factRateHint": "OFT send 唔抽 DEX 稅",
       "factPeer": "雙向 setPeer",
       "factPeerHint": "執行時按鏈切錢包",
       "factAddr": "地址各異",
       "factAddrHint": "implementation 寫死該鏈 Endpoint",
       "native": "原生發行",
-      "nativeHint": "獨立資產，不走 LayerZero",
+      "nativeHint": "獨立資產，唔走 LayerZero",
       "run": "執行順序",
       "runOft": "Home 鑄全量；spoke mint 0",
       "runPeer": "按鏈切錢包，雙向 setPeer",
       "runNative": "Cardano／NEAR／Solana 獨立發行"
     },
     "review": {
-      "checklist": "Anti-rug 清單 — 產品意圖，不是審計。",
+      "checklist": "Anti-rug 清單 — 產品意圖，唔係審計。",
       "fixed": "供應量固定",
       "mintableWarn": "可增發 — 擁有人可以膨脹",
       "lock": "已揀 LP 鎖定",
       "unaudited": "合約未經審計",
-      "offchain": "說明／網站／logo 唔上鏈。只喺本站顯示；錢包同 CMC 睇唔到，之後要自己提交。",
-      "desc": "說明：{{text}}",
-      "site": "網站：{{url}}"
+      "onchainOnly": "只上鏈名稱、代號、decimals、供應。冇說明、網站、logo。",
+      "nativeNoLp": "原生鏈無 Uniswap LP 呢步。"
     },
     "execute": {
       "simulate": "模擬後簽名",
       "home": "Home {{name}} 鑄全量並鎖 LP。其餘已配置 EVM mint 0，之後雙向 setPeer。",
       "homeTag": "home · 全量 + LP",
       "spokeTag": "spoke · 0 供應",
-      "needEvm": "未揀 EVM 鏈，無法簽名 OFT。",
+      "needEvm": "未揀 EVM 鏈，簽唔到 OFT。",
       "needContracts": "Factory／Manager／Locker／Router 仍為零。請先部署，再填 packages/config/src/contracts.ts。",
       "nativePath": "你揀咗 NEAR、Cardano 或 Solana。呢啲係 NEP-141／native asset／SPL，唔走 EVM OFT。原生 factory／program 未部署，呢步唔簽名。",
       "create": "1. 部署代幣",
@@ -211,7 +242,7 @@
     },
     "success": {
       "title": "已上鏈",
-      "reread": "即時 eth_call — 不是快取回條。",
+      "reread": "即時 eth_call — 唔係快取回條。",
       "token": "代幣",
       "lock": "鎖定"
     }
@@ -232,15 +263,16 @@
   },
   "me": {
     "title": "持倉",
-    "body": "此錢包嘅 Factory Launch 日誌。沒有帳號。",
-    "noFactory": "此鏈 Factory 地址仍為零。"
+    "body": "呢個錢包嘅 Factory Launch 日誌。冇帳戶系統。",
+    "noFactory": "呢條鏈 Factory 地址仍為零。"
   },
   "token": {
-    "missing": "需要 chainId 與代幣地址。",
+    "missing": "需要 chainId 同代幣地址。",
     "share": "下載卡片",
-    "shareNote": "瀏覽器繪製。沒有 OG 伺服器。"
+    "shareNote": "瀏覽器繪製。冇 OG 伺服器。",
+    "buy": "買入"
   },
   "lock": {
-    "missing": "需要 chainId 與鎖定編號。"
+    "missing": "需要 chainId 同鎖定編號。"
   }
 }

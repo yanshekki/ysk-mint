@@ -8,10 +8,6 @@ export type WizardDraft = {
   symbol: string;
   decimals: number;
   totalSupply: string;
-  description: string;
-  logoUri: string;
-  website: string;
-  showAdvanced: boolean;
   supplyMode: number;
   ownershipAction: number;
   ownershipTarget: string;
@@ -39,10 +35,6 @@ const defaults: WizardDraft = {
   symbol: "",
   decimals: 18,
   totalSupply: "1000000",
-  description: "",
-  logoUri: "",
-  website: "",
-  showAdvanced: false,
   supplyMode: SupplyMode.Fixed,
   ownershipAction: OwnershipAction.Keep,
   ownershipTarget: "",

@@ -1,14 +1,17 @@
-import { LaunchStep, LockMode, OwnershipAction, SupplyMode } from "@ysk-mint/sdk";
+import { useEffect } from "react";
+import { LockMode, OwnershipAction, SupplyMode } from "@ysk-mint/sdk";
 import { featuredChains, testnetChains } from "@ysk-mint/config";
 import { useTranslation } from "react-i18next";
+import { useAccount } from "wagmi";
 import { useWizard } from "./store.ts";
 import { WalletDesk } from "../wallet/WalletDesk.tsx";
 import { ChipGroup } from "../../shared/ui/ChipGroup.tsx";
 import { OptionCard, OptionGrid } from "../../shared/ui/OptionCard.tsx";
-import { Dropzone } from "../../shared/ui/Dropzone.tsx";
 import { Badge } from "../../shared/ui/TokenRow.tsx";
+import { useNativeWallets } from "../../lib/nativeWallets.ts";
+import { homeEvm, selectedChains, undeployedEvm } from "../../lib/launchTargets.ts";
+import { STEP_FLOW, decimalsOptions, defaultDecimals, hasEvm, selectedVms } from "../../lib/wizardFlow.ts";
 import {
-  DECIMALS,
   LOCK_CARDS,
   LP_BPS,
   NATIVE_PRESETS,
@@ -25,8 +28,49 @@ export function StepWallet() {
 export function StepBasics() {
   const { t } = useTranslation();
   const w = useWizard();
+  const { isConnected } = useAccount();
+  const native = useNativeWallets();
+  const vms = selectedVms(w.chains);
+  const decs = decimalsOptions(w.chains);
+  const picked = selectedChains(w.chains);
+  const missing = undeployedEvm(w.chains);
+
+  useEffect(() => {
+    if (!decs.includes(w.decimals)) {
+      const next = defaultDecimals(w.chains);
+      if (next !== w.decimals) w.set({ decimals: next });
+    }
+  }, [decs, w.chains, w.decimals, w]);
+
+  const gaps: string[] = [];
+  if (vms.includes("evm") && !isConnected) gaps.push(t("wizard.basics.gapWalletEvm"));
+  if (vms.includes("near") && !native.nearAccount) gaps.push(t("wizard.basics.gapWalletNear"));
+  if (vms.includes("cardano") && !native.cardanoAddress) gaps.push(t("wizard.basics.gapWalletAda"));
+  if (vms.includes("solana") && !native.solanaAddress) gaps.push(t("wizard.basics.gapWalletSol"));
+  if (missing.length) gaps.push(t("wizard.basics.gapUndeployedEvm", { names: missing.map((c) => c.short).join("、") }));
+  if (vms.includes("near")) gaps.push(t("wizard.basics.gapNearFactory"));
+  if (vms.includes("cardano")) gaps.push(t("wizard.basics.gapAdaFactory"));
+  if (vms.includes("solana")) gaps.push(t("wizard.basics.gapSolProgram"));
+  if (vms.includes("evm") && vms.includes("cardano") && !decs.includes(0)) gaps.push(t("wizard.basics.gapAdaDecimals"));
+  if (vms.includes("evm")) gaps.push(t("wizard.basics.gapSpoke"));
+  if (!vms.includes("evm") && vms.length) gaps.push(t("wizard.basics.gapNativeNoEvm"));
+
+  const nameHint =
+    vms.includes("evm") ? t("wizard.basics.nameHintEvm") : vms.includes("near") ? t("wizard.basics.nameHintNear") : vms.includes("cardano") ? t("wizard.basics.nameHintAda") : vms.includes("solana") ? t("wizard.basics.nameHintSol") : t("wizard.basics.nameHintEvm");
+  const symbolHint =
+    vms.includes("cardano") && !vms.includes("evm") ? t("wizard.basics.symbolHintAda") : t("wizard.basics.symbolHint");
+  const decimalsHint = vms.includes("evm") ? t("wizard.basics.decimalsHintEvm") : t("wizard.basics.decimalsHintNative");
+
   return (
     <div className="grid gap-5">
+      <p className="field-note">{t("wizard.basics.lede")}</p>
+      <div className="basics-chain-chips">
+        {picked.map((c) => (
+          <span key={c.key} className="basics-chip">
+            {c.short}
+          </span>
+        ))}
+      </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="text-[14px] font-bold">
           {t("wizard.basics.name")}
@@ -36,7 +80,7 @@ export function StepBasics() {
             value={w.name}
             onChange={(e) => w.set({ name: e.target.value })}
           />
-          <span className="field-note">{t("wizard.basics.nameHint")}</span>
+          <span className="field-note">{nameHint}</span>
         </label>
         <label className="text-[14px] font-bold">
           {t("wizard.basics.symbol")}
@@ -46,7 +90,7 @@ export function StepBasics() {
             value={w.symbol}
             onChange={(e) => w.set({ symbol: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "") })}
           />
-          <span className="field-note">{t("wizard.basics.symbolHint")}</span>
+          <span className="field-note">{symbolHint}</span>
         </label>
       </div>
       <div>
@@ -55,9 +99,9 @@ export function StepBasics() {
           ariaLabel="decimals"
           value={w.decimals}
           onChange={(decimals) => w.set({ decimals })}
-          options={DECIMALS.map((d) => ({ value: d, label: String(d) }))}
+          options={decs.map((d) => ({ value: d, label: String(d) }))}
         />
-        <p className="field-note mt-2">{t("wizard.basics.decimalsHint")}</p>
+        <p className="field-note mt-2">{decimalsHint}</p>
       </div>
       <div>
         <p className="mb-2 text-[14px] font-bold">{t("wizard.basics.supply")}</p>
@@ -67,38 +111,24 @@ export function StepBasics() {
           onChange={(totalSupply) => w.set({ totalSupply })}
           options={SUPPLY_PRESETS.map((s) => ({ value: s.value, label: s.label }))}
         />
+        <p className="field-note mt-2">{t("wizard.basics.supplyHint")}</p>
       </div>
-      <div>
-        <p className="mb-2 text-[14px] font-bold">{t("wizard.basics.logo")}</p>
-        <Dropzone preview={w.logoUri} onFile={(logoUri) => w.set({ logoUri })} />
+      <div className="vm-cards">
+        {vms.map((vm) => (
+          <article key={vm} className="vm-card">
+            <h3>{t(`wizard.basics.vm.${vm}.title`)}</h3>
+            <p>{t(`wizard.basics.vm.${vm}.body`)}</p>
+          </article>
+        ))}
       </div>
-      <button type="button" className="text-left text-[14px] font-bold text-brand-blue" onClick={() => w.set({ showAdvanced: !w.showAdvanced })}>
-        {w.showAdvanced ? t("wizard.basics.hideAdvanced") : t("wizard.basics.showAdvanced")}
-      </button>
-      {w.showAdvanced ? (
-        <div className="grid gap-3">
-          <p className="field-note">{t("wizard.basics.optionalNote")}</p>
-          <label className="text-[14px] font-bold">
-            {t("wizard.basics.description")}
-            <input
-              className="field-text mt-1"
-              value={w.description}
-              onChange={(e) => w.set({ description: e.target.value })}
-            />
-            <span className="field-note">{t("wizard.basics.descriptionHint")}</span>
-          </label>
-          <label className="text-[14px] font-bold">
-            {t("wizard.basics.website")}
-            <input
-              className="field-text mt-1"
-              type="url"
-              inputMode="url"
-              placeholder="https://"
-              value={w.website}
-              onChange={(e) => w.set({ website: e.target.value })}
-            />
-            <span className="field-note">{t("wizard.basics.websiteHint")}</span>
-          </label>
+      {gaps.length ? (
+        <div className="gap-box">
+          <p className="gap-box-title">{t("wizard.basics.gapsTitle")}</p>
+          <ul>
+            {gaps.map((g) => (
+              <li key={g}>{g}</li>
+            ))}
+          </ul>
         </div>
       ) : null}
     </div>
@@ -108,8 +138,12 @@ export function StepBasics() {
 export function StepTokenomics() {
   const { t } = useTranslation();
   const w = useWizard();
+  if (!hasEvm(w.chains)) {
+    return <p className="field-note">{t("wizard.tokenomics.nativeOnly")}</p>;
+  }
   return (
     <div className="grid gap-5">
+      <p className="field-note">{t("wizard.tokenomics.evmOnlyNote")}</p>
       <div>
         <p className="mb-2 text-[14px] font-bold">{t("wizard.tokenomics.supplyMode")}</p>
         <OptionGrid>
@@ -276,6 +310,11 @@ export function StepLiquidity() {
   const { t } = useTranslation();
   const w = useWizard();
   const lpAmt = lpTokenAmount(w.totalSupply, w.lpBps);
+  const home = homeEvm(w.chains);
+  const nat = home?.nativeSymbol ?? "ETH";
+  if (!hasEvm(w.chains)) {
+    return <p className="field-note">{t("wizard.liquidity.nativeOnly")}</p>;
+  }
   return (
     <div className="grid gap-5">
       <div>
@@ -296,7 +335,7 @@ export function StepLiquidity() {
           ariaLabel="lp-native"
           value={w.lpNativeAmount}
           onChange={(lpNativeAmount) => w.set({ lpNativeAmount })}
-          options={NATIVE_PRESETS.map((v) => ({ value: v, label: `${v} ETH` }))}
+          options={NATIVE_PRESETS.map((v) => ({ value: v, label: `${v} ${nat}` }))}
         />
       </div>
       <div>
@@ -320,6 +359,9 @@ export function StepLiquidity() {
 export function StepReview() {
   const { t } = useTranslation();
   const w = useWizard();
+  const home = homeEvm(w.chains);
+  const nat = home?.nativeSymbol ?? selectedChains(w.chains)[0]?.nativeSymbol ?? "";
+  const evm = hasEvm(w.chains);
   return (
     <div className="space-y-3">
       <div className="token-row">
@@ -331,7 +373,8 @@ export function StepReview() {
             {w.name || "—"} <span className="text-text-muted">{w.symbol}</span>
           </p>
           <p className="num text-[13px] text-text-muted">
-            {w.totalSupply} · {w.decimals} dec · LP {w.lpBps / 100}% + {w.lpNativeAmount} ETH
+            {w.totalSupply} · {w.decimals} dec
+            {evm ? ` · LP ${w.lpBps / 100}% + ${w.lpNativeAmount} ${nat}` : ""}
           </p>
         </div>
         <Badge kind={w.supplyMode === SupplyMode.Fixed ? "ok" : "warn"}>
@@ -340,12 +383,10 @@ export function StepReview() {
       </div>
       <ul className="space-y-1 text-[14px] text-text-sub">
         <li>{t("wizard.review.checklist")}</li>
-        <li>{w.supplyMode === SupplyMode.Fixed ? t("wizard.review.fixed") : t("wizard.review.mintableWarn")}</li>
-        <li>{t("wizard.review.lock")}</li>
+        {evm ? <li>{w.supplyMode === SupplyMode.Fixed ? t("wizard.review.fixed") : t("wizard.review.mintableWarn")}</li> : null}
+        {evm ? <li>{t("wizard.review.lock")}</li> : <li>{t("wizard.review.nativeNoLp")}</li>}
         <li>{t("wizard.review.unaudited")}</li>
-        <li>{t("wizard.review.offchain")}</li>
-        {w.description ? <li>{t("wizard.review.desc", { text: w.description })}</li> : null}
-        {w.website ? <li>{t("wizard.review.site", { url: w.website })}</li> : null}
+        <li>{t("wizard.review.onchainOnly")}</li>
       </ul>
     </div>
   );
@@ -353,14 +394,4 @@ export function StepReview() {
 
 export { StepOmnichain } from "./OmnichainDesk.tsx";
 
-export const STEP_LABELS = [
-  LaunchStep.Wallet,
-  LaunchStep.Basics,
-  LaunchStep.Tokenomics,
-  LaunchStep.Chains,
-  LaunchStep.Liquidity,
-  LaunchStep.Omnichain,
-  LaunchStep.Review,
-  LaunchStep.Execute,
-  LaunchStep.Success,
-];
+export const STEP_LABELS = [...STEP_FLOW];

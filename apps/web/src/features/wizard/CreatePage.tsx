@@ -11,14 +11,17 @@ import {
   validateChainEnabled,
   validateLock,
   validateLpAmounts,
+  validateName,
+  validateSymbol,
+  validateSupply,
 } from "@ysk-mint/sdk";
 import { Button } from "../../shared/ui/Button.tsx";
 import { StepRail } from "../../shared/ui/StepRail.tsx";
 import { useWizard } from "./store.ts";
 import { useNativeWallets } from "../../lib/nativeWallets.ts";
 import { lpTokenAmount } from "./presets.ts";
+import { STEP_FLOW, flowIndex, hasEvm, nextFlowStep, prevFlowStep } from "../../lib/wizardFlow.ts";
 import {
-  STEP_LABELS,
   StepBasics,
   StepChains,
   StepLiquidity,
@@ -75,9 +78,15 @@ export function CreatePage() {
       } catch {
         supply = 0n;
       }
-      return validateBasics({ name: w.name, symbol: w.symbol, decimals: w.decimals, totalSupply: supply }, locale);
+      if (hasEvm(w.chains)) {
+        return validateBasics({ name: w.name, symbol: w.symbol, decimals: w.decimals, totalSupply: supply }, locale);
+      }
+      return [...validateName(w.name, locale), ...validateSymbol(w.symbol, locale), ...validateSupply(supply, locale)];
     }
     if (w.step === LaunchStep.Chains) {
+      if (!w.chains.length) {
+        return [{ code: ErrorCode.InvalidChainKey, args: [0], severity: "user", retryable: false, message: t("wizard.chains.needOne") }];
+      }
       const list = w.chains.flatMap((c) => validateChainEnabled(c, locale));
       const needsEvm = w.chains.some((c) => CHAINS[c as keyof typeof CHAINS]?.evm);
       if (needsEvm && !isConnected) {
@@ -96,6 +105,7 @@ export function CreatePage() {
       return list;
     }
     if (w.step === LaunchStep.Liquidity) {
+      if (!hasEvm(w.chains)) return [];
       let tokenAmt = 0n;
       let nativeAmt = 0n;
       try {
@@ -113,7 +123,7 @@ export function CreatePage() {
     const list = validateCurrent();
     setErrors(list);
     if (list.length) return;
-    if (w.step < LaunchStep.Success) w.set({ step: w.step + 1 });
+    if (w.step !== LaunchStep.Success) w.set({ step: nextFlowStep(w.step) });
   }
 
   return (
@@ -128,11 +138,11 @@ export function CreatePage() {
       <div className="workspace-body">
         <aside className="workspace-rail">
           <StepRail
-            current={w.step}
-            onJump={(id) => {
-              if (id <= w.step) w.set({ step: id });
+            current={flowIndex(w.step)}
+            onJump={(i) => {
+              if (i <= flowIndex(w.step)) w.set({ step: STEP_FLOW[i]! });
             }}
-            steps={STEP_LABELS.map((id) => ({ id, label: t(`wizard.steps.${id}`) }))}
+            steps={STEP_FLOW.map((id, i) => ({ id: i, label: t(`wizard.steps.${id}`) }))}
           />
         </aside>
         <div className="workspace-main">
@@ -157,8 +167,8 @@ export function CreatePage() {
                   <span className={native.solanaAddress ? "on" : ""}>SOL</span>
                 </div>
               ) : null}
-              {w.step > LaunchStep.Wallet ? (
-                <Button variant="ghost" type="button" onClick={() => w.set({ step: w.step - 1 })}>
+              {w.step !== LaunchStep.Wallet ? (
+                <Button variant="ghost" type="button" onClick={() => w.set({ step: prevFlowStep(w.step) })}>
                   {t("wizard.back")}
                 </Button>
               ) : null}
