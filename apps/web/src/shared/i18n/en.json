@@ -63,7 +63,11 @@
     "pickCip30": "Pick an installed CIP-30 wallet.",
     "noCip30": "No CIP-30 wallet detected",
     "installCip30": "Install Lace, Eternl or Vespr, then refresh. This app does not create a wallet.",
-    "wrongNetwork": "Switch to a supported EVM chain."
+    "wrongNetwork": "Switch to a supported EVM chain.",
+    "nativeCoin": "Native",
+    "holdingsIdle": "Connect to read on-chain balances",
+    "holdingsFunded": "{{n}} with balance",
+    "holdingsHint": "Catalog tokens only. Icons from CoinMarketCap, stored in this repo."
   },
   "wizard": {
     "title": "Launch desk",

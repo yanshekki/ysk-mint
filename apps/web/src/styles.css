@@ -409,13 +409,88 @@ select {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
   gap: 8px;
+  overflow: hidden;
 }
-.wallet-addr-box {
-  padding: 14px 16px;
+.wallet-pane-main > .wallet-addr {
+  flex-shrink: 0;
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--bg-subtle);
+}
+.holdings {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   background: var(--bg-subtle);
+  overflow: hidden;
+}
+.holdings-head {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+.holdings-head strong {
+  font-size: 13px;
+  font-weight: 800;
+}
+.holdings-head span {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+.holdings-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+}
+.holdings-list li {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border-radius: 8px;
+}
+.holdings-list li:hover {
+  background: var(--bg-white);
+}
+.holding-zero {
+  opacity: 0.45;
+}
+.holding-ico {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--bg-white);
+  object-fit: cover;
+}
+.holding-meta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.holding-meta b {
+  font-size: 13px;
+  font-weight: 800;
+}
+.holding-meta span {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.holding-amt {
+  font-size: 13px;
+  font-weight: 700;
 }
 .wallet-addr {
   margin: 0;

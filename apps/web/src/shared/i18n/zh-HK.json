@@ -63,7 +63,11 @@
     "pickCip30": "揀一個已安裝嘅 CIP-30 錢包。",
     "noCip30": "未偵測 CIP-30 錢包",
     "installCip30": "安裝 Lace、Eternl 或 Vespr 之後重新整理。唔會代你開新錢包。",
-    "wrongNetwork": "請切到支援嘅 EVM 鏈。"
+    "wrongNetwork": "請切到支援嘅 EVM 鏈。",
+    "nativeCoin": "原生幣",
+    "holdingsIdle": "連接後讀鏈上餘額",
+    "holdingsFunded": "{{n}} 項有餘額",
+    "holdingsHint": "只讀本目錄代幣。Icon 來自 CoinMarketCap，已存入專案。"
   },
   "wizard": {
     "title": "發幣檯",

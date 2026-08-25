@@ -16,6 +16,8 @@ import {
   useNativeWallets,
   type CardanoWalletInfo,
 } from "../../lib/nativeWallets.ts";
+import { useCardanoHoldings, useEvmHoldings, useNearHoldings } from "../../lib/useHoldings.ts";
+import { HoldingsList } from "./HoldingsList.tsx";
 
 function short(v: string, head = 8, tail = 6) {
   if (!v || v.length <= head + tail + 1) return v || "—";
@@ -41,6 +43,9 @@ export function WalletDesk() {
 
   const evmChains = featuredChains().filter((c) => c.evm && !c.testnet);
   const onCount = Number(isConnected) + Number(!!native.nearAccount) + Number(!!native.cardanoAddress);
+  const evmHold = useEvmHoldings(address, chainId);
+  const nearHold = useNearHoldings(native.nearAccount);
+  const adaHold = useCardanoHoldings(native.cardanoAddress);
 
   useEffect(() => {
     void restoreNearSession();
@@ -92,11 +97,15 @@ export function WalletDesk() {
             ))}
           </div>
           <div className="wallet-pane-main">
-            <div className="wallet-addr-box">
-              <p className={`wallet-addr num ${isConnected ? "" : "wallet-addr-idle"}`}>
-                {isConnected ? address : t("wizard.wallet.idle")}
-              </p>
-            </div>
+            <p className={`wallet-addr num ${isConnected ? "" : "wallet-addr-idle"}`}>
+              {isConnected ? address : t("wizard.wallet.idle")}
+            </p>
+            <HoldingsList
+              rows={evmHold.rows}
+              funded={evmHold.funded}
+              connected={isConnected}
+              loading={evmHold.loading}
+            />
           </div>
           <div className="wallet-pane-foot">
             <ConnectButton.Custom>
@@ -143,12 +152,16 @@ export function WalletDesk() {
             {nearHeight ? <span className="wallet-chip wallet-chip-static num">#{nearHeight}</span> : null}
           </div>
           <div className="wallet-pane-main">
-            <div className="wallet-addr-box">
-              <p className={`wallet-addr num ${native.nearAccount ? "" : "wallet-addr-idle"}`}>
-                {native.nearAccount || t("wizard.wallet.idle")}
-              </p>
-              {nearErr ? <p className="wallet-err">{nearErr}</p> : null}
-            </div>
+            <p className={`wallet-addr num ${native.nearAccount ? "" : "wallet-addr-idle"}`}>
+              {native.nearAccount || t("wizard.wallet.idle")}
+            </p>
+            {nearErr ? <p className="wallet-err">{nearErr}</p> : null}
+            <HoldingsList
+              rows={nearHold.rows}
+              funded={nearHold.funded}
+              connected={Boolean(native.nearAccount)}
+              loading={nearHold.loading}
+            />
           </div>
           <div className="wallet-pane-foot">
             {native.nearAccount ? (
@@ -215,13 +228,17 @@ export function WalletDesk() {
             {adaHeight ? <span className="wallet-chip wallet-chip-static num">#{adaHeight}</span> : null}
           </div>
           <div className="wallet-pane-main">
-            <div className="wallet-addr-box">
-              <p className={`wallet-addr num ${native.cardanoAddress ? "" : "wallet-addr-idle"}`}>
-                {native.cardanoAddress ? short(native.cardanoAddress, 12, 8) : t("wizard.wallet.idle")}
-              </p>
-              {adaErr ? <p className="wallet-err">{adaErr}</p> : null}
-              {!adaWallets.length && !native.cardanoAddress ? <p className="wallet-empty">{t("wallet.installCip30")}</p> : null}
-            </div>
+            <p className={`wallet-addr num ${native.cardanoAddress ? "" : "wallet-addr-idle"}`}>
+              {native.cardanoAddress ? short(native.cardanoAddress, 12, 8) : t("wizard.wallet.idle")}
+            </p>
+            {adaErr ? <p className="wallet-err">{adaErr}</p> : null}
+            {!adaWallets.length && !native.cardanoAddress ? <p className="wallet-empty">{t("wallet.installCip30")}</p> : null}
+            <HoldingsList
+              rows={adaHold.rows}
+              funded={adaHold.funded}
+              connected={Boolean(native.cardanoAddress)}
+              loading={adaHold.loading}
+            />
           </div>
           <div className="wallet-pane-foot">
             {native.cardanoAddress ? (
