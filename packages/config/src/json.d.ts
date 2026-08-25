@@ -8,6 +8,7 @@ declare module "*.json" {
     LaunchStep: Record<string, number>;
     LaunchStatus: Record<string, number>;
     ModuleFlag: Record<string, number>;
+    SaleStatus: Record<string, number>;
   };
   export default value;
 }

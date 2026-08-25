@@ -8,7 +8,7 @@ Work lives in `/home/ki/文件/ysk-mint`. Each finished phase is merged to `orig
 
 Monorepo, enums, errors, validation, cloneable OFT, factory, wallet SPA.
 
-## Phase 1 — Single-chain wizard + LP (this release)
+## Phase 1 — Single-chain wizard + LP
 
 Base Sepolia. Deploy OFT, Uniswap V2 LP, timed or burn lock. Success page re-reads chain state.
 
@@ -24,6 +24,6 @@ Tax, limits, anti-bot, ownership actions, extra DEX kinds.
 
 On-chain transfer UI, my tokens via logs, share card on canvas.
 
-## Phase 5 — Fees, presale, audit prep
+## Phase 5 — Fees, presale, audit prep (this release)
 
 Default platform fee is 0. No HTTP API. Solana stays disabled until production-grade.

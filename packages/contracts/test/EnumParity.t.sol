@@ -45,5 +45,7 @@ contract EnumParityTest is Test {
 
         assertEq(uint8(LaunchEnums.ModuleFlag.Pause), uint8(json.readUint(".ModuleFlag.Pause")));
         assertEq(uint8(LaunchEnums.ModuleFlag.SellTax), uint8(json.readUint(".ModuleFlag.SellTax")));
+        assertEq(uint8(LaunchEnums.SaleStatus.Pending), uint8(json.readUint(".SaleStatus.Pending")));
+        assertEq(uint8(LaunchEnums.SaleStatus.Finalized), uint8(json.readUint(".SaleStatus.Finalized")));
     }
 }

@@ -6,7 +6,7 @@
 
 | | |
 |--|--|
-| **版本** | 0.2.0（Phase 1） |
+| **版本** | 0.5.0（Phase 5） |
 | **授權** | MIT |
 | **前端** | Vite + React + TypeScript（無後端） |
 | **合約** | Solidity 0.8.22、Foundry、OpenZeppelin 5.x |
@@ -17,6 +17,7 @@
 - 合約**未經審計**。
 - 配置裡有主網 chain key，但**已關閉**。
 - Phase 1 包含引導式 Wizard、V2 LP + 鎖定合約，以及即時 `eth_call` 成功頁。Factory 地址在測試網部署前仍為零。
+- Bonding Curve 與 Solana **未開放**。平台費預設為 **0**。仍然未經審計。
 - 產品數據全部從鏈上讀取。沒有應用伺服器。
 
 ## 套件
@@ -42,4 +43,5 @@ Foundry：`forge test -vv`
 - [錯誤碼](./docs/errors-ZH.md)
 - [階段](./docs/phases-ZH.md)
 - [安全清單](./docs/security-checklist-ZH.md)
+- [審計準備](./docs/audit-prep-ZH.md)
 - [產品藍圖](./docs/blueprint.md)

@@ -8,7 +8,7 @@
 
 Monorepo、ENUM、錯誤、校驗、可 clone 的 OFT、Factory、錢包 SPA。
 
-## Phase 1 — 單鏈 Wizard + LP（本版本）
+## Phase 1 — 單鏈 Wizard + LP
 
 Base Sepolia。部署 OFT、Uniswap V2 LP、定期或銷毀鎖定。成功頁重新讀取鏈上狀態。
 
@@ -24,6 +24,6 @@ Base Sepolia。部署 OFT、Uniswap V2 LP、定期或銷毀鎖定。成功頁重
 
 鏈上轉帳介面、以 logs 列出我的代幣、Canvas 分享卡。
 
-## Phase 5 — 費用、Presale、審計準備
+## Phase 5 — 費用、Presale、審計準備（本版本）
 
 平台費預設 0。沒有 HTTP API。Solana 在達到生產級之前保持關閉。

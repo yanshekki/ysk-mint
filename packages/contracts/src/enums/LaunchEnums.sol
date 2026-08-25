@@ -70,6 +70,13 @@ library LaunchEnums {
         SellTax
     }
 
+    enum SaleStatus {
+        Pending,
+        Active,
+        Failed,
+        Finalized
+    }
+
     uint16 internal constant MODULE_ALL_MASK = (1 << 8) - 1;
 
     function moduleBit(ModuleFlag flag) internal pure returns (uint16) {

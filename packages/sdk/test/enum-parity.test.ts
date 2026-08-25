@@ -10,6 +10,7 @@ import {
   LockMode,
   ModuleFlag,
   OwnershipAction,
+  SaleStatus,
   SupplyMode,
 } from "@ysk-mint/config";
 
@@ -27,5 +28,6 @@ describe("enum parity", () => {
     expect(LaunchStep).toEqual(lock.LaunchStep);
     expect(LaunchStatus).toEqual(lock.LaunchStatus);
     expect(ModuleFlag).toEqual(lock.ModuleFlag);
+    expect(SaleStatus).toEqual(lock.SaleStatus);
   });
 });

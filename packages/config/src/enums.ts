@@ -8,6 +8,7 @@ export const SupplyMode = parity.SupplyMode;
 export const LaunchStep = parity.LaunchStep;
 export const LaunchStatus = parity.LaunchStatus;
 export const ModuleFlag = parity.ModuleFlag;
+export const SaleStatus = parity.SaleStatus;
 
 export type ChainKeyName = keyof typeof ChainKey;
 export type DexKindName = keyof typeof DexKind;

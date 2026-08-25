@@ -11,5 +11,6 @@ interface ITokenFactory {
     function implementation() external view returns (address);
     function endpoint() external view returns (address);
     function predictToken(bytes32 salt) external view returns (address);
-    function createToken(IYskOFT.InitParams calldata params, bytes32 salt) external returns (address token);
+    function createToken(IYskOFT.InitParams calldata params, bytes32 salt) external payable returns (address token);
+    function platformFeeBps() external view returns (uint16);
 }

@@ -6,7 +6,7 @@ Guided multi-chain token launcher: deploy a native LayerZero OFT, create LP, and
 
 | | |
 |--|--|
-| **Version** | 0.2.0 (Phase 1) |
+| **Version** | 0.5.0 (Phase 5) |
 | **License** | MIT |
 | **Frontend** | Vite + React + TypeScript (no backend) |
 | **Contracts** | Solidity 0.8.22, Foundry, OpenZeppelin 5.x |
@@ -17,6 +17,7 @@ Guided multi-chain token launcher: deploy a native LayerZero OFT, create LP, and
 - Contracts are **not audited**.
 - Mainnet chain keys exist in config but are **disabled**.
 - Phase 1 includes the guided wizard, V2 LP + lock contracts, and live `eth_call` success pages. Factory addresses are still zero until a testnet deploy.
+- Bonding curve and Solana are **not enabled**. Platform fee defaults to **0**. There is still no audit.
 - All product data is read on-chain. There is no application server.
 
 ## Packages
@@ -42,4 +43,5 @@ Foundry: `forge test -vv`
 - [Error codes](./docs/errors.md)
 - [Phases](./docs/phases.md)
 - [Security checklist](./docs/security-checklist.md)
+- [Audit prep](./docs/audit-prep.md)
 - [Product blueprint](./docs/blueprint.md)
