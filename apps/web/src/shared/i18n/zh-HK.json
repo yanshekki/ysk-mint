@@ -173,9 +173,11 @@
       "hint": "選擇發行網絡。未部署 Factory 的鏈無法簽名。",
       "needOne": "至少選擇一條鏈。",
       "disabled": "未開放",
+      "groupEvm": "EVM · LayerZero OFT",
       "nearHint": "NEAR Protocol · NEP-141",
       "adaHint": "Cardano · native asset",
       "solHint": "Solana · SPL",
+      "mainnet": "主網",
       "testnets": "測試網"
     },
     "liquidity": {

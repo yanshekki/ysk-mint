@@ -983,6 +983,34 @@ table.data tbody tr:hover td {
   gap: 10px;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
 }
+.chain-desk {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.chain-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.chain-group-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text-main);
+}
+.chain-sub {
+  margin: 6px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.chain-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
 .chip {
   display: inline-flex;
   align-items: center;
@@ -1424,6 +1452,9 @@ table.data tbody tr:hover td {
   .oft-body,
   .oft-evm-grid {
     grid-template-columns: 1fr;
+  }
+  .chain-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .oft-title {
     font-size: 22px;

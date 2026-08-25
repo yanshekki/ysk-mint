@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { LockMode, OwnershipAction, SupplyMode } from "@ysk-mint/sdk";
-import { featuredChains, testnetChains } from "@ysk-mint/config";
+import type { ChainDefinition } from "@ysk-mint/config";
 import { useTranslation } from "react-i18next";
 import { useAccount } from "wagmi";
 import { useWizard } from "./store.ts";
@@ -9,7 +9,7 @@ import { ChipGroup } from "../../shared/ui/ChipGroup.tsx";
 import { OptionCard, OptionGrid } from "../../shared/ui/OptionCard.tsx";
 import { Badge } from "../../shared/ui/TokenRow.tsx";
 import { useNativeWallets } from "../../lib/nativeWallets.ts";
-import { homeEvm, selectedChains, undeployedEvm } from "../../lib/launchTargets.ts";
+import { homeEvm, issuanceGroups, selectedChains, undeployedEvm } from "../../lib/launchTargets.ts";
 import { STEP_FLOW, decimalsOptions, defaultDecimals, hasEvm, selectedVms } from "../../lib/wizardFlow.ts";
 import {
   LOCK_CARDS,
@@ -236,68 +236,79 @@ export function StepTokenomics() {
   );
 }
 
-export function StepChains() {
+const CHAIN_GROUP_TITLE = {
+  evm: "wizard.chains.groupEvm",
+  cardano: "wizard.chains.adaHint",
+  near: "wizard.chains.nearHint",
+  solana: "wizard.chains.solHint",
+} as const;
+
+function chainHint(c: ChainDefinition, t: (k: string) => string) {
+  if (c.vm === "evm") {
+    return c.enabled ? `EID ${c.eid}` : `EID ${c.eid} · ${t("wizard.chains.disabled")}`;
+  }
+  return c.testnet ? t("wizard.chains.testnets") : t("wizard.chains.mainnet");
+}
+
+function ChainPick({ c }: { c: ChainDefinition }) {
   const { t } = useTranslation();
   const w = useWizard();
+  const on = w.chains.includes(c.key);
+  const live = c.enabled;
   return (
-    <div className="space-y-3">
+    <OptionCard
+      selected={on && live}
+      disabled={!live}
+      title={c.name}
+      hint={chainHint(c, t)}
+      onSelect={() => {
+        if (!live) return;
+        w.set({
+          chains: on ? w.chains.filter((k) => k !== c.key) : [...w.chains, c.key],
+        });
+      }}
+    />
+  );
+}
+
+export function StepChains() {
+  const { t } = useTranslation();
+  return (
+    <div className="chain-desk">
       <p className="text-[15px] text-text-sub">{t("wizard.chains.hint")}</p>
-      <div className="opt-grid">
-        {featuredChains().map((c) => {
-          const on = w.chains.includes(c.key);
-          const live = c.enabled;
-          const hint =
-            c.vm === "near"
-              ? t("wizard.chains.nearHint")
-              : c.vm === "cardano"
-                ? t("wizard.chains.adaHint")
-                : c.vm === "solana"
-                  ? t("wizard.chains.solHint")
-                  : `EID ${c.eid}${live ? "" : ` · ${t("wizard.chains.disabled")}`}`;
-          return (
-            <OptionCard
-              key={c.key}
-              selected={on && live}
-              disabled={!live}
-              title={c.name}
-              hint={hint}
-              onSelect={() => {
-                if (!live) return;
-                w.set({
-                  chains: on ? w.chains.filter((k) => k !== c.key) : [...w.chains, c.key],
-                });
-              }}
-            />
-          );
-        })}
-      </div>
-      <p className="text-[14px] font-bold text-text-muted">{t("wizard.chains.testnets")}</p>
-      <div className="opt-grid">
-        {testnetChains().map((c) => {
-          const on = w.chains.includes(c.key);
-          return (
-            <OptionCard
-              key={c.key}
-              selected={on}
-              title={c.name}
-              hint={
-                c.vm === "near"
-                  ? t("wizard.chains.nearHint")
-                  : c.vm === "cardano"
-                    ? t("wizard.chains.adaHint")
-                    : c.vm === "solana"
-                      ? t("wizard.chains.solHint")
-                      : `EID ${c.eid}`
-              }
-              onSelect={() => {
-                w.set({
-                  chains: on ? w.chains.filter((k) => k !== c.key) : [...w.chains, c.key],
-                });
-              }}
-            />
-          );
-        })}
-      </div>
+      {issuanceGroups().map((g) => (
+        <section key={g.vm} className="chain-group">
+          <p className="chain-group-title">{t(CHAIN_GROUP_TITLE[g.vm])}</p>
+          {g.vm === "evm" ? (
+            <>
+              <div className="chain-row">
+                {g.main.map((c) => (
+                  <ChainPick key={c.key} c={c} />
+                ))}
+              </div>
+              {g.test.length ? (
+                <>
+                  <p className="chain-sub">{t("wizard.chains.testnets")}</p>
+                  <div className="chain-row">
+                    {g.test.map((c) => (
+                      <ChainPick key={c.key} c={c} />
+                    ))}
+                  </div>
+                </>
+              ) : null}
+            </>
+          ) : (
+            <div className="chain-row">
+              {g.main.map((c) => (
+                <ChainPick key={c.key} c={c} />
+              ))}
+              {g.test.map((c) => (
+                <ChainPick key={c.key} c={c} />
+              ))}
+            </div>
+          )}
+        </section>
+      ))}
     </div>
   );
 }

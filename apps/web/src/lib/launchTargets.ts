@@ -1,4 +1,24 @@
-import { CHAINS, isConfigured, launchContracts, type ChainDefinition } from "@ysk-mint/config";
+import {
+  CHAINS,
+  featuredChains,
+  isConfigured,
+  launchContracts,
+  testnetChains,
+  type ChainDefinition,
+  type ChainVm,
+} from "@ysk-mint/config";
+
+const ISSUANCE_VMS: ChainVm[] = ["evm", "cardano", "near", "solana"];
+
+export function issuanceGroups() {
+  const main = featuredChains();
+  const tests = testnetChains();
+  return ISSUANCE_VMS.map((vm) => ({
+    vm,
+    main: main.filter((c) => c.vm === vm),
+    test: tests.filter((c) => c.vm === vm),
+  }));
+}
 
 export function chainDef(key: number): ChainDefinition | undefined {
   return CHAINS[key as keyof typeof CHAINS];

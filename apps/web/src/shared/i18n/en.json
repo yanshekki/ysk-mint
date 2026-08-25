@@ -173,9 +173,11 @@
       "hint": "Select issuance networks. Signing is blocked on chains without a deployed factory.",
       "needOne": "Select at least one chain.",
       "disabled": "Not live",
+      "groupEvm": "EVM · LayerZero OFT",
       "nearHint": "NEAR Protocol · NEP-141",
       "adaHint": "Cardano · native asset",
       "solHint": "Solana · SPL",
+      "mainnet": "Mainnet",
       "testnets": "Testnets"
     },
     "liquidity": {
