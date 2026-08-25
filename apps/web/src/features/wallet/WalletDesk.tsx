@@ -8,6 +8,7 @@ import {
   connectCardano,
   connectNear,
   connectSolana,
+  disconnectCardanoWallet,
   disconnectNearWallet,
   disconnectSolanaWallet,
   listCardanoWallets,
@@ -19,6 +20,7 @@ import {
   type CardanoWalletInfo,
   type SolanaWalletInfo,
 } from "../../lib/nativeWallets.ts";
+import { useAdaHandle, useEvmName, useSolName } from "../../lib/chainNames.ts";
 import { useCardanoHoldings, useEvmHoldings, useNearHoldings, useSolanaHoldings } from "../../lib/useHoldings.ts";
 import { HoldingsList } from "./HoldingsList.tsx";
 import { SolanaSelector } from "./SolanaSelector.tsx";
@@ -30,6 +32,40 @@ function short(v: string, head = 8, tail = 6) {
 
 function StatusDot({ on }: { on: boolean }) {
   return <span className={`wallet-dot ${on ? "wallet-dot-on" : ""}`} />;
+}
+
+function BrandMark({ src, className }: { src: string; className: string }) {
+  return (
+    <div className={`wallet-mark ${className}`}>
+      <img src={src} alt="" />
+    </div>
+  );
+}
+
+function AddrFace({
+  connected,
+  name,
+  address,
+  idle,
+  head = 10,
+  tail = 8,
+}: {
+  connected: boolean;
+  name?: string;
+  address?: string;
+  idle: string;
+  head?: number;
+  tail?: number;
+}) {
+  if (!connected || !address) {
+    return <p className="wallet-addr num wallet-addr-idle">{idle}</p>;
+  }
+  return (
+    <p className={`wallet-addr ${name ? "wallet-addr-named" : ""}`}>
+      {name ? <span className="wallet-addr-name">{name}</span> : null}
+      <span className="num">{short(address, head, tail)}</span>
+    </p>
+  );
 }
 
 export function WalletDesk() {
@@ -51,14 +87,20 @@ export function WalletDesk() {
   const adaHold = useCardanoHoldings(native.cardanoAddress, {
     addresses: native.cardanoAddresses,
     stake: native.cardanoStake,
+    sync: native.cardanoSync,
   });
   const solHold = useSolanaHoldings(native.solanaAddress);
+  const evmName = useEvmName(address);
+  const adaName = useAdaHandle(native.cardanoAddress, native.cardanoStake);
+  const solName = useSolName(native.solanaAddress);
 
   useEffect(() => {
     void restoreNearSession();
     void restoreSolanaSession();
-    void restoreCardanoSession();
-    const scan = () => setAdaWallets(listCardanoWallets());
+    const scan = () => {
+      setAdaWallets(listCardanoWallets());
+      void restoreCardanoSession();
+    };
     scan();
     const timers = [400, 1200, 3000].map((ms) => window.setTimeout(scan, ms));
     return () => timers.forEach((id) => window.clearTimeout(id));
@@ -79,7 +121,7 @@ export function WalletDesk() {
       <div className="wallet-panes">
         <article className={`wallet-pane ${isConnected ? "wallet-pane-on" : ""}`}>
           <div className="wallet-pane-top">
-            <div className="wallet-mark wallet-mark-evm">EVM</div>
+            <BrandMark src="/tokens/eth.png" className="wallet-mark-evm" />
             <div className="wallet-pane-copy">
               <div className="wallet-pane-title">
                 <h3>{t("wallet.evm")}</h3>
@@ -92,9 +134,14 @@ export function WalletDesk() {
             </div>
           </div>
           <div className="wallet-pane-main">
-            <p className={`wallet-addr num ${isConnected ? "" : "wallet-addr-idle"}`}>
-              {isConnected && address ? short(address, 10, 8) : t("wizard.wallet.idle")}
-            </p>
+            <AddrFace
+              connected={isConnected}
+              name={evmName}
+              address={address}
+              idle={t("wizard.wallet.idle")}
+              head={10}
+              tail={8}
+            />
             <HoldingsList
               rows={evmHold.rows}
               funded={evmHold.funded}
@@ -131,7 +178,7 @@ export function WalletDesk() {
 
         <article className={`wallet-pane ${native.nearAccount ? "wallet-pane-on" : ""}`}>
           <div className="wallet-pane-top">
-            <div className="wallet-mark wallet-mark-near">NEAR</div>
+            <BrandMark src="/tokens/near.png" className="wallet-mark-near" />
             <div className="wallet-pane-copy">
               <div className="wallet-pane-title">
                 <h3>{t("wallet.near")}</h3>
@@ -144,9 +191,13 @@ export function WalletDesk() {
             </div>
           </div>
           <div className="wallet-pane-main">
-            <p className={`wallet-addr num ${native.nearAccount ? "" : "wallet-addr-idle"}`}>
-              {native.nearAccount ? short(native.nearAccount, 10, 8) : t("wizard.wallet.idle")}
-            </p>
+            <AddrFace
+              connected={Boolean(native.nearAccount)}
+              address={native.nearAccount}
+              idle={t("wizard.wallet.idle")}
+              head={14}
+              tail={8}
+            />
             {nearErr ? <p className="wallet-err">{nearErr}</p> : null}
             <HoldingsList
               rows={nearHold.rows}
@@ -182,7 +233,7 @@ export function WalletDesk() {
 
         <article className={`wallet-pane ${native.cardanoAddress ? "wallet-pane-on" : ""}`}>
           <div className="wallet-pane-top">
-            <div className="wallet-mark wallet-mark-ada">ADA</div>
+            <BrandMark src="/tokens/ada.png" className="wallet-mark-ada" />
             <div className="wallet-pane-copy">
               <div className="wallet-pane-title">
                 <h3>{t("wallet.cardano")}</h3>
@@ -195,9 +246,14 @@ export function WalletDesk() {
             </div>
           </div>
           <div className="wallet-pane-main">
-            <p className={`wallet-addr num ${native.cardanoAddress ? "" : "wallet-addr-idle"}`}>
-              {native.cardanoAddress ? short(native.cardanoAddress, 12, 8) : t("wizard.wallet.idle")}
-            </p>
+            <AddrFace
+              connected={Boolean(native.cardanoAddress)}
+              name={adaName}
+              address={native.cardanoAddress}
+              idle={t("wizard.wallet.idle")}
+              head={12}
+              tail={8}
+            />
             {adaErr ? <p className="wallet-err">{adaErr}</p> : null}
             <HoldingsList
               rows={adaHold.rows}
@@ -208,7 +264,7 @@ export function WalletDesk() {
           </div>
           <div className="wallet-pane-foot">
             {native.cardanoAddress ? (
-              <button type="button" className="ghost-btn wallet-cta-block" onClick={() => native.disconnectCardano()}>
+              <button type="button" className="ghost-btn wallet-cta-block" onClick={() => disconnectCardanoWallet()}>
                 {t("wallet.disconnect")}
               </button>
             ) : adaWallets.length ? (
@@ -242,7 +298,7 @@ export function WalletDesk() {
 
         <article className={`wallet-pane ${native.solanaAddress ? "wallet-pane-on" : ""}`}>
           <div className="wallet-pane-top">
-            <div className="wallet-mark wallet-mark-sol">SOL</div>
+            <BrandMark src="/tokens/sol.png" className="wallet-mark-sol" />
             <div className="wallet-pane-copy">
               <div className="wallet-pane-title">
                 <h3>{t("wallet.solana")}</h3>
@@ -255,9 +311,14 @@ export function WalletDesk() {
             </div>
           </div>
           <div className="wallet-pane-main">
-            <p className={`wallet-addr num ${native.solanaAddress ? "" : "wallet-addr-idle"}`}>
-              {native.solanaAddress ? short(native.solanaAddress, 8, 8) : t("wizard.wallet.idle")}
-            </p>
+            <AddrFace
+              connected={Boolean(native.solanaAddress)}
+              name={solName}
+              address={native.solanaAddress}
+              idle={t("wizard.wallet.idle")}
+              head={8}
+              tail={8}
+            />
             {solErr ? <p className="wallet-err">{solErr}</p> : null}
             <HoldingsList
               rows={solHold.rows}

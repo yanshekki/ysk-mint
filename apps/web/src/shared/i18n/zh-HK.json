@@ -76,8 +76,7 @@
     "wrongNetwork": "請切到支援嘅 EVM 鏈。",
     "nativeCoin": "原生幣",
     "holdingsIdle": "連接後讀鏈上餘額",
-    "holdingsFunded": "{{n}} 項有餘額",
-    "holdingsHint": "只讀本目錄代幣。Icon 來自 CoinMarketCap，已存入專案。"
+    "holdingsFunded": "{{n}} 項有餘額"
   },
   "wizard": {
     "title": "發幣檯",

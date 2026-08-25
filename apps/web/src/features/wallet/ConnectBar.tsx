@@ -9,6 +9,7 @@ import {
   connectCardano,
   connectNear,
   connectSolana,
+  disconnectCardanoWallet,
   disconnectNearWallet,
   disconnectSolanaWallet,
   listCardanoWallets,
@@ -22,6 +23,7 @@ import {
 } from "../../lib/nativeWallets.ts";
 import "@near-wallet-selector/modal-ui/styles.css";
 import "./nearModal.css";
+import { useAdaHandle, useEvmName, useSolName } from "../../lib/chainNames.ts";
 import { SolanaSelector } from "./SolanaSelector.tsx";
 
 function short(v: string, head = 6, tail = 4) {
@@ -50,6 +52,9 @@ export function ConnectBar() {
   const hasAda = Boolean(native.cardanoAddress);
   const hasSol = Boolean(native.solanaAddress);
   const any = isConnected || hasNear || hasAda || hasSol;
+  const evmName = useEvmName(address);
+  const adaName = useAdaHandle(native.cardanoAddress, native.cardanoStake);
+  const solName = useSolName(native.solanaAddress);
 
   useEffect(() => {
     void restoreNearSession();
@@ -95,13 +100,13 @@ export function ConnectBar() {
     parts.length === 0
       ? t("wallet.connect")
       : parts.length === 1 && isConnected && address
-        ? `${chain?.short ?? "EVM"} ${short(address, 4, 4)}`
+        ? `${chain?.short ?? "EVM"} ${evmName || short(address, 4, 4)}`
         : parts.length === 1 && hasNear
-          ? `NEAR ${short(native.nearAccount, 6, 4)}`
+          ? `NEAR ${native.nearAccount}`
           : parts.length === 1 && hasAda
-            ? `ADA ${short(native.cardanoAddress, 6, 4)}`
+            ? `ADA ${adaName || short(native.cardanoAddress, 6, 4)}`
             : parts.length === 1 && hasSol
-              ? `SOL ${short(native.solanaAddress, 4, 4)}`
+              ? `SOL ${solName || short(native.solanaAddress, 4, 4)}`
               : parts.join(" · ");
 
   return (
@@ -137,7 +142,7 @@ export function ConnectBar() {
               <div className="session-row">
                 <div className="session-row-copy">
                   <b>EVM · {chain?.short ?? "ETH"}</b>
-                  <span className="num">{account ? account.displayName : t("wizard.wallet.idle")}</span>
+                  <span className="num">{account ? evmName || account.displayName : t("wizard.wallet.idle")}</span>
                 </div>
                 {account ? (
                   <button type="button" className="ghost-btn" onClick={() => disconnect()}>
@@ -184,7 +189,9 @@ export function ConnectBar() {
               <div className="session-row">
                 <div className="session-row-copy">
                   <b>Cardano</b>
-                  <span className="num">{hasAda ? short(native.cardanoAddress, 10, 8) : t("wizard.wallet.idle")}</span>
+                  <span className="num">
+                    {hasAda ? adaName || short(native.cardanoAddress, 10, 8) : t("wizard.wallet.idle")}
+                  </span>
                   {!hasAda && adaWallets.length ? (
                     <div className="session-ada-wallets">
                       {adaWallets.map((w) => (
@@ -206,7 +213,7 @@ export function ConnectBar() {
                   {!hasAda && !adaWallets.length ? <span>{t("wallet.noCip30")}</span> : null}
                 </div>
                 {hasAda ? (
-                  <button type="button" className="ghost-btn" onClick={() => native.disconnectCardano()}>
+                  <button type="button" className="ghost-btn" onClick={() => disconnectCardanoWallet()}>
                     {t("wallet.disconnect")}
                   </button>
                 ) : null}
@@ -215,7 +222,7 @@ export function ConnectBar() {
               <div className="session-row">
                 <div className="session-row-copy">
                   <b>Solana</b>
-                  <span className="num">{hasSol ? short(native.solanaAddress, 8, 8) : t("wizard.wallet.idle")}</span>
+                  <span className="num">{hasSol ? solName || short(native.solanaAddress, 8, 8) : t("wizard.wallet.idle")}</span>
                 </div>
                 {hasSol ? (
                   <button type="button" className="ghost-btn" onClick={() => void disconnectSolanaWallet()}>

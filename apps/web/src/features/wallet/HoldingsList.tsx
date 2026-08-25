@@ -22,7 +22,6 @@ export function HoldingsList({
     <div className="holdings">
       <div className="holdings-head">
         <strong>{connected ? t("wallet.holdingsFunded", { n: funded }) : t("wallet.holdingsIdle")}</strong>
-        <span>{t("wallet.holdingsHint")}</span>
       </div>
       <ul className="holdings-list">
         {rows.map((r) => (

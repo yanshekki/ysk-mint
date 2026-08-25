@@ -7,7 +7,21 @@ type Cip30Enabled = {
   getUsedAddresses(): Promise<string[]>;
   getUnusedAddresses?: () => Promise<string[]>;
   getRewardAddresses?: () => Promise<string[]>;
+  getBalance?: () => Promise<string>;
+  getUtxos?: (amount?: string) => Promise<string[] | null>;
 };
+
+export type CardanoValue = { ada: bigint; assets: Map<string, bigint> };
+
+let enabledApi: Cip30Enabled | null = null;
+
+export function cardanoApi() {
+  return enabledApi;
+}
+
+export function clearCardanoApi() {
+  enabledApi = null;
+}
 
 export type CardanoSession = {
   address: string;
@@ -207,6 +221,7 @@ export async function enableCardano(walletId: string): Promise<CardanoSession> {
   }
   const address = payments[0] ?? "";
   if (!address || !isCardanoAddress(address)) throw new Error("address");
+  enabledApi = api;
   return { address, addresses: payments, stake };
 }
 
@@ -218,6 +233,198 @@ export async function refreshCardanoIfEnabled(walletId: string): Promise<Cardano
     const enabled = wallet.isEnabled ? await wallet.isEnabled() : false;
     if (!enabled) return null;
     return await enableCardano(walletId);
+  } catch {
+    return null;
+  }
+}
+
+class CborCursor {
+  i = 0;
+  constructor(readonly b: Uint8Array) {}
+  take(n: number) {
+    const slice = this.b.subarray(this.i, this.i + n);
+    this.i += n;
+    return slice;
+  }
+}
+
+function cborLen(c: CborCursor, extra: number): number {
+  if (extra < 24) return extra;
+  if (extra === 24) return c.take(1)[0]!;
+  if (extra === 25) {
+    const v = c.take(2);
+    return (v[0]! << 8) | v[1]!;
+  }
+  if (extra === 26) {
+    const v = c.take(4);
+    return (v[0]! << 24) | (v[1]! << 16) | (v[2]! << 8) | v[3]!;
+  }
+  if (extra === 27) {
+    const v = c.take(8);
+    let n = 0n;
+    for (const x of v) n = (n << 8n) | BigInt(x);
+    return Number(n);
+  }
+  throw new Error("cbor");
+}
+
+function cborUint(c: CborCursor, extra: number): bigint {
+  if (extra < 24) return BigInt(extra);
+  if (extra === 24) return BigInt(c.take(1)[0]!);
+  if (extra === 25) {
+    const v = c.take(2);
+    return BigInt((v[0]! << 8) | v[1]!);
+  }
+  if (extra === 26) {
+    const v = c.take(4);
+    return BigInt(((v[0]! << 24) | (v[1]! << 16) | (v[2]! << 8) | v[3]!) >>> 0);
+  }
+  if (extra === 27) {
+    const v = c.take(8);
+    let n = 0n;
+    for (const x of v) n = (n << 8n) | BigInt(x);
+    return n;
+  }
+  throw new Error("cbor");
+}
+
+function cborItem(c: CborCursor): unknown {
+  const ib = c.take(1)[0]!;
+  const major = ib >> 5;
+  const extra = ib & 31;
+  if (major === 0) return cborUint(c, extra);
+  if (major === 1) return -1n - cborUint(c, extra);
+  if (major === 2) return c.take(cborLen(c, extra));
+  if (major === 3) {
+    c.take(cborLen(c, extra));
+    return "";
+  }
+  if (major === 4) {
+    const n = extra === 31 ? -1 : cborLen(c, extra);
+    const arr: unknown[] = [];
+    if (n < 0) {
+      while (c.b[c.i] !== 0xff) arr.push(cborItem(c));
+      c.take(1);
+    } else {
+      for (let i = 0; i < n; i++) arr.push(cborItem(c));
+    }
+    return arr;
+  }
+  if (major === 5) {
+    const n = extra === 31 ? -1 : cborLen(c, extra);
+    const map = new Map<unknown, unknown>();
+    const push = () => {
+      const k = cborItem(c);
+      map.set(k, cborItem(c));
+    };
+    if (n < 0) {
+      while (c.b[c.i] !== 0xff) push();
+      c.take(1);
+    } else {
+      for (let i = 0; i < n; i++) push();
+    }
+    return map;
+  }
+  if (major === 6) {
+    cborLen(c, extra);
+    return cborItem(c);
+  }
+  if (major === 7) {
+    if (extra === 20) return false;
+    if (extra === 21) return true;
+    if (extra === 22 || extra === 23) return null;
+    if (extra === 31) return null;
+    if (extra === 25) c.take(2);
+    else if (extra === 26) c.take(4);
+    else if (extra === 27) c.take(8);
+    return 0n;
+  }
+  throw new Error("cbor");
+}
+
+function asBig(v: unknown): bigint {
+  if (typeof v === "bigint") return v;
+  if (typeof v === "number") return BigInt(v);
+  throw new Error("int");
+}
+
+function asBytes(v: unknown): Uint8Array {
+  if (v instanceof Uint8Array) return v;
+  throw new Error("bytes");
+}
+
+function toHex(bytes: Uint8Array) {
+  return [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function parseValue(item: unknown): CardanoValue {
+  if (item instanceof Uint8Array) return parseValue(cborItem(new CborCursor(item)));
+  if (typeof item === "bigint" || typeof item === "number") {
+    return { ada: asBig(item), assets: new Map() };
+  }
+  if (Array.isArray(item) && item.length >= 1) {
+    const ada = asBig(item[0]);
+    const assets = new Map<string, bigint>();
+    const ma = item[1];
+    if (ma instanceof Map) {
+      for (const [policy, names] of ma) {
+        const p = toHex(asBytes(policy));
+        if (!(names instanceof Map)) continue;
+        for (const [name, qty] of names) {
+          assets.set(`${p}${toHex(asBytes(name))}`, asBig(qty));
+        }
+      }
+    }
+    return { ada, assets };
+  }
+  throw new Error("value");
+}
+
+function valueFromUtxo(item: unknown): CardanoValue {
+  if (!Array.isArray(item) || item.length < 2) throw new Error("utxo");
+  const output = item[1];
+  if (Array.isArray(output) && output.length >= 2) return parseValue(output[1]);
+  if (output instanceof Map) {
+    const amount = output.get(1) ?? output.get(1n);
+    if (amount !== undefined) return parseValue(amount);
+  }
+  throw new Error("utxo");
+}
+
+function mergeValue(into: CardanoValue, add: CardanoValue) {
+  into.ada += add.ada;
+  for (const [unit, qty] of add.assets) into.assets.set(unit, (into.assets.get(unit) ?? 0n) + qty);
+}
+
+function decodeHexCbor(hex: string): unknown {
+  const raw = hex.replace(/^0x/i, "");
+  if (!/^[0-9a-f]+$/i.test(raw) || raw.length % 2) throw new Error("hex");
+  return cborItem(new CborCursor(hexToBytes(raw)));
+}
+
+export async function readCardanoValue(): Promise<CardanoValue | null> {
+  const api = enabledApi;
+  if (!api) return null;
+  try {
+    if (api.getBalance) {
+      const hex = await api.getBalance();
+      if (hex) return parseValue(decodeHexCbor(hex));
+    }
+  } catch {
+    /* try utxos */
+  }
+  try {
+    const utxos = (await api.getUtxos?.()) ?? [];
+    if (!utxos.length) return { ada: 0n, assets: new Map() };
+    const total: CardanoValue = { ada: 0n, assets: new Map() };
+    for (const hex of utxos) {
+      try {
+        mergeValue(total, valueFromUtxo(decodeHexCbor(hex)));
+      } catch {
+        /* skip malformed utxo */
+      }
+    }
+    return total;
   } catch {
     return null;
   }

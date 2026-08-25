@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { erc20Abi, formatUnits, type Address } from "viem";
 import { useBalance, useReadContracts } from "wagmi";
+import { readCardanoValue, stakeFromPayment } from "./cardanoCip30.ts";
 import { cardanoByUnit, tokensFor, type TokenRecord } from "./tokenRegistry.ts";
 
 export type HoldingRow = {
@@ -207,13 +208,51 @@ function chunk<T>(items: T[], size: number) {
   return out;
 }
 
-export function useCardanoHoldings(address: string, extras?: { addresses?: string[]; stake?: string }) {
+function rowsFromCardano(
+  catalog: TokenRecord[],
+  ada: bigint,
+  qty: Map<string, { raw: bigint; decimals: number }>,
+): HoldingRow[] {
+  const next: HoldingRow[] = [];
+  const adaMeta = catalog.find((t) => t.native);
+  if (adaMeta) next.push(row(adaMeta, ada, true));
+  const seen = new Set<string>();
+  for (const [unit, bal] of qty) {
+    seen.add(unit);
+    const known = cardanoByUnit(unit);
+    if (known) {
+      next.push(row(known, bal.raw, true));
+    } else {
+      const ticker = hexAscii(unit.slice(56)) || unit.slice(0, 8).toUpperCase();
+      next.push({
+        id: `ada-${unit}`,
+        symbol: ticker,
+        name: ticker,
+        icon: "/tokens/ada.png",
+        amount: fmt(bal.raw, bal.decimals),
+        raw: bal.raw,
+        contract: unit,
+        chainTag: "ADA",
+      });
+    }
+  }
+  for (const t of catalog) {
+    if (t.native || (t.address && seen.has(t.address.toLowerCase()))) continue;
+    next.push(row(t, 0n, true));
+  }
+  return sortHoldings(next, true);
+}
+
+export function useCardanoHoldings(
+  address: string,
+  extras?: { addresses?: string[]; stake?: string; sync?: number },
+) {
   const catalog = useMemo(() => tokensFor("cardano", 1815), []);
   const [rows, setRows] = useState<HoldingRow[]>(() => catalog.map((t) => row(t, null, false)));
   const [loading, setLoading] = useState(false);
-  const stake = extras?.stake ?? "";
+  const stake = extras?.stake || (address ? stakeFromPayment(address) : "");
   const payments = extras?.addresses?.filter(Boolean) ?? [];
-  const addrKey = [address, stake, ...payments].join("|");
+  const addrKey = [address, stake, extras?.sync ?? 0, ...payments].join("|");
 
   useEffect(() => {
     if (!address) {
@@ -223,8 +262,29 @@ export function useCardanoHoldings(address: string, extras?: { addresses?: strin
     let cancelled = false;
     setLoading(true);
     void (async () => {
-      const next: HoldingRow[] = [];
       try {
+        const cip = await readCardanoValue();
+        if (cip) {
+          const qty = new Map<string, { raw: bigint; decimals: number }>();
+          for (const [unit, raw] of cip.assets) {
+            const known = cardanoByUnit(unit);
+            qty.set(unit, { raw, decimals: known?.decimals ?? 0 });
+          }
+          let ada = cip.ada;
+          if (stake.startsWith("stake")) {
+            try {
+              const info = (await koiosPost("account_info", { _stake_addresses: [stake] })) as Array<{
+                rewards_available?: string;
+              }>;
+              ada += BigInt(info[0]?.rewards_available ?? "0");
+            } catch {
+              /* CORS / Koios optional */
+            }
+          }
+          if (!cancelled) setRows(rowsFromCardano(catalog, ada, qty));
+          return;
+        }
+
         let ada = 0n;
         let assets: CardanoAsset[] = [];
         if (stake.startsWith("stake")) {
@@ -242,10 +302,6 @@ export function useCardanoHoldings(address: string, extras?: { addresses?: strin
             assets.push(...flattenCardanoAssets(await koiosPost("address_assets", { _addresses: group })));
           }
         }
-
-        const adaMeta = catalog.find((t) => t.native);
-        if (adaMeta) next.push(row(adaMeta, ada, true));
-
         const qty = new Map<string, { raw: bigint; decimals: number }>();
         for (const a of assets) {
           const unit = cardanoUnit(a);
@@ -254,47 +310,17 @@ export function useCardanoHoldings(address: string, extras?: { addresses?: strin
           const prev = qty.get(unit);
           qty.set(unit, { raw: (prev?.raw ?? 0n) + raw, decimals: a.decimals ?? prev?.decimals ?? 0 });
         }
-
-        const seen = new Set<string>();
-        for (const [unit, bal] of qty) {
-          seen.add(unit);
-          const known = cardanoByUnit(unit);
-          if (known) {
-            next.push(row(known, bal.raw, true));
-          } else {
-            const ticker = hexAscii(unit.slice(56)) || unit.slice(0, 8).toUpperCase();
-            next.push({
-              id: `ada-${unit}`,
-              symbol: ticker,
-              name: ticker,
-              icon: "/tokens/ada.png",
-              amount: fmt(bal.raw, bal.decimals),
-              raw: bal.raw,
-              contract: unit,
-              chainTag: "ADA",
-            });
-          }
-        }
-        for (const t of catalog) {
-          if (t.native || (t.address && seen.has(t.address.toLowerCase()))) continue;
-          next.push(row(t, 0n, true));
-        }
+        if (!cancelled) setRows(rowsFromCardano(catalog, ada, qty));
       } catch {
-        if (!cancelled) {
-          setRows(catalog.map((t) => row(t, 0n, true)));
-          setLoading(false);
-        }
-        return;
-      }
-      if (!cancelled) {
-        setRows(sortHoldings(next, true));
-        setLoading(false);
+        if (!cancelled) setRows(catalog.map((t) => row(t, null, true)));
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [address, addrKey, catalog]);
+  }, [address, addrKey, catalog, stake]);
 
   const funded = rows.filter((r) => r.raw > 0n).length;
   return { rows, funded, loading, catalogSize: catalog.length };
@@ -302,6 +328,54 @@ export function useCardanoHoldings(address: string, extras?: { addresses?: strin
 
 const TOKEN_PROGRAM = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 const TOKEN_2022_PROGRAM = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb";
+const SOLANA_RPCS = [
+  "https://solana-rpc.publicnode.com",
+  "https://solana.publicnode.com",
+  "https://solana.leorpc.com/?api_key=FREE",
+  "https://api.mainnet-beta.solana.com",
+];
+
+type SolTokJson = {
+  result?: {
+    value?: Array<{
+      account?: { data?: { parsed?: { info?: { mint?: string; tokenAmount?: { amount?: string; decimals?: number } } } } };
+    }>;
+  };
+  error?: unknown;
+};
+
+async function solMintMeta(mint: string): Promise<{ symbol: string; name: string } | null> {
+  try {
+    const res = await fetch(`https://lite-api.jup.ag/tokens/v1/token/${mint}`);
+    if (!res.ok) return null;
+    const json = (await res.json()) as { symbol?: string; name?: string };
+    if (!json.symbol) return null;
+    return { symbol: json.symbol, name: json.name || json.symbol };
+  } catch {
+    return null;
+  }
+}
+
+async function solanaRpc<T>(body: unknown): Promise<T> {
+  let last = "solana rpc";
+  for (const url of SOLANA_RPCS) {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        last = `${url} ${res.status}`;
+        continue;
+      }
+      return (await res.json()) as T;
+    } catch (err) {
+      last = err instanceof Error ? err.message : String(err);
+    }
+  }
+  throw new Error(last);
+}
 
 export function useSolanaHoldings(address: string) {
   const catalog = useMemo(() => tokensFor("solana", 101), []);
@@ -317,50 +391,63 @@ export function useSolanaHoldings(address: string) {
     setLoading(true);
     void (async () => {
       try {
-        const tokenReq = (id: number, programId: string) =>
-          fetch("https://api.mainnet-beta.solana.com", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({
-              jsonrpc: "2.0",
-              id,
-              method: "getTokenAccountsByOwner",
-              params: [address, { programId }, { encoding: "jsonParsed" }],
-            }),
-          });
-        const [balRes, tokRes, tok2022Res] = await Promise.all([
-          fetch("https://api.mainnet-beta.solana.com", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getBalance", params: [address] }),
+        const tokenParams = (programId: string) => [address, { programId }, { encoding: "jsonParsed" }];
+        const [balJson, tokJson, tok2022Json] = await Promise.all([
+          solanaRpc<{ result?: { value?: number }; error?: unknown }>({
+            jsonrpc: "2.0",
+            id: 1,
+            method: "getBalance",
+            params: [address],
           }),
-          tokenReq(2, TOKEN_PROGRAM),
-          tokenReq(3, TOKEN_2022_PROGRAM),
+          solanaRpc<SolTokJson>({
+            jsonrpc: "2.0",
+            id: 2,
+            method: "getTokenAccountsByOwner",
+            params: tokenParams(TOKEN_PROGRAM),
+          }),
+          solanaRpc<SolTokJson>({
+            jsonrpc: "2.0",
+            id: 3,
+            method: "getTokenAccountsByOwner",
+            params: tokenParams(TOKEN_2022_PROGRAM),
+          }),
         ]);
-        const balJson = (await balRes.json()) as { result?: { value?: number } };
-        type TokJson = {
-          result?: { value?: Array<{ account?: { data?: { parsed?: { info?: { mint?: string; tokenAmount?: { amount?: string } } } } } }> };
-        };
-        const tokJson = (await tokRes.json()) as TokJson;
-        const tok2022Json = (await tok2022Res.json()) as TokJson;
-        const byMint = new Map<string, bigint>();
+        if (balJson.error) throw new Error("balance");
+        const byMint = new Map<string, { raw: bigint; decimals: number }>();
         for (const v of [...(tokJson.result?.value ?? []), ...(tok2022Json.result?.value ?? [])]) {
           const info = v.account?.data?.parsed?.info;
           if (!info?.mint) continue;
-          byMint.set(info.mint, (byMint.get(info.mint) ?? 0n) + BigInt(info.tokenAmount?.amount ?? "0"));
+          const raw = BigInt(info.tokenAmount?.amount ?? "0");
+          const prev = byMint.get(info.mint);
+          byMint.set(info.mint, {
+            raw: (prev?.raw ?? 0n) + raw,
+            decimals: info.tokenAmount?.decimals ?? prev?.decimals ?? 0,
+          });
         }
         if (cancelled) return;
-        setRows(
-          sortHoldings(
-            catalog.map((t) => {
-              const raw = t.native ? BigInt(balJson.result?.value ?? 0) : (byMint.get(t.address ?? "") ?? 0n);
-              return row(t, raw, true);
-            }),
-            true,
-          ),
-        );
+        const next = catalog.map((t) => {
+          const raw = t.native ? BigInt(balJson.result?.value ?? 0) : (byMint.get(t.address ?? "")?.raw ?? 0n);
+          return row(t, raw, true);
+        });
+        const known = new Set(catalog.map((t) => t.address).filter(Boolean));
+        const extras = [...byMint.entries()].filter(([mint, bal]) => !known.has(mint) && bal.raw > 0n);
+        const meta = await Promise.all(extras.map(([mint]) => solMintMeta(mint)));
+        extras.forEach(([mint, bal], i) => {
+          const info = meta[i];
+          next.push({
+            id: `sol-${mint}`,
+            symbol: info?.symbol || mint.slice(0, 4).toUpperCase(),
+            name: info?.name || mint,
+            icon: "/tokens/sol.png",
+            amount: fmt(bal.raw, bal.decimals),
+            raw: bal.raw,
+            contract: mint,
+            chainTag: "SOL",
+          });
+        });
+        setRows(sortHoldings(next, true));
       } catch {
-        if (!cancelled) setRows(catalog.map((t) => row(t, 0n, true)));
+        if (!cancelled) setRows(catalog.map((t) => row(t, null, true)));
       } finally {
         if (!cancelled) setLoading(false);
       }

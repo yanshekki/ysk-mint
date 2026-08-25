@@ -1,5 +1,11 @@
 import { isCardanoAddress, isNearAccountId, isSolanaAddress } from "@ysk-mint/sdk";
-import { enableCardano, listCardanoWallets, refreshCardanoIfEnabled, type CardanoWalletInfo } from "./cardanoCip30.ts";
+import {
+  clearCardanoApi,
+  enableCardano,
+  listCardanoWallets,
+  refreshCardanoIfEnabled,
+  type CardanoWalletInfo,
+} from "./cardanoCip30.ts";
 import { useNativeWallets } from "./nativeWalletStore.ts";
 import {
   connectNearSelector,
@@ -58,6 +64,11 @@ export async function restoreCardanoSession(): Promise<string> {
     }
   }
   return state.cardanoAddress;
+}
+
+export function disconnectCardanoWallet() {
+  clearCardanoApi();
+  useNativeWallets.getState().disconnectCardano();
 }
 
 export async function pingNearRpc(): Promise<string | null> {

@@ -76,8 +76,7 @@
     "wrongNetwork": "Switch to a supported EVM chain.",
     "nativeCoin": "Native",
     "holdingsIdle": "Connect to read on-chain balances",
-    "holdingsFunded": "{{n}} with balance",
-    "holdingsHint": "Catalog tokens only. Icons from CoinMarketCap, stored in this repo."
+    "holdingsFunded": "{{n}} with balance"
   },
   "wizard": {
     "title": "Launch desk",

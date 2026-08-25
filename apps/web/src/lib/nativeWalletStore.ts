@@ -7,6 +7,7 @@ type NativeState = {
   cardanoAddresses: string[];
   cardanoStake: string;
   cardanoWallet: string;
+  cardanoSync: number;
   solanaAddress: string;
   solanaWallet: string;
   setNear: (nearAccount: string) => void;
@@ -25,16 +26,18 @@ export const useNativeWallets = create<NativeState>()(
       cardanoAddresses: [],
       cardanoStake: "",
       cardanoWallet: "",
+      cardanoSync: 0,
       solanaAddress: "",
       solanaWallet: "",
       setNear: (nearAccount) => set({ nearAccount }),
       setCardano: (cardanoAddress, cardanoWallet = "", extras = {}) =>
-        set({
+        set((s) => ({
           cardanoAddress,
           cardanoWallet,
           cardanoAddresses: extras.addresses ?? [cardanoAddress].filter(Boolean),
           cardanoStake: extras.stake ?? "",
-        }),
+          cardanoSync: s.cardanoSync + 1,
+        })),
       setSolana: (solanaAddress, solanaWallet = "") => set({ solanaAddress, solanaWallet }),
       disconnectNear: () => set({ nearAccount: "" }),
       disconnectCardano: () => set({ cardanoAddress: "", cardanoAddresses: [], cardanoStake: "", cardanoWallet: "" }),
