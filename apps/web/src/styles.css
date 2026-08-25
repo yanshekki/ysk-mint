@@ -1011,6 +1011,58 @@ table.data tbody tr:hover td {
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
 }
+.review-desk {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.review-id {
+  padding: 14px 16px;
+  border-radius: 14px;
+}
+.review-issuance {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.review-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: var(--bg-white);
+  min-width: 0;
+}
+.review-k {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.review-v {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
+  word-break: break-word;
+}
+.review-notes {
+  margin: 0;
+  padding: 14px 16px 14px 34px;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: var(--bg-white);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--text-sub);
+  font-size: 14px;
+  font-weight: 600;
+}
+.review-notes li::marker {
+  color: var(--brand-blue);
+}
 .chip {
   display: inline-flex;
   align-items: center;
@@ -1244,7 +1296,8 @@ table.data tbody tr:hover td {
   color: var(--text-sub);
 }
 
-.workspace-scroll:has(.oft-desk) {
+.workspace-scroll:has(.oft-desk),
+.workspace-scroll:has(.review-desk) {
   display: flex;
   flex-direction: column;
   padding: 20px 24px;
@@ -1411,7 +1464,8 @@ table.data tbody tr:hover td {
     padding-right: 16px;
   }
   .workspace-scroll:has(.wallet-desk),
-  .workspace-scroll:has(.oft-desk) {
+  .workspace-scroll:has(.oft-desk),
+  .workspace-scroll:has(.review-desk) {
     overflow: auto;
   }
   .oft-desk {

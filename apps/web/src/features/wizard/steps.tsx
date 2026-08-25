@@ -7,7 +7,6 @@ import { useWizard } from "./store.ts";
 import { WalletDesk } from "../wallet/WalletDesk.tsx";
 import { ChipGroup } from "../../shared/ui/ChipGroup.tsx";
 import { OptionCard, OptionGrid } from "../../shared/ui/OptionCard.tsx";
-import { Badge } from "../../shared/ui/TokenRow.tsx";
 import { useNativeWallets } from "../../lib/nativeWallets.ts";
 import { homeEvm, ISSUANCE_GROUP_TITLE, issuanceGroups, selectedChains, undeployedEvm } from "../../lib/launchTargets.ts";
 import { STEP_FLOW, decimalsOptions, defaultDecimals, hasEvm, selectedVms } from "../../lib/wizardFlow.ts";
@@ -356,41 +355,7 @@ export function StepLiquidity() {
   );
 }
 
-export function StepReview() {
-  const { t } = useTranslation();
-  const w = useWizard();
-  const home = homeEvm(w.chains);
-  const nat = home?.nativeSymbol ?? selectedChains(w.chains)[0]?.nativeSymbol ?? "";
-  const evm = hasEvm(w.chains);
-  return (
-    <div className="space-y-3">
-      <div className="token-row">
-        <div className="grid h-10 w-10 place-items-center rounded-lg bg-gradient-to-br from-brand-blue to-brand-green text-xs font-black text-white">
-          {(w.symbol || "??").slice(0, 2)}
-        </div>
-        <div>
-          <p className="text-[15px] font-bold">
-            {w.name || "—"} <span className="text-text-muted">{w.symbol}</span>
-          </p>
-          <p className="num text-[13px] text-text-muted">
-            {w.totalSupply} · {w.decimals} dec
-            {evm ? ` · LP ${w.lpBps / 100}% + ${w.lpNativeAmount} ${nat}` : ""}
-          </p>
-        </div>
-        <Badge kind={w.supplyMode === SupplyMode.Fixed ? "ok" : "warn"}>
-          {w.supplyMode === SupplyMode.Fixed ? "FIXED" : "MINT"}
-        </Badge>
-      </div>
-      <ul className="space-y-1 text-[14px] text-text-sub">
-        <li>{t("wizard.review.checklist")}</li>
-        {evm ? <li>{w.supplyMode === SupplyMode.Fixed ? t("wizard.review.fixed") : t("wizard.review.mintableWarn")}</li> : null}
-        {evm ? <li>{t("wizard.review.lock")}</li> : <li>{t("wizard.review.nativeNoLp")}</li>}
-        <li>{t("wizard.review.unaudited")}</li>
-      </ul>
-    </div>
-  );
-}
-
 export { StepOmnichain } from "./OmnichainDesk.tsx";
+export { StepReview } from "./ReviewDesk.tsx";
 
 export const STEP_LABELS = [...STEP_FLOW];

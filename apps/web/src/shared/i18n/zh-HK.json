@@ -216,10 +216,15 @@
       "runNative": "Cardano／NEAR／Solana 獨立發行"
     },
     "review": {
-      "checklist": "Anti-rug 清單 — 產品意圖，並非審計。",
-      "fixed": "供應量固定",
-      "mintableWarn": "可增發 — 擁有人可以膨脹",
-      "lock": "已選擇 LP 鎖定",
+      "token": "代幣",
+      "rules": "規則",
+      "lp": "LP",
+      "issuance": "發行網絡",
+      "notes": "注意",
+      "on": "開啟",
+      "off": "關閉",
+      "fixed": "固定",
+      "mintable": "可增發",
       "unaudited": "合約未經審計",
       "nativeNoLp": "原生鏈沒有 Uniswap LP 步驟。"
     },

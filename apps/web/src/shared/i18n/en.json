@@ -216,10 +216,15 @@
       "runNative": "Issue Cardano / NEAR / Solana independently"
     },
     "review": {
-      "checklist": "Anti-rug checklist — product intent, not an audit.",
-      "fixed": "Supply is fixed",
-      "mintableWarn": "Mintable — owner can inflate",
-      "lock": "LP lock selected",
+      "token": "Token",
+      "rules": "Rules",
+      "lp": "LP",
+      "issuance": "Networks",
+      "notes": "Notes",
+      "on": "On",
+      "off": "Off",
+      "fixed": "Fixed",
+      "mintable": "Mintable",
       "unaudited": "Contracts unaudited",
       "nativeNoLp": "Native VMs have no Uniswap LP step."
     },
