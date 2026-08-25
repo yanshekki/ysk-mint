@@ -1101,6 +1101,206 @@ button.oft-chain:disabled {
   color: var(--brand-blue);
   cursor: pointer;
 }
+.me-desk {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.me-summary {
+  text-align: right;
+  flex-shrink: 0;
+}
+.me-summary b {
+  display: block;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-main);
+}
+.me-summary span {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.me-ids {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.me-id {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: var(--bg-white);
+}
+.me-id img {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+.me-id b {
+  display: block;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.me-id span {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.me-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.me-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 12px 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-white);
+  color: var(--text-sub);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+.me-chip img {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+.me-chip:hover {
+  color: var(--text-main);
+  border-color: var(--brand-blue-light);
+}
+.me-chip-on {
+  background: var(--brand-gradient);
+  color: #fff;
+  border-color: transparent;
+}
+.me-chip-on .me-count {
+  color: rgba(255, 255, 255, 0.85);
+}
+.me-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.me-card {
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background: var(--bg-white);
+  overflow: hidden;
+}
+.me-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+.me-card-head img {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+.me-card-head b {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.me-card-head .me-count {
+  margin-left: auto;
+}
+.me-cols {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 16px 8px 64px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.me-card-empty {
+  margin: 0;
+  padding: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-sub);
+}
+.me-list {
+  display: flex;
+  flex-direction: column;
+}
+.me-token {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+  border: 0;
+  border-top: 1px solid var(--border-light);
+  background: transparent;
+  text-decoration: none;
+  color: inherit;
+  width: 100%;
+  box-sizing: border-box;
+}
+.me-token:hover {
+  background: var(--bg-subtle);
+}
+.me-token .holding-ico-wrap {
+  width: 36px;
+  height: 36px;
+}
+.me-token .holding-ico {
+  width: 36px;
+  height: 36px;
+}
+.me-token .holding-meta b {
+  font-size: 15px;
+}
+.me-token .holding-meta span {
+  font-size: 13px;
+}
+.me-token .holding-amt {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.me-token-zero {
+  opacity: 0.55;
+}
+.me-oft-mark {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  font-size: 9px;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--brand-blue), var(--brand-green));
+  border-radius: 8px;
+}
+.me-token .holding-ico.me-oft-mark {
+  width: 36px;
+  height: 36px;
+  font-size: 11px;
+  border-radius: 10px;
+}
 .chip {
   display: inline-flex;
   align-items: center;
@@ -1461,6 +1661,14 @@ button.oft-chain:disabled {
 }
 
 @media (max-width: 900px) {
+  .workspace-head:has(.me-summary) {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .me-summary {
+    text-align: left;
+    width: 100%;
+  }
   .top-nav {
     display: none;
   }

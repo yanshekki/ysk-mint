@@ -277,7 +277,15 @@
   },
   "me": {
     "title": "Holdings",
-    "body": "Factory Launch logs for this wallet. No account.",
+    "body": "Tokens on connected wallets. No account.",
+    "needWallet": "Connect an existing wallet.",
+    "all": "All",
+    "token": "Token",
+    "amount": "Amount",
+    "funded": "{{n}} with balance",
+    "chainCount": "{{n}} chains",
+    "emptyChain": "No balance on this chain.",
+    "launched": "App OFTs",
     "noFactory": "Factory address is still zero on this chain."
   },
   "token": {

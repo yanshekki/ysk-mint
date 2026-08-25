@@ -277,7 +277,15 @@
   },
   "me": {
     "title": "持倉",
-    "body": "這個錢包的 Factory Launch 日誌。沒有帳戶系統。",
+    "body": "已連接錢包在各鏈上的代幣。沒有帳戶系統。",
+    "needWallet": "請連接現有錢包。",
+    "all": "全部",
+    "token": "代幣",
+    "amount": "數量",
+    "funded": "{{n}} 項有餘額",
+    "chainCount": "{{n}} 條鏈",
+    "emptyChain": "這條鏈沒有餘額。",
+    "launched": "本站 OFT",
     "noFactory": "這條鏈 Factory 地址仍為零。"
   },
   "token": {
