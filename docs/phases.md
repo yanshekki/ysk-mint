@@ -22,7 +22,7 @@ Tax, limits, anti-bot, ownership actions, extra DEX kinds.
 
 ## Phase 4 — Transfer + dashboard
 
-On-chain transfer UI, my tokens via logs, share card on canvas.
+On-chain transfer UI quotes on the connected EVM. Native VMs and the same chain are not OFT destinations. My tokens scan every configured factory. Share card is canvas-only.
 
 ## Phase 5 — Fees, presale, audit prep (this release)
 

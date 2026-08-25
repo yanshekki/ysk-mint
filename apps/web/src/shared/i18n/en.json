@@ -216,7 +216,8 @@
     "pickHint": "Click to paste a contract address",
     "amount": "Amount",
     "dest": "Destination",
-    "nativeDest": "NEAR, Cardano and Solana are not EVM OFT destinations. Independent native assets, so quote and send stay off."
+    "nativeDest": "NEAR, Cardano and Solana are not EVM OFT destinations. Independent native assets, so quote and send stay off.",
+    "sameChain": "Destination is the connected EVM. OFT send needs another peered EVM."
   },
   "me": {
     "title": "Holdings",

@@ -216,7 +216,8 @@
     "pickHint": "點擊以貼上合約地址",
     "amount": "數量",
     "dest": "目的鏈",
-    "nativeDest": "NEAR、Cardano、Solana 唔走 EVM OFT send。獨立原生資產，所以唔報價、唔發送。"
+    "nativeDest": "NEAR、Cardano、Solana 唔走 EVM OFT send。獨立原生資產，所以唔報價、唔發送。",
+    "sameChain": "目的鏈同而家連接嘅 EVM 相同。OFT send 要另一條已 setPeer 嘅 EVM。"
   },
   "me": {
     "title": "持倉",

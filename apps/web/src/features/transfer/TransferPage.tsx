@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { zeroAddress } from "viem";
-import { useAccount, usePublicClient, useWalletClient } from "wagmi";
+import { useAccount, useChainId, usePublicClient, useWalletClient } from "wagmi";
 import {
   CHAINS,
   ChainKey,
@@ -20,8 +20,9 @@ export function TransferPage() {
   const { t, i18n } = useTranslation();
   const locale = i18n.language === "zh-HK" ? "zh-HK" : "en";
   const { address } = useAccount();
-  const publicClient = usePublicClient();
-  const { data: wallet } = useWalletClient();
+  const chainId = useChainId();
+  const publicClient = usePublicClient({ chainId });
+  const { data: wallet } = useWalletClient({ chainId });
   const [token, setToken] = useState("");
   const [pct, setPct] = useState<(typeof PCT)[number]>(25);
   const [dstKey, setDstKey] = useState(ChainKey.ArbSepolia);
@@ -32,7 +33,9 @@ export function TransferPage() {
 
   const dst = CHAINS[dstKey as keyof typeof CHAINS];
   const enabled = Object.values(CHAINS).filter((c) => c.enabled);
-  const destIsNative = dst?.vm === "near" || dst?.vm === "cardano" || dst?.vm === "solana";
+  const destIsNative = dst?.vm !== "evm" || !dst.eid;
+  const destIsSelf = Boolean(dst?.evm && dst.chainId === chainId);
+  const destBlocked = destIsNative || destIsSelf;
 
   async function amountOf(): Promise<bigint> {
     if (!publicClient || !address || !token) return 0n;
@@ -156,9 +159,14 @@ export function TransferPage() {
               ariaLabel="dst"
               value={dstKey}
               onChange={setDstKey}
-              options={enabled.map((c) => ({ value: c.key, label: c.short }))}
+              options={enabled.map((c) => ({
+                value: c.key,
+                label: c.short,
+                disabled: c.vm !== "evm" || !c.eid || c.chainId === chainId,
+              }))}
             />
             {destIsNative ? <p className="mt-2 text-[14px] text-text-muted">{t("transfer.nativeDest")}</p> : null}
+            {destIsSelf ? <p className="mt-2 text-[14px] text-text-muted">{t("transfer.sameChain")}</p> : null}
           </div>
         </div>
         <div className="split-pane flex flex-col gap-4">
@@ -171,13 +179,13 @@ export function TransferPage() {
             </p>
           ))}
           <div className="mt-auto flex gap-2">
-            <Button type="button" variant="ghost" disabled={destIsNative} onClick={() => void doQuote()}>
+            <Button type="button" variant="ghost" disabled={destBlocked} onClick={() => void doQuote()}>
               {t("transfer.quote")}
             </Button>
             <Button
               type="button"
               variant="grad"
-              disabled={destIsNative || busy || !token || token.toLowerCase() === zeroAddress}
+              disabled={destBlocked || busy || !token || token.toLowerCase() === zeroAddress}
               onClick={() => void doSend()}
             >
               {t("transfer.send")}

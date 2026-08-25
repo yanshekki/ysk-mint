@@ -22,7 +22,7 @@ Monorepo、ENUM、錯誤、校驗、可 clone 的 OFT、Factory、錢包 SPA。
 
 ## Phase 4 — 轉帳 + Dashboard
 
-鏈上轉帳介面、以 logs 列出我的代幣、Canvas 分享卡。
+跨鏈頁喺已連接 EVM 報價。原生 VM 同同一條鏈唔係 OFT 目的地。持倉掃所有已配置 Factory。分享卡只喺瀏覽器畫。
 
 ## Phase 5 — 費用、Presale、審計準備（本版本）
 
