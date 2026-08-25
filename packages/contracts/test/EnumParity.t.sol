@@ -20,6 +20,11 @@ contract EnumParityTest is Test {
         assertEq(uint8(LaunchEnums.ChainKey.Avalanche), uint8(json.readUint(".ChainKey.Avalanche")));
         assertEq(uint8(LaunchEnums.ChainKey.Cardano), uint8(json.readUint(".ChainKey.Cardano")));
         assertEq(uint8(LaunchEnums.ChainKey.Near), uint8(json.readUint(".ChainKey.Near")));
+        assertEq(uint8(LaunchEnums.ChainKey.EthereumSepolia), uint8(json.readUint(".ChainKey.EthereumSepolia")));
+        assertEq(uint8(LaunchEnums.ChainKey.AvalancheFuji), uint8(json.readUint(".ChainKey.AvalancheFuji")));
+        assertEq(uint8(LaunchEnums.ChainKey.BnbTestnet), uint8(json.readUint(".ChainKey.BnbTestnet")));
+        assertEq(uint8(LaunchEnums.ChainKey.CardanoPreprod), uint8(json.readUint(".ChainKey.CardanoPreprod")));
+        assertEq(uint8(LaunchEnums.ChainKey.NearTestnet), uint8(json.readUint(".ChainKey.NearTestnet")));
 
         assertEq(uint8(LaunchEnums.DexKind.UniswapV2), uint8(json.readUint(".DexKind.UniswapV2")));
         assertEq(uint8(LaunchEnums.DexKind.PancakeV2), uint8(json.readUint(".DexKind.PancakeV2")));

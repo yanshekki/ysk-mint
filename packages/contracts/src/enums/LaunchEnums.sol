@@ -13,7 +13,12 @@ library LaunchEnums {
         ArbSepolia,
         Avalanche,
         Cardano,
-        Near
+        Near,
+        EthereumSepolia,
+        AvalancheFuji,
+        BnbTestnet,
+        CardanoPreprod,
+        NearTestnet
     }
 
     enum DexKind {

@@ -28,6 +28,9 @@ export const LAUNCH_CONTRACTS: Partial<Record<(typeof ChainKey)[keyof typeof Cha
   [ChainKey.Avalanche]: unset(JOE_V1),
   [ChainKey.BaseSepolia]: unset(),
   [ChainKey.ArbSepolia]: unset(),
+  [ChainKey.EthereumSepolia]: unset(),
+  [ChainKey.AvalancheFuji]: unset(),
+  [ChainKey.BnbTestnet]: unset(),
 };
 
 export function launchContracts(chainKey: number): LaunchContracts | undefined {

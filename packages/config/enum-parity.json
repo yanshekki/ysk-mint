@@ -9,7 +9,12 @@
     "ArbSepolia": 6,
     "Avalanche": 7,
     "Cardano": 8,
-    "Near": 9
+    "Near": 9,
+    "EthereumSepolia": 10,
+    "AvalancheFuji": 11,
+    "BnbTestnet": 12,
+    "CardanoPreprod": 13,
+    "NearTestnet": 14
   },
   "DexKind": {
     "UniswapV2": 0,

@@ -130,10 +130,10 @@
       "taxBps": "稅率"
     },
     "chains": {
-      "hint": "揀要發嘅鏈。NEAR 係主鏈 NEP-141，Cardano 係 native asset。Factory 未部署時簽名步會擋。",
+      "hint": "選擇發行網絡。未部署 Factory 的鏈無法完成簽名。",
       "disabled": "未開放",
-      "nearHint": "NEAR 主鏈。唔係 Aurora。NEP-141 + 鎖 LP。Factory 未部署。",
-      "adaHint": "Cardano native asset + 鎖 LP。唔係 EVM。Factory 未部署。",
+      "nearHint": "NEAR Protocol · NEP-141",
+      "adaHint": "Cardano · native asset",
       "testnets": "測試網"
     },
     "liquidity": {

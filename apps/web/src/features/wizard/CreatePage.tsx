@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { parseUnits } from "viem";
 import { useAccount } from "wagmi";
-import { CHAINS, ChainKey } from "@ysk-mint/config";
+import { CHAINS } from "@ysk-mint/config";
 import {
   ErrorCode,
   LaunchStep,
@@ -83,10 +83,11 @@ export function CreatePage() {
       if (needsEvm && !isConnected) {
         list.push({ code: ErrorCode.RecipientZero, args: [], severity: "user", retryable: false });
       }
-      if (w.chains.includes(ChainKey.Near) && !native.nearAccount) {
+      const picked = w.chains.map((k) => CHAINS[k as keyof typeof CHAINS]);
+      if (picked.some((c) => c?.vm === "near") && !native.nearAccount) {
         list.push({ code: ErrorCode.RecipientZero, args: [], severity: "user", retryable: false });
       }
-      if (w.chains.includes(ChainKey.Cardano) && !native.cardanoAddress) {
+      if (picked.some((c) => c?.vm === "cardano") && !native.cardanoAddress) {
         list.push({ code: ErrorCode.RecipientZero, args: [], severity: "user", retryable: false });
       }
       return list;

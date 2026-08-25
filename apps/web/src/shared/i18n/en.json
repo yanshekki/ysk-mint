@@ -130,10 +130,10 @@
       "taxBps": "Tax"
     },
     "chains": {
-      "hint": "Pick launch chains. NEAR is mainnet NEP-141. Cardano is a native asset. Sign step still blocks while factory is undeployed.",
+      "hint": "Select issuance networks. Signing is blocked on chains without a deployed factory.",
       "disabled": "Not live",
-      "nearHint": "NEAR mainnet. Not Aurora. NEP-141 + LP lock. Factory not deployed.",
-      "adaHint": "Cardano native asset + LP lock. Not EVM. Factory not deployed.",
+      "nearHint": "NEAR Protocol · NEP-141",
+      "adaHint": "Cardano · native asset",
       "testnets": "Testnets"
     },
     "liquidity": {

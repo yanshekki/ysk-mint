@@ -177,6 +177,80 @@ export const CHAINS: Record<(typeof ChainKey)[keyof typeof ChainKey], ChainDefin
     vm: "near",
     featured: true,
   },
+  [ChainKey.EthereumSepolia]: evmChain({
+    key: ChainKey.EthereumSepolia,
+    name: "Ethereum Sepolia",
+    short: "ETHSep",
+    chainId: 11155111,
+    eid: 40161,
+    endpoint: LZ_TESTNET_ENDPOINT,
+    explorer: "https://sepolia.etherscan.io",
+    rpc: "https://ethereum-sepolia-rpc.publicnode.com",
+    nativeSymbol: "ETH",
+    enabled: true,
+    testnet: true,
+    featured: false,
+  }),
+  [ChainKey.AvalancheFuji]: evmChain({
+    key: ChainKey.AvalancheFuji,
+    name: "Avalanche Fuji",
+    short: "Fuji",
+    chainId: 43113,
+    eid: 40106,
+    endpoint: LZ_TESTNET_ENDPOINT,
+    explorer: "https://testnet.snowtrace.io",
+    rpc: "https://api.avax-test.network/ext/bc/C/rpc",
+    nativeSymbol: "AVAX",
+    enabled: true,
+    testnet: true,
+    featured: false,
+  }),
+  [ChainKey.BnbTestnet]: evmChain({
+    key: ChainKey.BnbTestnet,
+    name: "BNB Testnet",
+    short: "BNBTest",
+    chainId: 97,
+    eid: 40102,
+    endpoint: LZ_TESTNET_ENDPOINT,
+    explorer: "https://testnet.bscscan.com",
+    rpc: "https://bsc-testnet-rpc.publicnode.com",
+    nativeSymbol: "BNB",
+    enabled: true,
+    testnet: true,
+    featured: false,
+  }),
+  [ChainKey.CardanoPreprod]: {
+    key: ChainKey.CardanoPreprod,
+    name: "Cardano Preprod",
+    short: "ADAPre",
+    chainId: 18151,
+    eid: 0,
+    endpoint: ZERO,
+    explorer: "https://preprod.cardanoscan.io",
+    rpc: "https://preprod.koios.rest/api/v1",
+    nativeSymbol: "ADA",
+    enabled: true,
+    testnet: true,
+    evm: false,
+    vm: "cardano",
+    featured: false,
+  },
+  [ChainKey.NearTestnet]: {
+    key: ChainKey.NearTestnet,
+    name: "NEAR Testnet",
+    short: "NEARTest",
+    chainId: 398,
+    eid: 0,
+    endpoint: ZERO,
+    explorer: "https://testnet.nearblocks.io",
+    rpc: "https://rpc.testnet.near.org",
+    nativeSymbol: "NEAR",
+    enabled: true,
+    testnet: true,
+    evm: false,
+    vm: "near",
+    featured: false,
+  },
 };
 
 /** Product bar: ETH · AVAX · Base · Arb · ADA · NEAR · BNB */
@@ -210,6 +284,16 @@ export function featuredChains(): ChainDefinition[] {
   return FEATURED_ORDER.map((k) => CHAINS[k]);
 }
 
+const TESTNET_ORDER: Array<(typeof ChainKey)[keyof typeof ChainKey]> = [
+  ChainKey.EthereumSepolia,
+  ChainKey.AvalancheFuji,
+  ChainKey.BaseSepolia,
+  ChainKey.ArbSepolia,
+  ChainKey.CardanoPreprod,
+  ChainKey.NearTestnet,
+  ChainKey.BnbTestnet,
+];
+
 export function testnetChains(): ChainDefinition[] {
-  return Object.values(CHAINS).filter((c) => c.testnet && c.enabled && c.evm);
+  return TESTNET_ORDER.map((k) => CHAINS[k]).filter((c) => c.enabled);
 }
