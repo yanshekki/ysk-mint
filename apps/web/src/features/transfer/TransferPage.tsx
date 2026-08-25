@@ -1,10 +1,12 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { zeroAddress } from "viem";
-import { useAccount, useChainId, usePublicClient, useSwitchChain, useWalletClient } from "wagmi";
+import { useAccount, useChainId, useConfig, useSwitchChain } from "wagmi";
+import { getPublicClient, getWalletClient } from "wagmi/actions";
 import {
   CHAINS,
   ChainKey,
+  ErrorCode,
   decodeLaunchError,
   toPeerBytes32,
   yskOftAbi,
@@ -18,6 +20,18 @@ import { ISSUANCE_GROUP_TITLE, issuanceGroups } from "../../lib/launchTargets.ts
 import { useWizard } from "../wizard/store.ts";
 
 const PCT = [10, 25, 50, 75, 100] as const;
+const ZERO_PEER = `0x${"00".repeat(32)}` as const;
+
+function errorFromCatch(e: unknown, locale: "en" | "zh-HK", notOft: string): LaunchError {
+  const err = e as { data?: `0x${string}`; cause?: { data?: `0x${string}` }; message?: string };
+  const data = err.data ?? err.cause?.data;
+  if (data && data !== "0x") return decodeLaunchError(data, locale);
+  const msg = `${err.message ?? ""} ${String(e)}`;
+  if (/quoteSend|peers|returned no data|does not match|execution reverted|Function does not exist/i.test(msg)) {
+    return { code: ErrorCode.Unknown, args: [], severity: "user", retryable: false, message: notOft };
+  }
+  return decodeLaunchError("0x", locale);
+}
 
 type Pick = {
   id: string;
@@ -35,6 +49,7 @@ export function TransferPage() {
   const locale = i18n.language === "zh-HK" ? "zh-HK" : "en";
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
+  const config = useConfig();
   const { switchChainAsync } = useSwitchChain();
   const w = useWizard();
   const evmHold = useEvmHoldings(address);
@@ -48,8 +63,6 @@ export function TransferPage() {
   const [pasted, setPasted] = useState("");
 
   const srcChainId = pick?.chainId ?? chainId;
-  const publicClient = usePublicClient({ chainId: srcChainId });
-  const { data: wallet } = useWalletClient({ chainId: srcChainId });
   const dst = CHAINS[dstKey as keyof typeof CHAINS];
   const destIsNative = dst?.vm !== "evm" || !dst.eid;
   const destIsSelf = Boolean(dst?.evm && dst.chainId === srcChainId);
@@ -93,32 +106,44 @@ export function TransferPage() {
   }, [evmHold.rows, w.name, w.perChain, w.symbol]);
 
   const groups = issuanceGroups();
-  const canAct = Boolean(address && token && token.toLowerCase() !== zeroAddress && !destBlocked);
+  const canAct = Boolean(address && token && token.toLowerCase() !== zeroAddress && !destBlocked && dst?.eid);
 
-  async function ensureSrcChain() {
-    if (pick && pick.chainId !== chainId) {
-      await switchChainAsync({ chainId: pick.chainId });
-    }
-  }
-
-  async function amountOf(): Promise<bigint> {
-    if (!publicClient || !address || !token) return 0n;
-    const bal = await publicClient.readContract({
-      address: token as `0x${string}`,
-      abi: yskOftAbi,
-      functionName: "balanceOf",
-      args: [address],
-    });
-    return (bal * BigInt(pct)) / 100n;
-  }
-
-  async function doQuote() {
-    if (!publicClient || !address || !token) return;
+  const quoteNow = useCallback(async () => {
+    if (!address || !token || destBlocked || !dst?.eid) return;
     setErrors([]);
+    setQuote("");
     try {
-      await ensureSrcChain();
-      const value = await amountOf();
-      const fee = await publicClient.readContract({
+      if (pick && pick.chainId !== chainId) {
+        await switchChainAsync({ chainId: pick.chainId });
+      }
+      const client = getPublicClient(config, { chainId: pick?.chainId ?? srcChainId });
+      if (!client) throw new Error("missing client");
+      const peer = await client.readContract({
+        address: token as `0x${string}`,
+        abi: yskOftAbi,
+        functionName: "peers",
+        args: [dst.eid],
+      });
+      if (peer === ZERO_PEER) {
+        setErrors([
+          {
+            code: ErrorCode.PeerNotSet,
+            args: [],
+            severity: "user",
+            retryable: false,
+            message: t("transfer.peerMissing"),
+          },
+        ]);
+        return;
+      }
+      const bal = await client.readContract({
+        address: token as `0x${string}`,
+        abi: yskOftAbi,
+        functionName: "balanceOf",
+        args: [address],
+      });
+      const value = (bal * BigInt(pct)) / 100n;
+      const fee = await client.readContract({
         address: token as `0x${string}`,
         abi: yskOftAbi,
         functionName: "quoteSend",
@@ -137,18 +162,37 @@ export function TransferPage() {
       });
       setQuote(fee.nativeFee.toString());
     } catch (e) {
-      const data = (e as { data?: `0x${string}` }).data;
-      setErrors([decodeLaunchError(data ?? "0x", locale)]);
+      setErrors([errorFromCatch(e, locale, t("transfer.notOft"))]);
     }
-  }
+  }, [address, chainId, config, destBlocked, dst?.eid, locale, pct, pick, srcChainId, switchChainAsync, t, token]);
+
+  useEffect(() => {
+    if (!canAct) {
+      setQuote("");
+      return;
+    }
+    const handle = window.setTimeout(() => void quoteNow(), 200);
+    return () => window.clearTimeout(handle);
+  }, [canAct, quoteNow]);
 
   async function doSend() {
-    if (!publicClient || !wallet || !address || !token) return;
+    if (!address || !token || !dst?.eid) return;
     setBusy(true);
     setErrors([]);
     try {
-      await ensureSrcChain();
-      const value = await amountOf();
+      if (pick && pick.chainId !== chainId) {
+        await switchChainAsync({ chainId: pick.chainId });
+      }
+      const client = getPublicClient(config, { chainId: pick?.chainId ?? srcChainId });
+      const signer = await getWalletClient(config, { chainId: pick?.chainId ?? srcChainId });
+      if (!client || !signer) throw new Error("missing client");
+      const bal = await client.readContract({
+        address: token as `0x${string}`,
+        abi: yskOftAbi,
+        functionName: "balanceOf",
+        args: [address],
+      });
+      const value = (bal * BigInt(pct)) / 100n;
       const sendParam = {
         dstEid: dst.eid,
         to: toPeerBytes32(address),
@@ -158,13 +202,13 @@ export function TransferPage() {
         composeMsg: "0x" as const,
         oftCmd: "0x" as const,
       };
-      const fee = await publicClient.readContract({
+      const fee = await client.readContract({
         address: token as `0x${string}`,
         abi: yskOftAbi,
         functionName: "quoteSend",
         args: [sendParam, false],
       });
-      await publicClient.simulateContract({
+      await client.simulateContract({
         account: address,
         address: token as `0x${string}`,
         abi: yskOftAbi,
@@ -172,17 +216,17 @@ export function TransferPage() {
         args: [sendParam, fee, address],
         value: fee.nativeFee,
       });
-      const hash = await wallet.writeContract({
+      const hash = await signer.writeContract({
         address: token as `0x${string}`,
         abi: yskOftAbi,
         functionName: "send",
         args: [sendParam, fee, address],
         value: fee.nativeFee,
       });
-      await publicClient.waitForTransactionReceipt({ hash });
+      await client.waitForTransactionReceipt({ hash });
+      setQuote(fee.nativeFee.toString());
     } catch (e) {
-      const data = (e as { data?: `0x${string}` }).data;
-      setErrors([decodeLaunchError(data ?? "0x", locale)]);
+      setErrors([errorFromCatch(e, locale, t("transfer.notOft"))]);
     } finally {
       setBusy(false);
     }
@@ -335,10 +379,10 @@ export function TransferPage() {
             </div>
           </div>
           <div className="workspace-actions">
-            <Button type="button" variant="ghost" disabled={!canAct} onClick={() => void doQuote()}>
+            <Button type="button" variant="ghost" disabled={!canAct} onClick={() => void quoteNow()}>
               {t("transfer.quote")}
             </Button>
-            <Button type="button" variant="grad" disabled={!canAct || busy} onClick={() => void doSend()}>
+            <Button type="button" variant="grad" disabled={!canAct || busy || !quote} onClick={() => void doSend()}>
               {t("transfer.send")}
             </Button>
           </div>

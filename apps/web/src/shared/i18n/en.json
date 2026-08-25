@@ -271,7 +271,9 @@
     "amount": "Amount",
     "dest": "Destination",
     "nativeDest": "Not OFT send.",
-    "sameChain": "Source chain"
+    "sameChain": "Source chain",
+    "notOft": "This token is not a product OFT, so it cannot be quoted.",
+    "peerMissing": "No setPeer for the destination chain."
   },
   "me": {
     "title": "Holdings",

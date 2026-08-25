@@ -271,7 +271,9 @@
     "amount": "數量",
     "dest": "目的鏈",
     "nativeDest": "不經 OFT send。",
-    "sameChain": "來源鏈"
+    "sameChain": "來源鏈",
+    "notOft": "這個代幣不是本產品 OFT，無法報價。",
+    "peerMissing": "目的鏈尚未 setPeer。"
   },
   "me": {
     "title": "持倉",
