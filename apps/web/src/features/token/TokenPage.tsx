@@ -2,6 +2,7 @@ import { useParams } from "react-router-dom";
 import { useReadContracts } from "wagmi";
 import { useTranslation } from "react-i18next";
 import { yskOftAbi } from "@ysk-mint/sdk";
+import { ShareCard } from "./ShareCard.tsx";
 
 export function TokenPage() {
   const { t } = useTranslation();
@@ -35,6 +36,7 @@ export function TokenPage() {
         <div className="flex justify-between gap-4"><dt>totalSupply()</dt><dd>{supply?.result?.toString() ?? "…"}</dd></div>
         <div className="flex justify-between gap-4"><dt>owner()</dt><dd className="font-mono break-all">{String(owner?.result ?? "…")}</dd></div>
       </dl>
+      <ShareCard name={String(name?.result ?? "")} address={token} />
     </section>
   );
 }

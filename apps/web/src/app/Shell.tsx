@@ -20,6 +20,12 @@ export function Shell() {
             <Link to="/create" className="text-text-sub hover:text-text-main">
               {t("nav.create")}
             </Link>
+            <Link to="/transfer" className="text-text-sub hover:text-text-main">
+              {t("nav.transfer")}
+            </Link>
+            <Link to="/me" className="text-text-sub hover:text-text-main">
+              {t("nav.me")}
+            </Link>
             <button
               type="button"
               className="rounded-lg border border-border px-2 py-1 text-xs"
