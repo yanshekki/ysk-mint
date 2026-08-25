@@ -120,7 +120,7 @@ export function WalletDesk() {
                 }
                 return (
                   <button type="button" className="ghost-btn wallet-cta-block" onClick={openAccountModal}>
-                    {t("wallet.disconnect")} · {account.displayName}
+                    {t("wallet.disconnect")}
                   </button>
                 );
               }}
