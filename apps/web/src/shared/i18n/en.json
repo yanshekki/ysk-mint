@@ -102,13 +102,19 @@
     },
     "basics": {
       "name": "Name",
+      "nameHint": "Written to name() on the contract. Wallets and explorers show it. Cannot change after mint.",
       "symbol": "Ticker",
+      "symbolHint": "Written to symbol() on the contract. Cannot change after mint.",
       "decimals": "Decimals",
+      "decimalsHint": "Written on-chain. Cannot change after mint.",
       "supply": "Total supply",
       "description": "Description (optional)",
+      "descriptionHint": "Not written to the contract. Wallets, Etherscan, CoinMarketCap and DEXes will not pick it up. Shown only on this site’s review. Editable before you sign; afterwards you submit it yourself on those platforms, where you can update it.",
       "logo": "Logo",
-      "logoHint": "Drop an image or click to choose. Stored locally only.",
+      "logoHint": "Drop an image or click to choose. Local preview only — not on-chain. Wallets and CMC need a separate upload.",
       "website": "Website (optional)",
+      "websiteHint": "Not written to the contract. This site can show the link. Explorers and CMC will not read it automatically. Editable before you sign; afterwards update it on each platform yourself.",
+      "optionalNote": "Description and website are not stored in the token contract, so there is nothing on-chain to edit. Only name, ticker and decimals go on-chain, and those cannot change after you sign.",
       "showAdvanced": "Optional details",
       "hideAdvanced": "Hide optional details"
     },
@@ -184,7 +190,10 @@
       "fixed": "Supply is fixed",
       "mintableWarn": "Mintable — owner can inflate",
       "lock": "LP lock selected",
-      "unaudited": "Contracts unaudited"
+      "unaudited": "Contracts unaudited",
+      "offchain": "Description, website and logo are not on-chain. This site can show them; wallets and CMC cannot. Submit those later yourself.",
+      "desc": "Description: {{text}}",
+      "site": "Website: {{url}}"
     },
     "execute": {
       "simulate": "Simulate then sign",

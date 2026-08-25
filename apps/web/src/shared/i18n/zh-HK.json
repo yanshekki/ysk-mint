@@ -102,13 +102,19 @@
     },
     "basics": {
       "name": "名稱",
+      "nameHint": "寫入合約 name()。錢包、區塊瀏覽器會顯示。上鏈後改唔到。",
       "symbol": "代號",
+      "symbolHint": "寫入合約 symbol()。上鏈後改唔到。",
       "decimals": "Decimals",
+      "decimalsHint": "寫入合約。上鏈後改唔到。",
       "supply": "總供應",
       "description": "說明（可選）",
+      "descriptionHint": "唔寫入合約。錢包、Etherscan、CoinMarketCap、DEX 都唔會自動顯示。只會出現喺本站總覽。上鏈前可以改；之後要自己去各平台提交，嗰度先改到。",
       "logo": "Logo",
-      "logoHint": "拖放圖片或點擊選擇。只存在本機。",
+      "logoHint": "拖放圖片或點擊選擇。只存在本機，唔上鏈。錢包／CMC 要另外上傳。",
       "website": "網站（可選）",
+      "websiteHint": "唔寫入合約。本站總覽可以顯示連結。瀏覽器同 CMC 唔會自動讀。上鏈前可以改；之後要自己去各平台更新。",
+      "optionalNote": "說明同網站都唔會寫入代幣合約，所以合約層面冇得改。上鏈嘅只有名稱、代號、decimals，簽完名就改唔到。",
       "showAdvanced": "可選資料",
       "hideAdvanced": "收起可選資料"
     },
@@ -184,7 +190,10 @@
       "fixed": "供應量固定",
       "mintableWarn": "可增發 — 擁有人可以膨脹",
       "lock": "已揀 LP 鎖定",
-      "unaudited": "合約未經審計"
+      "unaudited": "合約未經審計",
+      "offchain": "說明／網站／logo 唔上鏈。只喺本站顯示；錢包同 CMC 睇唔到，之後要自己提交。",
+      "desc": "說明：{{text}}",
+      "site": "網站：{{url}}"
     },
     "execute": {
       "simulate": "模擬後簽名",

@@ -1041,6 +1041,14 @@ table.data tbody tr:hover td {
   padding: 0 12px;
   background: var(--bg-white);
 }
+.field-note {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--text-sub);
+}
 .dropzone {
   border: 1px dashed var(--border-color);
   border-radius: var(--radius-md);

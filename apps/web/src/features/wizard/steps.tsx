@@ -36,6 +36,7 @@ export function StepBasics() {
             value={w.name}
             onChange={(e) => w.set({ name: e.target.value })}
           />
+          <span className="field-note">{t("wizard.basics.nameHint")}</span>
         </label>
         <label className="text-[14px] font-bold">
           {t("wizard.basics.symbol")}
@@ -45,6 +46,7 @@ export function StepBasics() {
             value={w.symbol}
             onChange={(e) => w.set({ symbol: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "") })}
           />
+          <span className="field-note">{t("wizard.basics.symbolHint")}</span>
         </label>
       </div>
       <div>
@@ -55,6 +57,7 @@ export function StepBasics() {
           onChange={(decimals) => w.set({ decimals })}
           options={DECIMALS.map((d) => ({ value: d, label: String(d) }))}
         />
+        <p className="field-note mt-2">{t("wizard.basics.decimalsHint")}</p>
       </div>
       <div>
         <p className="mb-2 text-[14px] font-bold">{t("wizard.basics.supply")}</p>
@@ -74,18 +77,28 @@ export function StepBasics() {
       </button>
       {w.showAdvanced ? (
         <div className="grid gap-3">
-          <input
-            className="field-text"
-            placeholder={t("wizard.basics.description")}
-            value={w.description}
-            onChange={(e) => w.set({ description: e.target.value })}
-          />
-          <input
-            className="field-text"
-            placeholder={t("wizard.basics.website")}
-            value={w.website}
-            onChange={(e) => w.set({ website: e.target.value })}
-          />
+          <p className="field-note">{t("wizard.basics.optionalNote")}</p>
+          <label className="text-[14px] font-bold">
+            {t("wizard.basics.description")}
+            <input
+              className="field-text mt-1"
+              value={w.description}
+              onChange={(e) => w.set({ description: e.target.value })}
+            />
+            <span className="field-note">{t("wizard.basics.descriptionHint")}</span>
+          </label>
+          <label className="text-[14px] font-bold">
+            {t("wizard.basics.website")}
+            <input
+              className="field-text mt-1"
+              type="url"
+              inputMode="url"
+              placeholder="https://"
+              value={w.website}
+              onChange={(e) => w.set({ website: e.target.value })}
+            />
+            <span className="field-note">{t("wizard.basics.websiteHint")}</span>
+          </label>
         </div>
       ) : null}
     </div>
@@ -330,6 +343,9 @@ export function StepReview() {
         <li>{w.supplyMode === SupplyMode.Fixed ? t("wizard.review.fixed") : t("wizard.review.mintableWarn")}</li>
         <li>{t("wizard.review.lock")}</li>
         <li>{t("wizard.review.unaudited")}</li>
+        <li>{t("wizard.review.offchain")}</li>
+        {w.description ? <li>{t("wizard.review.desc", { text: w.description })}</li> : null}
+        {w.website ? <li>{t("wizard.review.site", { url: w.website })}</li> : null}
       </ul>
     </div>
   );
