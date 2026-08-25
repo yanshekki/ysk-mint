@@ -28,9 +28,12 @@ export function NativeConnect() {
 
   useEffect(() => {
     void restoreNearSession();
-    setAdaWallets(listCardanoWallets());
+    const scan = () => setAdaWallets(listCardanoWallets());
+    scan();
+    const timers = [400, 1200, 3000].map((ms) => window.setTimeout(scan, ms));
     void pingNearRpc().then(setNearHeight);
     void pingCardanoTip().then(setAdaHeight);
+    return () => timers.forEach((id) => window.clearTimeout(id));
   }, []);
 
   return (
@@ -79,13 +82,13 @@ export function NativeConnect() {
           <div className="flex flex-wrap gap-2">
             {adaWallets.map((w) => (
               <button
-                key={w.name}
+                key={w.id}
                 type="button"
                 className="ghost-btn"
                 disabled={busy === "ada"}
                 onClick={() => {
                   setBusy("ada");
-                  void connectCardano(w.name).finally(() => setBusy(null));
+                  void connectCardano(w.id).finally(() => setBusy(null));
                 }}
               >
                 {w.name}

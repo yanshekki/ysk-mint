@@ -11,8 +11,6 @@
   },
   "dependencies": {
     "@hot-labs/near-connect": "^0.11.4",
-    "@meshsdk/core": "^1.9.1",
-    "@meshsdk/wallet": "2.0.0-beta.11",
     "@rainbow-me/rainbowkit": "^2.2.4",
     "@tanstack/react-query": "^5.69.0",
     "@ysk-mint/config": "workspace:*",
