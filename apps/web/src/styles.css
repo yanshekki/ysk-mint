@@ -174,17 +174,18 @@ select {
   align-items: center;
   gap: 8px;
 }
+.session-menu {
+  position: relative;
+}
 .session-pop {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 8px);
+  position: fixed;
   width: min(380px, calc(100vw - 24px));
   padding: 12px;
   border-radius: 16px;
   border: 1px solid var(--border-color);
   background: var(--bg-white);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
-  z-index: 30;
+  z-index: 10050;
 }
 .session-pop-title {
   margin: 0 4px 10px;
@@ -195,9 +196,9 @@ select {
   color: var(--text-muted);
 }
 .session-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
   gap: 12px;
   padding: 12px;
   border: 1px solid var(--border-color);
@@ -207,11 +208,15 @@ select {
 .session-row:last-child {
   margin-bottom: 0;
 }
-.session-row > div {
+.session-row-copy {
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+.session-row-copy b,
+.session-row-copy span {
+  display: block;
 }
 .session-row b {
   font-size: 14px;
@@ -220,6 +225,9 @@ select {
 .session-row span {
   font-size: 13px;
   color: var(--text-sub);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .session-row .wallet-cta,
 .session-row .ghost-btn {

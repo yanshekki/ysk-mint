@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useTranslation } from "react-i18next";
 import { useAccount, useChainId, useDisconnect } from "wagmi";
@@ -31,7 +32,10 @@ export function ConnectBar() {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [adaWallets, setAdaWallets] = useState<CardanoWalletInfo[]>([]);
-  const root = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 72, right: 24 });
+  const barRef = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const popRef = useRef<HTMLDivElement>(null);
 
   const hasNear = Boolean(native.nearAccount);
   const hasAda = Boolean(native.cardanoAddress);
@@ -44,15 +48,26 @@ export function ConnectBar() {
   useEffect(() => {
     if (!open) return;
     setAdaWallets(listCardanoWallets());
+    const place = () => {
+      const el = btnRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      setPos({ top: r.bottom + 8, right: Math.max(12, window.innerWidth - r.right) });
+    };
+    place();
     const onDoc = (e: MouseEvent) => {
-      if (!root.current?.contains(e.target as Node)) setOpen(false);
+      const n = e.target as Node;
+      if (barRef.current?.contains(n) || popRef.current?.contains(n)) return;
+      setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
     };
+    window.addEventListener("resize", place);
     document.addEventListener("mousedown", onDoc);
     document.addEventListener("keydown", onKey);
     return () => {
+      window.removeEventListener("resize", place);
       document.removeEventListener("mousedown", onDoc);
       document.removeEventListener("keydown", onKey);
     };
@@ -74,7 +89,7 @@ export function ConnectBar() {
             : parts.join(" · ");
 
   return (
-    <div className="session-bar" ref={root}>
+    <div className="session-bar" ref={barRef}>
       <label className="lang-dd-wrap">
         <span className="sr-only">{t("nav.lang")}</span>
         <select
@@ -99,9 +114,93 @@ export function ConnectBar() {
               </button>
             );
           }
+          const menu = (
+            <div className="session-pop" ref={popRef} role="dialog" aria-label={t("wallet.session")} style={pos}>
+              <p className="session-pop-title">{t("wallet.session")}</p>
+
+              <div className="session-row">
+                <div className="session-row-copy">
+                  <b>EVM · {chain?.short ?? "ETH"}</b>
+                  <span className="num">{account ? account.displayName : t("wizard.wallet.idle")}</span>
+                </div>
+                {account ? (
+                  <button type="button" className="ghost-btn" onClick={() => disconnect()}>
+                    {t("wallet.disconnect")}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="wallet-cta"
+                    onClick={() => {
+                      setOpen(false);
+                      openConnectModal();
+                    }}
+                  >
+                    {t("wallet.connect")}
+                  </button>
+                )}
+              </div>
+
+              <div className="session-row">
+                <div className="session-row-copy">
+                  <b>NEAR</b>
+                  <span className="num">{hasNear ? short(native.nearAccount, 10, 8) : t("wizard.wallet.idle")}</span>
+                </div>
+                {hasNear ? (
+                  <button type="button" className="ghost-btn" onClick={() => void disconnectNearWallet()}>
+                    {t("wallet.disconnect")}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="wallet-cta"
+                    disabled={busy === "near"}
+                    onClick={() => {
+                      setBusy("near");
+                      void connectNear().finally(() => setBusy(null));
+                    }}
+                  >
+                    {t("wallet.connectNear")}
+                  </button>
+                )}
+              </div>
+
+              <div className="session-row">
+                <div className="session-row-copy">
+                  <b>Cardano</b>
+                  <span className="num">{hasAda ? short(native.cardanoAddress, 10, 8) : t("wizard.wallet.idle")}</span>
+                  {!hasAda && adaWallets.length ? (
+                    <div className="session-ada-wallets">
+                      {adaWallets.map((w) => (
+                        <button
+                          key={w.id}
+                          type="button"
+                          className="wallet-chip"
+                          disabled={busy === "ada"}
+                          onClick={() => {
+                            setBusy("ada");
+                            void connectCardano(w.id).finally(() => setBusy(null));
+                          }}
+                        >
+                          {w.name}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                  {!hasAda && !adaWallets.length ? <span>{t("wallet.noCip30")}</span> : null}
+                </div>
+                {hasAda ? (
+                  <button type="button" className="ghost-btn" onClick={() => native.disconnectCardano()}>
+                    {t("wallet.disconnect")}
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          );
           return (
-            <>
+            <div className="session-menu">
               <button
+                ref={btnRef}
                 type="button"
                 className={`wallet-session-btn ${any ? "on" : ""}`}
                 aria-expanded={open}
@@ -110,94 +209,8 @@ export function ConnectBar() {
                 <span className={`wallet-dot ${any ? "wallet-dot-on" : ""}`} />
                 {trigger}
               </button>
-              {open ? (
-                <div className="session-pop" role="dialog" aria-label={t("wallet.session")}>
-                  <p className="session-pop-title">{t("wallet.session")}</p>
-
-                  <div className="session-row">
-                    <div>
-                      <b>EVM · {chain?.short ?? "ETH"}</b>
-                      <span className="num">{account ? account.displayName : t("wizard.wallet.idle")}</span>
-                    </div>
-                    {account ? (
-                      <button type="button" className="ghost-btn" onClick={() => disconnect()}>
-                        {t("wallet.disconnect")}
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="wallet-cta"
-                        onClick={() => {
-                          setOpen(false);
-                          openConnectModal();
-                        }}
-                      >
-                        {t("wallet.connect")}
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="session-row">
-                    <div>
-                      <b>NEAR</b>
-                      <span className="num">
-                        {hasNear ? short(native.nearAccount, 10, 8) : t("wizard.wallet.idle")}
-                      </span>
-                    </div>
-                    {hasNear ? (
-                      <button type="button" className="ghost-btn" onClick={() => void disconnectNearWallet()}>
-                        {t("wallet.disconnect")}
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="wallet-cta"
-                        disabled={busy === "near"}
-                        onClick={() => {
-                          setBusy("near");
-                          void connectNear().finally(() => setBusy(null));
-                        }}
-                      >
-                        {t("wallet.connectNear")}
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="session-row">
-                    <div>
-                      <b>Cardano</b>
-                      <span className="num">
-                        {hasAda ? short(native.cardanoAddress, 10, 8) : t("wizard.wallet.idle")}
-                      </span>
-                      {!hasAda && adaWallets.length ? (
-                        <div className="session-ada-wallets">
-                          {adaWallets.map((w) => (
-                            <button
-                              key={w.id}
-                              type="button"
-                              className="wallet-chip"
-                              disabled={busy === "ada"}
-                              onClick={() => {
-                                setBusy("ada");
-                                void connectCardano(w.id).finally(() => setBusy(null));
-                              }}
-                            >
-                              {w.name}
-                            </button>
-                          ))}
-                        </div>
-                      ) : null}
-                      {!hasAda && !adaWallets.length ? <span>{t("wallet.noCip30")}</span> : null}
-                    </div>
-                    {hasAda ? (
-                      <button type="button" className="ghost-btn" onClick={() => native.disconnectCardano()}>
-                        {t("wallet.disconnect")}
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-              ) : null}
-            </>
+              {open ? createPortal(menu, document.body) : null}
+            </div>
           );
         }}
       </ConnectButton.Custom>
