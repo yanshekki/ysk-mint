@@ -12,6 +12,7 @@ import {
   disconnectSolanaWallet,
   listCardanoWallets,
   listSolanaWallets,
+  restoreCardanoSession,
   restoreNearSession,
   restoreSolanaSession,
   useNativeWallets,
@@ -47,16 +48,17 @@ export function WalletDesk() {
     Number(isConnected) + Number(!!native.nearAccount) + Number(!!native.cardanoAddress) + Number(!!native.solanaAddress);
   const evmHold = useEvmHoldings(address);
   const nearHold = useNearHoldings(native.nearAccount);
-  const adaHold = useCardanoHoldings(native.cardanoAddress);
+  const adaHold = useCardanoHoldings(native.cardanoAddress, {
+    addresses: native.cardanoAddresses,
+    stake: native.cardanoStake,
+  });
   const solHold = useSolanaHoldings(native.solanaAddress);
 
   useEffect(() => {
     void restoreNearSession();
     void restoreSolanaSession();
-    const scan = () => {
-      setAdaWallets(listCardanoWallets());
-      void listSolanaWallets().then(setSolWallets);
-    };
+    void restoreCardanoSession();
+    const scan = () => setAdaWallets(listCardanoWallets());
     scan();
     const timers = [400, 1200, 3000].map((ms) => window.setTimeout(scan, ms));
     return () => timers.forEach((id) => window.clearTimeout(id));

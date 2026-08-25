@@ -76,17 +76,15 @@ function windowProviders(): Array<{ id: string; name: string; provider: Injected
     phantom?: { solana?: Injected };
     solflare?: Injected;
     backpack?: { solana?: Injected };
-    solana?: Injected;
   };
   const out: Array<{ id: string; name: string; provider: Injected }> = [];
-  const phantom = asInjected(w.phantom?.solana) ?? (w.solana?.isPhantom ? asInjected(w.solana) : null);
+  // Do not read window.solana — Phantom's getter can open a connect prompt on page load.
+  const phantom = asInjected(w.phantom?.solana);
   if (phantom) out.push({ id: "phantom", name: "Phantom", provider: phantom });
   const solflare = asInjected(w.solflare);
   if (solflare && !out.some((x) => x.provider === solflare)) out.push({ id: "solflare", name: "Solflare", provider: solflare });
   const backpack = asInjected(w.backpack?.solana);
   if (backpack) out.push({ id: "backpack", name: "Backpack", provider: backpack });
-  const generic = asInjected(w.solana);
-  if (generic && !out.some((x) => x.provider === generic)) out.push({ id: "solana", name: "Solana", provider: generic });
   return out;
 }
 
@@ -183,21 +181,8 @@ export async function disconnectSolanaWallet() {
   useNativeWallets.getState().disconnectSolana();
 }
 
+/** Persist only. Never call connect() or touch injected providers on refresh. */
 export async function restoreSolanaSession() {
   const saved = useNativeWallets.getState().solanaAddress;
-  if (saved && isSolanaAddress(saved)) return saved;
-  for (const p of windowProviders()) {
-    try {
-      const res = await p.provider.connect({ onlyIfTrusted: true });
-      const address = addrOf(res && typeof res === "object" ? res.publicKey : undefined) || addrOf(p.provider.publicKey);
-      if (isSolanaAddress(address)) {
-        injected = p.provider;
-        useNativeWallets.getState().setSolana(address, p.id);
-        return address;
-      }
-    } catch {
-      /* not trusted */
-    }
-  }
-  return "";
+  return saved && isSolanaAddress(saved) ? saved : "";
 }

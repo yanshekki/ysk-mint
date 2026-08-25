@@ -2,8 +2,18 @@ Token icons copied from CoinMarketCap public 64×64 CDN
 (https://s2.coinmarketcap.com/static/img/coins/64x64/{id}.png)
 into this folder so the SPA does not hotlink at runtime.
 
+Contract addresses in tokenRegistry.ts are CMC platform contracts
+fetched 2026-08-25. Decimals are on-chain (CMC contractDecimals is often wrong).
+
 CMC IDs:
   btc=1 eth=1027 usdt=825 bnb=1839 usdc=3408 ada=2010
   avax=5805 dai=4943 wbtc=3717 link=1975 uni=7083
   arb=11841 op=11840 near=6535 aave=7278 sol=5426
+  cake=7186 aero=29270 joe=11396 snek=25264 jup=29210
+  ray=8526 bonk=23095 wif=28752 pyth=28177 jto=28541
+  orca=11165 render=5690 cbbtc=32994 gmx=11857 min=12787
+  djed=21639 hosky=16755 sundae=11986 indy=22771 iag=11078
+  night=39064 wmtx=13769 aurora=14803 msol=11461 shib=5994
+  pepe=24478 png=8422 ref=11809 degen=30096 jitosol=22533
+  steth=8085 wsteth=12409 virtual=29420
   (4846 is Kusama — do not use)

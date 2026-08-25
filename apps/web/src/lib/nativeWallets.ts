@@ -1,5 +1,5 @@
 import { isCardanoAddress, isNearAccountId, isSolanaAddress } from "@ysk-mint/sdk";
-import { enableCardano, listCardanoWallets, type CardanoWalletInfo } from "./cardanoCip30.ts";
+import { enableCardano, listCardanoWallets, refreshCardanoIfEnabled, type CardanoWalletInfo } from "./cardanoCip30.ts";
 import { useNativeWallets } from "./nativeWalletStore.ts";
 import {
   connectNearSelector,
@@ -37,9 +37,27 @@ export type { CardanoWalletInfo };
 export { listCardanoWallets };
 
 export async function connectCardano(walletId: string): Promise<string> {
-  const addr = await enableCardano(walletId);
-  useNativeWallets.getState().setCardano(addr, walletId);
-  return addr;
+  const session = await enableCardano(walletId);
+  useNativeWallets.getState().setCardano(session.address, walletId, {
+    addresses: session.addresses,
+    stake: session.stake,
+  });
+  return session.address;
+}
+
+export async function restoreCardanoSession(): Promise<string> {
+  const state = useNativeWallets.getState();
+  if (state.cardanoWallet) {
+    const session = await refreshCardanoIfEnabled(state.cardanoWallet);
+    if (session) {
+      useNativeWallets.getState().setCardano(session.address, state.cardanoWallet, {
+        addresses: session.addresses,
+        stake: session.stake,
+      });
+      return session.address;
+    }
+  }
+  return state.cardanoAddress;
 }
 
 export async function pingNearRpc(): Promise<string | null> {

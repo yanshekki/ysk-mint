@@ -168,10 +168,52 @@ export function useNearHoldings(account: string) {
   return { rows, funded: rows.filter((r) => r.raw > 0n).length, loading, catalogSize: catalog.length };
 }
 
-export function useCardanoHoldings(address: string) {
+type CardanoAsset = {
+  policy_id?: string;
+  asset_policy?: string;
+  asset_name?: string;
+  quantity?: string;
+  decimals?: number;
+  asset_list?: CardanoAsset[];
+};
+
+function flattenCardanoAssets(raw: unknown): CardanoAsset[] {
+  if (!Array.isArray(raw)) return [];
+  const out: CardanoAsset[] = [];
+  for (const item of raw as CardanoAsset[]) {
+    if (Array.isArray(item.asset_list)) out.push(...item.asset_list);
+    else out.push(item);
+  }
+  return out;
+}
+
+function cardanoUnit(a: CardanoAsset) {
+  return `${a.policy_id ?? a.asset_policy ?? ""}${a.asset_name ?? ""}`.toLowerCase();
+}
+
+async function koiosPost(path: string, body: unknown) {
+  const res = await fetch(`https://api.koios.rest/api/v1/${path}`, {
+    method: "POST",
+    headers: { "content-type": "application/json", accept: "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`koios ${path}`);
+  return res.json() as Promise<unknown>;
+}
+
+function chunk<T>(items: T[], size: number) {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
+
+export function useCardanoHoldings(address: string, extras?: { addresses?: string[]; stake?: string }) {
   const catalog = useMemo(() => tokensFor("cardano", 1815), []);
   const [rows, setRows] = useState<HoldingRow[]>(() => catalog.map((t) => row(t, null, false)));
   const [loading, setLoading] = useState(false);
+  const stake = extras?.stake ?? "";
+  const payments = extras?.addresses?.filter(Boolean) ?? [];
+  const addrKey = [address, stake, ...payments].join("|");
 
   useEffect(() => {
     if (!address) {
@@ -183,46 +225,53 @@ export function useCardanoHoldings(address: string) {
     void (async () => {
       const next: HoldingRow[] = [];
       try {
-        const infoRes = await fetch("https://api.koios.rest/api/v1/address_info", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ _addresses: [address] }),
-        });
-        const info = (await infoRes.json()) as Array<{ balance?: string }>;
-        const ada = BigInt(info[0]?.balance ?? "0");
+        let ada = 0n;
+        let assets: CardanoAsset[] = [];
+        if (stake.startsWith("stake")) {
+          const info = (await koiosPost("account_info", { _stake_addresses: [stake] })) as Array<{
+            total_balance?: string;
+            utxo?: string;
+          }>;
+          ada = BigInt(info[0]?.total_balance ?? info[0]?.utxo ?? "0");
+          assets = flattenCardanoAssets(await koiosPost("account_assets", { _stake_addresses: [stake] }));
+        } else {
+          const addrs = Array.from(new Set([address, ...payments].filter(Boolean)));
+          for (const group of chunk(addrs, 50)) {
+            const info = (await koiosPost("address_info", { _addresses: group })) as Array<{ balance?: string }>;
+            for (const rowInfo of info) ada += BigInt(rowInfo.balance ?? "0");
+            assets.push(...flattenCardanoAssets(await koiosPost("address_assets", { _addresses: group })));
+          }
+        }
+
         const adaMeta = catalog.find((t) => t.native);
         if (adaMeta) next.push(row(adaMeta, ada, true));
 
-        const assetRes = await fetch("https://api.koios.rest/api/v1/address_assets", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ _addresses: [address] }),
-        });
-        const assets = (await assetRes.json()) as Array<{
-          policy_id?: string;
-          asset_name?: string;
-          quantity?: string;
-          decimals?: number;
-        }>;
-        const seen = new Set<string>();
+        const qty = new Map<string, { raw: bigint; decimals: number }>();
         for (const a of assets) {
-          const unit = `${a.policy_id ?? ""}${a.asset_name ?? ""}`.toLowerCase();
+          const unit = cardanoUnit(a);
           if (!unit) continue;
+          const raw = BigInt(a.quantity ?? "0");
+          const prev = qty.get(unit);
+          qty.set(unit, { raw: (prev?.raw ?? 0n) + raw, decimals: a.decimals ?? prev?.decimals ?? 0 });
+        }
+
+        const seen = new Set<string>();
+        for (const [unit, bal] of qty) {
           seen.add(unit);
           const known = cardanoByUnit(unit);
-          const raw = BigInt(a.quantity ?? "0");
           if (known) {
-            next.push(row(known, raw, true));
+            next.push(row(known, bal.raw, true));
           } else {
-            const ticker = hexAscii(a.asset_name ?? "") || unit.slice(0, 8).toUpperCase();
+            const ticker = hexAscii(unit.slice(56)) || unit.slice(0, 8).toUpperCase();
             next.push({
               id: `ada-${unit}`,
               symbol: ticker,
               name: ticker,
               icon: "/tokens/ada.png",
-              amount: fmt(raw, a.decimals ?? 0),
-              raw,
+              amount: fmt(bal.raw, bal.decimals),
+              raw: bal.raw,
               contract: unit,
+              chainTag: "ADA",
             });
           }
         }
@@ -231,8 +280,10 @@ export function useCardanoHoldings(address: string) {
           next.push(row(t, 0n, true));
         }
       } catch {
-        setRows(catalog.map((t) => row(t, 0n, true)));
-        setLoading(false);
+        if (!cancelled) {
+          setRows(catalog.map((t) => row(t, 0n, true)));
+          setLoading(false);
+        }
         return;
       }
       if (!cancelled) {
@@ -243,13 +294,14 @@ export function useCardanoHoldings(address: string) {
     return () => {
       cancelled = true;
     };
-  }, [address, catalog]);
+  }, [address, addrKey, catalog]);
 
   const funded = rows.filter((r) => r.raw > 0n).length;
   return { rows, funded, loading, catalogSize: catalog.length };
 }
 
 const TOKEN_PROGRAM = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
+const TOKEN_2022_PROGRAM = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb";
 
 export function useSolanaHoldings(address: string) {
   const catalog = useMemo(() => tokensFor("solana", 101), []);
@@ -265,32 +317,37 @@ export function useSolanaHoldings(address: string) {
     setLoading(true);
     void (async () => {
       try {
-        const [balRes, tokRes] = await Promise.all([
-          fetch("https://api.mainnet-beta.solana.com", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getBalance", params: [address] }),
-          }),
+        const tokenReq = (id: number, programId: string) =>
           fetch("https://api.mainnet-beta.solana.com", {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({
               jsonrpc: "2.0",
-              id: 2,
+              id,
               method: "getTokenAccountsByOwner",
-              params: [address, { programId: TOKEN_PROGRAM }, { encoding: "jsonParsed" }],
+              params: [address, { programId }, { encoding: "jsonParsed" }],
             }),
+          });
+        const [balRes, tokRes, tok2022Res] = await Promise.all([
+          fetch("https://api.mainnet-beta.solana.com", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getBalance", params: [address] }),
           }),
+          tokenReq(2, TOKEN_PROGRAM),
+          tokenReq(3, TOKEN_2022_PROGRAM),
         ]);
         const balJson = (await balRes.json()) as { result?: { value?: number } };
-        const tokJson = (await tokRes.json()) as {
+        type TokJson = {
           result?: { value?: Array<{ account?: { data?: { parsed?: { info?: { mint?: string; tokenAmount?: { amount?: string } } } } } }> };
         };
+        const tokJson = (await tokRes.json()) as TokJson;
+        const tok2022Json = (await tok2022Res.json()) as TokJson;
         const byMint = new Map<string, bigint>();
-        for (const v of tokJson.result?.value ?? []) {
+        for (const v of [...(tokJson.result?.value ?? []), ...(tok2022Json.result?.value ?? [])]) {
           const info = v.account?.data?.parsed?.info;
           if (!info?.mint) continue;
-          byMint.set(info.mint, BigInt(info.tokenAmount?.amount ?? "0"));
+          byMint.set(info.mint, (byMint.get(info.mint) ?? 0n) + BigInt(info.tokenAmount?.amount ?? "0"));
         }
         if (cancelled) return;
         setRows(

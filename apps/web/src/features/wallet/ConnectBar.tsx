@@ -13,6 +13,7 @@ import {
   disconnectSolanaWallet,
   listCardanoWallets,
   listSolanaWallets,
+  restoreCardanoSession,
   restoreNearSession,
   restoreSolanaSession,
   useNativeWallets,
@@ -53,6 +54,7 @@ export function ConnectBar() {
   useEffect(() => {
     void restoreNearSession();
     void restoreSolanaSession();
+    void restoreCardanoSession();
   }, []);
 
   useEffect(() => {

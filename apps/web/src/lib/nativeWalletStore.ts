@@ -4,11 +4,13 @@ import { persist } from "zustand/middleware";
 type NativeState = {
   nearAccount: string;
   cardanoAddress: string;
+  cardanoAddresses: string[];
+  cardanoStake: string;
   cardanoWallet: string;
   solanaAddress: string;
   solanaWallet: string;
   setNear: (nearAccount: string) => void;
-  setCardano: (cardanoAddress: string, cardanoWallet?: string) => void;
+  setCardano: (cardanoAddress: string, cardanoWallet?: string, extras?: { addresses?: string[]; stake?: string }) => void;
   setSolana: (solanaAddress: string, solanaWallet?: string) => void;
   disconnectNear: () => void;
   disconnectCardano: () => void;
@@ -20,14 +22,22 @@ export const useNativeWallets = create<NativeState>()(
     (set) => ({
       nearAccount: "",
       cardanoAddress: "",
+      cardanoAddresses: [],
+      cardanoStake: "",
       cardanoWallet: "",
       solanaAddress: "",
       solanaWallet: "",
       setNear: (nearAccount) => set({ nearAccount }),
-      setCardano: (cardanoAddress, cardanoWallet = "") => set({ cardanoAddress, cardanoWallet }),
+      setCardano: (cardanoAddress, cardanoWallet = "", extras = {}) =>
+        set({
+          cardanoAddress,
+          cardanoWallet,
+          cardanoAddresses: extras.addresses ?? [cardanoAddress].filter(Boolean),
+          cardanoStake: extras.stake ?? "",
+        }),
       setSolana: (solanaAddress, solanaWallet = "") => set({ solanaAddress, solanaWallet }),
       disconnectNear: () => set({ nearAccount: "" }),
-      disconnectCardano: () => set({ cardanoAddress: "", cardanoWallet: "" }),
+      disconnectCardano: () => set({ cardanoAddress: "", cardanoAddresses: [], cardanoStake: "", cardanoWallet: "" }),
       disconnectSolana: () => set({ solanaAddress: "", solanaWallet: "" }),
     }),
     {

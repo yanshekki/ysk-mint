@@ -5,12 +5,21 @@ export type CardanoWalletInfo = { id: string; name: string; icon?: string };
 type Cip30Enabled = {
   getChangeAddress(): Promise<string>;
   getUsedAddresses(): Promise<string[]>;
+  getUnusedAddresses?: () => Promise<string[]>;
+  getRewardAddresses?: () => Promise<string[]>;
+};
+
+export type CardanoSession = {
+  address: string;
+  addresses: string[];
+  stake: string;
 };
 
 type Cip30Injected = {
   name?: string;
   icon?: string;
   enable: (opts?: unknown) => Promise<Cip30Enabled>;
+  isEnabled?: () => Promise<boolean>;
 };
 
 const BECH32_CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
@@ -56,6 +65,52 @@ function encodeBech32(hrp: string, bytes: Uint8Array<ArrayBufferLike>) {
   const mod = polymod(checksumValues) ^ 1;
   const checksum = Array.from({ length: 6 }, (_, i) => (mod >> (5 * (5 - i))) & 31);
   return `${hrp}1${[...data, ...checksum].map((d) => BECH32_CHARSET[d]).join("")}`;
+}
+
+function fromWords(words: number[]) {
+  let acc = 0;
+  let bits = 0;
+  const out: number[] = [];
+  for (const w of words) {
+    acc = (acc << 5) | w;
+    bits += 5;
+    if (bits >= 8) {
+      bits -= 8;
+      out.push((acc >> bits) & 255);
+    }
+  }
+  return new Uint8Array(out);
+}
+
+function decodeBech32(addr: string): { hrp: string; bytes: Uint8Array } | null {
+  const s = addr.trim().toLowerCase();
+  const i = s.lastIndexOf("1");
+  if (i < 1) return null;
+  const hrp = s.slice(0, i);
+  const data = s.slice(i + 1);
+  const words: number[] = [];
+  for (const c of data) {
+    const v = BECH32_CHARSET.indexOf(c);
+    if (v < 0) return null;
+    words.push(v);
+  }
+  if (words.length < 7) return null;
+  if (polymod([...hrpExpand(hrp), ...words]) !== 1) return null;
+  return { hrp, bytes: fromWords(words.slice(0, -6)) };
+}
+
+/** Shelley base address (types 0–3) embeds the stake credential. */
+export function stakeFromPayment(addr: string): string {
+  const decoded = decodeBech32(addr);
+  if (!decoded || decoded.bytes.length < 57) return "";
+  const type = decoded.bytes[0]! >> 4;
+  const network = decoded.bytes[0]! & 0x0f;
+  if (type > 3 || (network !== 0 && network !== 1)) return "";
+  const header = (14 << 4) | network;
+  const payload = new Uint8Array(29);
+  payload[0] = header;
+  payload.set(decoded.bytes.slice(29, 57), 1);
+  return encodeBech32(network === 0 ? "stake_test" : "stake", payload);
 }
 
 function hexToBytes(hex: string) {
@@ -120,21 +175,50 @@ export function listCardanoWallets(): CardanoWalletInfo[] {
     }));
 }
 
-export async function enableCardano(walletId: string): Promise<string> {
+async function decodeList(raws: string[] | undefined): Promise<string[]> {
+  const out: string[] = [];
+  for (const raw of raws ?? []) {
+    try {
+      const addr = cip30ToAddress(raw);
+      if (isCardanoAddress(addr) && !out.includes(addr)) out.push(addr);
+    } catch {
+      /* skip malformed */
+    }
+  }
+  return out;
+}
+
+export async function enableCardano(walletId: string): Promise<CardanoSession> {
   const wallet = cardanoNamespace()[walletId];
   if (!wallet) throw new Error("wallet");
   const api = await wallet.enable();
-  let raw = "";
+  const changeRaw = await api.getChangeAddress().catch(() => "");
+  const used = await api.getUsedAddresses().catch(() => [] as string[]);
+  const unused = api.getUnusedAddresses ? await api.getUnusedAddresses().catch(() => [] as string[]) : [];
+  const rewards = api.getRewardAddresses ? await api.getRewardAddresses().catch(() => [] as string[]) : [];
+  const payments = await decodeList([changeRaw, ...used, ...unused]);
+  const stakes = (await decodeList(rewards)).filter((a) => a.startsWith("stake") || a.startsWith("stake_test"));
+  let stake = stakes[0] ?? "";
+  if (!stake) {
+    for (const payment of payments) {
+      stake = stakeFromPayment(payment);
+      if (stake) break;
+    }
+  }
+  const address = payments[0] ?? "";
+  if (!address || !isCardanoAddress(address)) throw new Error("address");
+  return { address, addresses: payments, stake };
+}
+
+/** Re-collect payment + stake if CIP-30 already authorized. Does not prompt. */
+export async function refreshCardanoIfEnabled(walletId: string): Promise<CardanoSession | null> {
+  const wallet = cardanoNamespace()[walletId];
+  if (!wallet) return null;
   try {
-    raw = await api.getChangeAddress();
+    const enabled = wallet.isEnabled ? await wallet.isEnabled() : false;
+    if (!enabled) return null;
+    return await enableCardano(walletId);
   } catch {
-    raw = "";
+    return null;
   }
-  if (!raw) {
-    const used = await api.getUsedAddresses();
-    raw = used[0] ?? "";
-  }
-  const addr = cip30ToAddress(raw);
-  if (!isCardanoAddress(addr)) throw new Error("address");
-  return addr;
 }
