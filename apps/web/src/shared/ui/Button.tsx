@@ -11,7 +11,7 @@ export function Button({ variant = "primary", className = "", ...props }: Props)
     variant === "grad"
       ? "btn-grad"
       : variant === "primary"
-        ? "bg-text-main text-white hover:bg-slate-800"
-        : "border border-border bg-white text-text-main hover:bg-slate-50";
+        ? "solid-btn"
+        : "ghost-btn";
   return <button className={`${base} ${styles} ${className}`} {...props} />;
 }

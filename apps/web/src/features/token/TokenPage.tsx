@@ -26,7 +26,7 @@ export function TokenPage() {
   const [name, symbol, decimals, supply, owner] = reads.data ?? [];
 
   return (
-    <section className="mx-auto max-w-xl px-4 py-8">
+    <section className="desk-page">
       <div className="mb-3 flex items-center gap-2">
         <Badge kind="info">OFT</Badge>
         <Badge kind="warn">{t("nav.disclaimer")}</Badge>

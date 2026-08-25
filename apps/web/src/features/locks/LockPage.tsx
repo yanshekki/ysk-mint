@@ -24,7 +24,7 @@ export function LockPage() {
   if (!lockId) return <p className="p-8">{t("lock.missing")}</p>;
 
   return (
-    <section className="mx-auto max-w-xl px-4 py-8">
+    <section className="desk-page">
       <div className="mb-3 flex gap-2">
         <Badge kind="ok">LOCK</Badge>
         {lock.data?.withdrawn ? <Badge kind="warn">OUT</Badge> : <Badge kind="info">HELD</Badge>}

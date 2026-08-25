@@ -4,11 +4,40 @@
     "tagline": "引導式多鏈發幣。原生 OFT。創建並鎖定 LP。只讀鏈上數據。"
   },
   "nav": {
-    "home": "看板",
+    "home": "戰壕",
+    "trenches": "戰壕",
+    "hot": "熱門",
+    "board": "跟單",
     "create": "發幣",
     "transfer": "跨鏈",
     "me": "持倉",
-    "disclaimer": "未經審計"
+    "disclaimer": "未經審計",
+    "search": "搜尋代號、合約、錢包"
+  },
+  "trenches": {
+    "hint": "只讀 Factory 鏈上日誌。無假盤。",
+    "new": "新創建",
+    "pending": "即將鎖定",
+    "live": "已開盤",
+    "empty": "暫無數據"
+  },
+  "hot": {
+    "buy": "買入",
+    "tabs": { "new": "新幣", "hot": "熱門", "search": "熱搜", "pump": "飆升", "blue": "下個藍籌" },
+    "cols": {
+      "token": "代幣",
+      "mc": "市值",
+      "ath": "歷史最高",
+      "pool": "池子",
+      "vol": "成交額",
+      "tx": "交易數",
+      "holders": "持有者",
+      "fee": "手續費"
+    }
+  },
+  "board": {
+    "tabs": { "alpha": "牛人榜", "smart": "聰明錢", "kol": "KOL" },
+    "cols": { "wallet": "錢包", "win": "勝率", "tx": "交易數", "flow": "淨流入" }
   },
   "home": {
     "title": "發原生多鏈幣。鎖 LP。沒有後端。",

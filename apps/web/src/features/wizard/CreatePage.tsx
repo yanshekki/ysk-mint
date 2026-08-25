@@ -102,7 +102,7 @@ export function CreatePage() {
   }
 
   return (
-    <section className="mx-auto max-w-[1100px] px-4 py-6">
+    <section className="desk-page">
       <div className="mb-4 flex items-end justify-between gap-3">
         <div>
           <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-text-muted">Launch</p>

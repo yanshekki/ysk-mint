@@ -5,10 +5,39 @@
   },
   "nav": {
     "home": "Trenches",
+    "trenches": "Trenches",
+    "hot": "Trending",
+    "board": "Leaders",
     "create": "Launch",
     "transfer": "Bridge",
     "me": "Holdings",
-    "disclaimer": "Unaudited"
+    "disclaimer": "Unaudited",
+    "search": "Search ticker, CA, wallet"
+  },
+  "trenches": {
+    "hint": "On-chain factory logs only. No fake tape.",
+    "new": "New",
+    "pending": "Pending LP lock",
+    "live": "Live",
+    "empty": "No data"
+  },
+  "hot": {
+    "buy": "Buy",
+    "tabs": { "new": "New", "hot": "Trending", "search": "Search", "pump": "Pump", "blue": "Blue chip" },
+    "cols": {
+      "token": "Token",
+      "mc": "MC",
+      "ath": "ATH",
+      "pool": "Pool",
+      "vol": "Volume",
+      "tx": "Txns",
+      "holders": "Holders",
+      "fee": "Fees"
+    }
+  },
+  "board": {
+    "tabs": { "alpha": "Alpha", "smart": "Smart", "kol": "KOL" },
+    "cols": { "wallet": "Wallet", "win": "Win", "tx": "Txns", "flow": "Flow" }
   },
   "home": {
     "title": "Launch an omnichain token. Lock LP. No backend.",
