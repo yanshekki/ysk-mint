@@ -2,11 +2,11 @@ import {
   CHAINS,
   featuredChains,
   isConfigured,
-  launchContracts,
   testnetChains,
   type ChainDefinition,
   type ChainVm,
 } from "@ysk-mint/config";
+import { canWalletDeploy, resolvedContracts } from "./launchStack.ts";
 
 const ISSUANCE_VMS: ChainVm[] = ["evm", "cardano", "near", "solana"];
 
@@ -40,11 +40,19 @@ export function selectedEvm(keys: number[]): ChainDefinition[] {
 }
 
 export function configuredEvm(keys: number[]): ChainDefinition[] {
-  return selectedEvm(keys).filter((c) => isConfigured(launchContracts(c.key)));
+  return selectedEvm(keys).filter((c) => isConfigured(resolvedContracts(c)));
 }
 
 export function undeployedEvm(keys: number[]): ChainDefinition[] {
-  return selectedEvm(keys).filter((c) => !isConfigured(launchContracts(c.key)));
+  return selectedEvm(keys).filter((c) => !isConfigured(resolvedContracts(c)));
+}
+
+export function deployableEvm(keys: number[]): ChainDefinition[] {
+  return undeployedEvm(keys).filter((c) => canWalletDeploy(c));
+}
+
+export function blockedEvm(keys: number[]): ChainDefinition[] {
+  return undeployedEvm(keys).filter((c) => !canWalletDeploy(c));
 }
 
 /** First selected EVM that is configured; else first selected EVM. */

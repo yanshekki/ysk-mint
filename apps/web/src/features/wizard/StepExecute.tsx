@@ -8,7 +8,6 @@ import {
   LaunchStep,
   decodeLaunchError,
   isConfigured,
-  launchContracts,
   liquidityManagerAbi,
   tokenFactoryAbi,
   yskOftAbi,
@@ -25,7 +24,16 @@ import { lpTokenAmount } from "./presets.ts";
 import { packFlags } from "./flags.ts";
 import { Button } from "../../shared/ui/Button.tsx";
 import { useWizard } from "./store.ts";
-import { configuredEvm, homeEvm, selectedChains, undeployedEvm } from "../../lib/launchTargets.ts";
+import { chainIcon } from "../../lib/chainIcon.ts";
+import { canWalletDeploy, ensureStack, resolvedContracts } from "../../lib/launchStack.ts";
+import {
+  ISSUANCE_GROUP_TITLE,
+  blockedEvm,
+  deployableEvm,
+  homeEvm,
+  issuanceGroups,
+  selectedEvm,
+} from "../../lib/launchTargets.ts";
 
 export function StepExecute() {
   const { t, i18n } = useTranslation();
@@ -37,14 +45,29 @@ export function StepExecute() {
   const [busy, setBusy] = useState<string | null>(null);
   const [errors, setErrors] = useState<LaunchError[]>([]);
 
-  const nativePicked = selectedChains(w.chains).filter((c) => !c.evm);
-  const ready = configuredEvm(w.chains);
-  const missing = undeployedEvm(w.chains);
+  const selected = new Set(w.chains);
+  const groups = issuanceGroups()
+    .map((g) => ({
+      vm: g.vm,
+      main: g.main.filter((c) => selected.has(c.key)),
+      test: g.test.filter((c) => selected.has(c.key)),
+    }))
+    .filter((g) => g.main.length || g.test.length);
+  const evmTargets = selectedEvm(w.chains).filter((c) => isConfigured(resolvedContracts(c)) || canWalletDeploy(c));
+  const toDeploy = deployableEvm(w.chains);
+  const blocked = blockedEvm(w.chains);
   const home = homeEvm(w.chains);
-  const canRun = Boolean(address && ready.length);
+  const canRun = Boolean(address && evmTargets.length);
+  const nativeCount = groups.filter((g) => g.vm !== "evm").reduce((n, g) => n + g.main.length + g.test.length, 0);
+
+  function evmStatus(c: ChainDefinition) {
+    if (isConfigured(resolvedContracts(c))) return t("wizard.execute.ready");
+    if (canWalletDeploy(c)) return t("wizard.execute.willDeploy");
+    return t("wizard.execute.mainnetZero");
+  }
 
   async function run() {
-    if (!address || !home || ready.length === 0) {
+    if (!address || !home || evmTargets.length === 0) {
       setErrors([{ code: ErrorCode.RecipientZero, args: [], severity: "user", retryable: false }]);
       return;
     }
@@ -80,11 +103,16 @@ export function StepExecute() {
     let lastLp: `0x${string}` | undefined;
     let lockId: string | undefined;
     let homeToken: `0x${string}` | undefined;
+    const ordered = [home, ...evmTargets.filter((c) => c.key !== home.key)];
 
     try {
-      for (const chain of ready) {
-        const contracts = launchContracts(chain.key);
-        if (!isConfigured(contracts)) continue;
+      for (const chain of ordered) {
+        await switchChainAsync({ chainId: chain.chainId });
+        const publicClient = getPublicClient(config, { chainId: chain.chainId });
+        const wallet = await getWalletClient(config, { chainId: chain.chainId });
+        if (!publicClient || !wallet) continue;
+        if (canWalletDeploy(chain) && !isConfigured(resolvedContracts(chain))) setBusy("deploying");
+        const contracts = await ensureStack({ chain, publicClient, wallet, account: address });
         const isHome = chain.key === home.key;
         const created = await deployOFT({
           chain,
@@ -245,44 +273,63 @@ export function StepExecute() {
   }
 
   return (
-    <div className="space-y-4">
-      {home ? (
-        <p className="text-[15px] text-text-sub">{t("wizard.execute.home", { name: home.name })}</p>
-      ) : (
-        <p className="text-[15px] text-text-sub">{t("wizard.execute.needEvm")}</p>
-      )}
-      {ready.length ? (
-        <ul className="space-y-1 text-[14px] text-text-sub">
-          {ready.map((c) => (
-            <li key={c.key}>
-              {c.name}
-              {home && c.key === home.key ? ` · ${t("wizard.execute.homeTag")}` : ` · ${t("wizard.execute.spokeTag")}`}
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      {missing.length ? (
-        <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-          {t("wizard.execute.needContracts")}
-          <span className="mt-1 block">{missing.map((c) => c.name).join(" · ")}</span>
+    <div className="review-desk">
+      <header className="oft-head">
+        <p className="oft-lede">
+          {home ? t("wizard.execute.home", { name: home.name }) : t("wizard.execute.needEvm")}
         </p>
-      ) : null}
-      {nativePicked.length ? (
-        <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{t("wizard.execute.nativePath")}</p>
-      ) : null}
+      </header>
+
+      {groups.map((g) => (
+        <section key={g.vm} className="chain-group">
+          <p className="chain-group-title">{t(ISSUANCE_GROUP_TITLE[g.vm])}</p>
+          <div className="chain-row">
+            {[...g.main, ...g.test].map((c) => (
+              <article key={c.key} className="oft-chain">
+                <img src={chainIcon(c)} alt="" width={32} height={32} />
+                <div>
+                  <b>{c.name}</b>
+                  <span>
+                    {c.evm
+                      ? `${home && c.key === home.key ? t("wizard.execute.homeTag") : t("wizard.execute.spokeTag")} · ${evmStatus(c)}`
+                      : t("wizard.execute.nativeSkip")}
+                  </span>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      ))}
+
+      <section className="chain-group">
+        <p className="chain-group-title">{t("wizard.review.notes")}</p>
+        <ul className="review-notes">
+          {!address ? <li>{t("wizard.execute.needWallet")}</li> : null}
+          {toDeploy.length ? <li>{t("wizard.execute.testnetDeploy")}</li> : null}
+          {blocked.length ? <li>{t("wizard.execute.mainnetZero")}</li> : null}
+          {nativeCount ? <li>{t("wizard.execute.nativeSkip")}</li> : null}
+          {toDeploy.length ? <li>{t("wizard.execute.mockLp")}</li> : null}
+        </ul>
+      </section>
+
       {errors.length ? (
-        <ul className="list-disc pl-5 text-sm text-red-700">
+        <ul className="review-notes" style={{ color: "#b91c1c" }}>
           {errors.map((err) => (
             <li key={err.code}>{err.message ?? err.code}</li>
           ))}
         </ul>
       ) : null}
-      <Button type="button" disabled={Boolean(busy) || !canRun} onClick={() => void run()}>
-        {busy === "simulating"
-          ? t("wizard.execute.simulating")
-          : busy === "sending"
-            ? t("wizard.execute.sending")
-            : t("wizard.execute.simulate")}
+
+      <Button type="button" variant="grad" disabled={Boolean(busy) || !canRun} onClick={() => void run()}>
+        {busy === "deploying"
+          ? t("wizard.execute.deploying")
+          : busy === "simulating"
+            ? t("wizard.execute.simulating")
+            : busy === "sending"
+              ? t("wizard.execute.sending")
+              : toDeploy.length
+                ? t("wizard.execute.deploySign")
+                : t("wizard.execute.simulate")}
       </Button>
       {w.createTx ? <p className="font-mono text-xs break-all">create {w.createTx}</p> : null}
       {w.lpTx ? <p className="font-mono text-xs break-all">lp {w.lpTx}</p> : null}
