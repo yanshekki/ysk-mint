@@ -11,14 +11,20 @@ export type WizardDraft = {
   description: string;
   logoUri: string;
   website: string;
+  showAdvanced: boolean;
   supplyMode: number;
   ownershipAction: number;
   ownershipTarget: string;
   chains: number[];
-  lpTokenAmount: string;
+  lpBps: number;
   lpNativeAmount: string;
   lockMode: number;
   lockDuration: number;
+  modulePause: boolean;
+  moduleMaxTx: boolean;
+  moduleTax: boolean;
+  taxBps: number;
+  maxWalletBps: number;
   tokenAddress?: `0x${string}`;
   lockId?: string;
   lpToken?: `0x${string}`;
@@ -36,14 +42,20 @@ const defaults: WizardDraft = {
   description: "",
   logoUri: "",
   website: "",
+  showAdvanced: false,
   supplyMode: SupplyMode.Fixed,
   ownershipAction: OwnershipAction.Keep,
   ownershipTarget: "",
   chains: [ChainKey.BaseSepolia],
-  lpTokenAmount: "400000",
+  lpBps: 8000,
   lpNativeAmount: "0.1",
   lockMode: LockMode.Timed,
   lockDuration: 30 * 24 * 60 * 60,
+  modulePause: false,
+  moduleMaxTx: false,
+  moduleTax: false,
+  taxBps: 0,
+  maxWalletBps: 200,
   perChain: {},
 };
 

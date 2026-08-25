@@ -1,43 +1,66 @@
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useAccount, useChainId, useSwitchChain } from "wagmi";
+import { enabledChains } from "@ysk-mint/config";
 import { ConnectBar } from "../features/wallet/ConnectBar.tsx";
+import { Segmented } from "../shared/ui/Segmented.tsx";
 import i18n from "../lib/i18n.ts";
 
 export function Shell() {
   const { t } = useTranslation();
+  const loc = useLocation();
+  const chainId = useChainId();
+  const { isConnected } = useAccount();
+  const { switchChain } = useSwitchChain();
+  const chains = enabledChains();
+
+  const links = [
+    ["/", "nav.home"],
+    ["/create", "nav.create"],
+    ["/transfer", "nav.transfer"],
+    ["/me", "nav.me"],
+  ] as const;
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-border bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
-          <Link to="/" className="text-lg font-bold tracking-tight">
-            {t("app.name")}
+      <div className="hairline" />
+      <header className="shell-header sticky top-0 z-20">
+        <div className="mx-auto flex h-full max-w-[1200px] items-center gap-4 px-4">
+          <Link to="/" className="shrink-0 text-[15px] font-black tracking-tight">
+            ysk<span className="text-brand-blue">-</span>mint
           </Link>
-          <nav className="flex items-center gap-4 text-sm">
-            <Link to="/" className="text-text-sub hover:text-text-main">
-              {t("nav.home")}
-            </Link>
-            <Link to="/create" className="text-text-sub hover:text-text-main">
-              {t("nav.create")}
-            </Link>
-            <Link to="/transfer" className="text-text-sub hover:text-text-main">
-              {t("nav.transfer")}
-            </Link>
-            <Link to="/me" className="text-text-sub hover:text-text-main">
-              {t("nav.me")}
-            </Link>
+          <nav className="hidden items-center md:flex">
+            {links.map(([href, key]) => (
+              <Link
+                key={href}
+                to={href}
+                className={`nav-link ${loc.pathname === href || (href !== "/" && loc.pathname.startsWith(href)) ? "nav-link-on" : ""}`}
+              >
+                {t(key)}
+              </Link>
+            ))}
+          </nav>
+          <div className="ml-auto flex items-center gap-2">
+            {isConnected ? (
+              <Segmented
+                ariaLabel="chain"
+                value={chainId}
+                onChange={(id) => switchChain({ chainId: id })}
+                options={chains.map((c) => ({ value: c.chainId, label: c.name.replace(" Sepolia", "") }))}
+              />
+            ) : null}
             <button
               type="button"
-              className="rounded-lg border border-border px-2 py-1 text-xs"
+              className="chip"
               onClick={() => void i18n.changeLanguage(i18n.language === "zh-HK" ? "en" : "zh-HK")}
             >
               {i18n.language === "zh-HK" ? "EN" : "中文"}
             </button>
             <ConnectBar />
-          </nav>
+          </div>
         </div>
       </header>
-      <main>
+      <main className="pb-16">
         <Outlet />
       </main>
     </div>

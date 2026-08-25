@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { parseUnits } from "viem";
 import { useAccount, useChainId } from "wagmi";
-import { baseSepolia } from "wagmi/chains";
+import { enabledChains } from "@ysk-mint/config";
 import {
   ErrorCode,
   LaunchStep,
@@ -13,7 +13,9 @@ import {
   validateLpAmounts,
 } from "@ysk-mint/sdk";
 import { Button } from "../../shared/ui/Button.tsx";
+import { StepRail } from "../../shared/ui/StepRail.tsx";
 import { useWizard } from "./store.ts";
+import { lpTokenAmount } from "./presets.ts";
 import {
   STEP_LABELS,
   StepBasics,
@@ -34,6 +36,7 @@ export function CreatePage() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const [errors, setErrors] = useState<LaunchError[]>([]);
+  const allowed = new Set(enabledChains().map((c) => c.chainId));
 
   const panel = useMemo(() => {
     switch (w.step) {
@@ -60,7 +63,7 @@ export function CreatePage() {
 
   function validateCurrent(): LaunchError[] {
     if (w.step === LaunchStep.Wallet) {
-      if (!isConnected || chainId !== baseSepolia.id) {
+      if (!isConnected || !allowed.has(chainId)) {
         return [{ code: ErrorCode.ChainDisabled, args: [chainId], severity: "user", retryable: false }];
       }
       return [];
@@ -81,7 +84,7 @@ export function CreatePage() {
       let tokenAmt = 0n;
       let nativeAmt = 0n;
       try {
-        tokenAmt = parseUnits(w.lpTokenAmount || "0", w.decimals);
+        tokenAmt = parseUnits(lpTokenAmount(w.totalSupply, w.lpBps), w.decimals);
         nativeAmt = parseUnits(w.lpNativeAmount || "0", 18);
       } catch {
         tokenAmt = 0n;
@@ -99,40 +102,51 @@ export function CreatePage() {
   }
 
   return (
-    <section className="mx-auto max-w-2xl px-4 py-12">
-      <h1 className="text-3xl font-bold">{t("wizard.title")}</h1>
-      <ol className="mt-6 flex flex-wrap gap-2 text-xs">
-        {STEP_LABELS.map((s) => (
-          <li
-            key={s}
-            className={`rounded-full px-3 py-1 ${w.step === s ? "bg-brand-blue text-white" : "bg-white border border-border"}`}
-          >
-            {t(`wizard.steps.${s}`)}
-          </li>
-        ))}
-      </ol>
-      <div className="mt-8">{panel}</div>
-      {errors.length ? (
-        <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-          <p className="font-medium">{t("wizard.errors")}</p>
-          <ul className="mt-2 list-disc pl-5">
-            {errors.map((e) => (
-              <li key={e.code}>{e.message ?? e.code}</li>
-            ))}
-          </ul>
+    <section className="mx-auto max-w-[1100px] px-4 py-6">
+      <div className="mb-4 flex items-end justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-text-muted">Launch</p>
+          <h1 className="text-2xl font-black tracking-tight">{t("wizard.title")}</h1>
         </div>
-      ) : null}
-      <div className="mt-6 flex gap-3">
-        {w.step > LaunchStep.Wallet && w.step < LaunchStep.Success ? (
-          <Button variant="ghost" type="button" onClick={() => w.set({ step: w.step - 1 })}>
-            {t("wizard.back")}
-          </Button>
-        ) : null}
-        {w.step < LaunchStep.Execute ? (
-          <Button type="button" onClick={next} disabled={w.step === LaunchStep.Wallet && !address}>
-            {t("wizard.next")}
-          </Button>
-        ) : null}
+        <span className="badge badge-warn">{t("nav.disclaimer")}</span>
+      </div>
+      <div className="desk flex gap-4">
+        <aside className="w-full shrink-0 md:w-[220px]">
+          <div className="panel p-2">
+            <StepRail
+              current={w.step}
+              onJump={(id) => {
+                if (id <= w.step) w.set({ step: id });
+              }}
+              steps={STEP_LABELS.map((id) => ({ id, label: t(`wizard.steps.${id}`) }))}
+            />
+          </div>
+        </aside>
+        <div className="min-w-0 flex-1">
+          <div className="panel p-5">{panel}</div>
+          {errors.length ? (
+            <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-[13px] text-red-800">
+              <p className="font-bold">{t("wizard.errors")}</p>
+              <ul className="mt-1 space-y-1">
+                {errors.map((e) => (
+                  <li key={e.code}>{e.message ?? e.code}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          <div className="mt-4 flex gap-2">
+            {w.step > LaunchStep.Wallet && w.step < LaunchStep.Success ? (
+              <Button variant="ghost" type="button" onClick={() => w.set({ step: w.step - 1, })}>
+                {t("wizard.back")}
+              </Button>
+            ) : null}
+            {w.step < LaunchStep.Execute ? (
+              <Button variant="grad" type="button" onClick={next} disabled={w.step === LaunchStep.Wallet && !address}>
+                {t("wizard.next")}
+              </Button>
+            ) : null}
+          </div>
+        </div>
       </div>
     </section>
   );

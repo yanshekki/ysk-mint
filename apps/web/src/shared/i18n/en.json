@@ -4,117 +4,146 @@
     "tagline": "Guided multi-chain token launch. Native OFT. LP + lock. On-chain data only."
   },
   "nav": {
-    "home": "Home",
-    "create": "Create",
-    "transfer": "Transfer",
-    "me": "My tokens",
+    "home": "Trenches",
+    "create": "Launch",
+    "transfer": "Bridge",
+    "me": "Holdings",
     "disclaimer": "Unaudited"
   },
   "home": {
-    "title": "Launch an omnichain token in guided steps",
-    "body": "Connect a wallet, deploy a LayerZero OFT, add liquidity, and lock LP. No backend — every number is read from the chain.",
-    "cta": "Start on Base Sepolia",
-    "honesty": "Contracts are not audited. Mainnet is disabled. Testnet only in this phase."
+    "title": "Launch an omnichain token. Lock LP. No backend.",
+    "body": "Terminal-style flow: pick options, sign on-chain. Every number after launch is an eth_call.",
+    "cta": "Open launch desk",
+    "honesty": "Contracts are not audited. Mainnet keys exist but are disabled."
   },
   "wallet": {
-    "connect": "Connect wallet",
-    "wrongNetwork": "Switch to Base Sepolia or Arbitrum Sepolia."
+    "connect": "Connect",
+    "wrongNetwork": "Switch to a live testnet."
   },
   "wizard": {
-    "title": "Create token",
-    "next": "Next",
+    "title": "Launch desk",
+    "next": "Continue",
     "back": "Back",
-    "errors": "Please fix these before continuing",
+    "errors": "Fix these before continuing",
     "steps": {
       "0": "Wallet",
-      "1": "Basics",
-      "2": "Tokenomics",
+      "1": "Token",
+      "2": "Rules",
       "3": "Chains",
-      "4": "Liquidity",
-      "5": "Omnichain",
+      "4": "LP",
+      "5": "Omni",
       "6": "Review",
-      "7": "Execute",
-      "8": "Success"
+      "7": "Sign",
+      "8": "Live"
     },
     "wallet": {
-      "need": "Connect a wallet on Base Sepolia to continue."
+      "need": "Connect on Base Sepolia or Arbitrum Sepolia.",
+      "ready": "Wallet ready",
+      "idle": "Not connected"
     },
     "basics": {
       "name": "Name",
-      "symbol": "Symbol",
+      "symbol": "Ticker",
       "decimals": "Decimals",
       "supply": "Total supply",
-      "description": "Description",
-      "logo": "Logo URI (IPFS or https)",
-      "website": "Website"
+      "description": "Description (optional)",
+      "logo": "Logo",
+      "logoHint": "Drop an image or click to choose. Stored locally only.",
+      "website": "Website (optional)",
+      "showAdvanced": "Optional details",
+      "hideAdvanced": "Hide optional details"
     },
     "tokenomics": {
-      "supplyMode": "Supply mode",
-      "fixed": "Fixed — no extra mint",
-      "mintable": "Mintable — owner can mint",
-      "ownership": "Ownership after launch",
+      "supplyMode": "Supply",
+      "fixed": "Fixed",
+      "fixedHint": "No extra mint. Cleanest for Anti-Rug.",
+      "mintable": "Mintable",
+      "mintableHint": "Owner can inflate supply later.",
+      "ownership": "Ownership",
       "keep": "Keep",
-      "renounce": "Renounce (later phase applies this on-chain)",
-      "safe": "Transfer to Safe (address)",
-      "timelock": "Transfer to Timelock (address)"
+      "keepHint": "You remain owner.",
+      "renounce": "Renounce",
+      "renounceHint": "Applied in a later on-chain step.",
+      "safe": "Safe",
+      "safeHint": "Transfer to a Safe address.",
+      "timelock": "Timelock",
+      "timelockHint": "Transfer to a timelock.",
+      "modules": "Guards",
+      "pause": "Pausable",
+      "pauseHint": "Owner can halt transfers. OFT mint/burn still works.",
+      "maxTx": "Wallet caps",
+      "maxTxHint": "Max tx / max wallet. Skipped on OFT path.",
+      "tax": "DEX tax",
+      "taxHint": "Buy/sell tax on DEX pairs only. OFT stays 1:1.",
+      "maxWallet": "Max wallet",
+      "taxBps": "Tax"
     },
     "chains": {
-      "hint": "Phase 1 only enables Base Sepolia. Other chains are listed but disabled.",
-      "disabled": "Disabled until Phase 2"
+      "hint": "Pick every live testnet. Mainnet cards stay disabled.",
+      "disabled": "Not live"
     },
     "liquidity": {
-      "tokenAmount": "Token amount into LP",
-      "nativeAmount": "Native amount into LP",
-      "mode": "Lock mode",
-      "timed": "Timed lock",
-      "burn": "Burn LP (permanent)",
-      "duration": "Lock duration"
+      "tokenBps": "Token into LP",
+      "nativeAmount": "Native into LP",
+      "mode": "Lock",
+      "burn": "Burn LP",
+      "burnHint": "Sent to dead. Irreversible.",
+      "d30": "30 days",
+      "d90": "90 days",
+      "d180": "180 days",
+      "d365": "365 days",
+      "timedHint": "On-chain timed lock."
     },
     "omnichain": {
-      "note": "Select every testnet you want, then switch the wallet per chain during Execute. After all deploys, setPeer is called both ways. Cross-chain send stays 1:1 with no tax.",
-      "addressNote": "Token addresses are not the same across chains: the OFT implementation bakes in that chain’s LayerZero endpoint, so CREATE2 clones differ. The UI never pretends they match."
+      "note": "Execute switches wallet per chain, then setPeer both ways. OFT send is 1:1, no tax.",
+      "addressNote": "Addresses differ per chain because the implementation bakes in that endpoint."
     },
     "review": {
-      "checklist": "Anti-rug checklist (intent, not an audit)",
+      "checklist": "Anti-rug checklist — product intent, not an audit.",
       "fixed": "Supply is fixed",
-      "mintableWarn": "Mintable — owner can inflate supply",
-      "lock": "LP lock is set",
-      "unaudited": "Contracts are unaudited"
+      "mintableWarn": "Mintable — owner can inflate",
+      "lock": "LP lock selected",
+      "unaudited": "Contracts unaudited"
     },
     "execute": {
-      "simulate": "Simulate then send",
-      "needContracts": "Factory / manager / locker / router addresses are still zero. Deploy the contracts on Base Sepolia and set packages/config/src/contracts.ts before a live mint.",
+      "simulate": "Simulate then sign",
+      "needContracts": "Factory / manager / locker / router are still zero. Deploy on Base Sepolia, then fill packages/config/src/contracts.ts.",
       "create": "1. Deploy token",
       "lp": "2. Add LP and lock",
       "simulating": "Simulating…",
       "sending": "Waiting for signature…",
-      "done": "On-chain receipts saved. Continue to success."
+      "done": "Receipts saved."
     },
     "success": {
-      "title": "Launch recorded on-chain",
-      "reread": "Values below are live eth_call results, not the receipt cache.",
+      "title": "On-chain",
+      "reread": "Live eth_call — not a cached receipt.",
       "token": "Token",
       "lock": "Lock"
     }
   },
   "transfer": {
-    "title": "Cross-chain transfer",
-    "body": "Quotes and sends through the OFT on your connected RPC. Same-chain is not used. Progress is the destination balance, not a server.",
+    "title": "Bridge",
+    "body": "Amount is a % of your on-chain balance. Destination is a chain chip.",
     "quote": "Quote",
     "send": "Simulate and send",
-    "fee": "nativeFee"
+    "fee": "nativeFee",
+    "token": "Token",
+    "pick": "Pick or paste",
+    "pickHint": "Click to paste a contract address",
+    "amount": "Amount",
+    "dest": "Destination"
   },
   "me": {
-    "title": "My tokens",
-    "body": "Read from Factory Launch logs for this wallet. No account system.",
+    "title": "Holdings",
+    "body": "Factory Launch logs for this wallet. No account.",
     "noFactory": "Factory address is still zero on this chain."
   },
   "token": {
-    "missing": "Pass a chainId and token address.",
-    "share": "Download share card",
-    "shareNote": "Generated in the browser. Social crawlers will not see a server-side OG image."
+    "missing": "Need chainId and token address.",
+    "share": "Download card",
+    "shareNote": "Drawn in the browser. No OG server."
   },
   "lock": {
-    "missing": "Pass a chainId and lock id."
+    "missing": "Need chainId and lock id."
   }
 }
