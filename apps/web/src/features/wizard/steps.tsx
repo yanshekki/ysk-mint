@@ -29,7 +29,7 @@ export function StepWallet() {
     <div className="space-y-4">
       <p className="text-[13px] text-text-sub">{t("wizard.wallet.need")}</p>
       <p className="text-[12px] font-bold">{t("wallet.evm")}</p>
-      <ConnectBar showHint />
+      <ConnectBar />
       <div className="token-row">
         <div className="grid h-10 w-10 place-items-center rounded-lg bg-bg-subtle text-xs font-black">EVM</div>
         <div>

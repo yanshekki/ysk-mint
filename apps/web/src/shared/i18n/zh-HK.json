@@ -46,8 +46,7 @@
     "honesty": "合約未經審計。主網 factory 地址仍為零。"
   },
   "wallet": {
-    "connect": "連接",
-    "create": "建立交易錢包",
+    "connect": "連接錢包",
     "disconnect": "登出",
     "evm": "EVM 錢包",
     "native": "NEAR 主鏈／Cardano",
@@ -56,7 +55,6 @@
     "connectNear": "連接 NEAR",
     "connectCardano": "連接 Cardano 錢包",
     "noCip30": "未偵測 CIP-30 錢包",
-    "privyMissing": "未設 VITE_PRIVY_APP_ID，暫用外置錢包。設好 Privy 後可用電郵／Google 一鍵建立。",
     "wrongNetwork": "請切到支援嘅 EVM 鏈。"
   },
   "wizard": {
@@ -76,7 +74,7 @@
       "8": "上鏈"
     },
     "wallet": {
-      "need": "EVM 用電郵／Google／現有錢包（同一 EOA 走 ETH、AVAX、Base、Arb、BNB）。NEAR 主鏈同 Cardano 用各自原生錢包。",
+      "need": "請連接現有錢包。EVM 用 MetaMask 等；NEAR 主鏈同 Cardano 用各自原生錢包。唔會代你開新錢包。",
       "ready": "錢包已連接",
       "idle": "未連接",
       "nativeReady": "已連接原生鏈帳戶。"

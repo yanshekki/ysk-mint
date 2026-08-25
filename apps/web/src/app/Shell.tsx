@@ -73,7 +73,7 @@ export function Shell() {
               {bal.data?.symbol ?? "ETH"} <b>{bal.data ? Number(bal.data.formatted).toFixed(4) : "—"}</b>
             </>
           ) : (
-            t("wallet.create")
+            t("wallet.connect")
           )}
         </span>
         <span className="bot-dot">● {t("nav.disclaimer")}</span>

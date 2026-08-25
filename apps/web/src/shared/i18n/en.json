@@ -46,8 +46,7 @@
     "honesty": "Contracts are not audited. Mainnet factory addresses are still zero."
   },
   "wallet": {
-    "connect": "Connect",
-    "create": "Create trading wallet",
+    "connect": "Connect wallet",
     "disconnect": "Sign out",
     "evm": "EVM wallet",
     "native": "NEAR mainnet / Cardano",
@@ -56,7 +55,6 @@
     "connectNear": "Connect NEAR",
     "connectCardano": "Connect Cardano wallet",
     "noCip30": "No CIP-30 wallet detected",
-    "privyMissing": "VITE_PRIVY_APP_ID is unset, so an external wallet is used. Set Privy to enable email / Google 1-click create.",
     "wrongNetwork": "Switch to a supported EVM chain."
   },
   "wizard": {
@@ -76,7 +74,7 @@
       "8": "Live"
     },
     "wallet": {
-      "need": "EVM uses email / Google / an existing wallet (one EOA on ETH, AVAX, Base, Arb, BNB). NEAR mainnet and Cardano use their native wallets.",
+      "need": "Connect an existing wallet. EVM uses MetaMask and similar; NEAR mainnet and Cardano use their native wallets. This app does not create a wallet for you.",
       "ready": "Wallet ready",
       "idle": "Not connected",
       "nativeReady": "Native-chain account connected."
