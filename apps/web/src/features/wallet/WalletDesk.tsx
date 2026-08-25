@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useAccount, useChainId, useSwitchChain } from "wagmi";
+import { useAccount, useChainId } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { featuredChains } from "@ysk-mint/config";
 import "@near-wallet-selector/modal-ui/styles.css";
@@ -32,7 +32,6 @@ export function WalletDesk() {
   const { t } = useTranslation();
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
-  const { switchChain } = useSwitchChain();
   const native = useNativeWallets();
   const [adaWallets, setAdaWallets] = useState<CardanoWalletInfo[]>([]);
   const [nearHeight, setNearHeight] = useState<string | null>(null);
@@ -82,18 +81,14 @@ export function WalletDesk() {
               {isConnected ? t("wizard.wallet.ready") : t("wizard.wallet.idle")}
             </span>
           </div>
-          <div className="wallet-chips" role="radiogroup" aria-label={t("wallet.evm")}>
+          <div className="wallet-chips" aria-label={t("wallet.evm")}>
             {evmChains.map((c) => (
-              <button
+              <span
                 key={c.key}
-                type="button"
-                role="radio"
-                aria-checked={chainId === c.chainId}
-                className={`wallet-chip ${chainId === c.chainId ? "wallet-chip-on" : ""}`}
-                onClick={() => switchChain({ chainId: c.chainId })}
+                className={`wallet-chip ${isConnected && chainId === c.chainId ? "wallet-chip-on" : "wallet-chip-static"}`}
               >
                 {c.short}
-              </button>
+              </span>
             ))}
           </div>
           <div className="wallet-pane-main">

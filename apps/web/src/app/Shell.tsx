@@ -1,18 +1,18 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useAccount, useBalance, useChainId, useSwitchChain } from "wagmi";
+import { useAccount, useBalance, useChainId } from "wagmi";
 import { evmEnabledChains } from "@ysk-mint/config";
 import { ConnectBar } from "../features/wallet/ConnectBar.tsx";
-import i18n from "../lib/i18n.ts";
+import { useNativeWallets } from "../lib/nativeWallets.ts";
 
 export function Shell() {
   const { t } = useTranslation();
   const loc = useLocation();
   const chainId = useChainId();
   const { address, isConnected } = useAccount();
-  const { switchChain } = useSwitchChain();
   const bal = useBalance({ address });
-  const chains = evmEnabledChains();
+  const native = useNativeWallets();
+  const chain = evmEnabledChains().find((c) => c.chainId === chainId);
 
   const nav = [
     ["/", "nav.lp"],
@@ -40,24 +40,6 @@ export function Shell() {
           ))}
         </nav>
         <div className="top-right">
-          <select
-            className="chain-dd"
-            value={chains.some((c) => c.chainId === chainId) ? chainId : chains[0]?.chainId}
-            onChange={(e) => switchChain({ chainId: Number(e.target.value) })}
-          >
-            {chains.map((c) => (
-              <option key={c.chainId} value={c.chainId}>
-                {c.short}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            className="ghost-btn"
-            onClick={() => void i18n.changeLanguage(i18n.language === "zh-HK" ? "en" : "zh-HK")}
-          >
-            {i18n.language === "zh-HK" ? "EN" : "中文"}
-          </button>
           <ConnectBar />
         </div>
       </header>
@@ -67,14 +49,15 @@ export function Shell() {
       <footer className="botbar">
         <span>{t("nav.lp")}</span>
         <span>{t("nav.create")}</span>
-        <span>
+        <span className="bot-session">
           {isConnected ? (
-            <>
-              {bal.data?.symbol ?? "ETH"} <b>{bal.data ? Number(bal.data.formatted).toFixed(4) : "—"}</b>
-            </>
-          ) : (
-            t("wallet.connect")
-          )}
+            <span>
+              {chain?.short ?? "EVM"} <b>{bal.data ? Number(bal.data.formatted).toFixed(4) : "—"}</b>
+            </span>
+          ) : null}
+          {native.nearAccount ? <span>NEAR</span> : null}
+          {native.cardanoAddress ? <span>ADA</span> : null}
+          {!isConnected && !native.nearAccount && !native.cardanoAddress ? t("wallet.connect") : null}
         </span>
         <span className="bot-dot">● {t("nav.disclaimer")}</span>
       </footer>

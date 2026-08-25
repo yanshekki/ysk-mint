@@ -156,7 +156,8 @@ select {
   gap: 8px;
   flex-shrink: 0;
 }
-.chain-dd {
+.chain-dd,
+.lang-dd {
   height: 42px;
   padding: 0 12px;
   border-radius: 10px;
@@ -164,6 +165,34 @@ select {
   background: var(--bg-white);
   font-weight: 700;
   font-size: 14px;
+}
+.session-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.session-pills {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.bot-session {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 }
 .ghost-btn,
 .solid-btn {
@@ -224,6 +253,9 @@ select {
 }
 .wallet-session-btn:hover {
   background: var(--bg-subtle);
+}
+.wallet-session-btn b {
+  font-weight: 800;
 }
 .wallet-dot {
   width: 8px;
