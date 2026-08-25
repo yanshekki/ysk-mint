@@ -38,4 +38,7 @@ library LaunchErrors {
     error NotInitialized();
     error EndpointZero();
     error LengthMismatch();
+    error LockNotFound();
+    error AlreadyWithdrawn();
+    error NativeTransferFailed();
 }

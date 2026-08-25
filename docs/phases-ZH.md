@@ -4,11 +4,11 @@
 
 所有改動在 `/home/ki/文件/ysk-mint`。每個完成的 phase 合併到 `origin/main`。
 
-## Phase 0 — 基礎搭建（本版本）
+## Phase 0 — 基礎搭建
 
 Monorepo、ENUM、錯誤、校驗、可 clone 的 OFT、Factory、錢包 SPA。
 
-## Phase 1 — 單鏈 Wizard + LP
+## Phase 1 — 單鏈 Wizard + LP（本版本）
 
 Base Sepolia。部署 OFT、Uniswap V2 LP、定期或銷毀鎖定。成功頁重新讀取鏈上狀態。
 

@@ -14,12 +14,90 @@
     "cta": "Start on Base Sepolia",
     "honesty": "Contracts are not audited. Mainnet is disabled. Testnet only in this phase."
   },
-  "create": {
-    "title": "Create token",
-    "phase": "Phase 0: wallet shell. The full wizard ships in Phase 1."
-  },
   "wallet": {
     "connect": "Connect wallet",
     "wrongNetwork": "Switch to Base Sepolia or Arbitrum Sepolia."
+  },
+  "wizard": {
+    "title": "Create token",
+    "next": "Next",
+    "back": "Back",
+    "errors": "Please fix these before continuing",
+    "steps": {
+      "0": "Wallet",
+      "1": "Basics",
+      "2": "Tokenomics",
+      "3": "Chains",
+      "4": "Liquidity",
+      "5": "Omnichain",
+      "6": "Review",
+      "7": "Execute",
+      "8": "Success"
+    },
+    "wallet": {
+      "need": "Connect a wallet on Base Sepolia to continue."
+    },
+    "basics": {
+      "name": "Name",
+      "symbol": "Symbol",
+      "decimals": "Decimals",
+      "supply": "Total supply",
+      "description": "Description",
+      "logo": "Logo URI (IPFS or https)",
+      "website": "Website"
+    },
+    "tokenomics": {
+      "supplyMode": "Supply mode",
+      "fixed": "Fixed — no extra mint",
+      "mintable": "Mintable — owner can mint",
+      "ownership": "Ownership after launch",
+      "keep": "Keep",
+      "renounce": "Renounce (later phase applies this on-chain)",
+      "safe": "Transfer to Safe (address)",
+      "timelock": "Transfer to Timelock (address)"
+    },
+    "chains": {
+      "hint": "Phase 1 only enables Base Sepolia. Other chains are listed but disabled.",
+      "disabled": "Disabled until Phase 2"
+    },
+    "liquidity": {
+      "tokenAmount": "Token amount into LP",
+      "nativeAmount": "Native amount into LP",
+      "mode": "Lock mode",
+      "timed": "Timed lock",
+      "burn": "Burn LP (permanent)",
+      "duration": "Lock duration"
+    },
+    "omnichain": {
+      "note": "This phase deploys a single-chain OFT. Peers are wired in Phase 2. Cross-chain send stays 1:1 with no tax."
+    },
+    "review": {
+      "checklist": "Anti-rug checklist (intent, not an audit)",
+      "fixed": "Supply is fixed",
+      "mintableWarn": "Mintable — owner can inflate supply",
+      "lock": "LP lock is set",
+      "unaudited": "Contracts are unaudited"
+    },
+    "execute": {
+      "simulate": "Simulate then send",
+      "needContracts": "Factory / manager / locker / router addresses are still zero. Deploy the contracts on Base Sepolia and set packages/config/src/contracts.ts before a live mint.",
+      "create": "1. Deploy token",
+      "lp": "2. Add LP and lock",
+      "simulating": "Simulating…",
+      "sending": "Waiting for signature…",
+      "done": "On-chain receipts saved. Continue to success."
+    },
+    "success": {
+      "title": "Launch recorded on-chain",
+      "reread": "Values below are live eth_call results, not the receipt cache.",
+      "token": "Token",
+      "lock": "Lock"
+    }
+  },
+  "token": {
+    "missing": "Pass a chainId and token address."
+  },
+  "lock": {
+    "missing": "Pass a chainId and lock id."
   }
 }

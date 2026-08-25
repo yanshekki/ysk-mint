@@ -34,6 +34,9 @@ export const ErrorCode = {
   NotInitialized: "NotInitialized",
   EndpointZero: "EndpointZero",
   LengthMismatch: "LengthMismatch",
+  LockNotFound: "LockNotFound",
+  AlreadyWithdrawn: "AlreadyWithdrawn",
+  NativeTransferFailed: "NativeTransferFailed",
   Unknown: "Unknown",
   SimulationFailed: "SimulationFailed",
 } as const;
@@ -69,6 +72,8 @@ export const USER_CODES: ReadonlySet<string> = new Set([
   ErrorCode.InvalidDexKind,
   ErrorCode.ZeroAmount,
   ErrorCode.LengthMismatch,
+  ErrorCode.LockNotFound,
+  ErrorCode.AlreadyWithdrawn,
 ]);
 
 export const RETRYABLE_CODES: ReadonlySet<string> = new Set([

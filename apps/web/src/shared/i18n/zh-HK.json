@@ -14,12 +14,90 @@
     "cta": "在 Base Sepolia 開始",
     "honesty": "合約未經審計。主網已關閉。本階段只支援測試網。"
   },
-  "create": {
-    "title": "創建代幣",
-    "phase": "Phase 0：錢包空殼。完整 Wizard 於 Phase 1 交付。"
-  },
   "wallet": {
     "connect": "連接錢包",
     "wrongNetwork": "請切換到 Base Sepolia 或 Arbitrum Sepolia。"
+  },
+  "wizard": {
+    "title": "創建代幣",
+    "next": "下一步",
+    "back": "上一步",
+    "errors": "請先修正以下項目",
+    "steps": {
+      "0": "錢包",
+      "1": "基本資料",
+      "2": "經濟模型",
+      "3": "選擇鏈",
+      "4": "流動性",
+      "5": "Omnichain",
+      "6": "總覽",
+      "7": "執行",
+      "8": "成功"
+    },
+    "wallet": {
+      "need": "請在 Base Sepolia 連接錢包後繼續。"
+    },
+    "basics": {
+      "name": "名稱",
+      "symbol": "代號",
+      "decimals": "Decimals",
+      "supply": "總供應量",
+      "description": "說明",
+      "logo": "Logo URI（IPFS 或 https）",
+      "website": "網站"
+    },
+    "tokenomics": {
+      "supplyMode": "供應模式",
+      "fixed": "固定 — 不可再增發",
+      "mintable": "可增發 — 擁有人可以 mint",
+      "ownership": "發幣後所有權",
+      "keep": "保留",
+      "renounce": "放棄（後續 phase 才上鏈執行）",
+      "safe": "轉到 Safe（地址）",
+      "timelock": "轉到 Timelock（地址）"
+    },
+    "chains": {
+      "hint": "Phase 1 只開放 Base Sepolia。其他鏈可見但未啟用。",
+      "disabled": "Phase 2 才開放"
+    },
+    "liquidity": {
+      "tokenAmount": "放入 LP 的代幣數量",
+      "nativeAmount": "放入 LP 的原生幣數量",
+      "mode": "鎖定模式",
+      "timed": "定期鎖定",
+      "burn": "銷毀 LP（永久）",
+      "duration": "鎖定期"
+    },
+    "omnichain": {
+      "note": "本階段只在單鏈部署 OFT。Peer 接線在 Phase 2。跨鏈 send 維持 1:1，不抽稅。"
+    },
+    "review": {
+      "checklist": "Anti-rug 清單（產品意圖，不是審計）",
+      "fixed": "供應量固定",
+      "mintableWarn": "可增發 — 擁有人可以膨脹供應",
+      "lock": "已設定 LP 鎖定",
+      "unaudited": "合約未經審計"
+    },
+    "execute": {
+      "simulate": "先模擬再發送",
+      "needContracts": "Factory／Manager／Locker／Router 地址仍為零。請先在 Base Sepolia 部署合約，並填入 packages/config/src/contracts.ts。",
+      "create": "1. 部署代幣",
+      "lp": "2. 加入 LP 並鎖定",
+      "simulating": "模擬中…",
+      "sending": "等待簽名…",
+      "done": "鏈上回條已保存。請到成功頁。"
+    },
+    "success": {
+      "title": "發幣已寫上鏈",
+      "reread": "以下數值來自即時 eth_call，不是交易回條快取。",
+      "token": "代幣",
+      "lock": "鎖定"
+    }
+  },
+  "token": {
+    "missing": "請提供 chainId 與代幣地址。"
+  },
+  "lock": {
+    "missing": "請提供 chainId 與鎖定編號。"
   }
 }
