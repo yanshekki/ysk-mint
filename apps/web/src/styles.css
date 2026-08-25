@@ -1064,6 +1064,43 @@ table.data tbody tr:hover td {
 .review-notes li::marker {
   color: var(--brand-blue);
 }
+.transfer-desk {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+button.oft-chain {
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+  font: inherit;
+  color: inherit;
+}
+button.oft-chain:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.transfer-pick-on {
+  border-color: var(--brand-blue);
+  box-shadow: 0 0 0 1px var(--brand-blue);
+}
+.transfer-tag {
+  margin-left: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.transfer-paste {
+  align-self: flex-start;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand-blue);
+  cursor: pointer;
+}
 .chip {
   display: inline-flex;
   align-items: center;
@@ -1298,7 +1335,8 @@ table.data tbody tr:hover td {
 }
 
 .workspace-scroll:has(.oft-desk),
-.workspace-scroll:has(.review-desk) {
+.workspace-scroll:has(.review-desk),
+.workspace-scroll:has(.transfer-desk) {
   display: flex;
   flex-direction: column;
   padding: 20px 24px;

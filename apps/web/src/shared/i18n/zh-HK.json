@@ -259,17 +259,19 @@
   },
   "transfer": {
     "title": "跨鏈",
-    "body": "數量為鏈上餘額的百分比。目的鏈以 chip 選擇。",
+    "body": "從已連接錢包選擇有餘額的 EVM 代幣，發到另一條已 setPeer 的 EVM。",
     "quote": "報價",
     "send": "模擬並發送",
     "fee": "nativeFee",
     "token": "代幣",
-    "pick": "選擇或貼上",
-    "pickHint": "點擊以貼上合約地址",
+    "walletTokens": "錢包代幣",
+    "needWallet": "請連接 EVM 錢包。",
+    "noTokens": "這個錢包沒有可跨鏈的 EVM 代幣。",
+    "paste": "貼上合約",
     "amount": "數量",
     "dest": "目的鏈",
-    "nativeDest": "NEAR、Cardano、Solana 不經 EVM OFT send。獨立原生資產，故不報價、不發送。",
-    "sameChain": "目的鏈與目前連接的 EVM 相同。OFT send 須另一條已 setPeer 的 EVM。"
+    "nativeDest": "不經 OFT send。",
+    "sameChain": "來源鏈"
   },
   "me": {
     "title": "持倉",

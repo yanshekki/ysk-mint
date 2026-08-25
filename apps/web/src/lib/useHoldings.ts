@@ -14,6 +14,7 @@ export type HoldingRow = {
   contract?: string;
   native?: boolean;
   chainTag?: string;
+  chainId?: number;
 };
 
 const CHAIN_TAG: Record<number, string> = {
@@ -47,6 +48,7 @@ function row(token: TokenRecord, raw: bigint | null, connected: boolean): Holdin
     contract: token.address,
     native: token.native,
     chainTag: CHAIN_TAG[token.chainId],
+    chainId: token.chainId,
   };
 }
 
@@ -262,6 +264,7 @@ function rowsFromCardano(
         raw: bal.raw,
         contract: unit,
         chainTag: "ADA",
+        chainId: 1815,
       });
     }
   }
@@ -479,6 +482,7 @@ export function useSolanaHoldings(address: string) {
             raw: bal.raw,
             contract: mint,
             chainTag: "SOL",
+            chainId: 101,
           });
         });
         setRows(sortHoldings(next, true));

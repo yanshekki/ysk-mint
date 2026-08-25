@@ -259,17 +259,19 @@
   },
   "transfer": {
     "title": "Bridge",
-    "body": "Amount is a % of your on-chain balance. Destination is a chain chip.",
+    "body": "Pick a funded EVM token from the connected wallet and send it to another peered EVM.",
     "quote": "Quote",
     "send": "Simulate and send",
     "fee": "nativeFee",
     "token": "Token",
-    "pick": "Pick or paste",
-    "pickHint": "Click to paste a contract address",
+    "walletTokens": "Wallet tokens",
+    "needWallet": "Connect an EVM wallet.",
+    "noTokens": "This wallet has no EVM tokens that can be bridged.",
+    "paste": "Paste contract",
     "amount": "Amount",
     "dest": "Destination",
-    "nativeDest": "NEAR, Cardano and Solana are not EVM OFT destinations. Independent native assets, so quote and send stay off.",
-    "sameChain": "Destination is the connected EVM. OFT send needs another peered EVM."
+    "nativeDest": "Not OFT send.",
+    "sameChain": "Source chain"
   },
   "me": {
     "title": "Holdings",
