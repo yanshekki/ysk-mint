@@ -1,15 +1,50 @@
 import { useEffect, useState } from "react";
-import { useEnsName } from "wagmi";
-import type { Address } from "viem";
 import { stakeFromPayment } from "./cardanoCip30.ts";
 
-export function useEvmName(address?: string) {
-  const { data } = useEnsName({
-    address: address as Address | undefined,
-    chainId: 1,
-    query: { enabled: Boolean(address) },
+type BioDomain = { identity?: string; platform?: string; isPrimary?: boolean };
+
+async function web3BioName(address: string, platform: "ens" | "sns"): Promise<string> {
+  const res = await fetch(`https://api.web3.bio/domain/${encodeURIComponent(address)}`);
+  if (!res.ok) return "";
+  const json = (await res.json()) as { domains?: BioDomain[] };
+  const hits = (json.domains ?? []).filter((d) => d.platform === platform && d.identity);
+  const pick = hits.find((d) => d.isPrimary) ?? hits[0];
+  return pick?.identity ?? "";
+}
+
+async function ensFromGraph(address: string): Promise<string> {
+  const id = address.toLowerCase();
+  const res = await fetch("https://api.thegraph.com/subgraphs/name/ensdomains/ens", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      query: `{ domains(first: 5, where: { resolvedAddress: "${id}" }) { name } }`,
+    }),
   });
-  return data ?? "";
+  if (!res.ok) return "";
+  const json = (await res.json()) as { data?: { domains?: Array<{ name?: string }> } };
+  const names = (json.data?.domains ?? []).map((d) => d.name).filter((n): n is string => Boolean(n?.endsWith(".eth")));
+  return names[0] ?? "";
+}
+
+export function useEvmName(address?: string) {
+  const [name, setName] = useState("");
+  useEffect(() => {
+    if (!address) {
+      setName("");
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const fromBio = await web3BioName(address, "ens").catch(() => "");
+      const found = fromBio || (await ensFromGraph(address).catch(() => ""));
+      if (!cancelled) setName(found);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [address]);
+  return name;
 }
 
 export function useAdaHandle(address: string, stake: string) {
@@ -45,51 +80,16 @@ export function useSolName(address: string) {
       return;
     }
     let cancelled = false;
-    void lookupSolName(address).then((found) => {
-      if (!cancelled) setName(found);
-    });
+    void web3BioName(address, "sns")
+      .then((found) => {
+        if (!cancelled) setName(found);
+      })
+      .catch(() => {
+        if (!cancelled) setName("");
+      });
     return () => {
       cancelled = true;
     };
   }, [address]);
   return name;
-}
-
-async function lookupSolName(address: string): Promise<string> {
-  const urls = [
-    `https://sns-api.bonfida.com/v2/user/${address}`,
-    `https://sns-api.bonfida.com/favorite-domain/${address}`,
-    `https://api.sns.id/domains/${address}`,
-    `https://lite-api.jup.ag/v1/sns/${address}`,
-  ];
-  for (const url of urls) {
-    try {
-      const res = await fetch(url);
-      if (!res.ok) continue;
-      const json: unknown = await res.json();
-      const found = pickSolName(json, address);
-      if (found) return found.endsWith(".sol") ? found : `${found}.sol`;
-    } catch {
-      /* try next */
-    }
-  }
-  return "";
-}
-
-function pickSolName(json: unknown, address: string): string {
-  if (!json || typeof json !== "object") return "";
-  const o = json as Record<string, unknown>;
-  const direct = [o.domain, o.name, o.favorite, o.primary, o.result];
-  for (const v of direct) {
-    if (typeof v === "string" && v && v !== address) return v.replace(/^\./, "");
-  }
-  if (o.data && typeof o.data === "object") return pickSolName(o.data, address);
-  const domains = o.domains ?? o.items;
-  if (Array.isArray(domains) && typeof domains[0] === "string") return domains[0];
-  if (Array.isArray(domains) && domains[0] && typeof domains[0] === "object") {
-    const first = domains[0] as Record<string, unknown>;
-    if (typeof first.name === "string") return first.name;
-    if (typeof first.domain === "string") return first.domain;
-  }
-  return "";
 }

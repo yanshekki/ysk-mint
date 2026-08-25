@@ -58,13 +58,13 @@ function AddrFace({
   tail?: number;
 }) {
   if (!connected || !address) {
-    return <p className="wallet-addr num wallet-addr-idle">{idle}</p>;
+    return <div className="wallet-addr wallet-addr-idle">{idle}</div>;
   }
   return (
-    <p className={`wallet-addr ${name ? "wallet-addr-named" : ""}`}>
-      {name ? <span className="wallet-addr-name">{name}</span> : null}
-      <span className="num">{short(address, head, tail)}</span>
-    </p>
+    <div className={`wallet-addr ${name ? "wallet-addr-named" : ""}`}>
+      {name ? <div className="wallet-addr-name">{name}</div> : null}
+      <div className="wallet-addr-hex num">{short(address, head, tail)}</div>
+    </div>
   );
 }
 

@@ -328,10 +328,11 @@ export function useCardanoHoldings(
 
 const TOKEN_PROGRAM = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 const TOKEN_2022_PROGRAM = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb";
+/** leorpc first: publicnode 403s getTokenAccountsByOwner from browsers. */
 const SOLANA_RPCS = [
+  "https://solana.leorpc.com/?api_key=FREE",
   "https://solana-rpc.publicnode.com",
   "https://solana.publicnode.com",
-  "https://solana.leorpc.com/?api_key=FREE",
   "https://api.mainnet-beta.solana.com",
 ];
 
@@ -356,25 +357,36 @@ async function solMintMeta(mint: string): Promise<{ symbol: string; name: string
   }
 }
 
-async function solanaRpc<T>(body: unknown): Promise<T> {
-  let last = "solana rpc";
-  for (const url of SOLANA_RPCS) {
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        last = `${url} ${res.status}`;
-        continue;
-      }
-      return (await res.json()) as T;
-    } catch (err) {
-      last = err instanceof Error ? err.message : String(err);
-    }
+async function solanaCall<T>(url: string, body: unknown): Promise<T | null> {
+  const ctrl = new AbortController();
+  const timer = window.setTimeout(() => ctrl.abort(), 10000);
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+      signal: ctrl.signal,
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as T;
+  } catch {
+    return null;
+  } finally {
+    window.clearTimeout(timer);
   }
-  throw new Error(last);
+}
+
+function collectMints(json: SolTokJson | null, into: Map<string, { raw: bigint; decimals: number }>) {
+  for (const v of json?.result?.value ?? []) {
+    const info = v.account?.data?.parsed?.info;
+    if (!info?.mint) continue;
+    const raw = BigInt(info.tokenAmount?.amount ?? "0");
+    const prev = into.get(info.mint);
+    into.set(info.mint, {
+      raw: (prev?.raw ?? 0n) + raw,
+      decimals: info.tokenAmount?.decimals ?? prev?.decimals ?? 0,
+    });
+  }
 }
 
 export function useSolanaHoldings(address: string) {
@@ -391,42 +403,43 @@ export function useSolanaHoldings(address: string) {
     setLoading(true);
     void (async () => {
       try {
-        const tokenParams = (programId: string) => [address, { programId }, { encoding: "jsonParsed" }];
-        const [balJson, tokJson, tok2022Json] = await Promise.all([
-          solanaRpc<{ result?: { value?: number }; error?: unknown }>({
+        let lamports: number | null = null;
+        const byMint = new Map<string, { raw: bigint; decimals: number }>();
+        for (const url of SOLANA_RPCS) {
+          const balJson = await solanaCall<{ result?: { value?: number }; error?: unknown }>(url, {
             jsonrpc: "2.0",
             id: 1,
             method: "getBalance",
             params: [address],
-          }),
-          solanaRpc<SolTokJson>({
-            jsonrpc: "2.0",
-            id: 2,
-            method: "getTokenAccountsByOwner",
-            params: tokenParams(TOKEN_PROGRAM),
-          }),
-          solanaRpc<SolTokJson>({
-            jsonrpc: "2.0",
-            id: 3,
-            method: "getTokenAccountsByOwner",
-            params: tokenParams(TOKEN_2022_PROGRAM),
-          }),
-        ]);
-        if (balJson.error) throw new Error("balance");
-        const byMint = new Map<string, { raw: bigint; decimals: number }>();
-        for (const v of [...(tokJson.result?.value ?? []), ...(tok2022Json.result?.value ?? [])]) {
-          const info = v.account?.data?.parsed?.info;
-          if (!info?.mint) continue;
-          const raw = BigInt(info.tokenAmount?.amount ?? "0");
-          const prev = byMint.get(info.mint);
-          byMint.set(info.mint, {
-            raw: (prev?.raw ?? 0n) + raw,
-            decimals: info.tokenAmount?.decimals ?? prev?.decimals ?? 0,
           });
+          if (balJson && !balJson.error && typeof balJson.result?.value === "number") {
+            lamports = balJson.result.value;
+          }
+          const tokenParams = (programId: string) => [address, { programId }, { encoding: "jsonParsed" as const }];
+          collectMints(
+            await solanaCall<SolTokJson>(url, {
+              jsonrpc: "2.0",
+              id: 2,
+              method: "getTokenAccountsByOwner",
+              params: tokenParams(TOKEN_PROGRAM),
+            }),
+            byMint,
+          );
+          collectMints(
+            await solanaCall<SolTokJson>(url, {
+              jsonrpc: "2.0",
+              id: 3,
+              method: "getTokenAccountsByOwner",
+              params: tokenParams(TOKEN_2022_PROGRAM),
+            }),
+            byMint,
+          );
+          if (lamports != null && byMint.size > 0) break;
         }
+        if (lamports == null && byMint.size === 0) throw new Error("solana rpc");
         if (cancelled) return;
         const next = catalog.map((t) => {
-          const raw = t.native ? BigInt(balJson.result?.value ?? 0) : (byMint.get(t.address ?? "")?.raw ?? 0n);
+          const raw = t.native ? BigInt(lamports ?? 0) : (byMint.get(t.address ?? "")?.raw ?? 0n);
           return row(t, raw, true);
         });
         const known = new Set(catalog.map((t) => t.address).filter(Boolean));
