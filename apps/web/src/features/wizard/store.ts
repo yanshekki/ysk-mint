@@ -24,6 +24,7 @@ export type WizardDraft = {
   lpToken?: `0x${string}`;
   createTx?: `0x${string}`;
   lpTx?: `0x${string}`;
+  perChain: Record<number, { token?: `0x${string}`; tx?: `0x${string}` }>;
 };
 
 const defaults: WizardDraft = {
@@ -43,6 +44,7 @@ const defaults: WizardDraft = {
   lpNativeAmount: "0.1",
   lockMode: LockMode.Timed,
   lockDuration: 30 * 24 * 60 * 60,
+  perChain: {},
 };
 
 type Store = WizardDraft & {

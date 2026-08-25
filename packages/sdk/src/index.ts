@@ -7,3 +7,4 @@ export * from "./validation/token";
 export * from "./validation/launch";
 export * from "./validation/liquidity";
 export * from "./abi/launch";
+export * from "./oft/peers";

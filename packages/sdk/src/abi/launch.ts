@@ -50,6 +50,83 @@ export const yskOftAbi = [
   { type: "function", name: "balanceOf", stateMutability: "view", inputs: [{ name: "a", type: "address" }], outputs: [{ type: "uint256" }] },
   { type: "function", name: "owner", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
   { type: "function", name: "approve", stateMutability: "nonpayable", inputs: [{ name: "s", type: "address" }, { name: "v", type: "uint256" }], outputs: [{ type: "bool" }] },
+  {
+    type: "function",
+    name: "setPeer",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "eid", type: "uint32" },
+      { name: "peer", type: "bytes32" },
+    ],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "peers",
+    stateMutability: "view",
+    inputs: [{ name: "eid", type: "uint32" }],
+    outputs: [{ type: "bytes32" }],
+  },
+  {
+    type: "function",
+    name: "quoteSend",
+    stateMutability: "view",
+    inputs: [
+      {
+        name: "sendParam",
+        type: "tuple",
+        components: [
+          { name: "dstEid", type: "uint32" },
+          { name: "to", type: "bytes32" },
+          { name: "amountLD", type: "uint256" },
+          { name: "minAmountLD", type: "uint256" },
+          { name: "extraOptions", type: "bytes" },
+          { name: "composeMsg", type: "bytes" },
+          { name: "oftCmd", type: "bytes" },
+        ],
+      },
+      { name: "payInLzToken", type: "bool" },
+    ],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "nativeFee", type: "uint256" },
+          { name: "lzTokenFee", type: "uint256" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "function",
+    name: "send",
+    stateMutability: "payable",
+    inputs: [
+      {
+        name: "sendParam",
+        type: "tuple",
+        components: [
+          { name: "dstEid", type: "uint32" },
+          { name: "to", type: "bytes32" },
+          { name: "amountLD", type: "uint256" },
+          { name: "minAmountLD", type: "uint256" },
+          { name: "extraOptions", type: "bytes" },
+          { name: "composeMsg", type: "bytes" },
+          { name: "oftCmd", type: "bytes" },
+        ],
+      },
+      {
+        name: "fee",
+        type: "tuple",
+        components: [
+          { name: "nativeFee", type: "uint256" },
+          { name: "lzTokenFee", type: "uint256" },
+        ],
+      },
+      { name: "refundAddress", type: "address" },
+    ],
+    outputs: [],
+  },
 ] as const;
 
 export const liquidityManagerAbi = [

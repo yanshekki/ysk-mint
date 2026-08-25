@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { keccak256, parseEther, parseUnits, stringToBytes, zeroAddress } from "viem";
-import { useAccount, usePublicClient, useWalletClient } from "wagmi";
+import { useAccount, usePublicClient, useSwitchChain, useWalletClient } from "wagmi";
 import {
   ChainKey,
   ErrorCode,
@@ -12,6 +12,8 @@ import {
   liquidityManagerAbi,
   tokenFactoryAbi,
   yskOftAbi,
+  planPeerCalls,
+  CHAINS,
   validateLaunchDraft,
   validateLock,
   validateLpAmounts,
@@ -27,6 +29,7 @@ export function StepExecute() {
   const { address } = useAccount();
   const publicClient = usePublicClient();
   const { data: wallet } = useWalletClient();
+  const { switchChainAsync } = useSwitchChain();
   const [busy, setBusy] = useState<string | null>(null);
   const [errors, setErrors] = useState<LaunchError[]>([]);
 
@@ -111,7 +114,11 @@ export function StepExecute() {
         ? (`0x${launchLog.topics[1].slice(26)}` as `0x${string}`)
         : undefined;
       if (!tokenAddress || tokenAddress === zeroAddress) throw new Error("missing token");
-      w.set({ createTx: createHash, tokenAddress });
+      const perChain = {
+        ...w.perChain,
+        [ChainKey.BaseSepolia]: { token: tokenAddress, tx: createHash },
+      };
+      w.set({ createTx: createHash, tokenAddress, perChain });
 
       setBusy("simulating");
       await publicClient.simulateContract({
@@ -150,6 +157,30 @@ export function StepExecute() {
       const lpReceipt = await publicClient.waitForTransactionReceipt({ hash: lpHash });
       const launched = lpReceipt.logs.find((l) => l.address.toLowerCase() === contracts.manager.toLowerCase());
       const lockId = launched?.data ? BigInt(launched.data.slice(0, 66)).toString() : undefined;
+      const deployed = Object.entries(perChain)
+        .filter(([, v]) => v.token)
+        .map(([key, v]) => ({ chainKey: Number(key), address: v.token as `0x${string}` }));
+      const peerCalls = planPeerCalls(deployed);
+      for (const call of peerCalls) {
+        const chain = CHAINS[call.fromChainKey as keyof typeof CHAINS];
+        if (!chain) continue;
+        setBusy("sending");
+        await switchChainAsync({ chainId: chain.chainId });
+        await publicClient.simulateContract({
+          account: address,
+          address: call.from,
+          abi: yskOftAbi,
+          functionName: "setPeer",
+          args: [call.dstEid, call.peer],
+        });
+        const peerHash = await wallet.writeContract({
+          address: call.from,
+          abi: yskOftAbi,
+          functionName: "setPeer",
+          args: [call.dstEid, call.peer],
+        });
+        await publicClient.waitForTransactionReceipt({ hash: peerHash });
+      }
       w.set({ lpTx: lpHash, lockId, step: LaunchStep.Success });
     } catch (e) {
       const data = (e as { data?: `0x${string}` }).data;

@@ -17,6 +17,12 @@ export const LAUNCH_CONTRACTS: Partial<Record<(typeof ChainKey)[keyof typeof Cha
     locker: ZERO,
     v2Router: ZERO,
   },
+  [ChainKey.ArbSepolia]: {
+    factory: ZERO,
+    manager: ZERO,
+    locker: ZERO,
+    v2Router: ZERO,
+  },
 };
 
 export function launchContracts(chainKey: number): LaunchContracts | undefined {
