@@ -37,4 +37,8 @@ export const launchErrorAbi = [
   { type: "error", name: "LockNotFound", inputs: [] },
   { type: "error", name: "AlreadyWithdrawn", inputs: [] },
   { type: "error", name: "NativeTransferFailed", inputs: [] },
+  { type: "error", name: "Paused", inputs: [] },
+  { type: "error", name: "MaxTxExceeded", inputs: [{ name: "amount", type: "uint256" }, { name: "maxTx", type: "uint256" }] },
+  { type: "error", name: "MaxWalletExceeded", inputs: [{ name: "balance", type: "uint256" }, { name: "maxWallet", type: "uint256" }] },
+  { type: "error", name: "Blacklisted", inputs: [] },
 ] as const;

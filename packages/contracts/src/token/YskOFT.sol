@@ -7,6 +7,9 @@ import {LaunchErrors} from "../errors/LaunchErrors.sol";
 import {LaunchValidation} from "../libraries/LaunchValidation.sol";
 import {IYskOFT} from "../interfaces/IYskOFT.sol";
 import {ILayerZeroEndpointV2} from "../interfaces/ILayerZeroEndpointV2.sol";
+import {Limits} from "./modules/Limits.sol";
+import {AccessLists} from "./modules/AccessLists.sol";
+import {TaxLib} from "../libraries/TaxLib.sol";
 
 /// @notice Cloneable OFT. Endpoint is immutable (set on the per-chain implementation).
 ///         Name/symbol/decimals live in storage so EIP-1167 clones can initialize.
@@ -22,6 +25,14 @@ contract YskOFT is ERC20, IYskOFT {
     uint8 public override supplyMode;
     uint16 public override moduleFlags;
     mapping(uint32 => bytes32) public override peers;
+
+    bool public paused;
+    Limits.Data internal _limits;
+    AccessLists.Data internal _access;
+    mapping(address => bool) public isDexPair;
+    uint16 public buyTaxBps;
+    uint16 public sellTaxBps;
+    address public taxRecipient;
 
     modifier onlyOwner() {
         if (msg.sender != _owner) revert LaunchErrors.NotOwner();
@@ -64,6 +75,69 @@ contract YskOFT is ERC20, IYskOFT {
 
     function owner() public view override returns (address) {
         return _owner;
+    }
+
+    function _requireModule(LaunchEnums.ModuleFlag flag) private view {
+        if (moduleFlags & LaunchEnums.moduleBit(flag) == 0) {
+            revert LaunchErrors.ModuleDisabled(uint8(flag));
+        }
+    }
+
+    function setPaused(bool value) external onlyOwner {
+        _requireModule(LaunchEnums.ModuleFlag.Pause);
+        paused = value;
+    }
+
+    function setLimits(uint256 maxTx, uint256 maxWallet) external onlyOwner {
+        _requireModule(LaunchEnums.ModuleFlag.MaxTx);
+        LaunchValidation.validateLimits(maxTx, maxWallet, totalSupply());
+        _limits.maxTx = maxTx;
+        _limits.maxWallet = maxWallet;
+    }
+
+    function setBlacklisted(address account, bool value) external onlyOwner {
+        _requireModule(LaunchEnums.ModuleFlag.Blacklist);
+        LaunchValidation.validateNonZeroAddress(account);
+        _access.blacklisted[account] = value;
+    }
+
+    function setDexPair(address pair, bool value) external onlyOwner {
+        LaunchValidation.validateNonZeroAddress(pair);
+        isDexPair[pair] = value;
+    }
+
+    function setTax(uint16 buyBps, uint16 sellBps, address recipient) external onlyOwner {
+        _requireModule(LaunchEnums.ModuleFlag.BuyTax);
+        LaunchValidation.validateTax(buyBps, sellBps, recipient);
+        buyTaxBps = buyBps;
+        sellTaxBps = sellBps;
+        taxRecipient = recipient;
+    }
+
+    function _update(address from, address to, uint256 value) internal override {
+        bool bridging = from == address(0) || to == address(0) || from == endpoint || to == endpoint;
+        if (!bridging) {
+            if (paused) revert LaunchErrors.Paused();
+            if (moduleFlags & LaunchEnums.moduleBit(LaunchEnums.ModuleFlag.Blacklist) != 0) {
+                AccessLists.requireNotBlacklisted(_access, from, to);
+            }
+            if (moduleFlags & LaunchEnums.moduleBit(LaunchEnums.ModuleFlag.MaxTx) != 0) {
+                Limits.enforceTx(_limits, value);
+            }
+            if (moduleFlags & LaunchEnums.moduleBit(LaunchEnums.ModuleFlag.MaxWallet) != 0) {
+                Limits.enforceWallet(_limits, balanceOf(to) + value);
+            }
+            uint16 bps;
+            if (isDexPair[from]) bps = buyTaxBps;
+            else if (isDexPair[to]) bps = sellTaxBps;
+            if (bps > 0) {
+                (uint256 tax, uint256 remaining) = TaxLib.take(value, bps);
+                if (tax > 0) super._update(from, taxRecipient, tax);
+                super._update(from, to, remaining);
+                return;
+            }
+        }
+        super._update(from, to, value);
     }
 
     function mint(address to, uint256 amount) external override onlyOwner {

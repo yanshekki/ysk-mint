@@ -41,4 +41,8 @@ library LaunchErrors {
     error LockNotFound();
     error AlreadyWithdrawn();
     error NativeTransferFailed();
+    error Paused();
+    error MaxTxExceeded(uint256 amount, uint256 maxTx);
+    error MaxWalletExceeded(uint256 balance, uint256 maxWallet);
+    error Blacklisted();
 }
