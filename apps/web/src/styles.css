@@ -346,9 +346,24 @@ select {
 }
 .wallet-pane-top {
   display: grid;
-  grid-template-columns: 56px 1fr auto;
+  grid-template-columns: 56px minmax(0, 1fr);
   gap: 12px;
   align-items: start;
+  flex-shrink: 0;
+  min-height: 72px;
+}
+.wallet-pane-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.wallet-pane-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 28px;
 }
 .wallet-mark {
   width: 56px;
@@ -377,10 +392,15 @@ select {
   letter-spacing: -0.03em;
 }
 .wallet-pane-top p {
-  margin: 4px 0 0;
+  margin: 0;
+  min-height: calc(14px * 1.45 * 2);
   font-size: 14px;
   line-height: 1.45;
   color: var(--text-sub);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .wallet-state {
   display: inline-flex;
@@ -401,8 +421,13 @@ select {
 }
 .wallet-chips {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
+  flex-shrink: 0;
+  min-height: 36px;
+  max-height: 36px;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 .wallet-chip {
   display: inline-flex;
@@ -446,10 +471,16 @@ select {
 }
 .wallet-pane-main > .wallet-addr {
   flex-shrink: 0;
+  height: 36px;
   font-size: 13px;
-  padding: 8px 10px;
+  padding: 0 10px;
   border-radius: 8px;
   background: var(--bg-subtle);
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .holdings {
   flex: 1;
@@ -1070,10 +1101,7 @@ table.data tbody tr:hover td {
     font-size: 18px;
   }
   .wallet-pane-top {
-    grid-template-columns: 48px 1fr;
-  }
-  .wallet-state {
-    grid-column: 1 / -1;
-    justify-self: start;
+    grid-template-columns: 48px minmax(0, 1fr);
+    min-height: 64px;
   }
 }

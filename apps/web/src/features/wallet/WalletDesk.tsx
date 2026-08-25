@@ -72,14 +72,16 @@ export function WalletDesk() {
         <article className={`wallet-pane ${isConnected ? "wallet-pane-on" : ""}`}>
           <div className="wallet-pane-top">
             <div className="wallet-mark wallet-mark-evm">EVM</div>
-            <div className="min-w-0">
-              <h3>{t("wallet.evm")}</h3>
+            <div className="wallet-pane-copy">
+              <div className="wallet-pane-title">
+                <h3>{t("wallet.evm")}</h3>
+                <span className={`wallet-state ${isConnected ? "on" : ""}`}>
+                  <StatusDot on={isConnected} />
+                  {isConnected ? t("wizard.wallet.ready") : t("wizard.wallet.idle")}
+                </span>
+              </div>
               <p>{t("wallet.evmHint")}</p>
             </div>
-            <span className={`wallet-state ${isConnected ? "on" : ""}`}>
-              <StatusDot on={isConnected} />
-              {isConnected ? t("wizard.wallet.ready") : t("wizard.wallet.idle")}
-            </span>
           </div>
           <div className="wallet-chips" aria-label={t("wallet.evm")}>
             {evmChains.map((c) => (
@@ -93,7 +95,7 @@ export function WalletDesk() {
           </div>
           <div className="wallet-pane-main">
             <p className={`wallet-addr num ${isConnected ? "" : "wallet-addr-idle"}`}>
-              {isConnected ? address : t("wizard.wallet.idle")}
+              {isConnected && address ? short(address, 10, 8) : t("wizard.wallet.idle")}
             </p>
             <HoldingsList
               rows={evmHold.rows}
@@ -132,14 +134,16 @@ export function WalletDesk() {
         <article className={`wallet-pane ${native.nearAccount ? "wallet-pane-on" : ""}`}>
           <div className="wallet-pane-top">
             <div className="wallet-mark wallet-mark-near">NEAR</div>
-            <div className="min-w-0">
-              <h3>{t("wallet.near")}</h3>
+            <div className="wallet-pane-copy">
+              <div className="wallet-pane-title">
+                <h3>{t("wallet.near")}</h3>
+                <span className={`wallet-state ${native.nearAccount ? "on" : ""}`}>
+                  <StatusDot on={!!native.nearAccount} />
+                  {native.nearAccount ? t("wizard.wallet.ready") : t("wizard.wallet.idle")}
+                </span>
+              </div>
               <p>{t("wallet.nearHint")}</p>
             </div>
-            <span className={`wallet-state ${native.nearAccount ? "on" : ""}`}>
-              <StatusDot on={!!native.nearAccount} />
-              {native.nearAccount ? t("wizard.wallet.ready") : t("wizard.wallet.idle")}
-            </span>
           </div>
           <div className="wallet-chips">
             <span className="wallet-chip wallet-chip-static">NEAR</span>
@@ -148,7 +152,7 @@ export function WalletDesk() {
           </div>
           <div className="wallet-pane-main">
             <p className={`wallet-addr num ${native.nearAccount ? "" : "wallet-addr-idle"}`}>
-              {native.nearAccount || t("wizard.wallet.idle")}
+              {native.nearAccount ? short(native.nearAccount, 10, 8) : t("wizard.wallet.idle")}
             </p>
             {nearErr ? <p className="wallet-err">{nearErr}</p> : null}
             <HoldingsList
@@ -186,14 +190,16 @@ export function WalletDesk() {
         <article className={`wallet-pane ${native.cardanoAddress ? "wallet-pane-on" : ""}`}>
           <div className="wallet-pane-top">
             <div className="wallet-mark wallet-mark-ada">ADA</div>
-            <div className="min-w-0">
-              <h3>{t("wallet.cardano")}</h3>
+            <div className="wallet-pane-copy">
+              <div className="wallet-pane-title">
+                <h3>{t("wallet.cardano")}</h3>
+                <span className={`wallet-state ${native.cardanoAddress ? "on" : ""}`}>
+                  <StatusDot on={!!native.cardanoAddress} />
+                  {native.cardanoAddress ? t("wizard.wallet.ready") : t("wizard.wallet.idle")}
+                </span>
+              </div>
               <p>{t("wallet.adaHint")}</p>
             </div>
-            <span className={`wallet-state ${native.cardanoAddress ? "on" : ""}`}>
-              <StatusDot on={!!native.cardanoAddress} />
-              {native.cardanoAddress ? t("wizard.wallet.ready") : t("wizard.wallet.idle")}
-            </span>
           </div>
           <div className="wallet-chips" role="radiogroup" aria-label={t("wallet.cardano")}>
             {adaWallets.length ? (
@@ -227,7 +233,6 @@ export function WalletDesk() {
               {native.cardanoAddress ? short(native.cardanoAddress, 12, 8) : t("wizard.wallet.idle")}
             </p>
             {adaErr ? <p className="wallet-err">{adaErr}</p> : null}
-            {!adaWallets.length && !native.cardanoAddress ? <p className="wallet-empty">{t("wallet.installCip30")}</p> : null}
             <HoldingsList
               rows={adaHold.rows}
               funded={adaHold.funded}
