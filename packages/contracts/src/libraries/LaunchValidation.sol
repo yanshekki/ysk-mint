@@ -18,6 +18,7 @@ library LaunchValidation {
     uint64 internal constant LOCK_MIN_SECONDS = 30 days;
     uint64 internal constant LOCK_MAX_SECONDS = 5 * 365 days;
     uint16 internal constant LP_TOKEN_MAX_BPS = 9900;
+    uint16 internal constant PLATFORM_FEE_MAX_BPS = 500;
 
     function validateName(string memory name) internal pure {
         bytes memory raw = bytes(name);
@@ -110,6 +111,10 @@ library LaunchValidation {
 
     function validateNonZeroAddress(address account) internal pure {
         if (account == address(0)) revert LaunchErrors.RecipientZero();
+    }
+
+    function validatePlatformFee(uint16 bps) internal pure {
+        if (bps > PLATFORM_FEE_MAX_BPS) revert LaunchErrors.PlatformFeeTooHigh(bps);
     }
 
     function validateBasics(string memory name, string memory symbol, uint8 decimals_, uint256 supply) internal pure {

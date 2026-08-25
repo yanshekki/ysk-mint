@@ -41,6 +41,12 @@ export const ErrorCode = {
   MaxTxExceeded: "MaxTxExceeded",
   MaxWalletExceeded: "MaxWalletExceeded",
   Blacklisted: "Blacklisted",
+  BondingDisabled: "BondingDisabled",
+  SaleNotActive: "SaleNotActive",
+  SaleCapExceeded: "SaleCapExceeded",
+  SaleNotFailed: "SaleNotFailed",
+  SaleNotFinalizable: "SaleNotFinalizable",
+  PlatformFeeTooHigh: "PlatformFeeTooHigh",
   Unknown: "Unknown",
   SimulationFailed: "SimulationFailed",
 } as const;

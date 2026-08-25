@@ -41,4 +41,10 @@ export const launchErrorAbi = [
   { type: "error", name: "MaxTxExceeded", inputs: [{ name: "amount", type: "uint256" }, { name: "maxTx", type: "uint256" }] },
   { type: "error", name: "MaxWalletExceeded", inputs: [{ name: "balance", type: "uint256" }, { name: "maxWallet", type: "uint256" }] },
   { type: "error", name: "Blacklisted", inputs: [] },
+  { type: "error", name: "BondingDisabled", inputs: [] },
+  { type: "error", name: "SaleNotActive", inputs: [] },
+  { type: "error", name: "SaleCapExceeded", inputs: [] },
+  { type: "error", name: "SaleNotFailed", inputs: [] },
+  { type: "error", name: "SaleNotFinalizable", inputs: [] },
+  { type: "error", name: "PlatformFeeTooHigh", inputs: [{ name: "bps", type: "uint16" }] },
 ] as const;

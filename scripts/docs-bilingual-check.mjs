@@ -11,6 +11,7 @@ const pairs = [
   ["docs/errors.md", "docs/errors-ZH.md"],
   ["docs/phases.md", "docs/phases-ZH.md"],
   ["docs/security-checklist.md", "docs/security-checklist-ZH.md"],
+  ["docs/audit-prep.md", "docs/audit-prep-ZH.md"],
 ];
 
 function headings(path) {

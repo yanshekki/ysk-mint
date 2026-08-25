@@ -45,4 +45,10 @@ library LaunchErrors {
     error MaxTxExceeded(uint256 amount, uint256 maxTx);
     error MaxWalletExceeded(uint256 balance, uint256 maxWallet);
     error Blacklisted();
+    error BondingDisabled();
+    error SaleNotActive();
+    error SaleCapExceeded();
+    error SaleNotFailed();
+    error SaleNotFinalizable();
+    error PlatformFeeTooHigh(uint16 bps);
 }
