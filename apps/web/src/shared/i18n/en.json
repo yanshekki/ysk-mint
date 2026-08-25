@@ -43,7 +43,7 @@
     }
   },
   "home": {
-    "title": "Launch an omnichain token. Lock LP. No backend.",
+    "title": "Launch an omnichain token. Lock LP.",
     "body": "All-chain LP table plus a guided launch. Every number is an eth_call.",
     "cta": "Open launch desk",
     "honesty": "Contracts are not audited. Mainnet factory addresses are still zero."
@@ -101,48 +101,44 @@
       "nativeReady": "Native-chain account connected."
     },
     "basics": {
-      "lede": "Only fields that go on-chain. No backend, and the contract has no description, website or logo slots — so this form does not collect them.",
       "name": "Name",
-      "nameHintEvm": "Written to name() on the EVM contract. Wallets and explorers show it. Cannot change after mint.",
-      "nameHintNear": "NEP-141 metadata name. Not ERC-20. Factory undeployed, so you cannot sign yet.",
-      "nameHintAda": "Cardano native-asset display name. No EVM contract. Factory undeployed, so you cannot sign yet.",
-      "nameHintSol": "SPL name. Metaplex art needs a hosted URI; this site has no backend, so it is not collected. Program undeployed, so you cannot sign yet.",
+      "nameHintEvm": "Written to name() on the EVM contract. Cannot change after mint.",
+      "nameHintNear": "NEP-141 metadata name.",
+      "nameHintAda": "Cardano native-asset display name.",
+      "nameHintSol": "SPL name.",
       "symbol": "Ticker",
-      "symbolHint": "EVM symbol(), A–Z0–9, max 11 characters. Cannot change after mint.",
-      "symbolHintAda": "Used as the native asset name (max 32 bytes). No ERC-20 contract.",
+      "symbolHint": "Written to EVM symbol(), A–Z0–9, max 11 characters. Cannot change after mint.",
+      "symbolHintAda": "Used as the native asset name (max 32 bytes).",
       "decimals": "Decimals",
       "decimalsHintEvm": "On-chain. Only 6 / 8 / 9 / 18. Cannot change after mint.",
       "decimalsHintNative": "Common values for the selected native VM. If EVM is also selected, 6–18 is required.",
       "supply": "Total supply",
-      "supplyHint": "Minted in full on the EVM home chain. OFT spokes mint 0 at execute. Native VMs issue separately and do not share supply.",
-      "gapsTitle": "Missing or blocked now",
+      "supplyHint": "Minted in full on the EVM home chain. OFT spokes mint 0 at execute. Native VMs issue separately.",
+      "gapsTitle": "Cannot sign yet",
       "gapWalletEvm": "EVM selected, but no EVM wallet connected.",
       "gapWalletNear": "NEAR selected, but no NEAR wallet connected.",
       "gapWalletAda": "Cardano selected, but no CIP-30 wallet connected.",
       "gapWalletSol": "Solana selected, but no Solana wallet connected.",
-      "gapUndeployedEvm": "EVM factory is still zero ({{names}}). Filling this form will not let you sign.",
+      "gapUndeployedEvm": "EVM factory is still zero ({{names}}).",
       "gapNearFactory": "NEAR NEP-141 factory is undeployed.",
       "gapAdaFactory": "Cardano native-asset factory is undeployed.",
       "gapSolProgram": "Solana SPL program is undeployed.",
-      "gapAdaDecimals": "EVM is also selected, so decimals must be 6–18. Cardano’s usual 0 decimals cannot be used.",
-      "gapSpoke": "OFT spoke supply 0 is handled at sign time. This field is home-chain full supply.",
-      "gapNativeNoEvm": "Native VMs only: DEX tax, wallet caps and Uniswap LP do not apply.",
       "vm": {
         "evm": {
           "title": "EVM · LayerZero OFT",
-          "body": "On-chain: name, symbol, decimals, supply. Home mints full supply; other configured EVM chains mint 0, then setPeer. No description / website / logo slots."
+          "body": "On-chain: name, symbol, decimals, supply. Home mints full supply; other configured EVM chains mint 0, then setPeer."
         },
         "near": {
           "title": "NEAR · NEP-141",
-          "body": "Independent mainnet asset. Not OFT, not Aurora. Factory undeployed."
+          "body": "Independent mainnet NEP-141. Not OFT, not Aurora."
         },
         "cardano": {
           "title": "Cardano · native asset",
-          "body": "Policy + asset name. No ERC-20 address. Factory undeployed. CIP-25 art is not hosted here."
+          "body": "Policy + asset name. No ERC-20 address."
         },
         "solana": {
           "title": "Solana · SPL",
-          "body": "Independent SPL mint. Metaplex art needs your own URI; not collected. Program undeployed."
+          "body": "Independent SPL mint."
         }
       }
     },
@@ -170,8 +166,8 @@
       "taxHint": "Buy/sell tax on DEX pairs only. OFT stays 1:1.",
       "maxWallet": "Max wallet",
       "taxBps": "Tax",
-      "nativeOnly": "You selected native VMs only. Supply mode, ownership, pause, tax and wallet caps are EVM contract modules and do not apply. Native factories / programs are undeployed.",
-      "evmOnlyNote": "These fields write to the EVM OFT only. They do not apply to independent Cardano / NEAR / Solana issuance. Tax and caps do not apply to OFT send."
+      "nativeOnly": "Native VMs only. Supply mode, ownership, pause, tax and wallet caps are EVM-only.",
+      "evmOnlyNote": "These fields write to the EVM OFT only. They do not apply to independent Cardano / NEAR / Solana issuance."
     },
     "chains": {
       "hint": "Select issuance networks. Signing is blocked on chains without a deployed factory.",
@@ -193,7 +189,7 @@
       "d180": "180 days",
       "d365": "365 days",
       "timedHint": "On-chain timed lock.",
-      "nativeOnly": "You selected native VMs only. Uniswap V2 LP and the locker are EVM-only. Native factories / programs are undeployed, so this step does not sign."
+      "nativeOnly": "Uniswap V2 LP and the locker are EVM-only."
     },
     "omnichain": {
       "kicker": "LayerZero OFT",
@@ -223,7 +219,6 @@
       "mintableWarn": "Mintable — owner can inflate",
       "lock": "LP lock selected",
       "unaudited": "Contracts unaudited",
-      "onchainOnly": "Only name, ticker, decimals and supply go on-chain. No description, website or logo.",
       "nativeNoLp": "Native VMs have no Uniswap LP step."
     },
     "execute": {
@@ -233,7 +228,7 @@
       "spokeTag": "spoke · zero supply",
       "needEvm": "No EVM chain selected. Cannot sign an OFT.",
       "needContracts": "Factory / manager / locker / router are still zero. Deploy, then fill packages/config/src/contracts.ts.",
-      "nativePath": "You picked NEAR, Cardano or Solana. Those paths are NEP-141 / native asset / SPL, not EVM OFT. Native factories and programs are undeployed, so this step will not sign.",
+      "nativePath": "NEAR / Cardano / Solana are independent native issuance, not EVM OFT. Native factories and programs are undeployed, so this step will not sign.",
       "create": "1. Deploy token",
       "lp": "2. Add LP and lock",
       "simulating": "Simulating…",

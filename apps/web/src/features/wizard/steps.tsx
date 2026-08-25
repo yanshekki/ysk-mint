@@ -51,9 +51,6 @@ export function StepBasics() {
   if (vms.includes("near")) gaps.push(t("wizard.basics.gapNearFactory"));
   if (vms.includes("cardano")) gaps.push(t("wizard.basics.gapAdaFactory"));
   if (vms.includes("solana")) gaps.push(t("wizard.basics.gapSolProgram"));
-  if (vms.includes("evm") && vms.includes("cardano") && !decs.includes(0)) gaps.push(t("wizard.basics.gapAdaDecimals"));
-  if (vms.includes("evm")) gaps.push(t("wizard.basics.gapSpoke"));
-  if (!vms.includes("evm") && vms.length) gaps.push(t("wizard.basics.gapNativeNoEvm"));
 
   const nameHint =
     vms.includes("evm") ? t("wizard.basics.nameHintEvm") : vms.includes("near") ? t("wizard.basics.nameHintNear") : vms.includes("cardano") ? t("wizard.basics.nameHintAda") : vms.includes("solana") ? t("wizard.basics.nameHintSol") : t("wizard.basics.nameHintEvm");
@@ -63,7 +60,6 @@ export function StepBasics() {
 
   return (
     <div className="grid gap-5">
-      <p className="field-note">{t("wizard.basics.lede")}</p>
       <div className="basics-chain-chips">
         {picked.map((c) => (
           <span key={c.key} className="basics-chip">
@@ -386,7 +382,6 @@ export function StepReview() {
         {evm ? <li>{w.supplyMode === SupplyMode.Fixed ? t("wizard.review.fixed") : t("wizard.review.mintableWarn")}</li> : null}
         {evm ? <li>{t("wizard.review.lock")}</li> : <li>{t("wizard.review.nativeNoLp")}</li>}
         <li>{t("wizard.review.unaudited")}</li>
-        <li>{t("wizard.review.onchainOnly")}</li>
       </ul>
     </div>
   );
