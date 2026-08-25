@@ -1118,6 +1118,208 @@ table.data tbody tr:hover td {
   color: var(--text-sub);
 }
 
+.workspace-scroll:has(.oft-desk) {
+  display: flex;
+  flex-direction: column;
+  padding: 20px 24px;
+  overflow: auto;
+}
+.oft-desk {
+  flex: 1 0 auto;
+  min-height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(300px, 0.72fr);
+  gap: 16px;
+  align-items: start;
+  overflow: visible;
+}
+.oft-main,
+.oft-side {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow: visible;
+}
+.oft-head {
+  flex-shrink: 0;
+}
+.oft-title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.15;
+  color: var(--text-main);
+}
+.oft-lede {
+  margin: 6px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-sub);
+}
+.oft-metric {
+  margin: 4px 0 0;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--brand-blue);
+}
+.oft-mesh {
+  position: relative;
+  height: 300px;
+  min-height: 300px;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background:
+    radial-gradient(ellipse at 50% 42%, rgba(59, 130, 246, 0.08), transparent 58%),
+    radial-gradient(ellipse at 58% 62%, rgba(16, 185, 129, 0.08), transparent 52%),
+    var(--bg-subtle);
+  overflow: hidden;
+}
+.oft-mesh-solo {
+  height: 180px;
+  min-height: 180px;
+}
+.oft-mesh-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.oft-mesh-line {
+  stroke: #93c5fd;
+  stroke-width: 0.55;
+  stroke-linecap: round;
+  opacity: 0.85;
+}
+.oft-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  z-index: 1;
+}
+.oft-node-mark {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+.oft-node-mark img {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+.oft-node-name {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 999px;
+  padding: 2px 8px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.oft-chain-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+}
+.oft-side .oft-chain-list {
+  grid-template-columns: 1fr;
+}
+.oft-chain {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-white);
+}
+.oft-chain img {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+.oft-chain b {
+  display: block;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
+}
+.oft-chain span {
+  display: block;
+  margin-top: 1px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-sub);
+}
+.oft-card {
+  padding: 16px 18px;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background: var(--bg-white);
+  box-shadow: var(--shadow-xs);
+}
+.oft-side-hint {
+  margin: 6px 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-sub);
+}
+.oft-facts {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.oft-facts li {
+  display: grid;
+  gap: 2px;
+}
+.oft-facts b {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-main);
+}
+.oft-facts span {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-sub);
+}
+.oft-run {
+  margin: 10px 0 0;
+  padding: 0 0 0 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--text-sub);
+  font-size: 14px;
+  font-weight: 600;
+}
+.oft-run li::marker {
+  font-weight: 800;
+  color: var(--brand-blue);
+}
+
 @media (max-width: 900px) {
   .top-nav {
     display: none;
@@ -1160,8 +1362,23 @@ table.data tbody tr:hover td {
     padding-left: 16px;
     padding-right: 16px;
   }
-  .workspace-scroll:has(.wallet-desk) {
+  .workspace-scroll:has(.wallet-desk),
+  .workspace-scroll:has(.oft-desk) {
     overflow: auto;
+  }
+  .oft-desk {
+    grid-template-columns: 1fr;
+    overflow: visible;
+    flex: none;
+    height: auto;
+    min-height: 0;
+  }
+  .oft-mesh {
+    height: 260px;
+    min-height: 260px;
+  }
+  .oft-title {
+    font-size: 22px;
   }
   .wallet-desk,
   .wallet-panes {

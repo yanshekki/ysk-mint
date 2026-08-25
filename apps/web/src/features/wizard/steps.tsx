@@ -1,4 +1,4 @@
-import { CHAINS, LaunchStep, LockMode, OwnershipAction, SupplyMode } from "@ysk-mint/sdk";
+import { LaunchStep, LockMode, OwnershipAction, SupplyMode } from "@ysk-mint/sdk";
 import { featuredChains, testnetChains } from "@ysk-mint/config";
 import { useTranslation } from "react-i18next";
 import { useWizard } from "./store.ts";
@@ -300,24 +300,6 @@ export function StepLiquidity() {
   );
 }
 
-export function StepOmnichain() {
-  const { t } = useTranslation();
-  const w = useWizard();
-  return (
-    <div className="space-y-3 text-[15px] leading-6 text-text-sub">
-      <p>{t("wizard.omnichain.note")}</p>
-      <p>{t("wizard.omnichain.addressNote")}</p>
-      <div className="flex flex-wrap gap-2">
-        {w.chains.map((k) => (
-          <span key={k} className="chip chip-on">
-            {CHAINS[k as keyof typeof CHAINS]?.name}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export function StepReview() {
   const { t } = useTranslation();
   const w = useWizard();
@@ -348,6 +330,8 @@ export function StepReview() {
     </div>
   );
 }
+
+export { StepOmnichain } from "./OmnichainDesk.tsx";
 
 export const STEP_LABELS = [
   LaunchStep.Wallet,

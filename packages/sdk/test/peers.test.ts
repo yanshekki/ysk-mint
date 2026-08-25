@@ -17,6 +17,19 @@ describe("planPeerCalls", () => {
     expect(calls[1]?.peer).toBe(toPeerBytes32(a));
     expect(calls[0]?.from).not.toBe(calls[1]?.from);
   });
+
+  it("skips Cardano and NEAR — they have no LayerZero Endpoint", () => {
+    const calls = planPeerCalls([
+      { chainKey: ChainKey.Cardano, address: a },
+      { chainKey: ChainKey.BaseSepolia, address: a },
+      { chainKey: ChainKey.Near, address: b },
+      { chainKey: ChainKey.ArbSepolia, address: b },
+    ]);
+    expect(calls).toHaveLength(2);
+    expect(calls.every((c) => c.fromChainKey === ChainKey.BaseSepolia || c.fromChainKey === ChainKey.ArbSepolia)).toBe(
+      true,
+    );
+  });
 });
 
 describe("validateSupplySplit", () => {

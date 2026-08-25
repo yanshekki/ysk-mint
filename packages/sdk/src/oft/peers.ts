@@ -20,16 +20,16 @@ export function toPeerBytes32(address: Address): `0x${string}` {
   return pad(address, { size: 32 });
 }
 
-/** Bidirectional setPeer calls. CREATE2 addresses are not assumed equal across chains. */
+/** Bidirectional setPeer on EVM OFT only. Native chains have no Endpoint. */
 export function planPeerCalls(deployed: DeployedOFT[]): PeerCall[] {
   const calls: PeerCall[] = [];
   for (const from of deployed) {
     const fromChain = CHAINS[from.chainKey as keyof typeof CHAINS];
-    if (!fromChain) continue;
+    if (!fromChain?.evm || !fromChain.eid) continue;
     for (const to of deployed) {
       if (from.chainKey === to.chainKey) continue;
       const toChain = CHAINS[to.chainKey as keyof typeof CHAINS];
-      if (!toChain) continue;
+      if (!toChain?.evm || !toChain.eid) continue;
       calls.push({
         fromChainKey: from.chainKey,
         from: from.address,

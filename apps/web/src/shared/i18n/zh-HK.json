@@ -149,8 +149,26 @@
       "timedHint": "鏈上定期鎖定。"
     },
     "omnichain": {
-      "note": "執行時按鏈切錢包，然後雙向 setPeer。OFT send 1:1，不抽稅。",
-      "addressNote": "各鏈地址不同，因為 implementation 寫死該鏈 endpoint。"
+      "kicker": "LayerZero OFT",
+      "title": "對等網絡",
+      "lede": "EVM 雙向 setPeer。OFT send 1:1。",
+      "peerCount": "{{n}} 條 EVM · {{calls}} 次 setPeer",
+      "single": "單鏈發行，無需 setPeer",
+      "none": "未選擇 EVM 鏈",
+      "eid": "EID {{eid}}",
+      "facts": "規則",
+      "factRate": "1:1",
+      "factRateHint": "OFT send 不抽 DEX 稅",
+      "factPeer": "雙向 setPeer",
+      "factPeerHint": "執行時按鏈切錢包",
+      "factAddr": "地址各異",
+      "factAddrHint": "implementation 寫死該鏈 Endpoint",
+      "native": "原生發行",
+      "nativeHint": "獨立資產，不走 LayerZero",
+      "run": "執行順序",
+      "runOft": "每條 EVM 部署 OFT",
+      "runPeer": "按鏈切錢包，雙向 setPeer",
+      "runNative": "Cardano／NEAR 獨立發行"
     },
     "review": {
       "checklist": "Anti-rug 清單 — 產品意圖，不是審計。",

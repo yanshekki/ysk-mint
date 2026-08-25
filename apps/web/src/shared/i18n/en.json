@@ -149,8 +149,26 @@
       "timedHint": "On-chain timed lock."
     },
     "omnichain": {
-      "note": "Execute switches wallet per chain, then setPeer both ways. OFT send is 1:1, no tax.",
-      "addressNote": "Addresses differ per chain because the implementation bakes in that endpoint."
+      "kicker": "LayerZero OFT",
+      "title": "Peer mesh",
+      "lede": "Bidirectional setPeer on EVM. OFT send is 1:1.",
+      "peerCount": "{{n}} EVM · {{calls}} setPeer calls",
+      "single": "Single chain. No setPeer.",
+      "none": "No EVM chain selected",
+      "eid": "EID {{eid}}",
+      "facts": "Rules",
+      "factRate": "1:1",
+      "factRateHint": "OFT send. No DEX tax.",
+      "factPeer": "Bidirectional setPeer",
+      "factPeerHint": "Wallet switches per chain at execute",
+      "factAddr": "Addresses differ",
+      "factAddrHint": "Implementation bakes in that endpoint",
+      "native": "Native issuance",
+      "nativeHint": "Standalone assets. Not LayerZero.",
+      "run": "Execute order",
+      "runOft": "Deploy OFT on each EVM",
+      "runPeer": "Switch wallet per chain, setPeer both ways",
+      "runNative": "Issue Cardano / NEAR independently"
     },
     "review": {
       "checklist": "Anti-rug checklist — product intent, not an audit.",
