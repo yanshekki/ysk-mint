@@ -26,6 +26,7 @@ export function NativeConnect() {
   const [nearHeight, setNearHeight] = useState<string | null>(null);
   const [adaHeight, setAdaHeight] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [nearErr, setNearErr] = useState<string | null>(null);
 
   useEffect(() => {
     void restoreNearSession();
@@ -54,18 +55,25 @@ export function NativeConnect() {
           </button>
         ) : (
           <button
+            id="ysk-near-connect"
             type="button"
             className="wallet-cta"
             disabled={busy === "near"}
             onClick={() => {
               setBusy("near");
-              void connectNear().finally(() => setBusy(null));
+              setNearErr(null);
+              void connectNear()
+                .catch((err: unknown) => {
+                  setNearErr(err instanceof Error ? err.message : String(err));
+                })
+                .finally(() => setBusy(null));
             }}
           >
             {t("wallet.connectNear")}
           </button>
         )}
       </div>
+      {nearErr ? <p className="text-[13px] text-red-500 lg:col-span-2">{nearErr}</p> : null}
       <div className="token-row">
         <div className="grid h-10 w-10 place-items-center rounded-lg bg-bg-subtle text-[12px] font-black">ADA</div>
         <div className="min-w-0">

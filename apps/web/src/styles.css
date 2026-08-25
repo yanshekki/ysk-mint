@@ -55,10 +55,14 @@
 html,
 body,
 #root,
-#root > *,
+#root > *:not(#near-wallet-selector-modal),
 [data-rk] {
   height: 100%;
   max-height: 100%;
+}
+#near-wallet-selector-modal,
+#near-wallet-selector-modal .nws-modal-wrapper {
+  z-index: 100000 !important;
 }
 html,
 body,
