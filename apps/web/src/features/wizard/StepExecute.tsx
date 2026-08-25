@@ -19,6 +19,8 @@ import {
   validateLpAmounts,
   type LaunchError,
 } from "@ysk-mint/sdk";
+import { lpTokenAmount } from "./presets.ts";
+import { packFlags } from "./flags.ts";
 import { Button } from "../../shared/ui/Button.tsx";
 import { useWizard } from "./store.ts";
 
@@ -41,8 +43,9 @@ export function StepExecute() {
       return;
     }
     const supply = parseUnits(w.totalSupply || "0", w.decimals);
-    const tokenLp = parseUnits(w.lpTokenAmount || "0", w.decimals);
+    const tokenLp = parseUnits(lpTokenAmount(w.totalSupply, w.lpBps), w.decimals);
     const nativeLp = parseEther(w.lpNativeAmount || "0");
+    const flags = packFlags(w);
     const collected = [
       ...validateLaunchDraft(
         {
@@ -51,7 +54,7 @@ export function StepExecute() {
           decimals: w.decimals,
           totalSupply: supply,
           supplyMode: w.supplyMode,
-          moduleFlags: 0,
+          moduleFlags: flags,
           owner: address,
           chains: w.chains,
         },
@@ -85,7 +88,7 @@ export function StepExecute() {
             totalSupply: supply,
             owner: address,
             supplyMode: w.supplyMode,
-            moduleFlags: 0,
+            moduleFlags: flags,
           },
           salt,
         ],
@@ -103,7 +106,7 @@ export function StepExecute() {
             totalSupply: supply,
             owner: address,
             supplyMode: w.supplyMode,
-            moduleFlags: 0,
+            moduleFlags: flags,
           },
           salt,
         ],

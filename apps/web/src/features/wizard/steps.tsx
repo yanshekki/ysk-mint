@@ -1,18 +1,36 @@
-import { CHAINS, LaunchStep, LockMode, OwnershipAction, SupplyMode, LOCK_MIN_SECONDS } from "@ysk-mint/sdk";
+import { CHAINS, LaunchStep, LockMode, OwnershipAction, SupplyMode } from "@ysk-mint/sdk";
 import { useAccount } from "wagmi";
 import { useTranslation } from "react-i18next";
 import { useWizard } from "./store.ts";
-
-const field = "mt-1 w-full rounded-xl border border-border bg-white px-3 py-2 text-sm";
-const labelCls = "block text-sm font-medium text-text-main";
+import { ChipGroup } from "../../shared/ui/ChipGroup.tsx";
+import { OptionCard, OptionGrid } from "../../shared/ui/OptionCard.tsx";
+import { Dropzone } from "../../shared/ui/Dropzone.tsx";
+import { Badge } from "../../shared/ui/TokenRow.tsx";
+import {
+  DECIMALS,
+  LOCK_CARDS,
+  LP_BPS,
+  NATIVE_PRESETS,
+  SUPPLY_PRESETS,
+  TAX_BPS,
+  WALLET_BPS,
+  lpTokenAmount,
+} from "./presets.ts";
 
 export function StepWallet() {
   const { t } = useTranslation();
   const { isConnected, address } = useAccount();
   return (
     <div className="space-y-3">
-      <p className="text-text-sub">{t("wizard.wallet.need")}</p>
-      <p className="font-mono text-sm break-all">{isConnected ? address : "—"}</p>
+      <p className="text-[13px] text-text-sub">{t("wizard.wallet.need")}</p>
+      <div className="token-row">
+        <div className="grid h-10 w-10 place-items-center rounded-lg bg-bg-subtle text-xs font-black">W</div>
+        <div>
+          <p className="text-[13px] font-bold">{isConnected ? t("wizard.wallet.ready") : t("wizard.wallet.idle")}</p>
+          <p className="num truncate text-[11px] text-text-muted">{isConnected ? address : "—"}</p>
+        </div>
+        <Badge kind={isConnected ? "ok" : "warn"}>{isConnected ? "ON" : "OFF"}</Badge>
+      </div>
     </div>
   );
 }
@@ -21,42 +39,68 @@ export function StepBasics() {
   const { t } = useTranslation();
   const w = useWizard();
   return (
-    <div className="grid gap-4">
-      <label className={labelCls}>
-        {t("wizard.basics.name")}
-        <input className={field} value={w.name} onChange={(e) => w.set({ name: e.target.value })} />
-      </label>
-      <label className={labelCls}>
-        {t("wizard.basics.symbol")}
-        <input className={field} value={w.symbol} onChange={(e) => w.set({ symbol: e.target.value.toUpperCase() })} />
-      </label>
-      <label className={labelCls}>
-        {t("wizard.basics.decimals")}
-        <input
-          className={field}
-          type="number"
-          min={6}
-          max={18}
+    <div className="grid gap-5">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="text-[12px] font-bold">
+          {t("wizard.basics.name")}
+          <input
+            className="field-text mt-1"
+            maxLength={32}
+            value={w.name}
+            onChange={(e) => w.set({ name: e.target.value })}
+          />
+        </label>
+        <label className="text-[12px] font-bold">
+          {t("wizard.basics.symbol")}
+          <input
+            className="field-text mt-1 num uppercase"
+            maxLength={11}
+            value={w.symbol}
+            onChange={(e) => w.set({ symbol: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "") })}
+          />
+        </label>
+      </div>
+      <div>
+        <p className="mb-2 text-[12px] font-bold">{t("wizard.basics.decimals")}</p>
+        <ChipGroup
+          ariaLabel="decimals"
           value={w.decimals}
-          onChange={(e) => w.set({ decimals: Number(e.target.value) })}
+          onChange={(decimals) => w.set({ decimals })}
+          options={DECIMALS.map((d) => ({ value: d, label: String(d) }))}
         />
-      </label>
-      <label className={labelCls}>
-        {t("wizard.basics.supply")}
-        <input className={field} value={w.totalSupply} onChange={(e) => w.set({ totalSupply: e.target.value })} />
-      </label>
-      <label className={labelCls}>
-        {t("wizard.basics.description")}
-        <textarea className={field} value={w.description} onChange={(e) => w.set({ description: e.target.value })} />
-      </label>
-      <label className={labelCls}>
-        {t("wizard.basics.logo")}
-        <input className={field} value={w.logoUri} onChange={(e) => w.set({ logoUri: e.target.value })} />
-      </label>
-      <label className={labelCls}>
-        {t("wizard.basics.website")}
-        <input className={field} value={w.website} onChange={(e) => w.set({ website: e.target.value })} />
-      </label>
+      </div>
+      <div>
+        <p className="mb-2 text-[12px] font-bold">{t("wizard.basics.supply")}</p>
+        <ChipGroup
+          ariaLabel="supply"
+          value={w.totalSupply}
+          onChange={(totalSupply) => w.set({ totalSupply })}
+          options={SUPPLY_PRESETS.map((s) => ({ value: s.value, label: s.label }))}
+        />
+      </div>
+      <div>
+        <p className="mb-2 text-[12px] font-bold">{t("wizard.basics.logo")}</p>
+        <Dropzone preview={w.logoUri} onFile={(logoUri) => w.set({ logoUri })} />
+      </div>
+      <button type="button" className="text-left text-[12px] font-bold text-brand-blue" onClick={() => w.set({ showAdvanced: !w.showAdvanced })}>
+        {w.showAdvanced ? t("wizard.basics.hideAdvanced") : t("wizard.basics.showAdvanced")}
+      </button>
+      {w.showAdvanced ? (
+        <div className="grid gap-3">
+          <input
+            className="field-text"
+            placeholder={t("wizard.basics.description")}
+            value={w.description}
+            onChange={(e) => w.set({ description: e.target.value })}
+          />
+          <input
+            className="field-text"
+            placeholder={t("wizard.basics.website")}
+            value={w.website}
+            onChange={(e) => w.set({ website: e.target.value })}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -65,55 +109,99 @@ export function StepTokenomics() {
   const { t } = useTranslation();
   const w = useWizard();
   return (
-    <div className="grid gap-4">
-      <fieldset>
-        <legend className={labelCls}>{t("wizard.tokenomics.supplyMode")}</legend>
-        <label className="mt-2 flex gap-2 text-sm">
-          <input
-            type="radio"
-            checked={w.supplyMode === SupplyMode.Fixed}
-            onChange={() => w.set({ supplyMode: SupplyMode.Fixed })}
+    <div className="grid gap-5">
+      <div>
+        <p className="mb-2 text-[12px] font-bold">{t("wizard.tokenomics.supplyMode")}</p>
+        <OptionGrid>
+          <OptionCard
+            selected={w.supplyMode === SupplyMode.Fixed}
+            title={t("wizard.tokenomics.fixed")}
+            hint={t("wizard.tokenomics.fixedHint")}
+            onSelect={() => w.set({ supplyMode: SupplyMode.Fixed })}
           />
-          {t("wizard.tokenomics.fixed")}
-        </label>
-        <label className="mt-2 flex gap-2 text-sm">
-          <input
-            type="radio"
-            checked={w.supplyMode === SupplyMode.Mintable}
-            onChange={() => w.set({ supplyMode: SupplyMode.Mintable })}
+          <OptionCard
+            selected={w.supplyMode === SupplyMode.Mintable}
+            title={t("wizard.tokenomics.mintable")}
+            hint={t("wizard.tokenomics.mintableHint")}
+            onSelect={() => w.set({ supplyMode: SupplyMode.Mintable })}
           />
-          {t("wizard.tokenomics.mintable")}
-        </label>
-      </fieldset>
-      <fieldset>
-        <legend className={labelCls}>{t("wizard.tokenomics.ownership")}</legend>
-        {(
-          [
-            [OwnershipAction.Keep, "keep"],
-            [OwnershipAction.Renounce, "renounce"],
-            [OwnershipAction.TransferSafe, "safe"],
-            [OwnershipAction.TransferTimelock, "timelock"],
-          ] as const
-        ).map(([v, key]) => (
-          <label key={v} className="mt-2 flex gap-2 text-sm">
-            <input
-              type="radio"
-              checked={w.ownershipAction === v}
-              onChange={() => w.set({ ownershipAction: v })}
+        </OptionGrid>
+      </div>
+      <div>
+        <p className="mb-2 text-[12px] font-bold">{t("wizard.tokenomics.ownership")}</p>
+        <OptionGrid>
+          {(
+            [
+              [OwnershipAction.Keep, "keep"],
+              [OwnershipAction.Renounce, "renounce"],
+              [OwnershipAction.TransferSafe, "safe"],
+              [OwnershipAction.TransferTimelock, "timelock"],
+            ] as const
+          ).map(([v, key]) => (
+            <OptionCard
+              key={v}
+              selected={w.ownershipAction === v}
+              title={t(`wizard.tokenomics.${key}`)}
+              hint={t(`wizard.tokenomics.${key}Hint`)}
+              onSelect={() => w.set({ ownershipAction: v })}
             />
-            {t(`wizard.tokenomics.${key}`)}
-          </label>
-        ))}
+          ))}
+        </OptionGrid>
         {w.ownershipAction === OwnershipAction.TransferSafe ||
         w.ownershipAction === OwnershipAction.TransferTimelock ? (
           <input
-            className={field}
+            className="field-text mt-3 num"
             placeholder="0x…"
             value={w.ownershipTarget}
             onChange={(e) => w.set({ ownershipTarget: e.target.value })}
           />
         ) : null}
-      </fieldset>
+      </div>
+      <div>
+        <p className="mb-2 text-[12px] font-bold">{t("wizard.tokenomics.modules")}</p>
+        <OptionGrid>
+          <OptionCard
+            selected={w.modulePause}
+            title={t("wizard.tokenomics.pause")}
+            hint={t("wizard.tokenomics.pauseHint")}
+            onSelect={() => w.set({ modulePause: !w.modulePause })}
+          />
+          <OptionCard
+            selected={w.moduleMaxTx}
+            title={t("wizard.tokenomics.maxTx")}
+            hint={t("wizard.tokenomics.maxTxHint")}
+            onSelect={() => w.set({ moduleMaxTx: !w.moduleMaxTx })}
+          />
+          <OptionCard
+            selected={w.moduleTax}
+            title={t("wizard.tokenomics.tax")}
+            hint={t("wizard.tokenomics.taxHint")}
+            onSelect={() => w.set({ moduleTax: !w.moduleTax })}
+          />
+        </OptionGrid>
+        {w.moduleMaxTx ? (
+          <div className="mt-3">
+            <p className="mb-2 text-[12px] font-bold">{t("wizard.tokenomics.maxWallet")}</p>
+            <ChipGroup
+              ariaLabel="max-wallet"
+              value={w.maxWalletBps}
+              onChange={(maxWalletBps) => w.set({ maxWalletBps })}
+              options={WALLET_BPS.map((x) => ({ value: x.value, label: x.label }))}
+            />
+          </div>
+        ) : null}
+        {w.moduleTax ? (
+          <div className="mt-3">
+            <p className="mb-2 text-[12px] font-bold">{t("wizard.tokenomics.taxBps")}</p>
+            <ChipGroup
+              ariaLabel="tax"
+              value={w.taxBps}
+              onChange={(taxBps) => w.set({ taxBps })}
+              options={TAX_BPS.map((x) => ({ value: x.value, label: x.label }))}
+            />
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -123,30 +211,27 @@ export function StepChains() {
   const w = useWizard();
   return (
     <div className="space-y-3">
-      <p className="text-sm text-text-sub">{t("wizard.chains.hint")}</p>
-      {Object.values(CHAINS).map((c) => {
-        const enabled = c.enabled;
-        const checked = w.chains.includes(c.key);
-        return (
-          <label key={c.chainId} className="flex items-center justify-between rounded-xl border border-border bg-white p-3">
-            <span>
-              {c.name}
-              {!enabled ? <span className="ml-2 text-xs text-text-sub">{t("wizard.chains.disabled")}</span> : null}
-            </span>
-            <input
-              type="checkbox"
-              checked={checked && enabled}
-              disabled={!enabled}
-              onChange={(e) => {
-                const next = e.target.checked
-                  ? Array.from(new Set([...w.chains, c.key]))
-                  : w.chains.filter((k) => k !== c.key);
-                w.set({ chains: next });
+      <p className="text-[13px] text-text-sub">{t("wizard.chains.hint")}</p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {Object.values(CHAINS).map((c) => {
+          const on = w.chains.includes(c.key);
+          return (
+            <OptionCard
+              key={c.chainId}
+              selected={on && c.enabled}
+              disabled={!c.enabled}
+              title={c.name}
+              hint={`chainId ${c.chainId} · EID ${c.eid}${c.enabled ? "" : ` · ${t("wizard.chains.disabled")}`}`}
+              onSelect={() => {
+                if (!c.enabled) return;
+                w.set({
+                  chains: on ? w.chains.filter((k) => k !== c.key) : [...w.chains, c.key],
+                });
               }}
             />
-          </label>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -154,54 +239,62 @@ export function StepChains() {
 export function StepLiquidity() {
   const { t } = useTranslation();
   const w = useWizard();
-  const days = [30, 90, 180, 365];
+  const lpAmt = lpTokenAmount(w.totalSupply, w.lpBps);
   return (
-    <div className="grid gap-4">
-      <label className={labelCls}>
-        {t("wizard.liquidity.tokenAmount")}
-        <input className={field} value={w.lpTokenAmount} onChange={(e) => w.set({ lpTokenAmount: e.target.value })} />
-      </label>
-      <label className={labelCls}>
-        {t("wizard.liquidity.nativeAmount")}
-        <input className={field} value={w.lpNativeAmount} onChange={(e) => w.set({ lpNativeAmount: e.target.value })} />
-      </label>
-      <fieldset>
-        <legend className={labelCls}>{t("wizard.liquidity.mode")}</legend>
-        <label className="mt-2 flex gap-2 text-sm">
-          <input type="radio" checked={w.lockMode === LockMode.Timed} onChange={() => w.set({ lockMode: LockMode.Timed })} />
-          {t("wizard.liquidity.timed")}
-        </label>
-        <label className="mt-2 flex gap-2 text-sm">
-          <input type="radio" checked={w.lockMode === LockMode.Burn} onChange={() => w.set({ lockMode: LockMode.Burn })} />
-          {t("wizard.liquidity.burn")}
-        </label>
-      </fieldset>
-      {w.lockMode === LockMode.Timed ? (
-        <label className={labelCls}>
-          {t("wizard.liquidity.duration")}
-          <select
-            className={field}
-            value={w.lockDuration}
-            onChange={(e) => w.set({ lockDuration: Number(e.target.value) })}
-          >
-            {days.map((d) => (
-              <option key={d} value={d * LOCK_MIN_SECONDS / 30}>
-                {d} days
-              </option>
-            ))}
-          </select>
-        </label>
-      ) : null}
+    <div className="grid gap-5">
+      <div>
+        <p className="mb-2 text-[12px] font-bold">{t("wizard.liquidity.tokenBps")}</p>
+        <ChipGroup
+          ariaLabel="lp-bps"
+          value={w.lpBps}
+          onChange={(lpBps) => w.set({ lpBps })}
+          options={LP_BPS.map((x) => ({ value: x.value, label: x.label }))}
+        />
+        <p className="mt-2 num text-[12px] text-text-muted">
+          {lpAmt} / {w.totalSupply}
+        </p>
+      </div>
+      <div>
+        <p className="mb-2 text-[12px] font-bold">{t("wizard.liquidity.nativeAmount")}</p>
+        <ChipGroup
+          ariaLabel="lp-native"
+          value={w.lpNativeAmount}
+          onChange={(lpNativeAmount) => w.set({ lpNativeAmount })}
+          options={NATIVE_PRESETS.map((v) => ({ value: v, label: `${v} ETH` }))}
+        />
+      </div>
+      <div>
+        <p className="mb-2 text-[12px] font-bold">{t("wizard.liquidity.mode")}</p>
+        <div className="grid gap-2 sm:grid-cols-3">
+          {LOCK_CARDS.map((c) => (
+            <OptionCard
+              key={`${c.mode}-${c.duration}`}
+              selected={w.lockMode === c.mode && (c.mode === LockMode.Burn || w.lockDuration === c.duration)}
+              title={t(`wizard.liquidity.${c.titleKey}`)}
+              hint={t(`wizard.liquidity.${c.hintKey}`)}
+              onSelect={() => w.set({ lockMode: c.mode, lockDuration: c.duration })}
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
 
 export function StepOmnichain() {
   const { t } = useTranslation();
+  const w = useWizard();
   return (
-    <div className="space-y-3 text-sm leading-6 text-text-sub">
+    <div className="space-y-3 text-[13px] leading-6 text-text-sub">
       <p>{t("wizard.omnichain.note")}</p>
       <p>{t("wizard.omnichain.addressNote")}</p>
+      <div className="flex flex-wrap gap-2">
+        {w.chains.map((k) => (
+          <span key={k} className="chip chip-on">
+            {CHAINS[k as keyof typeof CHAINS]?.name}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -210,13 +303,24 @@ export function StepReview() {
   const { t } = useTranslation();
   const w = useWizard();
   return (
-    <div className="space-y-4">
-      <dl className="space-y-2 rounded-2xl border border-border bg-white p-4 text-sm">
-        <div className="flex justify-between gap-4"><dt>Name</dt><dd>{w.name} ({w.symbol})</dd></div>
-        <div className="flex justify-between gap-4"><dt>Supply</dt><dd>{w.totalSupply}</dd></div>
-        <div className="flex justify-between gap-4"><dt>LP</dt><dd>{w.lpTokenAmount} + {w.lpNativeAmount} ETH</dd></div>
-      </dl>
-      <ul className="list-disc space-y-1 pl-5 text-sm text-text-sub">
+    <div className="space-y-3">
+      <div className="token-row">
+        <div className="grid h-10 w-10 place-items-center rounded-lg bg-gradient-to-br from-brand-blue to-brand-green text-xs font-black text-white">
+          {(w.symbol || "??").slice(0, 2)}
+        </div>
+        <div>
+          <p className="text-[13px] font-bold">
+            {w.name || "—"} <span className="text-text-muted">{w.symbol}</span>
+          </p>
+          <p className="num text-[11px] text-text-muted">
+            {w.totalSupply} · {w.decimals} dec · LP {w.lpBps / 100}% + {w.lpNativeAmount} ETH
+          </p>
+        </div>
+        <Badge kind={w.supplyMode === SupplyMode.Fixed ? "ok" : "warn"}>
+          {w.supplyMode === SupplyMode.Fixed ? "FIXED" : "MINT"}
+        </Badge>
+      </div>
+      <ul className="space-y-1 text-[12px] text-text-sub">
         <li>{t("wizard.review.checklist")}</li>
         <li>{w.supplyMode === SupplyMode.Fixed ? t("wizard.review.fixed") : t("wizard.review.mintableWarn")}</li>
         <li>{t("wizard.review.lock")}</li>

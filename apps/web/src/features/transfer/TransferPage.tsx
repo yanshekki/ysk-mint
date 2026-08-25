@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { parseUnits, zeroAddress } from "viem";
+import { zeroAddress } from "viem";
 import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 import {
   CHAINS,
@@ -11,6 +11,10 @@ import {
   type LaunchError,
 } from "@ysk-mint/sdk";
 import { Button } from "../../shared/ui/Button.tsx";
+import { ChipGroup } from "../../shared/ui/ChipGroup.tsx";
+import { TokenRow } from "../../shared/ui/TokenRow.tsx";
+
+const PCT = [10, 25, 50, 75, 100] as const;
 
 export function TransferPage() {
   const { t, i18n } = useTranslation();
@@ -19,24 +23,31 @@ export function TransferPage() {
   const publicClient = usePublicClient();
   const { data: wallet } = useWalletClient();
   const [token, setToken] = useState("");
-  const [amount, setAmount] = useState("1");
+  const [pct, setPct] = useState<(typeof PCT)[number]>(25);
   const [dstKey, setDstKey] = useState(ChainKey.ArbSepolia);
   const [quote, setQuote] = useState<string>("");
   const [errors, setErrors] = useState<LaunchError[]>([]);
   const [busy, setBusy] = useState(false);
+  const [manual, setManual] = useState(false);
 
   const dst = CHAINS[dstKey as keyof typeof CHAINS];
+  const enabled = Object.values(CHAINS).filter((c) => c.enabled);
+
+  async function amountOf(): Promise<bigint> {
+    if (!publicClient || !address || !token) return 0n;
+    const [decimals, bal] = await Promise.all([
+      publicClient.readContract({ address: token as `0x${string}`, abi: yskOftAbi, functionName: "decimals" }),
+      publicClient.readContract({ address: token as `0x${string}`, abi: yskOftAbi, functionName: "balanceOf", args: [address] }),
+    ]);
+    void decimals;
+    return (bal * BigInt(pct)) / 100n;
+  }
 
   async function doQuote() {
     if (!publicClient || !address || !token) return;
     setErrors([]);
     try {
-      const decimals = await publicClient.readContract({
-        address: token as `0x${string}`,
-        abi: yskOftAbi,
-        functionName: "decimals",
-      });
-      const value = parseUnits(amount || "0", decimals);
+      const value = await amountOf();
       const fee = await publicClient.readContract({
         address: token as `0x${string}`,
         abi: yskOftAbi,
@@ -66,12 +77,7 @@ export function TransferPage() {
     setBusy(true);
     setErrors([]);
     try {
-      const decimals = await publicClient.readContract({
-        address: token as `0x${string}`,
-        abi: yskOftAbi,
-        functionName: "decimals",
-      });
-      const value = parseUnits(amount || "0", decimals);
+      const value = await amountOf();
       const sendParam = {
         dstEid: dst.eid,
         to: toPeerBytes32(address),
@@ -112,49 +118,57 @@ export function TransferPage() {
   }
 
   return (
-    <section className="mx-auto max-w-xl px-4 py-16">
-      <h1 className="text-2xl font-bold">{t("transfer.title")}</h1>
-      <p className="mt-2 text-sm text-text-sub">{t("transfer.body")}</p>
-      <div className="mt-6 grid gap-3">
-        <input
-          className="rounded-xl border border-border px-3 py-2 text-sm"
-          placeholder="OFT 0x…"
-          value={token}
-          onChange={(e) => setToken(e.target.value)}
-        />
-        <input
-          className="rounded-xl border border-border px-3 py-2 text-sm"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-        />
-        <select
-          className="rounded-xl border border-border px-3 py-2 text-sm"
-          value={dstKey}
-          onChange={(e) => setDstKey(Number(e.target.value))}
-        >
-          {Object.values(CHAINS)
-            .filter((c) => c.enabled)
-            .map((c) => (
-              <option key={c.key} value={c.key}>
-                {c.name}
-              </option>
-            ))}
-        </select>
+    <section className="mx-auto max-w-xl px-4 py-8">
+      <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-text-muted">Bridge</p>
+      <h1 className="text-2xl font-black">{t("transfer.title")}</h1>
+      <p className="mt-1 text-[13px] text-text-sub">{t("transfer.body")}</p>
+      <div className="panel mt-5 space-y-4 p-4">
+        <div>
+          <p className="mb-2 text-[12px] font-bold">{t("transfer.token")}</p>
+          {manual ? (
+            <input className="field-text num" value={token} onChange={(e) => setToken(e.target.value)} placeholder="0x…" />
+          ) : (
+            <TokenRow
+              title={token ? token.slice(0, 6) : t("transfer.pick")}
+              subtitle={token || t("transfer.pickHint")}
+              onClick={() => setManual(true)}
+            />
+          )}
+        </div>
+        <div>
+          <p className="mb-2 text-[12px] font-bold">{t("transfer.amount")}</p>
+          <ChipGroup
+            ariaLabel="pct"
+            value={pct}
+            onChange={setPct}
+            options={PCT.map((p) => ({ value: p, label: p === 100 ? "Max" : `${p}%` }))}
+          />
+        </div>
+        <div>
+          <p className="mb-2 text-[12px] font-bold">{t("transfer.dest")}</p>
+          <ChipGroup
+            ariaLabel="dst"
+            value={dstKey}
+            onChange={setDstKey}
+            options={enabled.map((c) => ({ value: c.key, label: c.name }))}
+          />
+        </div>
         <div className="flex gap-2">
           <Button type="button" variant="ghost" onClick={() => void doQuote()}>
             {t("transfer.quote")}
           </Button>
-          <Button type="button" disabled={busy || token.toLowerCase() === zeroAddress} onClick={() => void doSend()}>
+          <Button
+            type="button"
+            variant="grad"
+            disabled={busy || !token || token.toLowerCase() === zeroAddress}
+            onClick={() => void doSend()}
+          >
             {t("transfer.send")}
           </Button>
         </div>
-        {quote ? (
-          <p className="font-mono text-xs">
-            {t("transfer.fee")} {quote}
-          </p>
-        ) : null}
+        {quote ? <p className="num text-[12px] text-text-muted">{t("transfer.fee")} {quote}</p> : null}
         {errors.map((e) => (
-          <p key={e.code} className="text-sm text-red-700">
+          <p key={e.code} className="text-[13px] text-red-700">
             {e.message}
           </p>
         ))}

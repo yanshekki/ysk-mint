@@ -3,6 +3,7 @@ import { useReadContracts } from "wagmi";
 import { useTranslation } from "react-i18next";
 import { yskOftAbi } from "@ysk-mint/sdk";
 import { ShareCard } from "./ShareCard.tsx";
+import { Badge, Metric } from "../../shared/ui/TokenRow.tsx";
 
 export function TokenPage() {
   const { t } = useTranslation();
@@ -25,17 +26,22 @@ export function TokenPage() {
   const [name, symbol, decimals, supply, owner] = reads.data ?? [];
 
   return (
-    <section className="mx-auto max-w-xl px-4 py-16">
-      <h1 className="text-2xl font-bold">
-        {String(name?.result ?? "…")} ({String(symbol?.result ?? "")})
+    <section className="mx-auto max-w-xl px-4 py-8">
+      <div className="mb-3 flex items-center gap-2">
+        <Badge kind="info">OFT</Badge>
+        <Badge kind="warn">{t("nav.disclaimer")}</Badge>
+      </div>
+      <h1 className="text-2xl font-black">
+        {String(name?.result ?? "…")}{" "}
+        <span className="text-text-muted">{String(symbol?.result ?? "")}</span>
       </h1>
-      <dl className="mt-6 space-y-2 rounded-2xl border border-border bg-white p-4 text-sm">
-        <div className="flex justify-between gap-4"><dt>chainId</dt><dd>{chainId}</dd></div>
-        <div className="flex justify-between gap-4"><dt>address</dt><dd className="font-mono break-all">{token}</dd></div>
-        <div className="flex justify-between gap-4"><dt>decimals()</dt><dd>{decimals?.result?.toString() ?? "…"}</dd></div>
-        <div className="flex justify-between gap-4"><dt>totalSupply()</dt><dd>{supply?.result?.toString() ?? "…"}</dd></div>
-        <div className="flex justify-between gap-4"><dt>owner()</dt><dd className="font-mono break-all">{String(owner?.result ?? "…")}</dd></div>
-      </dl>
+      <p className="num mt-1 text-[12px] text-text-muted">{token}</p>
+      <div className="mt-4 grid grid-cols-3 gap-2 rounded-xl bg-white p-4 ring-1 ring-border">
+        <Metric k="chain" v={chainId} />
+        <Metric k="dec" v={decimals?.result?.toString() ?? "…"} />
+        <Metric k="supply" v={supply?.result?.toString() ?? "…"} />
+      </div>
+      <p className="num mt-3 truncate text-[11px] text-text-muted">owner {String(owner?.result ?? "…")}</p>
       <ShareCard name={String(name?.result ?? "")} address={token} />
     </section>
   );

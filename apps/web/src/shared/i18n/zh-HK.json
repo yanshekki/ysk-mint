@@ -4,117 +4,146 @@
     "tagline": "引導式多鏈發幣。原生 OFT。創建並鎖定 LP。只讀鏈上數據。"
   },
   "nav": {
-    "home": "首頁",
+    "home": "看板",
     "create": "發幣",
     "transfer": "跨鏈",
-    "me": "我的代幣",
+    "me": "持倉",
     "disclaimer": "未經審計"
   },
   "home": {
-    "title": "按步驟發行原生多鏈代幣",
-    "body": "連接錢包、部署 LayerZero OFT、加入流動性並鎖定 LP。沒有後端——所有數字都從鏈上讀取。",
-    "cta": "在 Base Sepolia 開始",
-    "honesty": "合約未經審計。主網已關閉。本階段只支援測試網。"
+    "title": "發原生多鏈幣。鎖 LP。沒有後端。",
+    "body": "終端式流程：先揀選項，再鏈上簽名。發幣後每個數字都係 eth_call。",
+    "cta": "打開發幣檯",
+    "honesty": "合約未經審計。主網鍵存在但已關閉。"
   },
   "wallet": {
-    "connect": "連接錢包",
-    "wrongNetwork": "請切換到 Base Sepolia 或 Arbitrum Sepolia。"
+    "connect": "連接",
+    "wrongNetwork": "請切到已開放的測試網。"
   },
   "wizard": {
-    "title": "創建代幣",
-    "next": "下一步",
-    "back": "上一步",
+    "title": "發幣檯",
+    "next": "繼續",
+    "back": "返回",
     "errors": "請先修正以下項目",
     "steps": {
       "0": "錢包",
-      "1": "基本資料",
-      "2": "經濟模型",
-      "3": "選擇鏈",
-      "4": "流動性",
-      "5": "Omnichain",
+      "1": "代幣",
+      "2": "規則",
+      "3": "鏈",
+      "4": "LP",
+      "5": "跨鏈",
       "6": "總覽",
-      "7": "執行",
-      "8": "成功"
+      "7": "簽名",
+      "8": "上鏈"
     },
     "wallet": {
-      "need": "請在 Base Sepolia 連接錢包後繼續。"
+      "need": "請在 Base Sepolia 或 Arbitrum Sepolia 連接。",
+      "ready": "錢包已連接",
+      "idle": "未連接"
     },
     "basics": {
       "name": "名稱",
       "symbol": "代號",
       "decimals": "Decimals",
-      "supply": "總供應量",
-      "description": "說明",
-      "logo": "Logo URI（IPFS 或 https）",
-      "website": "網站"
+      "supply": "總供應",
+      "description": "說明（可選）",
+      "logo": "Logo",
+      "logoHint": "拖放圖片或點擊選擇。只存在本機。",
+      "website": "網站（可選）",
+      "showAdvanced": "可選資料",
+      "hideAdvanced": "收起可選資料"
     },
     "tokenomics": {
-      "supplyMode": "供應模式",
-      "fixed": "固定 — 不可再增發",
-      "mintable": "可增發 — 擁有人可以 mint",
-      "ownership": "發幣後所有權",
+      "supplyMode": "供應",
+      "fixed": "固定",
+      "fixedHint": "不可再增發。對 Anti-Rug 最乾淨。",
+      "mintable": "可增發",
+      "mintableHint": "擁有人可以之後膨脹供應。",
+      "ownership": "所有權",
       "keep": "保留",
-      "renounce": "放棄（後續 phase 才上鏈執行）",
-      "safe": "轉到 Safe（地址）",
-      "timelock": "轉到 Timelock（地址）"
+      "keepHint": "你繼續係擁有人。",
+      "renounce": "放棄",
+      "renounceHint": "稍後上鏈步驟先執行。",
+      "safe": "Safe",
+      "safeHint": "轉到 Safe 地址。",
+      "timelock": "Timelock",
+      "timelockHint": "轉到 timelock。",
+      "modules": "防護",
+      "pause": "可暫停",
+      "pauseHint": "擁有人可停轉帳。OFT mint/burn 仍可用。",
+      "maxTx": "錢包上限",
+      "maxTxHint": "單筆／單錢包上限。OFT 路徑會跳過。",
+      "tax": "DEX 稅",
+      "taxHint": "只喺 DEX 對抽稅。OFT 維持 1:1。",
+      "maxWallet": "單錢包上限",
+      "taxBps": "稅率"
     },
     "chains": {
-      "hint": "Phase 1 只開放 Base Sepolia。其他鏈可見但未啟用。",
-      "disabled": "Phase 2 才開放"
+      "hint": "揀所有已開放測試網。主網卡保持關閉。",
+      "disabled": "未開放"
     },
     "liquidity": {
-      "tokenAmount": "放入 LP 的代幣數量",
-      "nativeAmount": "放入 LP 的原生幣數量",
-      "mode": "鎖定模式",
-      "timed": "定期鎖定",
-      "burn": "銷毀 LP（永久）",
-      "duration": "鎖定期"
+      "tokenBps": "放入 LP 的代幣",
+      "nativeAmount": "放入 LP 的原生幣",
+      "mode": "鎖定",
+      "burn": "銷毀 LP",
+      "burnHint": "轉到 dead。不可逆。",
+      "d30": "30 日",
+      "d90": "90 日",
+      "d180": "180 日",
+      "d365": "365 日",
+      "timedHint": "鏈上定期鎖定。"
     },
     "omnichain": {
-      "note": "可多選已開放的測試網，執行時按鏈切換錢包。全部部署後會雙向 setPeer。跨鏈 send 維持 1:1，不抽稅。",
-      "addressNote": "各鏈代幣地址並不相同：implementation 在 constructor 寫入該鏈 LayerZero endpoint，因此 CREATE2 clone 地址會變。介面不會假裝全鏈同址。"
+      "note": "執行時按鏈切錢包，然後雙向 setPeer。OFT send 1:1，不抽稅。",
+      "addressNote": "各鏈地址不同，因為 implementation 寫死該鏈 endpoint。"
     },
     "review": {
-      "checklist": "Anti-rug 清單（產品意圖，不是審計）",
+      "checklist": "Anti-rug 清單 — 產品意圖，不是審計。",
       "fixed": "供應量固定",
-      "mintableWarn": "可增發 — 擁有人可以膨脹供應",
-      "lock": "已設定 LP 鎖定",
+      "mintableWarn": "可增發 — 擁有人可以膨脹",
+      "lock": "已揀 LP 鎖定",
       "unaudited": "合約未經審計"
     },
     "execute": {
-      "simulate": "先模擬再發送",
-      "needContracts": "Factory／Manager／Locker／Router 地址仍為零。請先在 Base Sepolia 部署合約，並填入 packages/config/src/contracts.ts。",
+      "simulate": "模擬後簽名",
+      "needContracts": "Factory／Manager／Locker／Router 仍為零。請先在 Base Sepolia 部署，再填 packages/config/src/contracts.ts。",
       "create": "1. 部署代幣",
       "lp": "2. 加入 LP 並鎖定",
       "simulating": "模擬中…",
       "sending": "等待簽名…",
-      "done": "鏈上回條已保存。請到成功頁。"
+      "done": "回條已保存。"
     },
     "success": {
-      "title": "發幣已寫上鏈",
-      "reread": "以下數值來自即時 eth_call，不是交易回條快取。",
+      "title": "已上鏈",
+      "reread": "即時 eth_call — 不是快取回條。",
       "token": "代幣",
       "lock": "鎖定"
     }
   },
   "transfer": {
-    "title": "跨鏈轉帳",
-    "body": "報價與發送都經過你連接的 RPC 上的 OFT。不使用同鏈。進度看目的鏈餘額，不是伺服器。",
+    "title": "跨鏈",
+    "body": "數量用你鏈上餘額嘅百分比。目的鏈用 chip。",
     "quote": "報價",
     "send": "模擬並發送",
-    "fee": "nativeFee"
+    "fee": "nativeFee",
+    "token": "代幣",
+    "pick": "揀或貼上",
+    "pickHint": "點擊以貼上合約地址",
+    "amount": "數量",
+    "dest": "目的鏈"
   },
   "me": {
-    "title": "我的代幣",
-    "body": "從此錢包的 Factory Launch 日誌讀取。沒有帳號系統。",
+    "title": "持倉",
+    "body": "此錢包嘅 Factory Launch 日誌。沒有帳號。",
     "noFactory": "此鏈 Factory 地址仍為零。"
   },
   "token": {
-    "missing": "請提供 chainId 與代幣地址。",
-    "share": "下載分享卡",
-    "shareNote": "在瀏覽器內生成。社群爬蟲看不到伺服器 OG 圖。"
+    "missing": "需要 chainId 與代幣地址。",
+    "share": "下載卡片",
+    "shareNote": "瀏覽器繪製。沒有 OG 伺服器。"
   },
   "lock": {
-    "missing": "請提供 chainId 與鎖定編號。"
+    "missing": "需要 chainId 與鎖定編號。"
   }
 }
