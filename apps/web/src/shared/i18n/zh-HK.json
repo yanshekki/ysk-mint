@@ -24,9 +24,11 @@
     "emptyUndeployed": "呢條鏈 Factory／Manager／Locker 仍未部署",
     "emptyAda": "Cardano 原生資產 factory 仍未部署",
     "emptyNear": "NEAR 主鏈 NEP-141 factory 仍未部署",
+    "emptySol": "Solana SPL program 仍未部署",
     "emptyDetail": "部署合約並填 packages/config/src/contracts.ts 之後，呢度會出現 LiquidityLaunched 日誌。",
     "adaDetail": "ADA 用 Cardano native asset（唔係 EVM）。LayerZero Cardano Endpoint 未上線，factory 地址仍空。",
     "nearDetail": "NEAR 用主鏈 NEP-141（唔係 Aurora）。LayerZero 未有 NEAR 主鏈 Endpoint，factory 地址仍空。",
+    "solDetail": "SOL 用經典 SPL Token。獨立發行，不走 LayerZero OFT。program 地址仍空。",
     "timed": "定期鎖",
     "burn": "銷毀 LP",
     "open": "瀏覽器",
@@ -51,18 +53,22 @@
     "connectEvm": "連接 EVM 錢包",
     "disconnect": "登出",
     "session": "現有錢包",
-    "count": "{{n}} / 3 已連接",
+    "count": "{{n}} / 4 已連接",
     "evm": "EVM",
-    "native": "NEAR 主鏈／Cardano",
+    "native": "NEAR／Cardano／Solana",
     "near": "NEAR 主鏈",
     "cardano": "Cardano",
+    "solana": "Solana",
     "evmHint": "MetaMask、Rabby、Rainbow 等現有 EIP-6963 錢包。",
     "nearHint": "官方 Wallet Selector。Meteor、MyNearWallet、HERE。",
     "adaHint": "CIP-30 瀏覽器錢包。Lace、Eternl、Vespr。",
+    "solHint": "Wallet Standard。Phantom、Solflare、Backpack。",
     "connectNear": "連接 NEAR",
     "connectCardano": "連接 Cardano",
+    "connectSolana": "連接 Solana",
     "pickCip30": "揀一個已安裝嘅 CIP-30 錢包。",
     "noCip30": "未偵測 CIP-30 錢包",
+    "noSolana": "未偵測 Solana 錢包",
     "installCip30": "安裝 Lace、Eternl 或 Vespr 之後重新整理。唔會代你開新錢包。",
     "wrongNetwork": "請切到支援嘅 EVM 鏈。",
     "nativeCoin": "原生幣",
@@ -87,7 +93,7 @@
       "8": "上鏈"
     },
     "wallet": {
-      "need": "連接你已經有嘅錢包。EVM、NEAR 主鏈、Cardano 分開授權。唔會代你開新錢包。",
+      "need": "連接你已經有嘅錢包。EVM、NEAR、Cardano、Solana 分開授權。唔會代你開新錢包。",
       "ready": "錢包已連接",
       "idle": "未連接",
       "nativeReady": "已連接原生鏈帳戶。"
@@ -134,6 +140,7 @@
       "disabled": "未開放",
       "nearHint": "NEAR Protocol · NEP-141",
       "adaHint": "Cardano · native asset",
+      "solHint": "Solana · SPL",
       "testnets": "測試網"
     },
     "liquidity": {
@@ -168,7 +175,7 @@
       "run": "執行順序",
       "runOft": "每條 EVM 部署 OFT",
       "runPeer": "按鏈切錢包，雙向 setPeer",
-      "runNative": "Cardano／NEAR 獨立發行"
+      "runNative": "Cardano／NEAR／Solana 獨立發行"
     },
     "review": {
       "checklist": "Anti-rug 清單 — 產品意圖，不是審計。",
@@ -180,7 +187,7 @@
     "execute": {
       "simulate": "模擬後簽名",
       "needContracts": "Factory／Manager／Locker／Router 仍為零。請先部署，再填 packages/config/src/contracts.ts。",
-      "nativePath": "你揀咗 NEAR 主鏈及／或 Cardano。呢條路徑係 NEP-141／Cardano native asset，唔係 Aurora、唔係 Solidity factory。原生 factory 未部署，呢步唔簽名。",
+      "nativePath": "你揀咗 NEAR、Cardano 或 Solana。呢啲係 NEP-141／native asset／SPL，唔走 EVM OFT。原生 factory／program 未部署，呢步唔簽名。",
       "create": "1. 部署代幣",
       "lp": "2. 加入 LP 並鎖定",
       "simulating": "模擬中…",
@@ -205,7 +212,7 @@
     "pickHint": "點擊以貼上合約地址",
     "amount": "數量",
     "dest": "目的鏈",
-    "nativeDest": "NEAR 主鏈同 Cardano 唔走 EVM OFT send。LayerZero 未有呢兩條鏈嘅 Endpoint，所以唔報價、唔發送。"
+    "nativeDest": "NEAR、Cardano、Solana 唔走 EVM OFT send。獨立原生資產，所以唔報價、唔發送。"
   },
   "me": {
     "title": "持倉",

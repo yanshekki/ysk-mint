@@ -10,7 +10,7 @@
 
 ## Not in this release
 
-- Solana
+- Solana SPL program (listed in the product, not deployed)
 - A production bonding curve
 - A hosted API
 - Any claim that the code is audited

@@ -10,7 +10,7 @@
 
 ## 本版本不含
 
-- Solana
+- Solana SPL program（已列入產品，未部署）
 - 可上線的 Bonding Curve
 - 托管 API
 - 任何「已審計」宣稱

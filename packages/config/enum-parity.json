@@ -14,7 +14,9 @@
     "AvalancheFuji": 11,
     "BnbTestnet": 12,
     "CardanoPreprod": 13,
-    "NearTestnet": 14
+    "NearTestnet": 14,
+    "Solana": 15,
+    "SolanaDevnet": 16
   },
   "DexKind": {
     "UniswapV2": 0,

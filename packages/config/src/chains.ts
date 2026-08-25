@@ -1,6 +1,6 @@
 import { ChainKey } from "./enums";
 
-export type ChainVm = "evm" | "near" | "cardano";
+export type ChainVm = "evm" | "near" | "cardano" | "solana";
 
 export type ChainDefinition = {
   key: (typeof ChainKey)[keyof typeof ChainKey];
@@ -251,9 +251,42 @@ export const CHAINS: Record<(typeof ChainKey)[keyof typeof ChainKey], ChainDefin
     vm: "near",
     featured: false,
   },
+  [ChainKey.Solana]: {
+    key: ChainKey.Solana,
+    name: "Solana",
+    short: "SOL",
+    /** Solana mainnet-beta cluster id. Not an EVM chain id. */
+    chainId: 101,
+    eid: 0,
+    endpoint: ZERO,
+    explorer: "https://solscan.io",
+    rpc: "https://api.mainnet-beta.solana.com",
+    nativeSymbol: "SOL",
+    enabled: true,
+    testnet: false,
+    evm: false,
+    vm: "solana",
+    featured: true,
+  },
+  [ChainKey.SolanaDevnet]: {
+    key: ChainKey.SolanaDevnet,
+    name: "Solana Devnet",
+    short: "SOLDev",
+    chainId: 103,
+    eid: 0,
+    endpoint: ZERO,
+    explorer: "https://solscan.io/?cluster=devnet",
+    rpc: "https://api.devnet.solana.com",
+    nativeSymbol: "SOL",
+    enabled: true,
+    testnet: true,
+    evm: false,
+    vm: "solana",
+    featured: false,
+  },
 };
 
-/** Product bar: ETH · AVAX · Base · Arb · ADA · NEAR · BNB */
+/** Product bar: ETH · AVAX · Base · Arb · ADA · NEAR · BNB · SOL */
 const FEATURED_ORDER: Array<(typeof ChainKey)[keyof typeof ChainKey]> = [
   ChainKey.Ethereum,
   ChainKey.Avalanche,
@@ -262,6 +295,7 @@ const FEATURED_ORDER: Array<(typeof ChainKey)[keyof typeof ChainKey]> = [
   ChainKey.Cardano,
   ChainKey.Near,
   ChainKey.Bnb,
+  ChainKey.Solana,
 ];
 
 export function chainByChainId(chainId: number): ChainDefinition | undefined {
@@ -292,6 +326,7 @@ const TESTNET_ORDER: Array<(typeof ChainKey)[keyof typeof ChainKey]> = [
   ChainKey.CardanoPreprod,
   ChainKey.NearTestnet,
   ChainKey.BnbTestnet,
+  ChainKey.SolanaDevnet,
 ];
 
 export function testnetChains(): ChainDefinition[] {

@@ -32,7 +32,7 @@ export function TransferPage() {
 
   const dst = CHAINS[dstKey as keyof typeof CHAINS];
   const enabled = Object.values(CHAINS).filter((c) => c.enabled);
-  const destIsNative = dst?.vm === "near" || dst?.vm === "cardano";
+  const destIsNative = dst?.vm === "near" || dst?.vm === "cardano" || dst?.vm === "solana";
 
   async function amountOf(): Promise<bigint> {
     if (!publicClient || !address || !token) return 0n;

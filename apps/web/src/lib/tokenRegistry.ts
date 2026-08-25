@@ -1,4 +1,4 @@
-export type TokenVm = "evm" | "near" | "cardano";
+export type TokenVm = "evm" | "near" | "cardano" | "solana";
 
 export type TokenRecord = {
   id: string;
@@ -74,6 +74,28 @@ export const TOKEN_CATALOG: TokenRecord[] = [
     decimals: 6,
     address: "8db269c3ec630e06ae29f74bc39edd1f87c819f1056206e879a1cd61446a6564",
     icon: I("ada"),
+  },
+
+  { id: "sol-native", vm: "solana", chainId: 101, symbol: "SOL", name: "Solana", decimals: 9, icon: I("sol"), native: true },
+  {
+    id: "sol-usdc",
+    vm: "solana",
+    chainId: 101,
+    symbol: "USDC",
+    name: "USD Coin",
+    decimals: 6,
+    address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    icon: I("usdc"),
+  },
+  {
+    id: "sol-usdt",
+    vm: "solana",
+    chainId: 101,
+    symbol: "USDT",
+    name: "Tether",
+    decimals: 6,
+    address: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+    icon: I("usdt"),
   },
 ];
 

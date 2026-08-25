@@ -208,7 +208,9 @@ export function StepChains() {
               ? t("wizard.chains.nearHint")
               : c.vm === "cardano"
                 ? t("wizard.chains.adaHint")
-                : `EID ${c.eid}${live ? "" : ` · ${t("wizard.chains.disabled")}`}`;
+                : c.vm === "solana"
+                  ? t("wizard.chains.solHint")
+                  : `EID ${c.eid}${live ? "" : ` · ${t("wizard.chains.disabled")}`}`;
           return (
             <OptionCard
               key={c.key}
@@ -240,7 +242,9 @@ export function StepChains() {
                   ? t("wizard.chains.nearHint")
                   : c.vm === "cardano"
                     ? t("wizard.chains.adaHint")
-                    : `EID ${c.eid}`
+                    : c.vm === "solana"
+                      ? t("wizard.chains.solHint")
+                      : `EID ${c.eid}`
               }
               onSelect={() => {
                 w.set({

@@ -384,7 +384,7 @@ select {
   flex: 1 1 auto;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
   overflow: hidden;
   align-items: stretch;
@@ -448,6 +448,9 @@ select {
 }
 .wallet-mark-ada {
   background: #0033ad;
+}
+.wallet-mark-sol {
+  background: #9945ff;
 }
 .wallet-pane-top h3 {
   margin: 0;
@@ -1388,7 +1391,7 @@ table.data tbody tr:hover td {
     height: auto;
   }
   .wallet-panes {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .wallet-pane {
     min-height: 0;
@@ -1402,5 +1405,11 @@ table.data tbody tr:hover td {
   .wallet-pane-top {
     grid-template-columns: 48px minmax(0, 1fr);
     min-height: 64px;
+  }
+}
+
+@media (max-width: 640px) {
+  .wallet-panes {
+    grid-template-columns: 1fr;
   }
 }

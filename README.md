@@ -17,7 +17,7 @@ Guided multi-chain token launcher: deploy a native LayerZero OFT, create LP, and
 - Contracts are **not audited**.
 - Mainnet chain keys exist in config but are **disabled**.
 - Phase 1 includes the guided wizard, V2 LP + lock contracts, and live `eth_call` success pages. Factory addresses are still zero until a testnet deploy.
-- Bonding curve and Solana are **not enabled**. Platform fee defaults to **0**. There is still no audit.
+- Bonding curve is **not enabled**. Solana is listed as **SPL native issuance**, not LayerZero OFT; the program address is still empty. Platform fee defaults to **0**. There is still no audit.
 - All product data is read on-chain. There is no application server.
 
 ## Packages

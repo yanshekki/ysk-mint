@@ -18,7 +18,9 @@ library LaunchEnums {
         AvalancheFuji,
         BnbTestnet,
         CardanoPreprod,
-        NearTestnet
+        NearTestnet,
+        Solana,
+        SolanaDevnet
     }
 
     enum DexKind {

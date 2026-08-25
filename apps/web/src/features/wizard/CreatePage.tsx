@@ -63,7 +63,7 @@ export function CreatePage() {
 
   function validateCurrent(): LaunchError[] {
     if (w.step === LaunchStep.Wallet) {
-      if (!isConnected && !native.nearAccount && !native.cardanoAddress) {
+      if (!isConnected && !native.nearAccount && !native.cardanoAddress && !native.solanaAddress) {
         return [{ code: ErrorCode.RecipientZero, args: [], severity: "user", retryable: false }];
       }
       return [];
@@ -88,6 +88,9 @@ export function CreatePage() {
         list.push({ code: ErrorCode.RecipientZero, args: [], severity: "user", retryable: false });
       }
       if (picked.some((c) => c?.vm === "cardano") && !native.cardanoAddress) {
+        list.push({ code: ErrorCode.RecipientZero, args: [], severity: "user", retryable: false });
+      }
+      if (picked.some((c) => c?.vm === "solana") && !native.solanaAddress) {
         list.push({ code: ErrorCode.RecipientZero, args: [], severity: "user", retryable: false });
       }
       return list;
@@ -151,6 +154,7 @@ export function CreatePage() {
                   <span className={isConnected ? "on" : ""}>EVM</span>
                   <span className={native.nearAccount ? "on" : ""}>NEAR</span>
                   <span className={native.cardanoAddress ? "on" : ""}>ADA</span>
+                  <span className={native.solanaAddress ? "on" : ""}>SOL</span>
                 </div>
               ) : null}
               {w.step > LaunchStep.Wallet ? (
@@ -163,7 +167,7 @@ export function CreatePage() {
                   variant="grad"
                   type="button"
                   onClick={next}
-                  disabled={w.step === LaunchStep.Wallet && !address && !native.nearAccount && !native.cardanoAddress}
+                  disabled={w.step === LaunchStep.Wallet && !address && !native.nearAccount && !native.cardanoAddress && !native.solanaAddress}
                 >
                   {t("wizard.next")}
                 </Button>

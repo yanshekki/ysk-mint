@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ChainKey, ErrorCode, LockMode, validateLaunchDraft, validateLock } from "../src/index";
 import { validateBasics, validateName, validateSymbol } from "../src/validation/token";
-import { isCardanoAddress, isNearAccountId } from "../src/validation/native";
+import { isCardanoAddress, isNearAccountId, isSolanaAddress } from "../src/validation/native";
 
 describe("token validation", () => {
   it("accepts a normal name and symbol", () => {
@@ -37,8 +37,19 @@ describe("token validation", () => {
       owner: "0x0000000000000000000000000000000000000001",
       chains: [ChainKey.Near],
     });
+    const sol = validateLaunchDraft({
+      name: "YSK Token",
+      symbol: "YSK",
+      decimals: 18,
+      totalSupply: 1n,
+      supplyMode: 0,
+      moduleFlags: 0,
+      owner: "0x0000000000000000000000000000000000000001",
+      chains: [ChainKey.Solana],
+    });
     expect(ada).toEqual([]);
     expect(near).toEqual([]);
+    expect(sol).toEqual([]);
   });
 
   it("accepts Base Sepolia draft", () => {
@@ -67,5 +78,9 @@ describe("token validation", () => {
     expect(isNearAccountId("alice.near")).toBe(true);
     expect(isNearAccountId("not aurora")).toBe(false);
     expect(isCardanoAddress("addr1qytestaddressxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")).toBe(true);
+    expect(isSolanaAddress("11111111111111111111111111111111")).toBe(true);
+    expect(isSolanaAddress("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")).toBe(true);
+    expect(isSolanaAddress("not a solana key")).toBe(false);
+    expect(isSolanaAddress("0x0000000000000000000000000000000000000001")).toBe(false);
   });
 });

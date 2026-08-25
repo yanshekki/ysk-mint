@@ -24,9 +24,11 @@
     "emptyUndeployed": "Factory / manager / locker are not deployed on this chain",
     "emptyAda": "Cardano native-asset factory is not deployed yet",
     "emptyNear": "NEAR mainnet NEP-141 factory is not deployed yet",
+    "emptySol": "Solana SPL program is not deployed yet",
     "emptyDetail": "After a deploy and filling packages/config/src/contracts.ts, LiquidityLaunched logs appear here.",
     "adaDetail": "ADA uses Cardano native assets, not EVM. LayerZero has no Cardano endpoint yet, so the factory address is empty.",
     "nearDetail": "NEAR uses mainnet NEP-141, not Aurora. LayerZero has no NEAR mainnet endpoint yet, so the factory address is empty.",
+    "solDetail": "SOL uses classic SPL Token. Independent issuance, not LayerZero OFT. Program address is empty.",
     "timed": "Timed",
     "burn": "Burn LP",
     "open": "Explorer",
@@ -51,18 +53,22 @@
     "connectEvm": "Connect EVM wallet",
     "disconnect": "Sign out",
     "session": "Existing wallets",
-    "count": "{{n}} / 3 connected",
+    "count": "{{n}} / 4 connected",
     "evm": "EVM",
-    "native": "NEAR mainnet / Cardano",
+    "native": "NEAR / Cardano / Solana",
     "near": "NEAR mainnet",
     "cardano": "Cardano",
+    "solana": "Solana",
     "evmHint": "MetaMask, Rabby, Rainbow and other EIP-6963 wallets you already have.",
     "nearHint": "Official Wallet Selector. Meteor, MyNearWallet, HERE.",
     "adaHint": "CIP-30 browser wallets. Lace, Eternl, Vespr.",
+    "solHint": "Wallet Standard. Phantom, Solflare, Backpack.",
     "connectNear": "Connect NEAR",
     "connectCardano": "Connect Cardano",
+    "connectSolana": "Connect Solana",
     "pickCip30": "Pick an installed CIP-30 wallet.",
     "noCip30": "No CIP-30 wallet detected",
+    "noSolana": "No Solana wallet detected",
     "installCip30": "Install Lace, Eternl or Vespr, then refresh. This app does not create a wallet.",
     "wrongNetwork": "Switch to a supported EVM chain.",
     "nativeCoin": "Native",
@@ -87,7 +93,7 @@
       "8": "Live"
     },
     "wallet": {
-      "need": "Connect wallets you already have. EVM, NEAR mainnet and Cardano each sign in separately. This app does not create a wallet.",
+      "need": "Connect wallets you already have. EVM, NEAR, Cardano and Solana each sign in separately. This app does not create a wallet.",
       "ready": "Wallet ready",
       "idle": "Not connected",
       "nativeReady": "Native-chain account connected."
@@ -134,6 +140,7 @@
       "disabled": "Not live",
       "nearHint": "NEAR Protocol · NEP-141",
       "adaHint": "Cardano · native asset",
+      "solHint": "Solana · SPL",
       "testnets": "Testnets"
     },
     "liquidity": {
@@ -168,7 +175,7 @@
       "run": "Execute order",
       "runOft": "Deploy OFT on each EVM",
       "runPeer": "Switch wallet per chain, setPeer both ways",
-      "runNative": "Issue Cardano / NEAR independently"
+      "runNative": "Issue Cardano / NEAR / Solana independently"
     },
     "review": {
       "checklist": "Anti-rug checklist — product intent, not an audit.",
@@ -180,7 +187,7 @@
     "execute": {
       "simulate": "Simulate then sign",
       "needContracts": "Factory / manager / locker / router are still zero. Deploy, then fill packages/config/src/contracts.ts.",
-      "nativePath": "You picked NEAR mainnet and/or Cardano. That path is NEP-141 / Cardano native assets, not Aurora and not the Solidity factory. Native factories are undeployed, so this step will not sign.",
+      "nativePath": "You picked NEAR, Cardano or Solana. Those paths are NEP-141 / native asset / SPL, not EVM OFT. Native factories and programs are undeployed, so this step will not sign.",
       "create": "1. Deploy token",
       "lp": "2. Add LP and lock",
       "simulating": "Simulating…",
@@ -205,7 +212,7 @@
     "pickHint": "Click to paste a contract address",
     "amount": "Amount",
     "dest": "Destination",
-    "nativeDest": "NEAR mainnet and Cardano are not EVM OFT destinations. LayerZero has no endpoint there, so quote and send stay off."
+    "nativeDest": "NEAR, Cardano and Solana are not EVM OFT destinations. Independent native assets, so quote and send stay off."
   },
   "me": {
     "title": "Holdings",

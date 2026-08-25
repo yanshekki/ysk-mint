@@ -7,13 +7,18 @@ import "./nearModal.css";
 import {
   connectCardano,
   connectNear,
+  connectSolana,
   disconnectNearWallet,
+  disconnectSolanaWallet,
   listCardanoWallets,
+  listSolanaWallets,
   restoreNearSession,
+  restoreSolanaSession,
   useNativeWallets,
   type CardanoWalletInfo,
+  type SolanaWalletInfo,
 } from "../../lib/nativeWallets.ts";
-import { useCardanoHoldings, useEvmHoldings, useNearHoldings } from "../../lib/useHoldings.ts";
+import { useCardanoHoldings, useEvmHoldings, useNearHoldings, useSolanaHoldings } from "../../lib/useHoldings.ts";
 import { HoldingsList } from "./HoldingsList.tsx";
 
 function short(v: string, head = 8, tail = 6) {
@@ -30,18 +35,26 @@ export function WalletDesk() {
   const { address, isConnected } = useAccount();
   const native = useNativeWallets();
   const [adaWallets, setAdaWallets] = useState<CardanoWalletInfo[]>([]);
+  const [solWallets, setSolWallets] = useState<SolanaWalletInfo[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [nearErr, setNearErr] = useState<string | null>(null);
   const [adaErr, setAdaErr] = useState<string | null>(null);
+  const [solErr, setSolErr] = useState<string | null>(null);
 
-  const onCount = Number(isConnected) + Number(!!native.nearAccount) + Number(!!native.cardanoAddress);
+  const onCount =
+    Number(isConnected) + Number(!!native.nearAccount) + Number(!!native.cardanoAddress) + Number(!!native.solanaAddress);
   const evmHold = useEvmHoldings(address);
   const nearHold = useNearHoldings(native.nearAccount);
   const adaHold = useCardanoHoldings(native.cardanoAddress);
+  const solHold = useSolanaHoldings(native.solanaAddress);
 
   useEffect(() => {
     void restoreNearSession();
-    const scan = () => setAdaWallets(listCardanoWallets());
+    void restoreSolanaSession();
+    const scan = () => {
+      setAdaWallets(listCardanoWallets());
+      void listSolanaWallets().then(setSolWallets);
+    };
     scan();
     const timers = [400, 1200, 3000].map((ms) => window.setTimeout(scan, ms));
     return () => timers.forEach((id) => window.clearTimeout(id));
@@ -218,6 +231,66 @@ export function WalletDesk() {
             ) : (
               <button type="button" className="ghost-btn wallet-cta-block" disabled>
                 {t("wallet.noCip30")}
+              </button>
+            )}
+          </div>
+        </article>
+
+        <article className={`wallet-pane ${native.solanaAddress ? "wallet-pane-on" : ""}`}>
+          <div className="wallet-pane-top">
+            <div className="wallet-mark wallet-mark-sol">SOL</div>
+            <div className="wallet-pane-copy">
+              <div className="wallet-pane-title">
+                <h3>{t("wallet.solana")}</h3>
+                <span className={`wallet-state ${native.solanaAddress ? "on" : ""}`}>
+                  <StatusDot on={!!native.solanaAddress} />
+                  {native.solanaAddress ? t("wizard.wallet.ready") : t("wizard.wallet.idle")}
+                </span>
+              </div>
+              <p>{t("wallet.solHint")}</p>
+            </div>
+          </div>
+          <div className="wallet-pane-main">
+            <p className={`wallet-addr num ${native.solanaAddress ? "" : "wallet-addr-idle"}`}>
+              {native.solanaAddress ? short(native.solanaAddress, 8, 8) : t("wizard.wallet.idle")}
+            </p>
+            {solErr ? <p className="wallet-err">{solErr}</p> : null}
+            <HoldingsList
+              rows={solHold.rows}
+              funded={solHold.funded}
+              connected={Boolean(native.solanaAddress)}
+              loading={solHold.loading}
+            />
+          </div>
+          <div className="wallet-pane-foot">
+            {native.solanaAddress ? (
+              <button type="button" className="ghost-btn wallet-cta-block" onClick={() => void disconnectSolanaWallet()}>
+                {t("wallet.disconnect")}
+              </button>
+            ) : solWallets.length ? (
+              <div className="wallet-chips">
+                {solWallets.map((w) => (
+                  <button
+                    key={w.id}
+                    type="button"
+                    className={`wallet-chip ${native.solanaWallet === w.id ? "wallet-chip-on" : ""}`}
+                    disabled={busy === "sol"}
+                    onClick={() => {
+                      setBusy("sol");
+                      setSolErr(null);
+                      void connectSolana(w.id)
+                        .catch((err: unknown) => setSolErr(err instanceof Error ? err.message : String(err)))
+                        .finally(() => setBusy(null));
+                    }}
+                  >
+                    {w.icon ? <img src={w.icon} alt="" className="wallet-ico" /> : null}
+                    {w.name}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <button type="button" className="ghost-btn wallet-cta-block" disabled>
+                {t("wallet.noSolana")}
               </button>
             )}
           </div>

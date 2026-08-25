@@ -57,7 +57,8 @@ export function Shell() {
           ) : null}
           {native.nearAccount ? <span>NEAR</span> : null}
           {native.cardanoAddress ? <span>ADA</span> : null}
-          {!isConnected && !native.nearAccount && !native.cardanoAddress ? t("wallet.connect") : null}
+          {native.solanaAddress ? <span>SOL</span> : null}
+          {!isConnected && !native.nearAccount && !native.cardanoAddress && !native.solanaAddress ? t("wallet.connect") : null}
         </span>
         <span className="bot-dot">● {t("nav.disclaimer")}</span>
       </footer>

@@ -6,6 +6,7 @@ import { useWizard } from "./store.ts";
 function chainIcon(c: ChainDefinition): string {
   if (c.vm === "near") return "/tokens/near.png";
   if (c.vm === "cardano") return "/tokens/ada.png";
+  if (c.vm === "solana") return "/tokens/sol.png";
   if (c.nativeSymbol === "BNB") return "/tokens/bnb.png";
   if (c.nativeSymbol === "AVAX") return "/tokens/avax.png";
   if (c.chainId === 42161 || c.chainId === 421614) return "/tokens/arb.png";
@@ -133,7 +134,13 @@ export function StepOmnichain() {
                   <img src={chainIcon(c)} alt="" width={28} height={28} />
                   <div>
                     <b>{c.name}</b>
-                    <span>{c.vm === "near" ? t("wizard.chains.nearHint") : t("wizard.chains.adaHint")}</span>
+                    <span>
+                      {c.vm === "near"
+                        ? t("wizard.chains.nearHint")
+                        : c.vm === "cardano"
+                          ? t("wizard.chains.adaHint")
+                          : t("wizard.chains.solHint")}
+                    </span>
                   </div>
                 </li>
               ))}

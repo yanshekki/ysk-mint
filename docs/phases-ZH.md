@@ -26,4 +26,4 @@ Base Sepolia。部署 OFT、Uniswap V2 LP、定期或銷毀鎖定。成功頁重
 
 ## Phase 5 — 費用、Presale、審計準備（本版本）
 
-平台費預設 0。沒有 HTTP API。Solana 在達到生產級之前保持關閉。
+平台費預設 0。沒有 HTTP API。Solana 係 SPL 原生路徑（唔係 OFT）；program 未部署。

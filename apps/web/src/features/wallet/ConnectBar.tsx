@@ -8,11 +8,16 @@ import { LOCALES } from "../../lib/i18n.ts";
 import {
   connectCardano,
   connectNear,
+  connectSolana,
   disconnectNearWallet,
+  disconnectSolanaWallet,
   listCardanoWallets,
+  listSolanaWallets,
   restoreNearSession,
+  restoreSolanaSession,
   useNativeWallets,
   type CardanoWalletInfo,
+  type SolanaWalletInfo,
 } from "../../lib/nativeWallets.ts";
 import "@near-wallet-selector/modal-ui/styles.css";
 import "./nearModal.css";
@@ -32,6 +37,7 @@ export function ConnectBar() {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [adaWallets, setAdaWallets] = useState<CardanoWalletInfo[]>([]);
+  const [solWallets, setSolWallets] = useState<SolanaWalletInfo[]>([]);
   const [pos, setPos] = useState({ top: 72, right: 24 });
   const barRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -39,15 +45,18 @@ export function ConnectBar() {
 
   const hasNear = Boolean(native.nearAccount);
   const hasAda = Boolean(native.cardanoAddress);
-  const any = isConnected || hasNear || hasAda;
+  const hasSol = Boolean(native.solanaAddress);
+  const any = isConnected || hasNear || hasAda || hasSol;
 
   useEffect(() => {
     void restoreNearSession();
+    void restoreSolanaSession();
   }, []);
 
   useEffect(() => {
     if (!open) return;
     setAdaWallets(listCardanoWallets());
+    void listSolanaWallets().then(setSolWallets);
     const place = () => {
       const el = btnRef.current;
       if (!el) return;
@@ -77,6 +86,7 @@ export function ConnectBar() {
   if (isConnected) parts.push(chain?.short ?? "EVM");
   if (hasNear) parts.push("NEAR");
   if (hasAda) parts.push("ADA");
+  if (hasSol) parts.push("SOL");
   const trigger =
     parts.length === 0
       ? t("wallet.connect")
@@ -86,7 +96,9 @@ export function ConnectBar() {
           ? `NEAR ${short(native.nearAccount, 6, 4)}`
           : parts.length === 1 && hasAda
             ? `ADA ${short(native.cardanoAddress, 6, 4)}`
-            : parts.join(" · ");
+            : parts.length === 1 && hasSol
+              ? `SOL ${short(native.solanaAddress, 4, 4)}`
+              : parts.join(" · ");
 
   return (
     <div className="session-bar" ref={barRef}>
@@ -191,6 +203,37 @@ export function ConnectBar() {
                 </div>
                 {hasAda ? (
                   <button type="button" className="ghost-btn" onClick={() => native.disconnectCardano()}>
+                    {t("wallet.disconnect")}
+                  </button>
+                ) : null}
+              </div>
+
+              <div className="session-row">
+                <div className="session-row-copy">
+                  <b>Solana</b>
+                  <span className="num">{hasSol ? short(native.solanaAddress, 8, 8) : t("wizard.wallet.idle")}</span>
+                  {!hasSol && solWallets.length ? (
+                    <div className="session-ada-wallets">
+                      {solWallets.map((w) => (
+                        <button
+                          key={w.id}
+                          type="button"
+                          className="wallet-chip"
+                          disabled={busy === "sol"}
+                          onClick={() => {
+                            setBusy("sol");
+                            void connectSolana(w.id).finally(() => setBusy(null));
+                          }}
+                        >
+                          {w.name}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                  {!hasSol && !solWallets.length ? <span>{t("wallet.noSolana")}</span> : null}
+                </div>
+                {hasSol ? (
+                  <button type="button" className="ghost-btn" onClick={() => void disconnectSolanaWallet()}>
                     {t("wallet.disconnect")}
                   </button>
                 ) : null}

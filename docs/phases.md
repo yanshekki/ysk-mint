@@ -26,4 +26,4 @@ On-chain transfer UI, my tokens via logs, share card on canvas.
 
 ## Phase 5 — Fees, presale, audit prep (this release)
 
-Default platform fee is 0. No HTTP API. Solana stays disabled until production-grade.
+Default platform fee is 0. No HTTP API. Solana is a native SPL path (not OFT); the program is undeployed.

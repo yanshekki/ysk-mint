@@ -23,6 +23,7 @@ const CHAIN_TAG: Record<number, string> = {
   43114: "AVAX",
   397: "NEAR",
   1815: "ADA",
+  101: "SOL",
 };
 
 function fmt(raw: bigint, decimals: number) {
@@ -237,6 +238,74 @@ export function useCardanoHoldings(address: string) {
       if (!cancelled) {
         setRows(sortHoldings(next, true));
         setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [address, catalog]);
+
+  const funded = rows.filter((r) => r.raw > 0n).length;
+  return { rows, funded, loading, catalogSize: catalog.length };
+}
+
+const TOKEN_PROGRAM = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
+
+export function useSolanaHoldings(address: string) {
+  const catalog = useMemo(() => tokensFor("solana", 101), []);
+  const [rows, setRows] = useState<HoldingRow[]>(() => catalog.map((t) => row(t, null, false)));
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!address) {
+      setRows(catalog.map((t) => row(t, null, false)));
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    void (async () => {
+      try {
+        const [balRes, tokRes] = await Promise.all([
+          fetch("https://api.mainnet-beta.solana.com", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getBalance", params: [address] }),
+          }),
+          fetch("https://api.mainnet-beta.solana.com", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              jsonrpc: "2.0",
+              id: 2,
+              method: "getTokenAccountsByOwner",
+              params: [address, { programId: TOKEN_PROGRAM }, { encoding: "jsonParsed" }],
+            }),
+          }),
+        ]);
+        const balJson = (await balRes.json()) as { result?: { value?: number } };
+        const tokJson = (await tokRes.json()) as {
+          result?: { value?: Array<{ account?: { data?: { parsed?: { info?: { mint?: string; tokenAmount?: { amount?: string } } } } } }> };
+        };
+        const byMint = new Map<string, bigint>();
+        for (const v of tokJson.result?.value ?? []) {
+          const info = v.account?.data?.parsed?.info;
+          if (!info?.mint) continue;
+          byMint.set(info.mint, BigInt(info.tokenAmount?.amount ?? "0"));
+        }
+        if (cancelled) return;
+        setRows(
+          sortHoldings(
+            catalog.map((t) => {
+              const raw = t.native ? BigInt(balJson.result?.value ?? 0) : (byMint.get(t.address ?? "") ?? 0n);
+              return row(t, raw, true);
+            }),
+            true,
+          ),
+        );
+      } catch {
+        if (!cancelled) setRows(catalog.map((t) => row(t, 0n, true)));
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     })();
     return () => {

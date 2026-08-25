@@ -24,6 +24,7 @@ export function LpPage() {
   let emptyKey = "lp.empty";
   if (selected?.vm === "near") emptyKey = "lp.emptyNear";
   else if (selected?.vm === "cardano") emptyKey = "lp.emptyAda";
+  else if (selected?.vm === "solana") emptyKey = "lp.emptySol";
   else if (selected && !isConfigured(launchContracts(selected.key))) emptyKey = "lp.emptyUndeployed";
   else if (filter === "all") emptyKey = "lp.emptyAll";
 
@@ -72,7 +73,9 @@ export function LpPage() {
               ? t("lp.nearDetail")
               : selected?.vm === "cardano"
                 ? t("lp.adaDetail")
-                : t("lp.emptyDetail")}
+                : selected?.vm === "solana"
+                  ? t("lp.solDetail")
+                  : t("lp.emptyDetail")}
           </div>
         ) : (
           <table className="data">

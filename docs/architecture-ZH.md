@@ -23,6 +23,8 @@
 
 Peer 接線是雙向 `setPeer(dstEid, bytes32(peer))`。CREATE2 clone 地址**在不同鏈上並不相同**，因為每條鏈的 implementation 在 constructor 寫入該鏈 endpoint。
 
+Cardano、NEAR、Solana 係獨立原生發行（native asset／NEP-141／SPL），唔係 LayerZero OFT peer。呢三條 VM 唔報價、唔 OFT send。
+
 ## 無後端
 
 草稿可放在 `localStorage`。代幣頁、鎖定與「我的代幣」只讀 `view` 與 `eth_getLogs`。

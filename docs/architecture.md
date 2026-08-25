@@ -23,6 +23,8 @@ A static React app talks to wallets and RPC. Smart contracts hold all launch sta
 
 Peer wiring is `setPeer(dstEid, bytes32(peer))` in both directions. CREATE2 clone addresses **differ across chains** because each factory’s implementation is constructed with that chain’s endpoint.
 
+Cardano, NEAR, and Solana are independent native issuance (native asset / NEP-141 / SPL). They are not LayerZero OFT peers. Quote and send stay off on those VMs.
+
 ## No backend
 
 Drafts may sit in `localStorage`. Token pages, locks, and “my tokens” read `view` functions and `eth_getLogs`.
