@@ -58,7 +58,14 @@ export function resolvedContracts(chain: ChainDefinition): LaunchContracts | und
 }
 
 export function canWalletDeploy(chain: ChainDefinition) {
-  return chain.evm && chain.testnet && live(chain.endpoint);
+  if (!chain.evm || !live(chain.endpoint)) return false;
+  const cfg = launchContracts(chain.key);
+  if (chain.testnet) return true;
+  return live(cfg?.v2Router);
+}
+
+export function needsMockRouter(chain: ChainDefinition) {
+  return chain.testnet && !live(resolvedContracts(chain)?.v2Router);
 }
 
 async function createdAddress(publicClient: PublicClient, hash: Hex): Promise<Address> {
@@ -83,12 +90,12 @@ export async function ensureStack(args: {
   }
 
   const account = args.account;
-  const chain = args.wallet.chain;
+  const viemChain = args.wallet.chain;
   const lockerHash = await args.wallet.deployContract({
     abi: lockerAbi,
     bytecode: LAUNCH_BYTECODE.liquidityLocker as Hex,
     account,
-    chain,
+    chain: viemChain,
   });
   const locker = await createdAddress(args.publicClient, lockerHash);
 
@@ -97,24 +104,27 @@ export async function ensureStack(args: {
     bytecode: LAUNCH_BYTECODE.liquidityManager as Hex,
     args: [locker],
     account,
-    chain,
+    chain: viemChain,
   });
   const manager = await createdAddress(args.publicClient, managerHash);
 
-  const routerHash = await args.wallet.deployContract({
-    abi: routerAbi,
-    bytecode: LAUNCH_BYTECODE.mockV2Router as Hex,
-    account,
-    chain,
-  });
-  const v2Router = await createdAddress(args.publicClient, routerHash);
+  let v2Router = live(current?.v2Router) ? current.v2Router : undefined;
+  if (!v2Router) {
+    const routerHash = await args.wallet.deployContract({
+      abi: routerAbi,
+      bytecode: LAUNCH_BYTECODE.mockV2Router as Hex,
+      account,
+      chain: viemChain,
+    });
+    v2Router = await createdAddress(args.publicClient, routerHash);
+  }
 
   const factoryHash = await args.wallet.deployContract({
     abi: factoryAbi,
     bytecode: LAUNCH_BYTECODE.tokenFactory as Hex,
     args: [args.chain.endpoint],
     account,
-    chain,
+    chain: viemChain,
   });
   const factory = await createdAddress(args.publicClient, factoryHash);
 

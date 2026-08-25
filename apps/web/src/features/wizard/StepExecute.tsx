@@ -25,7 +25,7 @@ import { packFlags } from "./flags.ts";
 import { Button } from "../../shared/ui/Button.tsx";
 import { useWizard } from "./store.ts";
 import { chainIcon } from "../../lib/chainIcon.ts";
-import { canWalletDeploy, ensureStack, resolvedContracts } from "../../lib/launchStack.ts";
+import { canWalletDeploy, ensureStack, needsMockRouter, resolvedContracts } from "../../lib/launchStack.ts";
 import {
   ISSUANCE_GROUP_TITLE,
   blockedEvm,
@@ -59,6 +59,7 @@ export function StepExecute() {
   const home = homeEvm(w.chains);
   const canRun = Boolean(address && evmTargets.length);
   const nativeCount = groups.filter((g) => g.vm !== "evm").reduce((n, g) => n + g.main.length + g.test.length, 0);
+  const useMockLp = toDeploy.some((c) => needsMockRouter(c));
 
   function evmStatus(c: ChainDefinition) {
     if (isConfigured(resolvedContracts(c))) return t("wizard.execute.ready");
@@ -305,10 +306,10 @@ export function StepExecute() {
         <p className="chain-group-title">{t("wizard.review.notes")}</p>
         <ul className="review-notes">
           {!address ? <li>{t("wizard.execute.needWallet")}</li> : null}
-          {toDeploy.length ? <li>{t("wizard.execute.testnetDeploy")}</li> : null}
-          {blocked.length ? <li>{t("wizard.execute.mainnetZero")}</li> : null}
+          {toDeploy.length ? <li>{t("wizard.execute.walletDeploy")}</li> : null}
+          {blocked.length ? <li>{t("wizard.execute.blocked")}</li> : null}
           {nativeCount ? <li>{t("wizard.execute.nativeSkip")}</li> : null}
-          {toDeploy.length ? <li>{t("wizard.execute.mockLp")}</li> : null}
+          {useMockLp ? <li>{t("wizard.execute.mockLp")}</li> : null}
         </ul>
       </section>
 
