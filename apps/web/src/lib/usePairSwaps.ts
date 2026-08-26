@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatUnits, parseAbiItem, type PublicClient } from "viem";
 import type { VenuePool } from "./dexPools.ts";
 
@@ -70,14 +70,17 @@ export function usePairSwaps(client: PublicClient | undefined, venues: VenuePool
   const [rows, setRows] = useState<SwapRow[]>([]);
   const [loading, setLoading] = useState(false);
   const key = venues.map((v) => v.pool).join(",");
+  const venuesRef = useRef(venues);
+  venuesRef.current = venues;
   useEffect(() => {
-    if (!client || !venues.length) {
+    const list = venuesRef.current;
+    if (!client || !list.length) {
       setRows([]);
       return;
     }
     let cancelled = false;
     setLoading(true);
-    void fetchSwaps(client, venues, dec0, dec1)
+    void fetchSwaps(client, list, dec0, dec1)
       .then((r) => {
         if (!cancelled) setRows(r);
       })
@@ -87,6 +90,6 @@ export function usePairSwaps(client: PublicClient | undefined, venues: VenuePool
     return () => {
       cancelled = true;
     };
-  }, [client, key, dec0, dec1, venues]);
+  }, [client, key, dec0, dec1]);
   return { rows, loading };
 }

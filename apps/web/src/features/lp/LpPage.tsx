@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAccount } from "wagmi";
@@ -35,9 +35,17 @@ export function LpPage() {
   const selected = filter === "all" ? undefined : featured.find((c) => c.chainId === filter);
   const lockFilter: LpFilter = filter === "all" ? "all" : (selected?.key ?? "all");
   const markets = useDexMarkets(filter);
+  const adaUnitsKey = useMemo(
+    () =>
+      ada.rows
+        .map((r) => r.contract)
+        .filter((x): x is string => Boolean(x))
+        .join("|"),
+    [ada.rows],
+  );
   const mine = useDexLp(address, filter, {
     near: native.nearAccount,
-    cardanoUnits: ada.rows.map((r) => r.contract).filter((x): x is string => Boolean(x)),
+    cardanoUnits: adaUnitsKey ? adaUnitsKey.split("|") : [],
   });
   const locks = useLpFeed(lockFilter);
 

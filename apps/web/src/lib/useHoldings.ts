@@ -62,39 +62,45 @@ function sortHoldings(rows: HoldingRow[], connected: boolean) {
   });
 }
 
+const BALANCE_QUERY = { staleTime: 30_000, refetchOnWindowFocus: false as const, retry: 1 };
+
 export function useEvmHoldings(address: Address | undefined) {
   const catalog = useMemo(() => tokensFor("evm"), []);
-  const erc20s = catalog.filter((t) => t.address);
-  const natives = catalog.filter((t) => t.native);
+  const erc20s = useMemo(() => catalog.filter((t) => t.address), [catalog]);
+  const natives = useMemo(() => catalog.filter((t) => t.native), [catalog]);
   const connected = Boolean(address);
+  const contracts = useMemo(
+    () =>
+      erc20s.map((t) => ({
+        address: t.address as Address,
+        abi: erc20Abi,
+        functionName: "balanceOf" as const,
+        args: [(address ?? "0x0000000000000000000000000000000000000000") as Address] as const,
+        chainId: t.chainId,
+      })),
+    [address, erc20s],
+  );
 
-  const eth = useBalance({ address, chainId: 1, query: { enabled: connected } });
-  const base = useBalance({ address, chainId: 8453, query: { enabled: connected } });
-  const arb = useBalance({ address, chainId: 42161, query: { enabled: connected } });
-  const bnb = useBalance({ address, chainId: 56, query: { enabled: connected } });
-  const avax = useBalance({ address, chainId: 43114, query: { enabled: connected } });
-
-  const nativeByChain: Record<number, bigint | undefined> = {
-    1: eth.data?.value,
-    8453: base.data?.value,
-    42161: arb.data?.value,
-    56: bnb.data?.value,
-    43114: avax.data?.value,
-  };
+  const eth = useBalance({ address, chainId: 1, query: { enabled: connected, ...BALANCE_QUERY } });
+  const base = useBalance({ address, chainId: 8453, query: { enabled: connected, ...BALANCE_QUERY } });
+  const arb = useBalance({ address, chainId: 42161, query: { enabled: connected, ...BALANCE_QUERY } });
+  const bnb = useBalance({ address, chainId: 56, query: { enabled: connected, ...BALANCE_QUERY } });
+  const avax = useBalance({ address, chainId: 43114, query: { enabled: connected, ...BALANCE_QUERY } });
 
   const erc = useReadContracts({
-    contracts: erc20s.map((t) => ({
-      address: t.address as Address,
-      abi: erc20Abi,
-      functionName: "balanceOf" as const,
-      args: [address as Address],
-      chainId: t.chainId,
-    })),
-    query: { enabled: connected && erc20s.length > 0 },
+    contracts,
+    query: { enabled: connected && contracts.length > 0, ...BALANCE_QUERY },
     allowFailure: true,
   });
 
   const rows = useMemo(() => {
+    const nativeByChain: Record<number, bigint | undefined> = {
+      1: eth.data?.value,
+      8453: base.data?.value,
+      42161: arb.data?.value,
+      56: bnb.data?.value,
+      43114: avax.data?.value,
+    };
     const out: HoldingRow[] = [];
     for (const t of natives) {
       const raw = connected ? (nativeByChain[t.chainId] ?? null) : null;
@@ -106,7 +112,7 @@ export function useEvmHoldings(address: Address | undefined) {
       out.push(row(t, raw, connected));
     });
     return sortHoldings(out, connected);
-  }, [catalog, connected, erc.data, erc20s, natives, eth.data?.value, base.data?.value, arb.data?.value, bnb.data?.value, avax.data?.value]);
+  }, [connected, erc.data, erc20s, natives, eth.data?.value, base.data?.value, arb.data?.value, bnb.data?.value, avax.data?.value]);
 
   const funded = rows.filter((r) => r.raw > 0n).length;
   const loading = eth.isLoading || base.isLoading || arb.isLoading || bnb.isLoading || avax.isLoading || erc.isLoading;

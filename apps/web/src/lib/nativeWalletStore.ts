@@ -31,13 +31,24 @@ export const useNativeWallets = create<NativeState>()(
       solanaWallet: "",
       setNear: (nearAccount) => set({ nearAccount }),
       setCardano: (cardanoAddress, cardanoWallet = "", extras = {}) =>
-        set((s) => ({
-          cardanoAddress,
-          cardanoWallet,
-          cardanoAddresses: extras.addresses ?? [cardanoAddress].filter(Boolean),
-          cardanoStake: extras.stake ?? "",
-          cardanoSync: s.cardanoSync + 1,
-        })),
+        set((s) => {
+          const cardanoAddresses = extras.addresses ?? [cardanoAddress].filter(Boolean);
+          const cardanoStake = extras.stake ?? "";
+          const same =
+            s.cardanoAddress === cardanoAddress &&
+            s.cardanoWallet === cardanoWallet &&
+            s.cardanoStake === cardanoStake &&
+            s.cardanoAddresses.length === cardanoAddresses.length &&
+            s.cardanoAddresses.every((a, i) => a === cardanoAddresses[i]);
+          if (same) return s;
+          return {
+            cardanoAddress,
+            cardanoWallet,
+            cardanoAddresses,
+            cardanoStake,
+            cardanoSync: s.cardanoSync + 1,
+          };
+        }),
       setSolana: (solanaAddress, solanaWallet = "") => set({ solanaAddress, solanaWallet }),
       disconnectNear: () => set({ nearAccount: "" }),
       disconnectCardano: () => set({ cardanoAddress: "", cardanoAddresses: [], cardanoStake: "", cardanoWallet: "" }),

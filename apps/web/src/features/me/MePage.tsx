@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { formatUnits, parseAbiItem, type Address } from "viem";
@@ -247,6 +247,20 @@ export function MePage() {
     }).filter((g) => g.connected);
   }, [ada.loading, ada.rows, evm.loading, evm.rows, isConnected, native.cardanoAddress, native.nearAccount, native.solanaAddress, near.loading, near.rows, sol.loading, sol.rows]);
 
+  const bucketsRef = useRef(buckets);
+  bucketsRef.current = buckets;
+  const holdingsKey = useMemo(
+    () =>
+      buckets
+        .flatMap((g) => g.rows)
+        .filter((r) => r.raw > 0n || r.native)
+        .map((r) => `${r.chainId}:${r.native ? "n" : (r.contract ?? "").toLowerCase()}:${r.raw}`)
+        .sort()
+        .join("|"),
+    [buckets],
+  );
+  const unstakeLiquid = t("me.unstakeLiquid");
+
   useEffect(() => {
     if (!anyWallet) {
       setQuotes(new Map());
@@ -260,8 +274,9 @@ export function MePage() {
     }
     let cancelled = false;
     void (async () => {
+      const snapshot = bucketsRef.current;
       const next = new Map<string, Quote>();
-      const funded = buckets.flatMap((g) => g.rows.filter((r) => r.raw > 0n || r.native));
+      const funded = snapshot.flatMap((g) => g.rows.filter((r) => r.raw > 0n || r.native));
       const evmRows = funded.filter((r) => r.chainId != null && DEX[r.chainId]);
       const clients = new Map<number, NonNullable<ReturnType<typeof getPublicClient>>>();
       for (const id of new Set(evmRows.map((r) => r.chainId!))) {
@@ -296,17 +311,11 @@ export function MePage() {
           }),
       );
 
-      if (native.nearAccount) {
-        const b = await readBurrow(native.nearAccount).catch(() => null);
-        if (!cancelled) setBurrow(b ? [b] : []);
-      } else if (!cancelled) {
-        setBurrow([]);
-      }
-
+      const burrowCards = native.nearAccount ? await readBurrow(native.nearAccount).catch(() => null) : null;
+      const aaveCards: AaveCard[] = [];
+      const uniCards: UniCard[] = [];
+      const tokens = new Set<string>();
       if (address) {
-        const aaveCards: AaveCard[] = [];
-        const uniCards: UniCard[] = [];
-        const tokens = new Set<string>();
         await Promise.all(
           [...clients.entries()].map(async ([id, client]) => {
             const a = await readAave(client, id, address);
@@ -314,22 +323,11 @@ export function MePage() {
               aaveCards.push(a);
               for (const x of a.aTokens) tokens.add(x);
             }
-            const u = await readUniV3(client, id, address);
-            uniCards.push(...u);
+            uniCards.push(...(await readUniV3(client, id, address)));
           }),
         );
-        if (!cancelled) {
-          setAave(aaveCards);
-          setUni(uniCards);
-          setATokens(tokens);
-        }
-      } else if (!cancelled) {
-        setAave([]);
-        setUni([]);
-        setATokens(new Set());
       }
       const extra: StakeLine[] = [];
-      const liquid = t("me.unstakeLiquid");
       const ethClient = clients.get(1);
       const ethUsd = next.get(quoteKey(1, undefined, true))?.usdc ?? next.get("1:native")?.usdc;
       if (ethClient && address) extra.push(...(await readLidoQueue(ethClient, address, ethUsd).catch(() => [])));
@@ -337,28 +335,32 @@ export function MePage() {
       if (native.nearAccount) extra.push(...(await readNearStake(native.nearAccount).catch(() => [])));
       const solUsd = next.get(`101:native`)?.usdc;
       if (native.solanaAddress) extra.push(...(await readSolStake(native.solanaAddress, solUsd).catch(() => [])));
+      let benqiCard: AaveCard | null = null;
       if (address) {
         await Promise.all(
           [...clients.entries()].map(async ([id, client]) => {
-            extra.push(...(await readPinnedLst(client, id, address, next, liquid).catch(() => [])));
+            extra.push(...(await readPinnedLst(client, id, address, next, unstakeLiquid).catch(() => [])));
           }),
         );
         const avax = clients.get(43114);
         if (avax) {
           extra.push(...(await readSavaxUnlocks(avax, address, next.get("43114:native")?.usdc).catch(() => [])));
-          const b = await readBenqiMarkets(avax, address, next).catch(() => null);
-          if (!cancelled) setBenqi(b ? [b] : []);
-        } else if (!cancelled) setBenqi([]);
-      } else if (!cancelled) setBenqi([]);
-      if (!cancelled) {
-        setStakeExtra(extra);
-        setQuotes(next);
+          benqiCard = await readBenqiMarkets(avax, address, next).catch(() => null);
+        }
       }
+      if (cancelled) return;
+      setQuotes(next);
+      setAave(aaveCards);
+      setBurrow(burrowCards ? [burrowCards] : []);
+      setBenqi(benqiCard ? [benqiCard] : []);
+      setUni(uniCards);
+      setATokens(tokens);
+      setStakeExtra(extra);
     })();
     return () => {
       cancelled = true;
     };
-  }, [address, anyWallet, buckets, config, native.nearAccount, native.cardanoStake, native.solanaAddress]);
+  }, [address, anyWallet, holdingsKey, config, native.nearAccount, native.cardanoStake, native.solanaAddress, unstakeLiquid]);
 
   const walletRows = useMemo(() => {
     const rows = buckets.flatMap((g) =>
