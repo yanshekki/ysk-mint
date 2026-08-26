@@ -4,8 +4,8 @@
     "tagline": "引導式多鏈發幣。原生 OFT。建立並鎖定 LP。只讀鏈上數據。"
   },
   "nav": {
-    "home": "LP",
-    "lp": "LP",
+    "home": "市場",
+    "lp": "市場",
     "create": "發幣",
     "transfer": "跨鏈",
     "me": "持倉",
@@ -14,7 +14,8 @@
     "search": "搜尋代號、合約、錢包"
   },
   "lp": {
-    "hint": "公開 DEX 的主流交易對，以及已連接錢包的 LP。EVM 為工廠現價；NEAR 為 Rhea／Ref 合約儲備；Cardano 為 Minswap 聚合報價。USDC、USDT、USDM、USDA 均按 1 USD。本站鎖定另欄。無假盤。",
+    "kicker": "聚合報價",
+    "hint": "各鏈 DEX 現價聚合。USDC、USDT、USDM、USDA 按 1 美元。只列出已存在且有儲備的池。市值排序取自 CoinMarketCap 目錄快照，不是即時榜。無假盤。",
     "all": "全部",
     "testnets": "測試網",
     "loading": "正在讀取鏈上資料…",
@@ -33,7 +34,7 @@
     "nearAmm": "NEAR 報價取自 Rhea／Ref 合約 get_pool 儲備。",
     "solAmm": "Solana 僅列出已釘選的主流池與 Jupiter 報價。",
     "markets": "市場",
-    "myLp": "我的 LP",
+    "myLp": "我的流動倉",
     "venues": "場館",
     "oracle": "{{n}} 個池加權",
     "oracleNote": "EVM 現價取自池儲備或 slot0。NEAR 取自 Ref 合約儲備。Cardano 取自 Minswap 聚合估價。最近成交僅 EVM Swap 日誌，不是全歷史。",
@@ -45,8 +46,8 @@
     "depth": "深度",
     "productLocks": "本站鎖定",
     "pairMissing": "需要 chainId 與兩個代幣地址。",
-    "myLpHint": "若錢包在這些池有 LP，會顯示於首頁「我的 LP」。",
-    "connectForLp": "連接現有錢包後，可讀取你在這些 DEX 的 LP。",
+    "myLpHint": "若錢包在這些池有流動倉，會顯示於首頁「我的流動倉」。",
+    "connectForLp": "連接現有錢包後，可讀取你在這些池的流動倉。",
     "timed": "定期鎖",
     "burn": "銷毀 LP",
     "open": "區塊瀏覽器",

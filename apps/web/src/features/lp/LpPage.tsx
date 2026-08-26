@@ -53,7 +53,7 @@ export function LpPage() {
     <section className="workspace">
       <div className="workspace-head">
         <div>
-          <p className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-text-muted">DEX</p>
+          <p className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-text-muted">{t("lp.kicker")}</p>
           <h1>{t("nav.lp")}</h1>
           <p className="mt-1 text-[15px] text-text-sub">{t("lp.hint")}</p>
         </div>
@@ -108,13 +108,13 @@ export function LpPage() {
           <section className="me-card">
             <div className="me-card-head">
               <b>{t("lp.markets")}</b>
-              <span className="me-count">{markets.loading ? "…" : markets.rows.length}</span>
+              <span className="me-count">{markets.loading && !markets.rows.length ? "…" : markets.rows.length}</span>
             </div>
-            {markets.loading ? (
-              <p className="me-card-empty">{t("lp.loading")}</p>
-            ) : markets.error ? (
+            {markets.error && !markets.rows.length ? (
               <p className="me-card-empty">{t("lp.rpcError")}</p>
-            ) : markets.rows.length === 0 ? (
+            ) : !markets.rows.length && markets.loading ? (
+              <p className="me-card-empty">{t("lp.loading")}</p>
+            ) : !markets.rows.length ? (
               <p className="me-card-empty">{t("lp.emptyMarkets")}</p>
             ) : (
               <div className="me-list">
@@ -124,6 +124,7 @@ export function LpPage() {
                   <span>{t("lp.venues")}</span>
                   <span>{t("lp.depth")}</span>
                 </div>
+                {markets.loading ? <p className="me-card-empty">{t("lp.loading")}</p> : null}
                 {markets.rows.map((r) => (
                   <Link key={r.pairId} to={`/pair/${r.chainId}/${encodeURIComponent(r.tokenA)}/${encodeURIComponent(r.tokenB)}`} className="me-token me-token-5">
                     <span className="holding-ico-wrap">

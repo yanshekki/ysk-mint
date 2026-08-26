@@ -4,8 +4,8 @@
     "tagline": "Guided multi-chain token launch. Native OFT. LP + lock. On-chain data only."
   },
   "nav": {
-    "home": "LP",
-    "lp": "LP",
+    "home": "Markets",
+    "lp": "Markets",
     "create": "Launch",
     "transfer": "Bridge",
     "me": "Holdings",
@@ -14,7 +14,8 @@
     "search": "Search ticker, CA, wallet"
   },
   "lp": {
-    "hint": "Public DEX pairs and LP on the connected wallet. EVM quotes are factory spots; NEAR quotes are Rhea/Ref reserves; Cardano quotes are Minswap aggregator estimates. USDC, USDT, USDM and USDA count as $1. App locks are a separate section. No synthetic tape.",
+    "kicker": "Aggregator quotes",
+    "hint": "Aggregated DEX spots. USDC, USDT, USDM and USDA count as $1. Only pools that exist with reserves. Token order follows a CoinMarketCap snapshot, not a live ranking. No synthetic tape.",
     "all": "All",
     "testnets": "Testnets",
     "loading": "Reading on-chain data…",
@@ -33,7 +34,7 @@
     "nearAmm": "NEAR quotes come from Rhea/Ref get_pool reserves.",
     "solAmm": "Solana lists pinned major pools and Jupiter quotes only.",
     "markets": "Markets",
-    "myLp": "My LP",
+    "myLp": "My liquidity",
     "venues": "Venues",
     "oracle": "{{n}} pools, weighted",
     "oracleNote": "EVM spots from reserves or slot0. NEAR from Ref reserves. Cardano from Minswap aggregator estimates. Recent fills are EVM Swap logs only, not a full history.",
@@ -45,8 +46,8 @@
     "depth": "Depth",
     "productLocks": "App locks",
     "pairMissing": "Need chainId and two token addresses.",
-    "myLpHint": "LP you hold in these pools appears under My LP on the home page.",
-    "connectForLp": "Connect an existing wallet to read your LP on these DEXes.",
+    "myLpHint": "LP you hold in these pools appears under My liquidity on the home page.",
+    "connectForLp": "Connect an existing wallet to read your liquidity in these pools.",
     "timed": "Timed",
     "burn": "Burn LP",
     "open": "Explorer",

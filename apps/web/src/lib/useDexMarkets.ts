@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { createPublicClient, http } from "viem";
 import { CHAINS, featuredChains } from "@ysk-mint/config";
-import { SEED_PAIRS, SOL_SEEDS } from "./dexVenues.ts";
-import { readVenuesForPair, weightedPrice, type VenuePool } from "./dexPools.ts";
+import { SEED_PAIRS, isStable } from "./dexVenues.ts";
+import { readVenuesForPair, type VenuePool } from "./dexPools.ts";
 import { pairId } from "./pairKey.ts";
-import { quoteSolMints } from "./defiQuotes.ts";
-import { loadNearMarkets } from "./nearDex.ts";
-import { loadAdaMarkets } from "./adaDex.ts";
+import { quoteUsd } from "./defi/quote.ts";
+import { ensureProtocols } from "./defi/protocols.ts";
+import { protocolsOn } from "./defi/registry.ts";
 
 export type MarketRow = {
   pairId: string;
@@ -43,26 +43,42 @@ async function loadEvm(chainId: number): Promise<MarketRow[]> {
   const client = createPublicClient({ transport: http(url) });
   const seeds = SEED_PAIRS.filter((p) => p.chainId === chainId);
   const rows: MarketRow[] = [];
-  for (const s of seeds) {
-    const venues = await readVenuesForPair(client, chainId, s.a.address, s.b.address, s.a.decimals, s.b.decimals).catch(() => []);
-    if (!venues.length) continue;
-    const names = [...new Set(venues.map((v) => v.venue.name))];
-    rows.push({
-      pairId: pairId(chainId, s.a.address, s.b.address),
-      chainId,
-      chainShort: chain.short,
-      symbolA: s.a.symbol,
-      symbolB: s.b.symbol,
-      iconA: s.a.icon,
-      iconB: s.b.icon,
-      tokenA: s.a.address,
-      tokenB: s.b.address,
-      venues,
-      price: weightedPrice(venues),
-      depth: venues.reduce((n, v) => n + v.tvlQuote, 0),
-      venueNames: names,
-    });
-  }
+  await Promise.all(
+    seeds.map(async (s) => {
+      const venues = await readVenuesForPair(client, chainId, s.a.address, s.b.address, s.a.decimals, s.b.decimals).catch(
+        () => [] as VenuePool[],
+      );
+      if (!venues.length) return;
+      const usd = await quoteUsd({ evm: client }, chainId, s.a.address, s.a.decimals, false).catch(() => null);
+      const names = [...new Set(venues.map((v) => v.venue.name))];
+      const depth = venues.reduce((n, v) => n + v.tvlQuote, 0);
+      rows.push({
+        pairId: pairId(chainId, s.a.address, s.b.address),
+        chainId,
+        chainShort: chain.short,
+        symbolA: s.a.symbol,
+        symbolB: s.b.symbol,
+        iconA: s.a.icon,
+        iconB: s.b.icon,
+        tokenA: s.a.address,
+        tokenB: s.b.address,
+        venues,
+        price: usd?.usdc ?? (isStable(s.a.symbol) ? 1 : null),
+        depth: usd?.depth ?? depth,
+        venueNames: names,
+      });
+    }),
+  );
+  return rows;
+}
+
+function sortMarkets(rows: MarketRow[]) {
+  const order = featuredChains().map((c) => c.chainId);
+  rows.sort((a, b) => {
+    const d = order.indexOf(a.chainId) - order.indexOf(b.chainId);
+    if (d !== 0) return d;
+    return (b.depth || 0) - (a.depth || 0);
+  });
   return rows;
 }
 
@@ -75,6 +91,8 @@ export function useDexMarkets(chainId: number | "all") {
     let cancelled = false;
     setLoading(true);
     setError(null);
+    setRows([]);
+    ensureProtocols();
     const ids =
       chainId === "all"
         ? featuredChains()
@@ -84,39 +102,36 @@ export function useDexMarkets(chainId: number | "all") {
     void (async () => {
       try {
         const evmIds = ids.filter((id) => ![101, 397, 1815, 398, 18151, 103].includes(id));
-        const [evmParts, near, ada] = await Promise.all([
-          Promise.all(evmIds.map(loadEvm)),
-          ids.includes(397) ? loadNearMarkets().catch(() => []) : Promise.resolve([]),
-          ids.includes(1815) ? loadAdaMarkets().catch(() => []) : Promise.resolve([]),
-        ]);
-        const flat = [...evmParts.flat(), ...near, ...ada];
-        if (chainId === "all" || chainId === 101) {
-          const jup = await quoteSolMints(SOL_SEEDS.map((s) => s.mintA));
-          for (const s of SOL_SEEDS) {
-            const q = jup.get(s.mintA);
-            flat.push({
-              pairId: `101:${s.mintA}-${s.mintB}`,
-              chainId: 101,
-              chainShort: "SOL",
-              symbolA: s.symbolA,
-              symbolB: s.symbolB,
-              iconA: s.iconA,
-              iconB: s.iconB,
-              tokenA: s.mintA,
-              tokenB: s.mintB,
-              venues: [],
-              price: q?.usdc ?? null,
-              depth: 0,
-              venueNames: [s.dex],
-            });
-          }
+        const nativeIds = ids.filter((id) => [101, 397, 1815].includes(id));
+        const jobs: Array<Promise<void>> = [];
+        const acc: MarketRow[] = [];
+        const push = (part: MarketRow[]) => {
+          if (cancelled || !part.length) return;
+          acc.push(...part);
+          setRows(sortMarkets([...acc]));
+        };
+        for (const id of evmIds) {
+          jobs.push(
+            loadEvm(id)
+              .then(push)
+              .catch(() => undefined),
+          );
         }
-        const order = featuredChains().map((c) => c.chainId);
-        flat.sort((a, b) => {
-          const d = order.indexOf(a.chainId) - order.indexOf(b.chainId);
-          return d !== 0 ? d : a.symbolA.localeCompare(b.symbolA);
-        });
-        if (!cancelled) setRows(flat);
+        for (const id of nativeIds) {
+          jobs.push(
+            Promise.all(protocolsOn(id).map((p) => p.markets?.({}).catch(() => []) ?? Promise.resolve([])))
+              .then((parts) => {
+                const mapped: MarketRow[] = parts.flat().map((r) => ({
+                  ...r,
+                  venues: [],
+                }));
+                push(mapped);
+              })
+              .catch(() => undefined),
+          );
+        }
+        await Promise.all(jobs);
+        if (!cancelled && !acc.length) setRows([]);
       } catch (e) {
         if (!cancelled) {
           setRows([]);

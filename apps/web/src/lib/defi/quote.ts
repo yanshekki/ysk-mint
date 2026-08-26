@@ -1,0 +1,178 @@
+import type { Address, PublicClient } from "viem";
+import { DEX, isUsdStableAddress, usdStables } from "../defiAddresses.ts";
+import { cached } from "./cache.ts";
+import { ensureProtocols } from "./protocols.ts";
+import { protocolsOn } from "./registry.ts";
+import type { DefiCtx, Quote, QuoteSource, TokenRef, VenueQuote } from "./types.ts";
+
+const QUOTE_TTL = 30_000;
+const OUTLIER = 0.15;
+
+export function rejectOutliers<T extends { usdc: number; depth: number }>(rows: T[]): T[] {
+  if (rows.length < 2) return rows;
+  const best = rows.reduce((a, b) => (b.depth > a.depth ? b : a));
+  if (!best.usdc || best.depth <= 0) return rows;
+  const kept = rows.filter((r) => Math.abs(r.usdc - best.usdc) / best.usdc <= OUTLIER);
+  return kept.length ? kept : [best];
+}
+
+export function weightedUsd(rows: Array<{ usdc: number; depth: number }>): number | null {
+  let num = 0;
+  let den = 0;
+  for (const r of rows) {
+    const w = Math.max(r.depth, 0);
+    if (!w || !r.usdc) continue;
+    num += r.usdc * w;
+    den += w;
+  }
+  if (den) return num / den;
+  return rows[0]?.usdc ?? null;
+}
+
+function asToken(chainId: number, token: string | undefined, decimals: number, native?: boolean): TokenRef {
+  return { chainId, address: token ?? "", decimals, native };
+}
+
+async function discoverRead(
+  ctx: DefiCtx,
+  chainId: number,
+  tokenA: TokenRef,
+  tokenB: TokenRef,
+): Promise<VenueQuote[]> {
+  const out: VenueQuote[] = [];
+  await Promise.all(
+    protocolsOn(chainId).map(async (p) => {
+      if (!p.discover || !p.readPool) return;
+      const refs = await p.discover(ctx, tokenA, tokenB).catch(() => []);
+      await Promise.all(
+        refs.map(async (ref) => {
+          const row = await p.readPool!(ctx, ref, tokenA, tokenB).catch(() => null);
+          if (row) out.push(row);
+        }),
+      );
+    }),
+  );
+  return out;
+}
+
+type Spot = { usdc: number; depth: number; source: QuoteSource; venue: VenueQuote };
+
+async function spotsVsStables(ctx: DefiCtx, chainId: number, token: TokenRef): Promise<Spot[]> {
+  const d = DEX[chainId];
+  if (!d) return [];
+  const addr = token.address.toLowerCase();
+  const legs = usdStables(d).filter((s) => s.address.toLowerCase() !== addr);
+  const spots: Spot[] = [];
+  await Promise.all(
+    legs.map(async (leg) => {
+      const venues = await discoverRead(ctx, chainId, token, {
+        chainId,
+        address: leg.address,
+        decimals: leg.decimals,
+        symbol: leg.symbol,
+      });
+      for (const v of venues) {
+        if (!v.priceAinB) continue;
+        spots.push({
+          usdc: v.priceAinB,
+          depth: Math.max(v.tvlQuote, 0),
+          source: v.kind === "v3" ? "v3" : "v2",
+          venue: v,
+        });
+      }
+    }),
+  );
+  return spots;
+}
+
+async function wrappedUsd(ctx: DefiCtx, chainId: number): Promise<number | null> {
+  const d = DEX[chainId];
+  if (!d) return null;
+  return cached(`wrapusd:${chainId}`, QUOTE_TTL, async () => {
+    const token: TokenRef = { chainId, address: d.wrapped, decimals: 18 };
+    const spots = rejectOutliers(await spotsVsStables(ctx, chainId, token));
+    return weightedUsd(spots);
+  });
+}
+
+async function evmQuoteUsd(ctx: DefiCtx, chainId: number, token: TokenRef): Promise<Quote | null> {
+  const d = DEX[chainId];
+  if (!d || !ctx.evm) return null;
+  const addr = (token.native ? d.wrapped : token.address)?.toLowerCase();
+  if (!addr) return null;
+  if (isUsdStableAddress(d, addr)) return { usdc: 1, source: "stable", depth: 0 };
+
+  return cached(`usd:${chainId}:${addr}`, QUOTE_TTL, async () => {
+    const base: TokenRef = { ...token, address: addr, native: false };
+    let spots = await spotsVsStables(ctx, chainId, base);
+    if (!spots.length && addr !== d.wrapped.toLowerCase()) {
+      const wrap = await wrappedUsd(ctx, chainId);
+      if (wrap) {
+        const vsW = await discoverRead(ctx, chainId, base, {
+          chainId,
+          address: d.wrapped,
+          decimals: 18,
+        });
+        for (const v of vsW) {
+          if (!v.priceAinB) continue;
+          spots.push({
+            usdc: v.priceAinB * wrap,
+            depth: Math.max(v.tvlQuote, 0) * wrap,
+            source: v.kind === "v3" ? "v3" : "v2",
+            venue: v,
+          });
+        }
+      }
+    }
+    const kept = rejectOutliers(spots);
+    const usdc = weightedUsd(kept);
+    if (usdc == null) return null;
+    const depth = kept.reduce((n, s) => n + s.depth, 0);
+    const v3 = kept.some((s) => s.source === "v3");
+    return { usdc, source: v3 ? "v3" : kept[0]?.source ?? "agg", depth };
+  });
+}
+
+export async function quoteUsd(
+  ctx: DefiCtx,
+  chainId: number,
+  token: string | undefined,
+  decimals: number,
+  native?: boolean,
+): Promise<Quote | null> {
+  ensureProtocols();
+  const ref = asToken(chainId, token, decimals, native);
+  const nativeQuote = protocolsOn(chainId).find((p) => p.quoteUsd && !p.discover);
+  if (nativeQuote?.quoteUsd) {
+    return cached(`usd:${chainId}:${native ? "native" : (token ?? "").toLowerCase()}`, QUOTE_TTL, () =>
+      nativeQuote.quoteUsd!(ctx, ref),
+    );
+  }
+  return evmQuoteUsd(ctx, chainId, ref);
+}
+
+export async function readPairVenues(
+  client: PublicClient,
+  chainId: number,
+  tokenA: Address | string,
+  tokenB: Address | string,
+  decA: number,
+  decB: number,
+): Promise<VenueQuote[]> {
+  ensureProtocols();
+  return discoverRead(
+    { evm: client },
+    chainId,
+    { chainId, address: tokenA, decimals: decA },
+    { chainId, address: tokenB, decimals: decB },
+  );
+}
+
+export function consensusPairPrice(venues: VenueQuote[]): number | null {
+  const rows = venues.map((v) => ({ usdc: v.priceAinB, depth: v.tvlQuote, venue: v }));
+  return weightedUsd(rejectOutliers(rows));
+}
+
+export function venueDepthUsd(venues: VenueQuote[]): number {
+  return venues.reduce((n, v) => n + Math.max(v.tvlQuote, 0), 0);
+}
