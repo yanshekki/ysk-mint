@@ -1,4 +1,4 @@
-import { DEX, usdStables } from "../defiAddresses.ts";
+import { DEX, SOL_NATIVE_MINT, usdStables } from "../defiAddresses.ts";
 import { TOKEN_CATALOG } from "../tokenRegistry.ts";
 import type { TokenRef } from "./types.ts";
 
@@ -27,6 +27,46 @@ export function topCmcIds(limit = 100) {
     if (ids.length >= limit) break;
   }
   return ids;
+}
+
+function nativePlaceholder(chainId: number): MarketToken | undefined {
+  if (chainId === 101) {
+    return { chainId, address: SOL_NATIVE_MINT, decimals: 9, symbol: "SOL", icon: "/tokens/sol.png", native: true };
+  }
+  if (chainId === 397) {
+    return { chainId, address: "wrap.near", decimals: 24, symbol: "NEAR", icon: "/tokens/near.png", native: true };
+  }
+  if (chainId === 1815) {
+    return { chainId, address: "lovelace", decimals: 6, symbol: "ADA", icon: "/tokens/ada.png", native: true };
+  }
+  return undefined;
+}
+
+export function catalogTopOn(chainId: number, limit = 100): MarketToken[] {
+  const rank = new Set(topCmcIds(limit));
+  const seen = new Set<string>();
+  const out: MarketToken[] = [];
+  const native = nativePlaceholder(chainId);
+  if (native) pushToken(out, seen, native);
+  for (const t of TOKEN_CATALOG) {
+    if (t.chainId !== chainId) continue;
+    const m = /^cmc-(\d+)/.exec(t.id);
+    if (t.native) {
+      if (native) continue;
+      continue;
+    }
+    if (!m || !rank.has(Number(m[1])) || !t.address) continue;
+    if (SENTINEL.test(t.address)) continue;
+    pushToken(out, seen, {
+      chainId,
+      address: t.address,
+      decimals: t.decimals || 18,
+      symbol: t.symbol,
+      icon: t.icon,
+      name: t.name,
+    });
+  }
+  return out;
 }
 
 function pushToken(out: MarketToken[], seen: Set<string>, t: MarketToken) {

@@ -32,7 +32,7 @@
     "solDetail": "SOL 使用經典 SPL Token。獨立發行，不經 LayerZero OFT。program 地址仍空。",
     "adaAmm": "Cardano 報價取自 Minswap 聚合器池路徑，不是 Blockfrost 私鑰索引。",
     "nearAmm": "NEAR 報價取自 Rhea／Ref 合約 get_pool 儲備。",
-    "solAmm": "Solana 僅列出已釘選的主流池與 Jupiter 報價。",
+    "solAmm": "Solana 報價取自 Jupiter。只列出目錄頭 100 且報到價的 mint。",
     "markets": "市場",
     "myLp": "我的流動倉",
     "venues": "場館",
