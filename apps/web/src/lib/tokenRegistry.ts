@@ -116,6 +116,7 @@ const EXTRA: TokenRecord[] = [
   { id: "world-wld", vm: "evm", chainId: 480, symbol: "WLD", name: "Worldcoin", decimals: 18, address: "0x2cFc85d8e48F8EAB294be644d9E25C3030863003", icon: I("wld") },
   { id: "trx-usdt", vm: "tron", chainId: 728126428, symbol: "USDT", name: "Tether", decimals: 6, address: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t", icon: I("usdt") },
   { id: "sui-usdc", vm: "sui", chainId: 784, symbol: "USDC", name: "USD Coin", decimals: 6, address: "0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC", icon: I("usdc") },
+  { id: "cmc-3408-324-usdce", vm: "evm", chainId: 324, symbol: "USDC", name: "USD Coin", decimals: 6, address: "0x3355df6D4c9C3035724Fd0e3914dE96A5a83aaf4", icon: I("usdc") },
   { id: "ton-usdt", vm: "ton", chainId: 607, symbol: "USDT", name: "Tether", decimals: 6, address: "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs", icon: I("usdt") },
   { id: "apt-usdc", vm: "aptos", chainId: 637, symbol: "USDC", name: "USD Coin", decimals: 6, address: "0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b", icon: I("usdc") },
 ];

@@ -3,11 +3,21 @@ import { canonAddr } from "../../pairKey.ts";
 import type { Venue } from "../../dexVenues.ts";
 import { forChunks } from "../cache.ts";
 import type { DefiProtocol, PoolRef, TokenRef, VenueQuote } from "../types.ts";
-import { erc20BalAbi, v3FactoryAbi, v3PoolAbi } from "./abis.ts";
+import { erc20BalAbi, v3FactoryAbi, v3PoolAbi, v3TickFactoryAbi } from "./abis.ts";
 import { ZERO, priceFromSqrtPriceX96 } from "./math.ts";
 
+function v3Key(venue: Venue) {
+  const tick = venue.poolArg === "tick";
+  return {
+    tick,
+    fees: venue.fees ?? (tick ? [1, 10, 50, 100, 200] : [500, 3000]),
+    abi: tick ? v3TickFactoryAbi : v3FactoryAbi,
+    label: (n: number) => (tick ? `t${n}` : `${n / 10000}%`),
+  };
+}
+
 export function makeV3(venue: Venue): DefiProtocol {
-  const fees = venue.fees ?? [500, 3000];
+  const { fees, abi, label } = v3Key(venue);
   return {
     id: venue.id,
     name: venue.name,
@@ -20,7 +30,7 @@ export function makeV3(venue: Venue): DefiProtocol {
         const res = await client.multicall({
           contracts: fees.map((fee) => ({
             address: venue.factory,
-            abi: v3FactoryAbi,
+            abi,
             functionName: "getPool" as const,
             args: [tokenA.address as Address, tokenB.address as Address, fee],
           })),
@@ -37,7 +47,7 @@ export function makeV3(venue: Venue): DefiProtocol {
               pool,
               tokenA: tokenA.address,
               tokenB: tokenB.address,
-              feeLabel: `${fees[i] / 10000}%`,
+              feeLabel: label(fees[i]),
               extra: { fee: fees[i] },
             },
           ];
@@ -57,7 +67,7 @@ export function makeV3(venue: Venue): DefiProtocol {
           const res = await client.multicall({
             contracts: chunk.map((j) => ({
               address: venue.factory,
-              abi: v3FactoryAbi,
+              abi,
               functionName: "getPool" as const,
               args: [j.a.address as Address, j.b.address as Address, j.fee],
             })),
@@ -76,7 +86,7 @@ export function makeV3(venue: Venue): DefiProtocol {
               pool,
               tokenA: j.a.address,
               tokenB: j.b.address,
-              feeLabel: `${j.fee / 10000}%`,
+              feeLabel: label(j.fee),
               extra: { fee: j.fee },
             });
             grouped.set(key, row);

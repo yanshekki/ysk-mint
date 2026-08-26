@@ -1,5 +1,5 @@
 {
-  "asOf": "2026-08-26",
+  "asOf": "2026-08-27",
   "source": "Token Terminal public explorer markets/exchange + markets/lending",
   "ttTotals": {
     "dex": 241,
@@ -243,33 +243,33 @@
       "name": "Shadow",
       "sector": "dex",
       "family": "aero",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         146
       ],
-      "note": ""
+      "note": "PairFactory getPair + ShadowV3Factory getPool(tickSpacing)"
     },
     {
       "id": "blackhole",
       "name": "Blackhole",
       "sector": "dex",
       "family": "aero",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         43114
       ],
-      "note": ""
+      "note": "PairFactory getPair + Algebra Integral poolByPair"
     },
     {
       "id": "solidlizard",
       "name": "SolidLizard",
       "sector": "dex",
       "family": "aero",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         42161
       ],
-      "note": ""
+      "note": "LizardFactory getPair volatile/stable"
     },
     {
       "id": "thruster",
@@ -286,57 +286,58 @@
       "id": "kyberswap",
       "name": "KyberSwap",
       "sector": "dex",
-      "family": "univ3",
-      "status": "pending",
+      "family": "aggregator",
+      "status": "skip",
       "chains": [
         "evm"
       ],
-      "note": ""
+      "note": "Elastic 2023-11 停運；而家剩低聚合器，唔當 AMM factory"
     },
     {
       "id": "biswap",
       "name": "Biswap",
       "sector": "dex",
       "family": "univ2",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         56
       ],
-      "note": ""
+      "note": "V2 factory getPair；V3 官方 factory 未列，未接"
     },
     {
       "id": "apeswap",
       "name": "ApeSwap",
       "sector": "dex",
       "family": "univ2",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         56,
         137
       ],
-      "note": ""
+      "note": "BSC／Polygon factory getPair；品牌已轉 ApeBond，AMM 仍在"
     },
     {
       "id": "syncswap",
       "name": "SyncSwap",
       "sector": "dex",
       "family": "univ2",
-      "status": "pending",
+      "status": "wired",
       "chains": [
-        324
+        324,
+        59144
       ],
-      "note": ""
+      "note": "Classic factory getPool(a,b)；getReserves 兩欄 vault 儲備；Stable 曲線未接"
     },
     {
       "id": "zkswap-finance",
       "name": "zkSwap Finance",
       "sector": "dex",
       "family": "univ2",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         324
       ],
-      "note": ""
+      "note": "FactoryV2 getPair + ZFV3Factory getPool；官方前端已停，合約仍讀"
     },
     {
       "id": "maverick",
@@ -398,11 +399,11 @@
       "name": "Cetus",
       "sector": "dex",
       "family": "sui-amm",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         784
       ],
-      "note": ""
+      "note": "api-sui.cetus.zone/v2/sui/stats_pools；TVL ≥ $50k，SUI／stable pair"
     },
     {
       "id": "stonfi",
@@ -431,11 +432,11 @@
       "name": "HyperSwap",
       "sector": "dex",
       "family": "univ3",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         999
       ],
-      "note": ""
+      "note": "V3 factory getPool + V2 factory getPair"
     },
     {
       "id": "kodiak",
@@ -510,7 +511,7 @@
       "chains": [
         784
       ],
-      "note": ""
+      "note": "無公開 stats list，要 SDK AmmPoolManager，未接"
     },
     {
       "id": "hyperion",
@@ -521,7 +522,7 @@
       "chains": [
         637
       ],
-      "note": ""
+      "note": "官方 GraphQL alcove 404；REST host 未公開 pool list，未接"
     },
     {
       "id": "pendle",

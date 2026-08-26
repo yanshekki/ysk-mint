@@ -50,6 +50,21 @@ export const v3FactoryAbi = [
   },
 ] as const;
 
+/** Ramses / Shadow CL: third arg is tickSpacing, not Uniswap fee. */
+export const v3TickFactoryAbi = [
+  {
+    type: "function",
+    name: "getPool",
+    stateMutability: "view",
+    inputs: [
+      { name: "tokenA", type: "address" },
+      { name: "tokenB", type: "address" },
+      { name: "tickSpacing", type: "int24" },
+    ],
+    outputs: [{ type: "address" }],
+  },
+] as const;
+
 export const v2PairAbi = [
   {
     type: "function",

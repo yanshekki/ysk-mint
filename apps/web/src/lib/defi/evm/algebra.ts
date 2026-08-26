@@ -68,6 +68,24 @@ const stateDirAbi = [
   },
 ] as const;
 
+/** Algebra Integral / Blackhole CL */
+const stateIntegralAbi = [
+  {
+    type: "function",
+    name: "globalState",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [
+      { type: "uint160" },
+      { type: "int24" },
+      { type: "uint16" },
+      { type: "uint8" },
+      { type: "uint16" },
+      { type: "bool" },
+    ],
+  },
+] as const;
+
 function feeLabelOf(fee: number | undefined) {
   if (fee == null || fee <= 0) return "dyn";
   return `${fee / 10000}%`;
@@ -81,8 +99,13 @@ async function readSqrt(
     const g = await client.readContract({ address: pool, abi: stateQsAbi, functionName: "globalState" });
     return { price: g[0], fee: Number(g[2]) };
   } catch {
-    const g = await client.readContract({ address: pool, abi: stateDirAbi, functionName: "globalState" });
-    return { price: g[0], fee: Number(g[3]) };
+    try {
+      const g = await client.readContract({ address: pool, abi: stateDirAbi, functionName: "globalState" });
+      return { price: g[0], fee: Number(g[3]) };
+    } catch {
+      const g = await client.readContract({ address: pool, abi: stateIntegralAbi, functionName: "globalState" });
+      return { price: g[0], fee: Number(g[2]) };
+    }
   }
 }
 
@@ -197,7 +220,7 @@ export function makeAlgebra(venue: AlgebraVenue): DefiProtocol {
   };
 }
 
-/** Official Algebra factories: QuickSwap V3 Polygon, Camelot V3 Arbitrum. */
+/** Official Algebra factories: QuickSwap / Camelot / Thena Fusion / Blackhole CL. */
 export const ALGEBRA_VENUES: AlgebraVenue[] = [
   {
     id: "quick-v3-137",
@@ -216,5 +239,11 @@ export const ALGEBRA_VENUES: AlgebraVenue[] = [
     name: "Thena Fusion",
     chainId: 56,
     factory: "0x306F06C147f064A010530292A1EB6737c3e378e4",
+  },
+  {
+    id: "blackhole-cl-43114",
+    name: "Blackhole CL",
+    chainId: 43114,
+    factory: "0x512eb749541B7cf294be882D636218c84a5e9E5F",
   },
 ];

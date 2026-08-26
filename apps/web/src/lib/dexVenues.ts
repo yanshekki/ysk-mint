@@ -11,6 +11,8 @@ export type Venue = {
   npm?: Addr;
   fees?: number[];
   poolFn?: "getPool" | "getPair";
+  /** V3 factory third arg. Shadow/Ramses CL uses tickSpacing, not fee. */
+  poolArg?: "fee" | "tick";
 };
 
 export type SeedToken = { address: Addr; symbol: string; decimals: number; icon: string };
@@ -70,6 +72,14 @@ const USDT_POL: SeedToken = { address: "0xc2132D05D31c914a87C6611C10748AEb04B58e
 const WETH_LINEA: SeedToken = { address: "0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f", symbol: "WETH", decimals: 18, icon: I("eth") };
 const USDC_LINEA: SeedToken = { address: "0x176211869cA2b568f2A7D4EE941E073a821EE1ff", symbol: "USDC", decimals: 6, icon: I("usdc") };
 
+const WS: SeedToken = { address: "0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38", symbol: "wS", decimals: 18, icon: I("eth") };
+const USDC_SONIC: SeedToken = { address: "0x29219dd400f2Bf60E5a23d13Be72B486D4038894", symbol: "USDC", decimals: 6, icon: I("usdc") };
+const WHYPE: SeedToken = { address: "0x5555555555555555555555555555555555555555", symbol: "WHYPE", decimals: 18, icon: I("hype") };
+const USDC_HYPE: SeedToken = { address: "0xb88339CB7199b77E23DB6E890353E22632Ba630f", symbol: "USDC", decimals: 6, icon: I("usdc") };
+const WETH_ZK: SeedToken = { address: "0x5AEa5775959fBC2557Cc8789bC1bf90A239D9a91", symbol: "WETH", decimals: 18, icon: I("eth") };
+const USDC_ZK: SeedToken = { address: "0x1D17CbCF0d6d143135ae90236593E4A2D3ffA0f0", symbol: "USDC", decimals: 6, icon: I("usdc") };
+const USDCE_ZK: SeedToken = { address: "0x3355df6D4c9C3035724Fd0e3914dE96A5a83aaf4", symbol: "USDC", decimals: 6, icon: I("usdc") };
+
 export const VENUES: Venue[] = [
   { id: "uni-v3-1", name: "Uniswap V3", chainId: 1, kind: "v3", factory: UNI_V3_FACTORY, npm: UNI_V3_NPM, fees: V3_FEES },
   { id: "uni-v2-1", name: "Uniswap V2", chainId: 1, kind: "v2", factory: "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f" },
@@ -124,6 +134,22 @@ export const VENUES: Venue[] = [
   { id: "uni-v2-130", name: "Uniswap V2", chainId: 130, kind: "v2", factory: "0x1f98400000000000000000000000000000000002" },
 
   { id: "uni-v3-146", name: "Uniswap V3", chainId: 146, kind: "v3", factory: "0xcb2436774C3e191c85056d248EF4260ce5f27A9D", fees: V3_FEES },
+  { id: "shadow-v2-146", name: "Shadow", chainId: 146, kind: "aero", factory: "0x2dA25E7446A70D7be65fd4c053948BEcAA6374c8", poolFn: "getPair" },
+  { id: "shadow-v3-146", name: "Shadow CL", chainId: 146, kind: "v3", factory: "0xcD2d0637c94fe77C2896BbCBB174cefFb08DE6d7", npm: "0x12E66C8F215DdD5d48d150c8f46aD0c6fB0F4406", fees: [1, 10, 50, 100, 200], poolArg: "tick" },
+
+  { id: "blackhole-v2-43114", name: "Blackhole", chainId: 43114, kind: "aero", factory: "0xfE926062Fb99CA5653080d6C14fE945Ad68c265C", poolFn: "getPair" },
+
+  { id: "biswap-v2-56", name: "Biswap", chainId: 56, kind: "v2", factory: "0x858E3312ed3A876947EA49d572A7C42DE08af7EE" },
+  { id: "apeswap-v2-56", name: "ApeSwap", chainId: 56, kind: "v2", factory: "0x0841BD0B734E4F5853f0dD8d7Ea041c241fb0Da6" },
+  { id: "apeswap-v2-137", name: "ApeSwap", chainId: 137, kind: "v2", factory: "0xcf083be4164828f00cae704ec15a36d711491284" },
+
+  { id: "hyperswap-v3-999", name: "HyperSwap V3", chainId: 999, kind: "v3", factory: "0xB1c0fa0B789320044A6F623cFe5eBda9562602E3", npm: "0x6eDA206207c09e5428F281761DdC0D300851fBC8", fees: V3_FEES },
+  { id: "hyperswap-v2-999", name: "HyperSwap V2", chainId: 999, kind: "v2", factory: "0x724412C00059bf7d6ee7d4a1d0D5cd4de3ea1C48" },
+
+  { id: "zkswap-v2-324", name: "zkSwap Finance", chainId: 324, kind: "v2", factory: "0x3a76e377ED58c8731F9DF3A36155942438744Ce3" },
+  { id: "zkswap-v3-324", name: "zkSwap V3", chainId: 324, kind: "v3", factory: "0x88ADD6a7e3C221e02f978B388a092c9FD8cd7850", npm: "0xe8A9c651C29469F0DE2CE0506002828A7E683860", fees: V3_FEES },
+
+  { id: "solidlizard-42161", name: "SolidLizard", chainId: 42161, kind: "aero", factory: "0x734d84631f00dC0d3FCD18b04b6cf42BFd407074", poolFn: "getPair" },
 
   { id: "uni-v3-1868", name: "Uniswap V3", chainId: 1868, kind: "v3", factory: "0x42ae7ec7ff020412639d443e245d936429fbe717", npm: "0x56c1205b0244332011c1e866f4ea5384eb6bfa2c", fees: V3_FEES },
 ];
@@ -167,6 +193,10 @@ export const SEED_PAIRS: SeedPair[] = [
   pair(137, WETH_POL, USDC_POL),
   pair(137, WETH_POL, WPOL),
   pair(59144, WETH_LINEA, USDC_LINEA),
+  pair(146, WS, USDC_SONIC),
+  pair(999, WHYPE, USDC_HYPE),
+  pair(324, WETH_ZK, USDC_ZK),
+  pair(324, WETH_ZK, USDCE_ZK),
 ];
 
 export const SOL_SEEDS = [

@@ -224,7 +224,7 @@ export const DEX: Record<number, DexChain> = {
   324: {
     chainId: 324,
     short: "zkSync",
-    usdc: "0x1d17CBcF0D6D143135aE90236593e4A2D3FFA0f0",
+    usdc: "0x1D17CbCF0d6d143135ae90236593E4A2D3ffA0f0",
     usdcDecimals: 6,
     wrapped: "0x5AEa5775959fBC2557Cc8789bC1bf90A239D9a91",
     v3Factory: "0x8FdA5a7a8dCA67BBcDd10F02Fa0649A937215422",
