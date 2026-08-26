@@ -7,7 +7,7 @@ import { CHAINS } from "@ysk-mint/config";
 import { seedToken, isStable } from "../../lib/dexVenues.ts";
 import { readVenuesForPair, weightedPrice, type VenuePool } from "../../lib/dexPools.ts";
 import { usePairSwaps } from "../../lib/usePairSwaps.ts";
-import { fmtUsdc } from "../../lib/defiQuotes.ts";
+import { fmtCompact, fmtUsdc } from "../../lib/defiQuotes.ts";
 import { canonAddr } from "../../lib/pairKey.ts";
 
 function short(a: string) {
@@ -92,6 +92,12 @@ export function PairPage() {
               <p className="me-card-empty">{t("lp.noVenues")}</p>
             ) : (
               <div className="me-list">
+                <div className="me-cols me-cols-5">
+                  <span>{t("lp.venues")}</span>
+                  <span>{t("me.quote")}</span>
+                  <span>{sa?.symbol ?? "A"}</span>
+                  <span>{t("lp.depth")}</span>
+                </div>
                 {venues.map((v) => (
                   <a
                     key={`${v.venue.id}-${v.pool}-${v.feeLabel}`}
@@ -109,9 +115,9 @@ export function PairPage() {
                       </b>
                       <span className="num">{short(v.pool)}</span>
                     </div>
-                    <span className="num me-price">{fmtUsdc(v.priceAinB)}</span>
-                    <span className="num holding-amt">{v.reserveA ? v.reserveA.toLocaleString(undefined, { maximumFractionDigits: 2 }) : "—"}</span>
-                    <span className="num me-value">{v.tvlQuote ? fmtUsdc(v.tvlQuote) : "—"}</span>
+                    <span className="num me-price">{fmtCompact(v.priceAinB)}</span>
+                    <span className="num holding-amt">{v.reserveA ? fmtCompact(v.reserveA) : "—"}</span>
+                    <span className="num me-value">{v.tvlQuote ? fmtCompact(v.tvlQuote) : "—"}</span>
                   </a>
                 ))}
               </div>
@@ -129,20 +135,38 @@ export function PairPage() {
               <p className="me-card-empty">{t("lp.noTrades")}</p>
             ) : (
               <div className="me-list">
-                {swaps.rows.map((s) => (
-                  <div key={s.id} className="me-token me-token-5">
-                    <span className="holding-ico-wrap">
-                      <span className="holding-ico me-oft-mark">{s.side === "buy0" ? "B" : "S"}</span>
-                    </span>
-                    <div className="holding-meta">
-                      <b>{s.venue}</b>
-                      <span className="num">#{s.block.toString()}</span>
+                <div className="me-cols me-cols-5">
+                  <span>{t("lp.trades")}</span>
+                  <span>{sa?.symbol ?? "A"}</span>
+                  <span>{sb?.symbol ?? "B"}</span>
+                  <span />
+                </div>
+                {swaps.rows.map((s) => {
+                  const href = s.tx && chain?.explorer ? `${chain.explorer}/tx/${s.tx}` : undefined;
+                  const inner = (
+                    <>
+                      <span className="holding-ico-wrap">
+                        <span className="holding-ico me-oft-mark">{s.side === "buy0" ? "B" : "S"}</span>
+                      </span>
+                      <div className="holding-meta">
+                        <b>{s.venue}</b>
+                        <span className="num">#{s.block.toString()}</span>
+                      </div>
+                      <span className="num me-price">{fmtCompact(s.amount0)}</span>
+                      <span className="num holding-amt">{fmtCompact(s.amount1)}</span>
+                      <span className="num me-value">{href ? t("lp.open") : ""}</span>
+                    </>
+                  );
+                  return href ? (
+                    <a key={s.id} href={href} target="_blank" rel="noreferrer" className="me-token me-token-5">
+                      {inner}
+                    </a>
+                  ) : (
+                    <div key={s.id} className="me-token me-token-5">
+                      {inner}
                     </div>
-                    <span className="num me-price">{Number(s.amount0).toLocaleString(undefined, { maximumFractionDigits: 4 })}</span>
-                    <span className="num holding-amt">{Number(s.amount1).toLocaleString(undefined, { maximumFractionDigits: 4 })}</span>
-                    <span className="num me-value">{short(s.pool)}</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </section>

@@ -1245,16 +1245,28 @@ button.oft-chain:disabled {
   text-align: left;
 }
 .me-token.me-token-5 {
-  grid-template-columns: 36px minmax(0, 1fr) 88px 100px 100px;
+  grid-template-columns: 36px minmax(0, 1fr) minmax(72px, 0.7fr) minmax(72px, 0.7fr) minmax(72px, 0.7fr);
 }
 .me-price,
-.me-value {
+.me-value,
+.me-token-5 .holding-amt {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 14px;
   font-weight: 700;
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
-.me-token-5 .holding-amt {
-  text-align: right;
+.me-token-5 .holding-meta {
+  min-width: 0;
+}
+.me-token-5 .holding-meta b,
+.me-token-5 .holding-meta span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .me-card-empty {
   margin: 0;
@@ -1304,7 +1316,7 @@ button.oft-chain:disabled {
   letter-spacing: -0.02em;
 }
 .me-token.me-token-5 {
-  grid-template-columns: 36px minmax(0, 1fr) 88px 100px 100px;
+  grid-template-columns: 36px minmax(0, 1fr) minmax(72px, 0.7fr) minmax(72px, 0.7fr) minmax(72px, 0.7fr);
 }
 .me-token-zero {
   opacity: 0.55;
@@ -1695,15 +1707,15 @@ button.oft-chain:disabled {
     width: 100%;
   }
   .me-token.me-token-5 {
-    grid-template-columns: 36px minmax(0, 1fr) 72px 80px;
+    grid-template-columns: 36px minmax(0, 1fr) minmax(56px, 0.8fr) minmax(56px, 0.8fr);
   }
-  .me-price {
+  .me-value {
     display: none;
   }
   .me-cols-5 {
     grid-template-columns: minmax(0, 1fr) 72px 80px;
   }
-  .me-cols-5 span:nth-child(2) {
+  .me-cols-5 span:nth-child(4) {
     display: none;
   }
   .top-nav {

@@ -233,3 +233,15 @@ export function fmtUsdc(n: number | null | undefined) {
   if (n >= 0.01) return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
   return n.toLocaleString(undefined, { maximumFractionDigits: 6 });
 }
+
+export function fmtCompact(n: number | null | undefined) {
+  if (n == null || !Number.isFinite(n)) return "—";
+  const sign = n < 0 ? "-" : "";
+  const abs = Math.abs(n);
+  if (abs >= 1e9) return `${sign}${abs >= 1e12 ? (abs / 1e12).toFixed(2) + "T" : (abs / 1e9).toFixed(2) + "B"}`;
+  if (abs >= 1e6) return `${sign}${(abs / 1e6).toFixed(2)}M`;
+  if (abs >= 1000) return `${sign}${abs.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+  if (abs >= 1) return `${sign}${abs.toLocaleString(undefined, { maximumFractionDigits: 4 })}`;
+  if (abs === 0) return "0";
+  return `${sign}${abs.toLocaleString(undefined, { maximumFractionDigits: 6 })}`;
+}

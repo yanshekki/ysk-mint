@@ -13,9 +13,10 @@ export type SwapRow = {
   id: string;
   venue: string;
   pool: string;
+  tx?: string;
   block: bigint;
-  amount0: string;
-  amount1: string;
+  amount0: number;
+  amount1: number;
   side: string;
 };
 
@@ -51,9 +52,10 @@ export async function fetchSwaps(client: PublicClient, venues: VenuePool[], dec0
           id: `${l.transactionHash}-${l.logIndex}`,
           venue: `${v.venue.name} ${v.feeLabel}`,
           pool: v.pool,
+          tx: l.transactionHash,
           block: l.blockNumber ?? 0n,
-          amount0: formatUnits(a0 < 0n ? -a0 : a0, dec0),
-          amount1: formatUnits(a1 < 0n ? -a1 : a1, dec1),
+          amount0: Number(formatUnits(a0 < 0n ? -a0 : a0, dec0)),
+          amount1: Number(formatUnits(a1 < 0n ? -a1 : a1, dec1)),
           side: a0 < 0n || (a0 === 0n && a1 > 0n) ? "sell0" : "buy0",
         });
       }
