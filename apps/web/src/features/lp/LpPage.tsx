@@ -10,6 +10,8 @@ import { fmtUsdc } from "../../lib/defiQuotes.ts";
 import { chainIcon } from "../../lib/chainIcon.ts";
 import { useNativeWallets } from "../../lib/nativeWallets.ts";
 import { useCardanoHoldings } from "../../lib/useHoldings.ts";
+import { ChipBusy } from "../../shared/ui/LiveDock.tsx";
+import { useLiveStatus } from "../../lib/liveStatus.ts";
 
 function fmtUnlock(ts: number) {
   if (!ts) return "—";
@@ -48,6 +50,9 @@ export function LpPage() {
     cardanoUnits: adaUnitsKey ? adaUnitsKey.split("|") : [],
   });
   const locks = useLpFeed(lockFilter);
+  const marketJobs = useLiveStatus((s) => s.jobs.filter((j) => j.kind === "markets" && j.phase !== "fail"));
+  const reading = marketJobs.find((j) => j.phase === "run") ?? marketJobs[0];
+  const readingShort = featured.find((c) => c.chainId === reading?.chainId)?.short;
 
   return (
     <section className="workspace">
@@ -73,6 +78,7 @@ export function LpPage() {
               >
                 <img src={chainIcon(c)} alt="" width={20} height={20} />
                 {c.short}
+                <ChipBusy chainId={c.chainId} />
               </button>
             ))}
           </div>
@@ -113,7 +119,7 @@ export function LpPage() {
             {markets.error && !markets.rows.length ? (
               <p className="me-card-empty">{t("lp.rpcError")}</p>
             ) : !markets.rows.length && markets.loading ? (
-              <p className="me-card-empty">{t("lp.loading")}</p>
+              <p className="me-card-empty">{readingShort ? t("lp.loadingChain", { chain: readingShort }) : t("lp.loading")}</p>
             ) : !markets.rows.length ? (
               <p className="me-card-empty">{t("lp.emptyMarkets")}</p>
             ) : (
@@ -124,7 +130,7 @@ export function LpPage() {
                   <span>{t("lp.venues")}</span>
                   <span>{t("lp.depth")}</span>
                 </div>
-                {markets.loading ? <p className="me-card-empty">{t("lp.loading")}</p> : null}
+                {markets.loading && readingShort ? <p className="me-card-empty">{t("lp.loadingChain", { chain: readingShort })}</p> : null}
                 {markets.rows.map((r) => (
                   <Link key={r.pairId} to={`/pair/${r.chainId}/${encodeURIComponent(r.tokenA)}/${encodeURIComponent(r.tokenB)}`} className="me-token me-token-5">
                     <span className="holding-ico-wrap">

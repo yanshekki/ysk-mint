@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { trackLive, useLiveStatus } from "./liveStatus.ts";
 import { formatUnits, parseAbiItem, type PublicClient } from "viem";
 import type { VenuePool } from "./dexPools.ts";
 
@@ -66,7 +67,13 @@ export async function fetchSwaps(client: PublicClient, venues: VenuePool[], dec0
   return rows.sort((a, b) => Number(b.block - a.block)).slice(0, 50);
 }
 
-export function usePairSwaps(client: PublicClient | undefined, venues: VenuePool[], dec0: number, dec1: number) {
+export function usePairSwaps(
+  client: PublicClient | undefined,
+  venues: VenuePool[],
+  dec0: number,
+  dec1: number,
+  chainId?: number,
+) {
   const [rows, setRows] = useState<SwapRow[]>([]);
   const [loading, setLoading] = useState(false);
   const key = venues.map((v) => v.pool).join(",");
@@ -80,7 +87,10 @@ export function usePairSwaps(client: PublicClient | undefined, venues: VenuePool
     }
     let cancelled = false;
     setLoading(true);
-    void fetchSwaps(client, list, dec0, dec1)
+    const job = chainId
+      ? trackLive(`trades:${chainId}`, chainId, "trades", () => fetchSwaps(client, list, dec0, dec1))
+      : fetchSwaps(client, list, dec0, dec1);
+    void job
       .then((r) => {
         if (!cancelled) setRows(r);
       })
@@ -89,7 +99,8 @@ export function usePairSwaps(client: PublicClient | undefined, venues: VenuePool
       });
     return () => {
       cancelled = true;
+      if (chainId) useLiveStatus.getState().finish(`trades:${chainId}`, true);
     };
-  }, [client, key, dec0, dec1]);
+  }, [client, key, dec0, dec1, chainId]);
   return { rows, loading };
 }

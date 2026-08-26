@@ -12,6 +12,8 @@ import { useWizard } from "../wizard/store.ts";
 import { useAdaHandle, useEvmName, useSolName } from "../../lib/chainNames.ts";
 import { chainIcon } from "../../lib/chainIcon.ts";
 import { Badge } from "../../shared/ui/TokenRow.tsx";
+import { ChipBusy } from "../../shared/ui/LiveDock.tsx";
+import { trackLive, useLiveStatus } from "../../lib/liveStatus.ts";
 import { TOKEN_CATALOG } from "../../lib/tokenRegistry.ts";
 import { DEX, isLst, SOL_NATIVE_MINT } from "../../lib/defiAddresses.ts";
 import { fmtUsdc, quoteKey, quoteSolMints, type Quote } from "../../lib/defiQuotes.ts";
@@ -260,6 +262,7 @@ export function MePage() {
     [buckets],
   );
   const unstakeLiquid = t("me.unstakeLiquid");
+  const liveJobs = useLiveStatus((s) => s.jobs);
 
   useEffect(() => {
     if (!anyWallet) {
@@ -290,64 +293,87 @@ export function MePage() {
           if (c) clients.set(id, c);
         }
       }
-      await Promise.all(
-        evmRows.map(async (r) => {
-          const client = clients.get(r.chainId!);
-          if (!client) return;
-          const q = await oracleTokenUsdc(client, r.chainId!, r.contract as Address | undefined, rowDecimals(r), r.native).catch(() => null);
-          if (q) next.set(quoteKey(r.chainId!, r.contract, r.native), q);
-        }),
-      );
-      const solMints = funded.filter((r) => r.chainId === 101).map((r) => (r.native ? SOL_NATIVE_MINT : r.contract || ""));
-      const jup = await quoteSolMints(solMints);
-      for (const [mint, q] of jup) next.set(`101:${mint === SOL_NATIVE_MINT ? "native" : mint.toLowerCase()}`, q);
+      const quoteIds = [...new Set(funded.map((r) => r.chainId).filter((id): id is number => id != null))];
+      for (const id of quoteIds) useLiveStatus.getState().start(`quote:${id}`, id, "quote", "wait");
 
-      await Promise.all(
-        funded
-          .filter((r) => r.chainId === 397 || r.chainId === 1815)
-          .map(async (r) => {
-            const q = await oracleTokenUsdc(undefined, r.chainId!, r.contract, rowDecimals(r), r.native).catch(() => null);
-            if (q) next.set(quoteKey(r.chainId!, r.contract, r.native), q);
-          }),
-      );
+      const quoteChain = async (id: number) => {
+        const rows = funded.filter((r) => r.chainId === id);
+        if (!rows.length) {
+          useLiveStatus.getState().finish(`quote:${id}`, true);
+          return;
+        }
+        await trackLive(`quote:${id}`, id, "quote", async () => {
+          if (id === 101) {
+            const solMints = rows.map((r) => (r.native ? SOL_NATIVE_MINT : r.contract || ""));
+            const jup = await quoteSolMints(solMints);
+            for (const [mint, q] of jup) next.set(`101:${mint === SOL_NATIVE_MINT ? "native" : mint.toLowerCase()}`, q);
+            return;
+          }
+          await Promise.all(
+            rows.map(async (r) => {
+              const client = clients.get(id);
+              const q = await oracleTokenUsdc(
+                client,
+                id,
+                r.contract as Address | undefined,
+                rowDecimals(r),
+                r.native,
+              ).catch(() => null);
+              if (q) next.set(quoteKey(id, r.contract, r.native), q);
+            }),
+          );
+        }).catch(() => undefined);
+      };
+      await Promise.all(quoteIds.map(quoteChain));
 
-      const burrowCards = native.nearAccount ? await readBurrow(native.nearAccount).catch(() => null) : null;
+      const extra: StakeLine[] = [];
       const aaveCards: AaveCard[] = [];
       const uniCards: UniCard[] = [];
       const tokens = new Set<string>();
-      if (address) {
-        await Promise.all(
-          [...clients.entries()].map(async ([id, client]) => {
+      let burrowCards: AaveCard | null = null;
+      let benqiCard: AaveCard | null = null;
+      const defiIds = [
+        ...clients.keys(),
+        ...(native.nearAccount ? [397] : []),
+        ...(native.cardanoStake ? [1815] : []),
+        ...(native.solanaAddress ? [101] : []),
+      ];
+      for (const id of defiIds) useLiveStatus.getState().start(`defi:${id}`, id, "defi", "wait");
+
+      await Promise.all(
+        [...new Set(defiIds)].map((id) =>
+          trackLive(`defi:${id}`, id, "defi", async () => {
+            if (id === 397) {
+              burrowCards = native.nearAccount ? await readBurrow(native.nearAccount).catch(() => null) : null;
+              extra.push(...(await readNearStake(native.nearAccount).catch(() => [])));
+              return;
+            }
+            if (id === 1815) {
+              extra.push(...(await readAdaStake(native.cardanoStake).catch(() => [])));
+              return;
+            }
+            if (id === 101) {
+              extra.push(...(await readSolStake(native.solanaAddress, next.get("101:native")?.usdc).catch(() => [])));
+              return;
+            }
+            const client = clients.get(id);
+            if (!client || !address) return;
             const a = await readAave(client, id, address);
             if (a) {
               aaveCards.push(a);
               for (const x of a.aTokens) tokens.add(x);
             }
             uniCards.push(...(await readUniV3(client, id, address)));
-          }),
-        );
-      }
-      const extra: StakeLine[] = [];
-      const ethClient = clients.get(1);
-      const ethUsd = next.get(quoteKey(1, undefined, true))?.usdc ?? next.get("1:native")?.usdc;
-      if (ethClient && address) extra.push(...(await readLidoQueue(ethClient, address, ethUsd).catch(() => [])));
-      if (native.cardanoStake) extra.push(...(await readAdaStake(native.cardanoStake).catch(() => [])));
-      if (native.nearAccount) extra.push(...(await readNearStake(native.nearAccount).catch(() => [])));
-      const solUsd = next.get(`101:native`)?.usdc;
-      if (native.solanaAddress) extra.push(...(await readSolStake(native.solanaAddress, solUsd).catch(() => [])));
-      let benqiCard: AaveCard | null = null;
-      if (address) {
-        await Promise.all(
-          [...clients.entries()].map(async ([id, client]) => {
             extra.push(...(await readPinnedLst(client, id, address, next, unstakeLiquid).catch(() => [])));
-          }),
-        );
-        const avax = clients.get(43114);
-        if (avax) {
-          extra.push(...(await readSavaxUnlocks(avax, address, next.get("43114:native")?.usdc).catch(() => [])));
-          benqiCard = await readBenqiMarkets(avax, address, next).catch(() => null);
-        }
-      }
+            if (id === 1) extra.push(...(await readLidoQueue(client, address, next.get(quoteKey(1, undefined, true))?.usdc ?? next.get("1:native")?.usdc).catch(() => [])));
+            if (id === 43114) {
+              extra.push(...(await readSavaxUnlocks(client, address, next.get("43114:native")?.usdc).catch(() => [])));
+              benqiCard = await readBenqiMarkets(client, address, next).catch(() => null);
+            }
+          }).catch(() => undefined),
+        ),
+      );
+
       if (cancelled) return;
       setQuotes(next);
       setAave(aaveCards);
@@ -359,6 +385,8 @@ export function MePage() {
     })();
     return () => {
       cancelled = true;
+      useLiveStatus.getState().clear("quote:");
+      useLiveStatus.getState().clear("defi:");
     };
   }, [address, anyWallet, holdingsKey, config, native.nearAccount, native.cardanoStake, native.solanaAddress, unstakeLiquid]);
 
@@ -488,6 +516,7 @@ export function MePage() {
                   <button key={g.id} type="button" className={`me-chip ${filter === g.id ? "me-chip-on" : ""}`} onClick={() => setFilter(g.id)}>
                     <img src={g.icon} alt="" width={20} height={20} />
                     {g.label}
+                    <ChipBusy chainId={g.id} />
                     <span className="me-count">{chipCount(g.id)}</span>
                   </button>
                 ))}
@@ -512,6 +541,7 @@ export function MePage() {
                       const q = quotes.get(quoteKey(r.chainId ?? 0, r.contract, r.native));
                       const v = valued(r.raw, rowDecimals(r), q);
                       const loading = buckets.find((g) => g.id === r.chainId)?.loading;
+                      const quoting = liveJobs.some((j) => j.chainId === r.chainId && j.kind === "quote" && j.phase !== "fail");
                       return (
                         <Line
                           key={r.id}
@@ -520,8 +550,8 @@ export function MePage() {
                           title={r.symbol}
                           subtitle={r.native ? r.name || t("wallet.nativeCoin") : `${r.name}${r.contract ? ` · ${short(r.contract)}` : ""}`}
                           amount={loading ? "…" : r.amount}
-                          price={q ? fmtUsdc(q.usdc) : "—"}
-                          value={v == null ? "—" : fmtUsdc(v)}
+                          price={q ? fmtUsdc(q.usdc) : quoting ? "…" : "—"}
+                          value={v == null ? (quoting ? "…" : "—") : fmtUsdc(v)}
                           zero={r.raw === 0n && !loading}
                           href={r.native ? undefined : explorerFor(r.chainId ?? 0, r.contract)}
                         />

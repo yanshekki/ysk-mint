@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useAccount, useBalance, useChainId } from "wagmi";
 import { evmEnabledChains } from "@ysk-mint/config";
 import { ConnectBar } from "../features/wallet/ConnectBar.tsx";
+import { LiveDock } from "../shared/ui/LiveDock.tsx";
 import { useNativeWallets } from "../lib/nativeWallets.ts";
 
 export function Shell() {
@@ -46,6 +47,7 @@ export function Shell() {
       <main className="stage">
         <Outlet />
       </main>
+      <LiveDock />
       <footer className="botbar">
         <span>{t("nav.lp")}</span>
         <span>{t("nav.create")}</span>

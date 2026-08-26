@@ -7,6 +7,7 @@ import { CHAINS } from "@ysk-mint/config";
 import { seedToken, isStable } from "../../lib/dexVenues.ts";
 import { readVenuesForPair, weightedPrice, type VenuePool } from "../../lib/dexPools.ts";
 import { usePairSwaps } from "../../lib/usePairSwaps.ts";
+import { trackLive, useLiveStatus } from "../../lib/liveStatus.ts";
 import { fmtCompact, fmtUsdc } from "../../lib/defiQuotes.ts";
 import { canonAddr } from "../../lib/pairKey.ts";
 import { nearToken, nearVenuesForPair } from "../../lib/nearDex.ts";
@@ -56,7 +57,7 @@ export function PairPage() {
       setClient(c);
       return readVenuesForPair(c, chainId, canonAddr(a), canonAddr(b), sa?.decimals ?? 18, sb?.decimals ?? 18);
     };
-    void run()
+    void trackLive(`pair:${chainId}`, chainId, "markets", run)
       .then((v) => {
         if (!cancelled) setVenues(v);
       })
@@ -68,12 +69,13 @@ export function PairPage() {
       });
     return () => {
       cancelled = true;
+      useLiveStatus.getState().finish(`pair:${chainId}`, true);
     };
   }, [a, b, chain, chainId, sa?.decimals, sb?.decimals]);
 
   const price = useMemo(() => weightedPrice(venues), [venues]);
   const evm = chain?.vm === "evm" || chain?.evm;
-  const swaps = usePairSwaps(evm ? client : undefined, evm ? venues : [], sa?.decimals ?? 18, sb?.decimals ?? 18);
+  const swaps = usePairSwaps(evm ? client : undefined, evm ? venues : [], sa?.decimals ?? 18, sb?.decimals ?? 18, chainId);
   const quoteIsStable = sb ? isStable(sb.symbol) : false;
 
   function venueHref(pool: string) {

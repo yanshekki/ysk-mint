@@ -7,6 +7,7 @@ import { v2FactoryAbi, aeroFactoryAbi, erc20BalAbi, readVenuesForPair, weightedP
 import { discoveredPools, loadEvmMarkets } from "./defi/markets.ts";
 import { marketTokensOn } from "./defi/universe.ts";
 import { mapChunk } from "./defi/cache.ts";
+import { trackLive, useLiveStatus } from "./liveStatus.ts";
 import { pairId, canonAddr, type Addr } from "./pairKey.ts";
 import { nearMyLp } from "./nearDex.ts";
 import { adaMyLp } from "./adaDex.ts";
@@ -174,54 +175,58 @@ export function useDexLp(
       const acc = new Map<string, MyLpRow>();
       if (address) {
         for (const chainId of chainIds) {
-          const client = getPublicClient(config, { chainId });
-          if (!client) continue;
-          const hits = [...(await v2Positions(client, chainId, address)), ...(await v3Positions(client, chainId, address))];
-          for (const h of hits) {
-            const id = pairId(chainId, h.a, h.b);
-            const ma = seedMeta(chainId, h.a);
-            const mb = seedMeta(chainId, h.b);
-            const venues = await readVenuesForPair(client, chainId, h.a, h.b, ma?.decimals ?? 18, mb?.decimals ?? 18).catch(() => []);
-            const names = [...new Set(venues.map((v) => v.venue.name))];
-            const price = weightedPrice(venues);
-            acc.set(id, {
-              pairId: id,
-              chainId,
-              symbolA: ma?.symbol ?? h.a.slice(0, 6),
-              symbolB: mb?.symbol ?? h.b.slice(0, 6),
-              tokenA: h.a,
-              tokenB: h.b,
-              iconA: ma?.icon ?? "/tokens/eth.png",
-              iconB: mb?.icon ?? "/tokens/eth.png",
-              venueCount: names.length || 1,
-              venueNames: names,
-              valueHint: price != null ? String(price) : "—",
-            });
-          }
+          await trackLive(`lp:${chainId}`, chainId, "lp", async () => {
+            const client = getPublicClient(config, { chainId });
+            if (!client) return;
+            const hits = [...(await v2Positions(client, chainId, address)), ...(await v3Positions(client, chainId, address))];
+            for (const h of hits) {
+              const id = pairId(chainId, h.a, h.b);
+              const ma = seedMeta(chainId, h.a);
+              const mb = seedMeta(chainId, h.b);
+              const venues = await readVenuesForPair(client, chainId, h.a, h.b, ma?.decimals ?? 18, mb?.decimals ?? 18).catch(() => []);
+              const names = [...new Set(venues.map((v) => v.venue.name))];
+              const price = weightedPrice(venues);
+              acc.set(id, {
+                pairId: id,
+                chainId,
+                symbolA: ma?.symbol ?? h.a.slice(0, 6),
+                symbolB: mb?.symbol ?? h.b.slice(0, 6),
+                tokenA: h.a,
+                tokenB: h.b,
+                iconA: ma?.icon ?? "/tokens/eth.png",
+                iconB: mb?.icon ?? "/tokens/eth.png",
+                venueCount: names.length || 1,
+                venueNames: names,
+                valueHint: price != null ? String(price) : "—",
+              });
+            }
+          }).catch(() => undefined);
         }
       }
       if (near && (chainFilter === "all" || chainFilter === 397)) {
-        for (const h of await nearMyLp(near).catch(() => [])) {
-          acc.set(h.pairId, h);
-        }
+        await trackLive("lp:397", 397, "lp", async () => {
+          for (const h of await nearMyLp(near).catch(() => [])) acc.set(h.pairId, h);
+        }).catch(() => undefined);
       }
       if (adaKey && (chainFilter === "all" || chainFilter === 1815)) {
-        const units = adaKey.split("|").filter(Boolean);
-        for (const h of await adaMyLp(units).catch(() => [])) {
-          acc.set(h.pairId, {
-            pairId: h.pairId,
-            chainId: h.chainId,
-            symbolA: h.symbolA,
-            symbolB: h.symbolB,
-            tokenA: h.tokenA,
-            tokenB: h.tokenB,
-            iconA: h.iconA,
-            iconB: h.iconB,
-            venueCount: h.venueNames.length || 1,
-            venueNames: h.venueNames,
-            valueHint: "—",
-          });
-        }
+        await trackLive("lp:1815", 1815, "lp", async () => {
+          const units = adaKey.split("|").filter(Boolean);
+          for (const h of await adaMyLp(units).catch(() => [])) {
+            acc.set(h.pairId, {
+              pairId: h.pairId,
+              chainId: h.chainId,
+              symbolA: h.symbolA,
+              symbolB: h.symbolB,
+              tokenA: h.tokenA,
+              tokenB: h.tokenB,
+              iconA: h.iconA,
+              iconB: h.iconB,
+              venueCount: h.venueNames.length || 1,
+              venueNames: h.venueNames,
+              valueHint: "—",
+            });
+          }
+        }).catch(() => undefined);
       }
       if (!cancelled) {
         setRows([...acc.values()]);
@@ -230,6 +235,7 @@ export function useDexLp(
     })();
     return () => {
       cancelled = true;
+      useLiveStatus.getState().clear("lp:");
     };
   }, [address, chainFilter, config, near, adaKey]);
 

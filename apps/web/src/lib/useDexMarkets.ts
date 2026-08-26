@@ -5,6 +5,7 @@ import { loadEvmMarkets } from "./defi/markets.ts";
 import { ensureProtocols } from "./defi/protocols.ts";
 import { protocolsOn } from "./defi/registry.ts";
 import type { MarketRow as DefiMarket, VenueQuote } from "./defi/types.ts";
+import { useLiveStatus } from "./liveStatus.ts";
 
 export type MarketRow = {
   pairId: string;
@@ -87,6 +88,8 @@ export function useDexMarkets(chainId: number | "all") {
             .filter((c) => !c.testnet)
             .map((c) => c.chainId)
         : [chainId];
+    const live = useLiveStatus.getState();
+    for (const id of ids) live.start(`markets:${id}`, id, "markets", "wait");
     void (async () => {
       try {
         const evmIds = ids.filter((id) => ![101, 397, 1815, 398, 18151, 103].includes(id));
@@ -98,23 +101,29 @@ export function useDexMarkets(chainId: number | "all") {
           acc.push(...part);
           setRows(sortMarkets([...acc]));
         };
+        const one = async (id: number, fn: () => Promise<MarketRow[]>) => {
+          useLiveStatus.getState().run(`markets:${id}`);
+          try {
+            const part = await fn();
+            if (!cancelled) push(part);
+            useLiveStatus.getState().finish(`markets:${id}`, true);
+          } catch {
+            useLiveStatus.getState().finish(`markets:${id}`, false);
+          }
+        };
         jobs.push(
           mapLimit(evmIds, 2, async (id) => {
-            const part = await loadEvm(id).catch(() => []);
-            push(part);
+            await one(id, () => loadEvm(id));
           }),
         );
         for (const id of nativeIds) {
           jobs.push(
-            Promise.all(protocolsOn(id).map((p) => p.markets?.({}).catch(() => []) ?? Promise.resolve([])))
-              .then((parts) => {
-                const mapped: MarketRow[] = parts.flat().map((r) => ({
-                  ...r,
-                  venues: [],
-                }));
-                push(mapped);
-              })
-              .catch(() => undefined),
+            one(id, async () => {
+              const parts = await Promise.all(
+                protocolsOn(id).map((p) => p.markets?.({}).catch(() => []) ?? Promise.resolve([])),
+              );
+              return parts.flat().map((r) => ({ ...r, venues: [] }));
+            }),
           );
         }
         await Promise.all(jobs);
@@ -126,10 +135,12 @@ export function useDexMarkets(chainId: number | "all") {
         }
       } finally {
         if (!cancelled) setLoading(false);
+        useLiveStatus.getState().clear("markets:");
       }
     })();
     return () => {
       cancelled = true;
+      useLiveStatus.getState().clear("markets:");
     };
   }, [chainId]);
 

@@ -3,6 +3,19 @@
     "name": "ysk-mint",
     "tagline": "Guided multi-chain token launch. Native OFT. LP + lock. On-chain data only."
   },
+  "live": {
+    "title": "Live data",
+    "fail": "Failed",
+    "left": "{{n}} chains left",
+    "kind": {
+      "markets": "markets",
+      "holdings": "holdings",
+      "quote": "quotes",
+      "lp": "liquidity",
+      "trades": "trades",
+      "defi": "protocol"
+    }
+  },
   "nav": {
     "home": "Markets",
     "lp": "Markets",
@@ -19,6 +32,7 @@
     "all": "All",
     "testnets": "Testnets",
     "loading": "Reading on-chain data…",
+    "loadingChain": "Reading {{chain}}…",
     "rpcError": "RPC read failed. No synthetic rows.",
     "empty": "No LP yet",
     "emptyAll": "No locked LP on any chain yet",

@@ -3,6 +3,19 @@
     "name": "ysk-mint",
     "tagline": "引導式多鏈發幣。原生 OFT。建立並鎖定 LP。只讀鏈上數據。"
   },
+  "live": {
+    "title": "即時數據",
+    "fail": "失敗",
+    "left": "尚餘 {{n}} 條鏈",
+    "kind": {
+      "markets": "市場",
+      "holdings": "持倉",
+      "quote": "報價",
+      "lp": "流動倉",
+      "trades": "成交",
+      "defi": "協議倉"
+    }
+  },
   "nav": {
     "home": "市場",
     "lp": "市場",
@@ -19,6 +32,7 @@
     "all": "全部",
     "testnets": "測試網",
     "loading": "正在讀取鏈上資料…",
+    "loadingChain": "正在讀 {{chain}}…",
     "rpcError": "RPC 讀取失敗。無造假資料。",
     "empty": "暫無 LP",
     "emptyAll": "所有鏈均未有已鎖定 LP",

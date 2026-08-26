@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { syncLiveFlag, useLiveStatus } from "./liveStatus.ts";
 import { erc20Abi, formatUnits, type Address } from "viem";
 import { useBalance, useReadContracts } from "wagmi";
 import { readCardanoValue, stakeFromPayment } from "./cardanoCip30.ts";
@@ -116,6 +117,19 @@ export function useEvmHoldings(address: Address | undefined) {
 
   const funded = rows.filter((r) => r.raw > 0n).length;
   const loading = eth.isLoading || base.isLoading || arb.isLoading || bnb.isLoading || avax.isLoading || erc.isLoading;
+  useEffect(() => {
+    const flags: Array<[number, boolean]> = [
+      [1, connected && (eth.isLoading || erc.isLoading)],
+      [8453, connected && (base.isLoading || erc.isLoading)],
+      [42161, connected && (arb.isLoading || erc.isLoading)],
+      [56, connected && (bnb.isLoading || erc.isLoading)],
+      [43114, connected && (avax.isLoading || erc.isLoading)],
+    ];
+    for (const [id, on] of flags) syncLiveFlag(`holdings:${id}`, id, "holdings", on);
+    return () => {
+      for (const [id] of flags) useLiveStatus.getState().finish(`holdings:${id}`, true);
+    };
+  }, [connected, eth.isLoading, base.isLoading, arb.isLoading, bnb.isLoading, avax.isLoading, erc.isLoading]);
   return { rows, funded, loading, catalogSize: catalog.length };
 }
 
@@ -170,6 +184,11 @@ export function useNearHoldings(account: string) {
       cancelled = true;
     };
   }, [account, catalog]);
+
+  useEffect(() => {
+    syncLiveFlag("holdings:397", 397, "holdings", Boolean(account) && loading);
+    return () => useLiveStatus.getState().finish("holdings:397", true);
+  }, [account, loading]);
 
   const rows = useMemo(
     () => sortHoldings(catalog.map((t) => row(t, connected ? (balances[t.id] ?? 0n) : null, connected)), connected),
@@ -322,6 +341,10 @@ export function useCardanoHoldings(
   }, [address, addrKey, catalog, stake]);
 
   const funded = rows.filter((r) => r.raw > 0n).length;
+  useEffect(() => {
+    syncLiveFlag("holdings:1815", 1815, "holdings", Boolean(address) && loading);
+    return () => useLiveStatus.getState().finish("holdings:1815", true);
+  }, [address, loading]);
   return { rows, funded, loading, catalogSize: catalog.length };
 }
 
@@ -472,6 +495,10 @@ export function useSolanaHoldings(address: string) {
   }, [address, catalog]);
 
   const funded = rows.filter((r) => r.raw > 0n).length;
+  useEffect(() => {
+    syncLiveFlag("holdings:101", 101, "holdings", Boolean(address) && loading);
+    return () => useLiveStatus.getState().finish("holdings:101", true);
+  }, [address, loading]);
   return { rows, funded, loading, catalogSize: catalog.length };
 }
 

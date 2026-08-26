@@ -1926,3 +1926,91 @@ button.oft-chain:disabled {
   font-weight: 600;
   color: var(--text-sub);
 }
+
+.live-dock {
+  position: fixed;
+  right: 20px;
+  bottom: 64px;
+  z-index: 60;
+  min-width: 220px;
+  max-width: min(320px, calc(100vw - 32px));
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-white);
+  box-shadow: 0 10px 32px rgba(15, 23, 42, 0.12);
+}
+.live-dock-title {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.live-dock-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+.live-dock-list li {
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+.live-dock-list img {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+.live-dock-list em {
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ef4444;
+}
+.live-dock-fail span {
+  color: var(--text-sub);
+}
+.live-dock-more {
+  margin: 8px 0 0;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--text-muted);
+}
+.live-dock-dot {
+  width: 8px;
+  height: 8px;
+  margin: 5px;
+  border-radius: 999px;
+  background: var(--brand-blue);
+}
+.live-spin {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--brand-blue);
+  border-right-color: transparent;
+  border-radius: 999px;
+  animation: live-rot 0.7s linear infinite;
+}
+.live-spin-chip {
+  width: 10px;
+  height: 10px;
+  margin-left: 2px;
+}
+.me-chip-on .live-spin {
+  border-color: #fff;
+  border-right-color: transparent;
+}
+@keyframes live-rot {
+  to {
+    transform: rotate(360deg);
+  }
+}
