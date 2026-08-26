@@ -30,3 +30,9 @@ export async function mapChunk<T, R>(items: T[], size: number, fn: (item: T) => 
   }
   return out;
 }
+
+export async function forChunks<T>(items: T[], size: number, fn: (chunk: T[]) => Promise<void>) {
+  for (let i = 0; i < items.length; i += size) {
+    await fn(items.slice(i, i + size));
+  }
+}

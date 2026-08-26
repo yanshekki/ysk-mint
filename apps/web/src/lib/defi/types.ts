@@ -67,6 +67,10 @@ export type DefiProtocol = {
   chainId: number;
   caps: DefiCap[];
   discover?(ctx: DefiCtx, tokenA: TokenRef, tokenB: TokenRef): Promise<PoolRef[]>;
+  discoverMany?(
+    ctx: DefiCtx,
+    pairs: Array<{ a: TokenRef; b: TokenRef }>,
+  ): Promise<Array<{ a: TokenRef; b: TokenRef; refs: PoolRef[] }>>;
   readPool?(ctx: DefiCtx, ref: PoolRef, tokenA: TokenRef, tokenB: TokenRef): Promise<VenueQuote | null>;
   quoteUsd?(ctx: DefiCtx, token: TokenRef): Promise<Quote | null>;
   markets?(ctx: DefiCtx): Promise<MarketRow[]>;

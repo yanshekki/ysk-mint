@@ -1,6 +1,7 @@
 import { formatUnits, type Address } from "viem";
 import { canonAddr } from "../../pairKey.ts";
 import type { Venue } from "../../dexVenues.ts";
+import { forChunks } from "../cache.ts";
 import type { DefiProtocol, PoolRef, TokenRef, VenueQuote } from "../types.ts";
 import { v2FactoryAbi, v2PairAbi } from "./abis.ts";
 import { ZERO } from "./math.ts";
@@ -35,6 +36,47 @@ export function makeV2(venue: Venue): DefiProtocol {
       } catch {
         return [];
       }
+    },
+    async discoverMany(ctx, pairs) {
+      const client = ctx.evm;
+      if (!client || !pairs.length) return [];
+      const hits: Array<{ a: TokenRef; b: TokenRef; refs: PoolRef[] }> = [];
+      await forChunks(pairs, 80, async (chunk) => {
+        try {
+          const res = await client.multicall({
+            contracts: chunk.map((p) => ({
+              address: venue.factory,
+              abi: v2FactoryAbi,
+              functionName: "getPair" as const,
+              args: [p.a.address as Address, p.b.address as Address],
+            })),
+            allowFailure: true,
+          });
+          res.forEach((r, i) => {
+            if (r.status !== "success") return;
+            const pool = r.result as Address;
+            if (!pool || pool === ZERO) return;
+            const p = chunk[i];
+            hits.push({
+              a: p.a,
+              b: p.b,
+              refs: [
+                {
+                  protocolId: venue.id,
+                  chainId: venue.chainId,
+                  pool,
+                  tokenA: p.a.address,
+                  tokenB: p.b.address,
+                  feeLabel: "0.30%",
+                },
+              ],
+            });
+          });
+        } catch {
+          /* batch miss */
+        }
+      });
+      return hits;
     },
     async readPool(ctx, ref, tokenA, tokenB) {
       return readV2Pool(ctx, venue, ref, tokenA, tokenB, "v2");

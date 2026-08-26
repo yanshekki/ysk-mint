@@ -1,7 +1,8 @@
 import { formatUnits, type Address } from "viem";
 import { canonAddr } from "../../pairKey.ts";
 import type { Venue } from "../../dexVenues.ts";
-import type { DefiProtocol, TokenRef, VenueQuote } from "../types.ts";
+import { forChunks } from "../cache.ts";
+import type { DefiProtocol, PoolRef, TokenRef, VenueQuote } from "../types.ts";
 import { erc20BalAbi, v3FactoryAbi, v3PoolAbi } from "./abis.ts";
 import { ZERO, priceFromSqrtPriceX96 } from "./math.ts";
 
@@ -44,6 +45,47 @@ export function makeV3(venue: Venue): DefiProtocol {
       } catch {
         return [];
       }
+    },
+    async discoverMany(ctx, pairs) {
+      const client = ctx.evm;
+      if (!client || !pairs.length) return [];
+      type Job = { a: TokenRef; b: TokenRef; fee: number };
+      const jobs: Job[] = pairs.flatMap((p) => fees.map((fee) => ({ a: p.a, b: p.b, fee })));
+      const grouped = new Map<string, { a: TokenRef; b: TokenRef; refs: PoolRef[] }>();
+      await forChunks(jobs, 80, async (chunk) => {
+        try {
+          const res = await client.multicall({
+            contracts: chunk.map((j) => ({
+              address: venue.factory,
+              abi: v3FactoryAbi,
+              functionName: "getPool" as const,
+              args: [j.a.address as Address, j.b.address as Address, j.fee],
+            })),
+            allowFailure: true,
+          });
+          res.forEach((r, i) => {
+            if (r.status !== "success") return;
+            const pool = r.result as Address;
+            if (!pool || pool === ZERO) return;
+            const j = chunk[i];
+            const key = `${j.a.address.toLowerCase()}:${j.b.address.toLowerCase()}`;
+            const row = grouped.get(key) ?? { a: j.a, b: j.b, refs: [] };
+            row.refs.push({
+              protocolId: venue.id,
+              chainId: venue.chainId,
+              pool,
+              tokenA: j.a.address,
+              tokenB: j.b.address,
+              feeLabel: `${j.fee / 10000}%`,
+              extra: { fee: j.fee },
+            });
+            grouped.set(key, row);
+          });
+        } catch {
+          /* batch miss */
+        }
+      });
+      return [...grouped.values()];
     },
     async readPool(ctx, ref, tokenA, tokenB) {
       return readV3Pool(ctx, venue, ref.pool, tokenA, tokenB, ref.feeLabel);

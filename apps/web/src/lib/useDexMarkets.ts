@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
-import { createPublicClient, http } from "viem";
-import { CHAINS, featuredChains } from "@ysk-mint/config";
-import { SEED_PAIRS, isStable } from "./dexVenues.ts";
-import { readVenuesForPair, type VenuePool } from "./dexPools.ts";
-import { pairId } from "./pairKey.ts";
-import { quoteUsd } from "./defi/quote.ts";
+import { featuredChains } from "@ysk-mint/config";
+import { type VenuePool } from "./dexPools.ts";
+import { loadEvmMarkets } from "./defi/markets.ts";
 import { ensureProtocols } from "./defi/protocols.ts";
 import { protocolsOn } from "./defi/registry.ts";
+import type { MarketRow as DefiMarket, VenueQuote } from "./defi/types.ts";
 
 export type MarketRow = {
   pairId: string;
@@ -24,52 +22,42 @@ export type MarketRow = {
   venueNames: string[];
 };
 
-function explorerChain(chainId: number) {
-  return Object.values(CHAINS).find((c) => c.chainId === chainId);
+function toPools(venues: VenueQuote[]): VenuePool[] {
+  return venues.map((q) => ({
+    venue: {
+      id: q.protocolId,
+      name: q.protocolName,
+      chainId: q.chainId,
+      kind: q.kind === "aero" ? "aero" : q.kind === "v3" ? "v3" : "v2",
+      factory: "0x0000000000000000000000000000000000000000",
+    },
+    pool: q.pool,
+    feeLabel: q.feeLabel,
+    priceAinB: q.priceAinB,
+    tvlQuote: q.tvlQuote,
+    reserveA: q.reserveA,
+    reserveB: q.reserveB,
+  }));
 }
 
-const RPC_FALLBACK: Record<number, string> = {
-  1: "https://ethereum-rpc.publicnode.com",
-  8453: "https://base.publicnode.com",
-  42161: "https://arbitrum-one-rpc.publicnode.com",
-  56: "https://bsc-rpc.publicnode.com",
-  43114: "https://avalanche-c-chain-rpc.publicnode.com",
-};
+function asRow(r: DefiMarket): MarketRow {
+  return { ...r, venues: toPools(r.venues) };
+}
 
 async function loadEvm(chainId: number): Promise<MarketRow[]> {
-  const chain = explorerChain(chainId);
-  if (!chain?.rpc) return [];
-  const url = RPC_FALLBACK[chainId] ?? chain.rpc;
-  const client = createPublicClient({ transport: http(url) });
-  const seeds = SEED_PAIRS.filter((p) => p.chainId === chainId);
-  const rows: MarketRow[] = [];
-  await Promise.all(
-    seeds.map(async (s) => {
-      const venues = await readVenuesForPair(client, chainId, s.a.address, s.b.address, s.a.decimals, s.b.decimals).catch(
-        () => [] as VenuePool[],
-      );
-      if (!venues.length) return;
-      const usd = await quoteUsd({ evm: client }, chainId, s.a.address, s.a.decimals, false).catch(() => null);
-      const names = [...new Set(venues.map((v) => v.venue.name))];
-      const depth = venues.reduce((n, v) => n + v.tvlQuote, 0);
-      rows.push({
-        pairId: pairId(chainId, s.a.address, s.b.address),
-        chainId,
-        chainShort: chain.short,
-        symbolA: s.a.symbol,
-        symbolB: s.b.symbol,
-        iconA: s.a.icon,
-        iconB: s.b.icon,
-        tokenA: s.a.address,
-        tokenB: s.b.address,
-        venues,
-        price: usd?.usdc ?? (isStable(s.a.symbol) ? 1 : null),
-        depth: usd?.depth ?? depth,
-        venueNames: names,
-      });
-    }),
-  );
-  return rows;
+  const rows = await loadEvmMarkets(chainId).catch(() => []);
+  return rows.map(asRow);
+}
+
+async function mapLimit<T>(ids: T[], n: number, fn: (id: T) => Promise<void>) {
+  let i = 0;
+  const workers = Array.from({ length: Math.min(n, ids.length) }, async () => {
+    while (i < ids.length) {
+      const id = ids[i++];
+      await fn(id);
+    }
+  });
+  await Promise.all(workers);
 }
 
 function sortMarkets(rows: MarketRow[]) {
@@ -110,13 +98,12 @@ export function useDexMarkets(chainId: number | "all") {
           acc.push(...part);
           setRows(sortMarkets([...acc]));
         };
-        for (const id of evmIds) {
-          jobs.push(
-            loadEvm(id)
-              .then(push)
-              .catch(() => undefined),
-          );
-        }
+        jobs.push(
+          mapLimit(evmIds, 2, async (id) => {
+            const part = await loadEvm(id).catch(() => []);
+            push(part);
+          }),
+        );
         for (const id of nativeIds) {
           jobs.push(
             Promise.all(protocolsOn(id).map((p) => p.markets?.({}).catch(() => []) ?? Promise.resolve([])))

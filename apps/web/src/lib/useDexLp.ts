@@ -4,6 +4,9 @@ import { getPublicClient } from "wagmi/actions";
 import { useConfig } from "wagmi";
 import { venuesOn, SEED_PAIRS } from "./dexVenues.ts";
 import { v2FactoryAbi, aeroFactoryAbi, erc20BalAbi, readVenuesForPair, weightedPrice } from "./dexPools.ts";
+import { discoveredPools, loadEvmMarkets } from "./defi/markets.ts";
+import { marketTokensOn } from "./defi/universe.ts";
+import { mapChunk } from "./defi/cache.ts";
 import { pairId, canonAddr, type Addr } from "./pairKey.ts";
 import { nearMyLp } from "./nearDex.ts";
 import { adaMyLp } from "./adaDex.ts";
@@ -52,23 +55,47 @@ function seedMeta(chainId: number, token: string) {
     if (p.a.address.toLowerCase() === a) return p.a;
     if (p.b.address.toLowerCase() === a) return p.b;
   }
+  const hit = marketTokensOn(chainId).find((t) => t.address.toLowerCase() === a);
+  if (hit) return { address: hit.address as Addr, symbol: hit.symbol ?? hit.address.slice(0, 6), decimals: hit.decimals, icon: hit.icon };
   return undefined;
 }
 
 async function v2Positions(client: PublicClient, chainId: number, user: Address) {
   const found: Array<{ a: Addr; b: Addr }> = [];
-  const seeds = SEED_PAIRS.filter((p) => p.chainId === chainId);
-  for (const venue of venuesOn(chainId).filter((v) => v.kind === "v2" || v.kind === "aero")) {
-    for (const s of seeds) {
+  await loadEvmMarkets(chainId).catch(() => []);
+  const pools = discoveredPools(chainId);
+  const seen = new Set<string>();
+  if (pools.length) {
+    await mapChunk(pools, 40, async (p) => {
+      const id = p.pool.toLowerCase();
+      if (seen.has(id)) return null;
+      seen.add(id);
       try {
-        const pools: Address[] = [];
+        const bal = await client.readContract({
+          address: p.pool as Address,
+          abi: erc20BalAbi,
+          functionName: "balanceOf",
+          args: [user],
+        });
+        if (bal > 0n) found.push({ a: p.tokenA as Addr, b: p.tokenB as Addr });
+      } catch {
+        /* skip */
+      }
+      return null;
+    });
+    return found;
+  }
+  for (const venue of venuesOn(chainId).filter((v) => v.kind === "v2" || v.kind === "aero")) {
+    for (const s of SEED_PAIRS.filter((p) => p.chainId === chainId)) {
+      try {
+        const addrs: Address[] = [];
         if (venue.kind === "aero") {
           const [vol, st] = await Promise.all([
             client.readContract({ address: venue.factory, abi: aeroFactoryAbi, functionName: "getPool", args: [s.a.address, s.b.address, false] }),
             client.readContract({ address: venue.factory, abi: aeroFactoryAbi, functionName: "getPool", args: [s.a.address, s.b.address, true] }),
           ]);
-          if (vol && vol !== ZERO) pools.push(vol);
-          if (st && st !== ZERO) pools.push(st);
+          if (vol && vol !== ZERO) addrs.push(vol);
+          if (st && st !== ZERO) addrs.push(st);
         } else {
           const pool = await client.readContract({
             address: venue.factory,
@@ -76,9 +103,9 @@ async function v2Positions(client: PublicClient, chainId: number, user: Address)
             functionName: "getPair",
             args: [s.a.address, s.b.address],
           });
-          if (pool && pool !== ZERO) pools.push(pool);
+          if (pool && pool !== ZERO) addrs.push(pool);
         }
-        for (const pool of pools) {
+        for (const pool of addrs) {
           const bal = await client.readContract({ address: pool, abi: erc20BalAbi, functionName: "balanceOf", args: [user] });
           if (bal > 0n) found.push({ a: s.a.address, b: s.b.address });
         }
