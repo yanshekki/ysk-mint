@@ -18,6 +18,13 @@ export const router = createBrowserRouter([
         },
       },
       {
+        path: "pair/:chainId/:tokenA/:tokenB",
+        lazy: async () => {
+          const { PairPage } = await import("../features/lp/PairPage.tsx");
+          return { Component: PairPage };
+        },
+      },
+      {
         path: "token/:chainId/:address",
         lazy: async () => {
           const { TokenPage } = await import("../features/token/TokenPage.tsx");

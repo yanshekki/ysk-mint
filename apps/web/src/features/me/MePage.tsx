@@ -14,7 +14,8 @@ import { chainIcon } from "../../lib/chainIcon.ts";
 import { Badge } from "../../shared/ui/TokenRow.tsx";
 import { TOKEN_CATALOG } from "../../lib/tokenRegistry.ts";
 import { DEX, isLst, SOL_NATIVE_MINT } from "../../lib/defiAddresses.ts";
-import { fmtUsdc, quoteEvmToken, quoteKey, quoteSolMints, type Quote } from "../../lib/defiQuotes.ts";
+import { fmtUsdc, quoteKey, quoteSolMints, type Quote } from "../../lib/defiQuotes.ts";
+import { oracleTokenUsdc } from "../../lib/oracle.ts";
 import { readAave, readUniV3, stakingLines, type AaveCard, type UniCard } from "../../lib/defiPositions.ts";
 
 const launchEvent = parseAbiItem(
@@ -250,7 +251,7 @@ export function MePage() {
         evmRows.map(async (r) => {
           const client = clients.get(r.chainId!);
           if (!client) return;
-          const q = await quoteEvmToken(client, r.chainId!, r.contract as Address | undefined, rowDecimals(r), r.native).catch(() => null);
+          const q = await oracleTokenUsdc(client, r.chainId!, r.contract as Address | undefined, rowDecimals(r), r.native).catch(() => null);
           if (q) next.set(quoteKey(r.chainId!, r.contract, r.native), q);
         }),
       );
