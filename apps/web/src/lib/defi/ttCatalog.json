@@ -878,7 +878,7 @@
       "name": "Morpho",
       "sector": "lending",
       "family": "morpho-blue",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         "evm"
       ],
@@ -889,7 +889,7 @@
       "name": "Spark",
       "sector": "lending",
       "family": "aave-v3",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         1,
         8453
@@ -934,7 +934,7 @@
       "name": "Compound",
       "sector": "lending",
       "family": "compound-v3",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         1
       ],
@@ -945,7 +945,7 @@
       "name": "Venus",
       "sector": "lending",
       "family": "compound-v2",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         56
       ],
@@ -979,7 +979,7 @@
       "name": "Moonwell",
       "sector": "lending",
       "family": "compound-v2",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         8453,
         10
@@ -1014,7 +1014,7 @@
       "name": "Euler",
       "sector": "lending",
       "family": "euler-v2",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         "evm"
       ],

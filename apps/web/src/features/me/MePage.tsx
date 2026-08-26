@@ -38,6 +38,7 @@ import { DEX, isLst, SOL_NATIVE_MINT } from "../../lib/defiAddresses.ts";
 import { fmtUsdc, quoteKey, quoteSolMints, type Quote } from "../../lib/defiQuotes.ts";
 import { oracleTokenUsdc } from "../../lib/oracle.ts";
 import { readAave, readUniV3, type AaveCard, type ProtocolLine, type UniCard } from "../../lib/defiPositions.ts";
+import { readExtraLending, type LendCard } from "../../lib/lendingExtra.ts";
 import { SortHead, useSort, type SortDir } from "../../shared/ui/SortTable.tsx";
 import { readBurrow } from "../../lib/nearDex.ts";
 import {
@@ -215,6 +216,7 @@ export function MePage() {
   const [aave, setAave] = useState<AaveCard[]>([]);
   const [burrow, setBurrow] = useState<AaveCard[]>([]);
   const [benqi, setBenqi] = useState<AaveCard[]>([]);
+  const [lendExtra, setLendExtra] = useState<LendCard[]>([]);
   const [uni, setUni] = useState<UniCard[]>([]);
   const [aTokens, setATokens] = useState<Set<string>>(new Set());
   const [stakeExtra, setStakeExtra] = useState<StakeLine[]>([]);
@@ -448,6 +450,7 @@ export function MePage() {
       setAave([]);
       setBurrow([]);
       setBenqi([]);
+      setLendExtra([]);
       setUni([]);
       setATokens(new Set());
       setStakeExtra([]);
@@ -466,7 +469,7 @@ export function MePage() {
         if (c) clients.set(id, c);
       }
       if (address) {
-        for (const id of [1, 8453, 42161, 56, 43114]) {
+        for (const id of [1, 8453, 42161, 56, 43114, 10, 137]) {
           if (clients.has(id)) continue;
           const c = getPublicClient(config, { chainId: id });
           if (c) clients.set(id, c);
@@ -508,6 +511,7 @@ export function MePage() {
       const extra: StakeLine[] = [];
       const aaveCards: AaveCard[] = [];
       const uniCards: UniCard[] = [];
+      const lendCards: LendCard[] = [];
       const tokens = new Set<string>();
       let burrowCards: AaveCard | null = null;
       let benqiCard: AaveCard | null = null;
@@ -538,6 +542,11 @@ export function MePage() {
               for (const x of a.aTokens) tokens.add(x);
             }
             uniCards.push(...(await readUniV3(client, id, address)));
+            const more = await readExtraLending(client, id, address, next).catch(() => []);
+            for (const card of more) {
+              lendCards.push(card);
+              for (const x of card.aTokens) tokens.add(x);
+            }
             extra.push(...(await readPinnedLst(client, id, address, next, unstakeLiquid).catch(() => [])));
             if (id === 1) extra.push(...(await readLidoQueue(client, address, next.get(quoteKey(1, undefined, true))?.usdc ?? next.get("1:native")?.usdc).catch(() => [])));
             if (id === 43114) {
@@ -553,6 +562,7 @@ export function MePage() {
       setAave(aaveCards);
       setBurrow(burrowCards ? [burrowCards] : []);
       setBenqi(benqiCard ? [benqiCard] : []);
+      setLendExtra(lendCards);
       setUni(uniCards);
       setATokens(tokens);
       setStakeExtra(extra);
@@ -631,6 +641,7 @@ export function MePage() {
   const burrowCards = filter === "all" ? burrow : burrow.filter((c) => c.chainId === filter);
   const benqiCards = filter === "all" ? benqi : benqi.filter((c) => c.chainId === filter);
   const uniCards = filter === "all" ? uni : uni.filter((c) => c.chainId === filter);
+  const extraLendCards = filter === "all" ? lendExtra : lendExtra.filter((c) => c.chainId === filter);
   const visibleLaunched = filter === "all" ? launched : launched.filter((r) => r.chainId === filter);
   const launchedGet = useCallback((r: LaunchRow, k: string) => (k === "name" ? r.symbol : r.chain), []);
   const launchedSort = useSort(visibleLaunched, "name", launchedGet, "asc");
@@ -644,6 +655,7 @@ export function MePage() {
   for (const c of burrowCards) for (const l of c.lines) allValues.push(l.valueUsdc ?? null);
   for (const c of benqiCards) for (const l of c.lines) allValues.push(l.valueUsdc ?? null);
   for (const c of uniCards) for (const l of c.lines) allValues.push(l.valueUsdc ?? null);
+  for (const c of extraLendCards) for (const l of c.lines) allValues.push(l.valueUsdc ?? null);
   for (const l of stake) {
     if (l.inWallet && !isLst(l.chainId, l.contract)) continue;
     allValues.push(l.valueUsdc ?? null);
@@ -659,8 +671,9 @@ export function MePage() {
     const nBurrow = (id === "all" ? burrow : burrow.filter((c) => c.chainId === id)).reduce((n, c) => n + c.lines.length, 0);
     const nBenqi = (id === "all" ? benqi : benqi.filter((c) => c.chainId === id)).reduce((n, c) => n + c.lines.length, 0);
     const nUni = (id === "all" ? uni : uni.filter((c) => c.chainId === id)).reduce((n, c) => n + c.lines.length, 0);
+    const nLend = (id === "all" ? lendExtra : lendExtra.filter((c) => c.chainId === id)).reduce((n, c) => n + c.lines.length, 0);
     const nStake = id === "all" ? stakeAll.length : stakeAll.filter((l) => l.chainId === id).length;
-    return nWallet + nAave + nBurrow + nBenqi + nUni + nStake;
+    return nWallet + nAave + nBurrow + nBenqi + nUni + nLend + nStake;
   };
 
   return (
@@ -915,6 +928,35 @@ export function MePage() {
                         tag={l.chain}
                         title={l.symbol}
                         subtitle={l.side === "borrow" ? t("me.borrowed") : l.side === "lp" ? l.extra ?? t("me.staking") : t("me.supplied")}
+                        amount={l.amount}
+                        price={l.quote ? fmtUsdc(l.quote.usdc) : "—"}
+                        value={l.valueUsdc == null ? "—" : fmtUsdc(l.valueUsdc)}
+                        href={explorerFor(l.chainId, l.contract)}
+                      />
+                    )}
+                  />
+                </section>
+              ))}
+
+              {extraLendCards.map((c) => (
+                <section key={`lend-${c.protocol}-${c.chainId}`} className="me-card">
+                  <div className="me-card-head">
+                    <b>
+                      {c.protocol} · {c.chain}
+                    </b>
+                    <span className="me-count">
+                      {c.health !== "—" ? `${t("me.health")} ${c.health}` : fmtUsdc(c.lines.reduce((n, l) => n + (l.valueUsdc ?? 0), 0))}
+                    </span>
+                  </div>
+                  <ProtocolTable
+                    lines={c.lines}
+                    render={(l) => (
+                      <Line
+                        key={l.id}
+                        icon={l.icon}
+                        tag={l.chain}
+                        title={l.symbol}
+                        subtitle={l.side === "borrow" ? t("me.borrowed") : t("me.supplied")}
                         amount={l.amount}
                         price={l.quote ? fmtUsdc(l.quote.usdc) : "—"}
                         value={l.valueUsdc == null ? "—" : fmtUsdc(l.valueUsdc)}

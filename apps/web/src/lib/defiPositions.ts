@@ -216,14 +216,19 @@ async function meta(client: PublicClient, token: Address) {
   return { symbol: String(symbol), decimals: Number(decimals) };
 }
 
-export async function readAave(client: PublicClient, chainId: number, user: Address): Promise<AaveCard | null> {
-  const d = DEX[chainId];
-  if (!d?.aave) return null;
+export async function readAaveMarket(
+  client: PublicClient,
+  chainId: number,
+  user: Address,
+  cfg: { pool: Address; data: Address },
+  chain: string,
+  idPrefix: string,
+): Promise<AaveCard | null> {
   try {
-    const [account, list, cfg] = await Promise.all([
-      client.readContract({ address: d.aave.pool, abi: poolAbi, functionName: "getUserAccountData", args: [user] }),
-      client.readContract({ address: d.aave.pool, abi: poolAbi, functionName: "getReservesList" }),
-      client.readContract({ address: d.aave.pool, abi: poolAbi, functionName: "getUserConfiguration", args: [user] }),
+    const [account, list, userCfg] = await Promise.all([
+      client.readContract({ address: cfg.pool, abi: poolAbi, functionName: "getUserAccountData", args: [user] }),
+      client.readContract({ address: cfg.pool, abi: poolAbi, functionName: "getReservesList" }),
+      client.readContract({ address: cfg.pool, abi: poolAbi, functionName: "getUserConfiguration", args: [user] }),
     ]);
     const acc = account as unknown as {
       totalCollateralBase: bigint;
@@ -234,13 +239,13 @@ export async function readAave(client: PublicClient, chainId: number, user: Addr
     const collateral = typeof acc.totalCollateralBase === "bigint" ? acc.totalCollateralBase : acc[0];
     const debtBase = typeof acc.totalDebtBase === "bigint" ? acc.totalDebtBase : acc[1];
     if (healthRaw === 0n && collateral === 0n && debtBase === 0n) return null;
-    const cfgData = typeof cfg === "bigint" ? cfg : (cfg as { data: bigint }).data;
+    const cfgData = typeof userCfg === "bigint" ? userCfg : (userCfg as { data: bigint }).data;
     const used = list.map((asset, i) => ({ asset, i })).filter((x) => usingReserve(cfgData, x.i));
     if (!used.length) return null;
     const rows = await client.multicall({
       contracts: used.flatMap((u) => [
-        { address: d.aave!.data, abi: dataAbi, functionName: "getUserReserveData" as const, args: [u.asset, user] },
-        { address: d.aave!.data, abi: dataAbi, functionName: "getReserveTokensAddresses" as const, args: [u.asset] },
+        { address: cfg.data, abi: dataAbi, functionName: "getUserReserveData" as const, args: [u.asset, user] },
+        { address: cfg.data, abi: dataAbi, functionName: "getReserveTokensAddresses" as const, args: [u.asset] },
       ]),
       allowFailure: true,
     });
@@ -276,9 +281,9 @@ export async function readAave(client: PublicClient, chainId: number, user: Addr
       if (aBal > 0n) {
         const n = Number(formatUnits(aBal, info.decimals));
         lines.push({
-          id: `aave-${chainId}-s-${used[i].asset}`,
+          id: `${idPrefix}-${chainId}-s-${used[i].asset}`,
           chainId,
-          chain: d.short,
+          chain,
           symbol: info.symbol,
           name: info.symbol,
           icon: "/tokens/eth.png",
@@ -293,9 +298,9 @@ export async function readAave(client: PublicClient, chainId: number, user: Addr
       if (debt > 0n) {
         const n = Number(formatUnits(debt, info.decimals));
         lines.push({
-          id: `aave-${chainId}-b-${used[i].asset}`,
+          id: `${idPrefix}-${chainId}-b-${used[i].asset}`,
           chainId,
-          chain: d.short,
+          chain,
           symbol: info.symbol,
           name: info.symbol,
           icon: "/tokens/eth.png",
@@ -311,10 +316,16 @@ export async function readAave(client: PublicClient, chainId: number, user: Addr
     if (!lines.length) return null;
     const hf = Number(formatUnits(healthRaw, 18));
     const health = !Number.isFinite(hf) || hf > 1e10 ? "—" : hf.toFixed(2);
-    return { chainId, chain: d.short, health, lines, aTokens };
+    return { chainId, chain, health, lines, aTokens };
   } catch {
     return null;
   }
+}
+
+export async function readAave(client: PublicClient, chainId: number, user: Address): Promise<AaveCard | null> {
+  const d = DEX[chainId];
+  if (!d?.aave) return null;
+  return readAaveMarket(client, chainId, user, d.aave, d.short, "aave");
 }
 
 async function readNpm(client: PublicClient, chainId: number, user: Address, npm: Addr, factory: Addr, protocol: string): Promise<UniCard | null> {
