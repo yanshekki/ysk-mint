@@ -5,6 +5,7 @@ import { nearView } from "./nearRpc.ts";
 import type { AaveCard, ProtocolLine } from "./defiPositions.ts";
 import { quoteNearToken } from "./nearDex.ts";
 import { quoteAdaToken } from "./adaDex.ts";
+import { stakeFromPayment } from "./cardanoCip30.ts";
 
 export type StakeStatus = "liquid" | "active" | "unstaking" | "claimable";
 
@@ -157,22 +158,99 @@ export async function readLidoQueue(client: PublicClient, user: Address, ethUsd?
   }
 }
 
-export async function readAdaStake(stakeAddr: string): Promise<StakeLine[]> {
-  if (!stakeAddr.startsWith("stake")) return [];
+type AdaAccount = {
+  stake_address?: string;
+  status?: string;
+  delegated_pool?: string;
+  total_balance?: string | number;
+  utxo?: string | number;
+  rewards?: string | number;
+  withdrawals?: string | number;
+  rewards_available?: string | number;
+};
+
+function lovelace(v: unknown): bigint {
+  if (v == null || v === "") return 0n;
   try {
-    const info = (await koiosPost("account_info", { _stake_addresses: [stakeAddr] })) as Array<{
-      status?: string;
-      delegated_pool?: string;
-      total_balance?: string;
-      utxo?: string;
-      rewards_available?: string;
-    }>;
-    const row = info[0];
-    if (!row) return [];
-    const pool = row.delegated_pool;
-    if (!pool && row.status !== "registered") return [];
-    const ada = BigInt(row.utxo ?? row.total_balance ?? "0");
-    const rewards = BigInt(row.rewards_available ?? "0");
+    if (typeof v === "number") return BigInt(Math.trunc(v));
+    const s = String(v).replace(/"/g, "").trim();
+    if (!s || s === "null" || s === "undefined") return 0n;
+    return BigInt(s);
+  } catch {
+    return 0n;
+  }
+}
+
+function unwrapAccounts(json: unknown): AdaAccount[] {
+  if (Array.isArray(json)) return json as AdaAccount[];
+  if (json && typeof json === "object") {
+    const o = json as Record<string, unknown>;
+    if (Array.isArray(o.data)) return o.data as AdaAccount[];
+    if (Array.isArray(o.result)) return o.result as AdaAccount[];
+  }
+  return [];
+}
+
+function adaStakes(primary: string, payments: string[]) {
+  const out: string[] = [];
+  const push = (s: string) => {
+    if (!s.startsWith("stake") || out.includes(s)) return;
+    out.push(s);
+  };
+  push(primary);
+  for (const p of payments) push(stakeFromPayment(p));
+  return out;
+}
+
+function withdrawable(row: AdaAccount) {
+  const avail = lovelace(row.rewards_available);
+  if (avail > 0n) return avail;
+  const earned = lovelace(row.rewards);
+  const withdrawn = lovelace(row.withdrawals);
+  return earned > withdrawn ? earned - withdrawn : 0n;
+}
+
+async function koiosAccounts(stakes: string[]): Promise<AdaAccount[]> {
+  if (!stakes.length) return [];
+  const body = { _stake_addresses: stakes };
+  for (const path of ["account_info", "account_info_cached"]) {
+    try {
+      const rows = unwrapAccounts(await koiosPost(path, body));
+      if (rows.length) return rows;
+    } catch {
+      /* next */
+    }
+  }
+  const out: AdaAccount[] = [];
+  for (const s of stakes) {
+    try {
+      const res = await fetch(`https://api.koios.rest/api/v1/account_info?_stake_address=${encodeURIComponent(s)}`, {
+        headers: { accept: "application/json" },
+      });
+      if (!res.ok) continue;
+      out.push(...unwrapAccounts(await res.json()));
+    } catch {
+      /* skip */
+    }
+  }
+  return out;
+}
+
+export async function readAdaStake(stakeAddr: string, payments: string[] = []): Promise<StakeLine[]> {
+  const stakes = adaStakes(stakeAddr, payments);
+  if (!stakes.length) return [];
+  try {
+    const info = await koiosAccounts(stakes);
+    if (!info.length) return [];
+    let ada = 0n;
+    let rewards = 0n;
+    const pools: string[] = [];
+    for (const row of info) {
+      ada += lovelace(row.utxo ?? row.total_balance);
+      rewards += withdrawable(row);
+      if (row.delegated_pool && !pools.includes(row.delegated_pool)) pools.push(row.delegated_pool);
+    }
+    const pool = pools[0];
     let ticker = pool ? pool.slice(0, 12) : "";
     if (pool) {
       try {
@@ -186,7 +264,7 @@ export async function readAdaStake(stakeAddr: string): Promise<StakeLine[]> {
     }
     let stakedSince: string | undefined;
     try {
-      const updates = (await koiosPost("account_updates", { _stake_addresses: [stakeAddr] })) as Array<{
+      const updates = (await koiosPost("account_updates", { _stake_addresses: stakes })) as Array<{
         updates?: Array<{ action_type?: string; epoch_no?: number; block_time?: number }>;
         action_type?: string;
         epoch_no?: number;
@@ -216,7 +294,7 @@ export async function readAdaStake(stakeAddr: string): Promise<StakeLine[]> {
     if (pool && ada > 0n) {
       const n = Number(formatUnits(ada, 6));
       lines.push({
-        id: `ada-stake-${stakeAddr}`,
+        id: `ada-stake-${stakes[0]}`,
         chainId: 1815,
         chain: "ADA",
         symbol: "ADA",
@@ -238,21 +316,21 @@ export async function readAdaStake(stakeAddr: string): Promise<StakeLine[]> {
     if (rewards > 0n) {
       const n = Number(formatUnits(rewards, 6));
       lines.push({
-        id: `ada-rew-${stakeAddr}`,
+        id: `ada-rew-${stakes[0]}`,
         chainId: 1815,
         chain: "ADA",
         symbol: "ADA",
-        name: "未領取質押獎勵",
+        name: "未領取 ADA",
         icon: "/tokens/ada.png",
         amount: fmtAmt(rewards, 6),
         raw: rewards,
         side: "stake",
-        extra: "rewards_available",
+        extra: ticker ? `${ticker} 質押獎勵` : "質押獎勵",
         quote: q,
         valueUsdc: q && Number.isFinite(n) ? n * q.usdc : null,
         status: "claimable",
         inWallet: false,
-        unstakeNote: "可在錢包領取",
+        unstakeNote: "可在連接的 Cardano 錢包領取",
       });
     }
     return lines;

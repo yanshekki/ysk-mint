@@ -7,6 +7,7 @@ import { getPublicClient } from "wagmi/actions";
 import { CHAINS, evmEnabledChains, featuredChains, isConfigured, type ChainDefinition } from "@ysk-mint/sdk";
 import { useCardanoHoldings, useEvmHoldings, useNearHoldings, useSolanaHoldings, type HoldingRow } from "../../lib/useHoldings.ts";
 import { useNativeWallets } from "../../lib/nativeWallets.ts";
+import { stakeFromPayment } from "../../lib/cardanoCip30.ts";
 import { resolvedContracts } from "../../lib/launchStack.ts";
 import { useWizard } from "../wizard/store.ts";
 import { useAdaHandle, useEvmName, useSolName } from "../../lib/chainNames.ts";
@@ -263,6 +264,7 @@ export function MePage() {
   );
   const unstakeLiquid = t("me.unstakeLiquid");
   const liveJobs = useLiveStatus((s) => s.jobs);
+  const adaStake = native.cardanoStake || (native.cardanoAddress ? stakeFromPayment(native.cardanoAddress) : "");
 
   useEffect(() => {
     if (!anyWallet) {
@@ -335,7 +337,7 @@ export function MePage() {
       const defiIds = [
         ...clients.keys(),
         ...(native.nearAccount ? [397] : []),
-        ...(native.cardanoStake ? [1815] : []),
+        ...(native.cardanoAddress || adaStake ? [1815] : []),
         ...(native.solanaAddress ? [101] : []),
       ];
       for (const id of defiIds) useLiveStatus.getState().start(`defi:${id}`, id, "defi", "wait");
@@ -349,7 +351,7 @@ export function MePage() {
               return;
             }
             if (id === 1815) {
-              extra.push(...(await readAdaStake(native.cardanoStake).catch(() => [])));
+              extra.push(...(await readAdaStake(adaStake, native.cardanoAddresses).catch(() => [])));
               return;
             }
             if (id === 101) {
@@ -388,7 +390,7 @@ export function MePage() {
       useLiveStatus.getState().clear("quote:");
       useLiveStatus.getState().clear("defi:");
     };
-  }, [address, anyWallet, holdingsKey, config, native.nearAccount, native.cardanoStake, native.solanaAddress, unstakeLiquid]);
+  }, [address, anyWallet, holdingsKey, config, native.nearAccount, native.cardanoStake, native.cardanoAddress, native.cardanoAddresses, native.solanaAddress, unstakeLiquid, adaStake]);
 
   const walletRows = useMemo(() => {
     const rows = buckets.flatMap((g) =>
