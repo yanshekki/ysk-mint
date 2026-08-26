@@ -154,6 +154,12 @@ export const LST: Record<number, Record<string, { symbol: string; name: string; 
     "linear-protocol.near": { symbol: "LINEAR", name: "LiNEAR", decimals: 24, icon: "/tokens/near.png" },
     "meta-pool.near": { symbol: "stNEAR", name: "Meta Pool stNEAR", decimals: 24, icon: "/tokens/near.png" },
   },
+  43114: {
+    "0x2b2c81e08f1af8835a78bb2a90ae924ace0ea4be": { symbol: "sAVAX", name: "BENQI sAVAX", decimals: 18, icon: "/tokens/avax.png" },
+  },
+  56: {
+    "0xa2e3356610840701bdf5611a53974510ae27e2e1": { symbol: "wBETH", name: "Wrapped Beacon ETH", decimals: 18, icon: "/tokens/eth.png" },
+  },
   101: {
     msolzycxhdygdzu16g5qsh3i5k3z3kzk7ytfqcjm7so: { symbol: "mSOL", name: "Marinade mSOL", decimals: 9, icon: "/tokens/sol.png" },
     j1toso1uck3rlmjorhttrvwy9hj7x8v9yyac6y7kgcpn: { symbol: "jitoSOL", name: "Jito SOL", decimals: 9, icon: "/tokens/sol.png" },

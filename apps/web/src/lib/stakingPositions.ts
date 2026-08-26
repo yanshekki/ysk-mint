@@ -2,7 +2,7 @@ import { formatUnits, type Address, type PublicClient } from "viem";
 import { LST } from "./defiAddresses.ts";
 import { type Quote } from "./defiQuotes.ts";
 import { nearView } from "./nearRpc.ts";
-import type { ProtocolLine } from "./defiPositions.ts";
+import type { AaveCard, ProtocolLine } from "./defiPositions.ts";
 import { quoteNearToken } from "./nearDex.ts";
 import { quoteAdaToken } from "./adaDex.ts";
 
@@ -90,7 +90,7 @@ export function lstStakeLines(
     }
   }
   if (!Object.keys(map).length) return [];
-  const short = chainId === 1 ? "ETH" : chainId === 8453 ? "Base" : chainId === 42161 ? "Arb" : chainId === 397 ? "NEAR" : chainId === 101 ? "SOL" : String(chainId);
+  const short = chainId === 1 ? "ETH" : chainId === 8453 ? "Base" : chainId === 42161 ? "Arb" : chainId === 397 ? "NEAR" : chainId === 101 ? "SOL" : chainId === 43114 ? "AVAX" : chainId === 56 ? "BNB" : String(chainId);
   const lines: StakeLine[] = [];
   for (const r of rows) {
     if (!r.contract || r.raw === 0n) continue;
@@ -261,79 +261,159 @@ export async function readAdaStake(stakeAddr: string): Promise<StakeLine[]> {
   }
 }
 
+const NEAR_POOL_SEEDS = [
+  "here.poolv1.near",
+  "everstake.poolv1.near",
+  "astro-stakers.poolv1.near",
+  "zavodil.poolv1.near",
+  "legend.poolv1.near",
+  "masternode.poolv1.near",
+  "aurora.pool.near",
+  "staked.poolv1.near",
+  "bisontrails.poolv1.near",
+  "figment.poolv1.near",
+  "lunanova.poolv1.near",
+  "tribe.poolv1.near",
+  "crypto-crew.poolv1.near",
+  "near-pool.poolv1.near",
+  "hashquark.poolv1.near",
+];
+
+function asU128(v: unknown): bigint {
+  if (v == null) return 0n;
+  if (typeof v === "string" || typeof v === "number") return BigInt(v);
+  if (typeof v === "object" && v && "0" in (v as object)) return BigInt(String((v as { 0: string })[0]));
+  return 0n;
+}
+
+async function nearPoolBalances(pool: string, account: string) {
+  try {
+    const acc = await nearView<{
+      staked_balance?: unknown;
+      unstaked_balance?: unknown;
+      can_withdraw?: boolean;
+    }>(pool, "get_account", { account_id: account });
+    return {
+      staked: asU128(acc.staked_balance),
+      unstaked: asU128(acc.unstaked_balance),
+      canWithdraw: Boolean(acc.can_withdraw),
+    };
+  } catch {
+    try {
+      const [staked, unstaked, can] = await Promise.all([
+        nearView<unknown>(pool, "get_account_staked_balance", { account_id: account }),
+        nearView<unknown>(pool, "get_account_unstaked_balance", { account_id: account }),
+        nearView<boolean>(pool, "is_account_unstaked_balance_available", { account_id: account }).catch(() => false),
+      ]);
+      return { staked: asU128(staked), unstaked: asU128(unstaked), canWithdraw: Boolean(can) };
+    } catch {
+      return null;
+    }
+  }
+}
+
+async function nearFtBalance(contract: string, account: string) {
+  try {
+    const raw = await nearView<string>(contract, "ft_balance_of", { account_id: account });
+    return asU128(String(raw).replace(/"/g, ""));
+  } catch {
+    return 0n;
+  }
+}
+
 export async function readNearStake(account: string): Promise<StakeLine[]> {
   if (!account) return [];
+  const found = new Set(NEAR_POOL_SEEDS);
   try {
     const res = await fetch(`https://api.fastnear.com/v1/account/${account}/staking`);
-    if (!res.ok) return [];
-    const json = (await res.json()) as { pools?: Array<{ pool_id?: string }> };
-    const pools = [...new Set((json.pools ?? []).map((p) => p.pool_id).filter((x): x is string => Boolean(x)))];
-    const q = await quoteNearToken(undefined, true);
-    const out: StakeLine[] = [];
-    await Promise.all(
-      pools.map(async (pool) => {
-        try {
-          const acc = await nearView<{
-            staked_balance?: string;
-            unstaked_balance?: string;
-            can_withdraw?: boolean;
-          }>(pool, "get_account", { account_id: account });
-          const staked = BigInt(acc.staked_balance || "0");
-          const unstaked = BigInt(acc.unstaked_balance || "0");
-          const minNear = 10n ** 21n;
-          const name = pool.replace(".poolv1.near", "").replace(".pool.near", "");
-          if (staked >= minNear) {
-            const n = Number(formatUnits(staked, 24));
-            out.push({
-              id: `near-stk-${pool}`,
-              chainId: 397,
-              chain: "NEAR",
-              symbol: "NEAR",
-              name: name,
-              icon: "/tokens/near.png",
-              amount: fmtAmt(staked, 24),
-              raw: staked,
-              contract: pool,
-              side: "stake",
-              extra: pool,
-              quote: q,
-              valueUsdc: q && Number.isFinite(n) ? n * q.usdc : null,
-              status: "active",
-              inWallet: false,
-              unstakeNote: "解押後約 4 個 epoch（約 2 日）可領",
-            });
-          }
-          if (unstaked >= minNear) {
-            const n = Number(formatUnits(unstaked, 24));
-            const ready = Boolean(acc.can_withdraw);
-            out.push({
-              id: `near-unstk-${pool}`,
-              chainId: 397,
-              chain: "NEAR",
-              symbol: "NEAR",
-              name: name,
-              icon: "/tokens/near.png",
-              amount: fmtAmt(unstaked, 24),
-              raw: unstaked,
-              contract: pool,
-              side: "stake",
-              extra: pool,
-              quote: q,
-              valueUsdc: q && Number.isFinite(n) ? n * q.usdc : null,
-              status: ready ? "claimable" : "unstaking",
-              inWallet: false,
-              unstakeNote: ready ? "可領" : "解押中，約 4 個 epoch 後可領",
-            });
-          }
-        } catch {
-          /* pool miss */
-        }
-      }),
-    );
-    return out;
+    if (res.ok) {
+      const json = (await res.json()) as { pools?: Array<{ pool_id?: string }> };
+      for (const p of json.pools ?? []) if (p.pool_id) found.add(p.pool_id);
+    }
   } catch {
-    return [];
+    /* CORS or indexer miss — still query seeds */
   }
+  const q = await quoteNearToken(undefined, true);
+  const out: StakeLine[] = [];
+  const minNear = 10n ** 21n;
+  await Promise.all(
+    [...found].map(async (pool) => {
+      const bal = await nearPoolBalances(pool, account);
+      if (!bal) return;
+      const name = pool.replace(".poolv1.near", "").replace(".pool.near", "");
+      if (bal.staked >= minNear) {
+        const n = Number(formatUnits(bal.staked, 24));
+        out.push({
+          id: `near-stk-${pool}`,
+          chainId: 397,
+          chain: "NEAR",
+          symbol: "NEAR",
+          name,
+          icon: "/tokens/near.png",
+          amount: fmtAmt(bal.staked, 24),
+          raw: bal.staked,
+          contract: pool,
+          side: "stake",
+          extra: pool,
+          quote: q,
+          valueUsdc: q && Number.isFinite(n) ? n * q.usdc : null,
+          status: "active",
+          inWallet: false,
+          unstakeNote: "解押後約 4 個 epoch（約 2 日）可領",
+        });
+      }
+      if (bal.unstaked >= minNear) {
+        const n = Number(formatUnits(bal.unstaked, 24));
+        out.push({
+          id: `near-unstk-${pool}`,
+          chainId: 397,
+          chain: "NEAR",
+          symbol: "NEAR",
+          name,
+          icon: "/tokens/near.png",
+          amount: fmtAmt(bal.unstaked, 24),
+          raw: bal.unstaked,
+          contract: pool,
+          side: "stake",
+          extra: pool,
+          quote: q,
+          valueUsdc: q && Number.isFinite(n) ? n * q.usdc : null,
+          status: bal.canWithdraw ? "claimable" : "unstaking",
+          inWallet: false,
+          unstakeNote: bal.canWithdraw ? "可領" : "解押中，約 4 個 epoch 後可領",
+        });
+      }
+    }),
+  );
+  const liquidNote = "流動性質押，可隨時經協議兌換。首次質押時間不在本站。";
+  for (const [id, meta] of [
+    ["linear-protocol.near", { symbol: "LINEAR", name: "LiNEAR" }],
+    ["meta-pool.near", { symbol: "stNEAR", name: "Meta Pool stNEAR" }],
+  ] as const) {
+    const raw = await nearFtBalance(id, account);
+    if (raw < minNear) continue;
+    const n = Number(formatUnits(raw, 24));
+    const lq = await quoteNearToken(id, false);
+    out.push({
+      id: `near-lst-${id}`,
+      chainId: 397,
+      chain: "NEAR",
+      symbol: meta.symbol,
+      name: meta.name,
+      icon: "/tokens/near.png",
+      amount: fmtAmt(raw, 24),
+      raw,
+      contract: id,
+      side: "stake",
+      extra: meta.name,
+      quote: lq,
+      valueUsdc: lq && Number.isFinite(n) ? n * lq.usdc : q && Number.isFinite(n) ? n * q.usdc : null,
+      status: "liquid",
+      inWallet: true,
+      unstakeNote: liquidNote,
+    });
+  }
+  return out;
 }
 
 async function solRpc(method: string, params: unknown[]) {
@@ -416,4 +496,249 @@ export function stakeBadge(l: StakeLine) {
   if (l.status === "unstaking") return "解押中";
   if (l.status === "active") return "委託中";
   return "流動";
+}
+
+const erc20Bal = [
+  { type: "function", name: "balanceOf", stateMutability: "view", inputs: [{ type: "address" }], outputs: [{ type: "uint256" }] },
+] as const;
+
+const SAVAX = "0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE" as Address;
+const BENQI_LP = "0x784DA19e61cf348a8c54547531795ECfee2AfFd1" as Address;
+
+const savaxAbi = [
+  ...erc20Bal,
+  { type: "function", name: "getPooledAvaxByShares", stateMutability: "view", inputs: [{ type: "uint256" }], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "getUnlockRequestCount", stateMutability: "view", inputs: [{ type: "address" }], outputs: [{ type: "uint256" }] },
+  {
+    type: "function",
+    name: "getPaginatedUnlockRequests",
+    stateMutability: "view",
+    inputs: [{ type: "address" }, { type: "uint256" }, { type: "uint256" }],
+    outputs: [
+      {
+        type: "tuple[]",
+        components: [
+          { name: "startedAt", type: "uint256" },
+          { name: "shareAmount", type: "uint256" },
+        ],
+      },
+      { type: "uint256[]" },
+    ],
+  },
+  { type: "function", name: "cooldownPeriod", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "redeemPeriod", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+] as const;
+
+const qiSnapAbi = [
+  ...erc20Bal,
+  {
+    type: "function",
+    name: "getAccountSnapshot",
+    stateMutability: "view",
+    inputs: [{ type: "address" }],
+    outputs: [{ type: "uint256" }, { type: "uint256" }, { type: "uint256" }, { type: "uint256" }],
+  },
+  { type: "function", name: "symbol", stateMutability: "view", inputs: [], outputs: [{ type: "string" }] },
+] as const;
+
+const chefAbi = [
+  { type: "function", name: "poolLength", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  {
+    type: "function",
+    name: "userInfo",
+    stateMutability: "view",
+    inputs: [{ type: "uint256" }, { type: "address" }],
+    outputs: [{ type: "uint256" }, { type: "uint256" }],
+  },
+] as const;
+
+const BENQI_QI: Array<{ token: Address; symbol: string; underlying: string; dec: number }> = [
+  { token: "0x5C0401e81Bc07Ca70fAD469b451682c0d747Ef1c", symbol: "AVAX", underlying: "avax", dec: 18 },
+  { token: "0xF362feA9659cf036792c9cb02f8ff8198E21B4cB", symbol: "sAVAX", underlying: "savax", dec: 18 },
+  { token: "0xBEb5d47A3f720Ec0a390d04b4d41ED7d9688bC7F", symbol: "USDC", underlying: "usd", dec: 6 },
+  { token: "0xc9e5999b8e75C3fEB117F6f73E664b9f3C8ca65C", symbol: "USDT.e", underlying: "usd", dec: 6 },
+  { token: "0xB715808a78F6041E46d61Cb123C9B4A27056AE9C", symbol: "USDC", underlying: "usd", dec: 6 },
+  { token: "0xd8fcDa6ec4Bdc547C0827B8804e89aCd817d56EF", symbol: "USDT", underlying: "usd", dec: 6 },
+  { token: "0x835866d37AFB8CB8F8334dCCdaf66cf01832Ff5D", symbol: "DAI", underlying: "usd", dec: 18 },
+];
+
+export async function readPinnedLst(client: PublicClient, chainId: number, user: Address, quotes: Map<string, Quote>, liquidNote: string): Promise<StakeLine[]> {
+  const map = LST[chainId];
+  if (!map) return [];
+  const short = chainId === 1 ? "ETH" : chainId === 8453 ? "Base" : chainId === 42161 ? "Arb" : chainId === 43114 ? "AVAX" : chainId === 56 ? "BNB" : String(chainId);
+  const out: StakeLine[] = [];
+  await Promise.all(
+    Object.entries(map).map(async ([addr, meta]) => {
+      if (!addr.startsWith("0x")) return;
+      try {
+        const raw = await client.readContract({ address: addr as Address, abi: erc20Bal, functionName: "balanceOf", args: [user] });
+        if (raw === 0n) return;
+        const n = Number(formatUnits(raw, meta.decimals));
+        let q = quotes.get(`${chainId}:${addr}`) ?? quotes.get(`${chainId}:native`);
+        if (addr.toLowerCase() === SAVAX.toLowerCase()) {
+          try {
+            const pooled = await client.readContract({ address: SAVAX, abi: savaxAbi, functionName: "getPooledAvaxByShares", args: [raw] });
+            const avax = Number(formatUnits(pooled, 18));
+            const avaxUsd = quotes.get("43114:native")?.usdc;
+            if (avaxUsd && Number.isFinite(avax) && avax > 0) q = { usdc: (avax / n) * avaxUsd, source: "v2" };
+          } catch {
+            /* keep native */
+          }
+        }
+        out.push({
+          id: `lst-pin-${chainId}-${addr}`,
+          chainId,
+          chain: short,
+          symbol: meta.symbol,
+          name: meta.name,
+          icon: meta.icon,
+          amount: fmtAmt(raw, meta.decimals),
+          raw,
+          contract: addr,
+          side: "stake",
+          extra: meta.name,
+          quote: q ?? null,
+          valueUsdc: q && Number.isFinite(n) ? n * q.usdc : null,
+          status: "liquid",
+          inWallet: true,
+          unstakeNote: addr.toLowerCase() === SAVAX.toLowerCase() ? "解押冷卻 15 日，其後 2 日可領。首次質押時間不在本站。" : liquidNote,
+        });
+      } catch {
+        /* skip */
+      }
+    }),
+  );
+  return out;
+}
+
+export async function readSavaxUnlocks(client: PublicClient, user: Address, avaxUsd?: number | null): Promise<StakeLine[]> {
+  try {
+    const count = await client.readContract({ address: SAVAX, abi: savaxAbi, functionName: "getUnlockRequestCount", args: [user] });
+    if (count === 0n) return [];
+    const n = Number(count);
+    const [reqs, avaxAmts] = await client.readContract({
+      address: SAVAX,
+      abi: savaxAbi,
+      functionName: "getPaginatedUnlockRequests",
+      args: [user, 0n, BigInt(n)],
+    });
+    const cool = Number(await client.readContract({ address: SAVAX, abi: savaxAbi, functionName: "cooldownPeriod" }));
+    const redeem = Number(await client.readContract({ address: SAVAX, abi: savaxAbi, functionName: "redeemPeriod" }));
+    const now = Date.now() / 1000;
+    const out: StakeLine[] = [];
+    reqs.forEach((r, i) => {
+      const start = Number(r.startedAt);
+      const shares = r.shareAmount;
+      if (shares === 0n) return;
+      const coolEnd = start + cool;
+      const redeemEnd = coolEnd + redeem;
+      let status: StakeStatus = "unstaking";
+      let note = `冷卻至 ${utc(coolEnd)}，其後至 ${utc(redeemEnd)} 可領`;
+      if (now >= coolEnd && now <= redeemEnd) {
+        status = "claimable";
+        note = `可領，窗口至 ${utc(redeemEnd)}`;
+      } else if (now > redeemEnd) {
+        note = "領取窗口已過，須重新申請";
+      }
+      const avaxRaw = avaxAmts[i] ?? 0n;
+      const avaxN = Number(formatUnits(avaxRaw || shares, 18));
+      out.push({
+        id: `savax-unlock-${i}-${start}`,
+        chainId: 43114,
+        chain: "AVAX",
+        symbol: "sAVAX",
+        name: "BENQI 解押",
+        icon: "/tokens/avax.png",
+        amount: fmtAmt(shares, 18),
+        raw: shares,
+        contract: SAVAX,
+        side: "stake",
+        extra: `#${i}`,
+        quote: avaxUsd ? { usdc: avaxUsd, source: "v2" } : null,
+        valueUsdc: avaxUsd && Number.isFinite(avaxN) ? avaxN * avaxUsd : null,
+        status,
+        inWallet: false,
+        stakedSince: utc(start),
+        unstakeNote: note,
+      });
+    });
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+export async function readBenqiMarkets(client: PublicClient, user: Address, quotes: Map<string, Quote>): Promise<AaveCard | null> {
+  const avaxUsd = quotes.get("43114:native")?.usdc;
+  const savaxQ = quotes.get(`43114:${SAVAX.toLowerCase()}`);
+  const lines: ProtocolLine[] = [];
+  const tokens = new Set<string>();
+  await Promise.all(
+    BENQI_QI.map(async (m) => {
+      try {
+        const snap = await client.readContract({ address: m.token, abi: qiSnapAbi, functionName: "getAccountSnapshot", args: [user] });
+        const qiBal = snap[1];
+        const borrow = snap[2];
+        const rate = snap[3];
+        tokens.add(m.token.toLowerCase());
+        const und = qiBal === 0n ? 0n : (qiBal * rate) / 10n ** 18n;
+        const push = (raw: bigint, side: "supply" | "borrow") => {
+          if (raw === 0n) return;
+          const n = Number(formatUnits(raw, m.dec));
+          const q =
+            m.underlying === "usd"
+              ? { usdc: 1, source: "stable" as const }
+              : m.underlying === "savax"
+                ? savaxQ
+                : avaxUsd
+                  ? { usdc: avaxUsd, source: "v2" as const }
+                  : null;
+          lines.push({
+            id: `benqi-${side}-${m.token}`,
+            chainId: 43114,
+            chain: "AVAX",
+            symbol: m.symbol,
+            name: m.symbol,
+            icon: "/tokens/avax.png",
+            amount: fmtAmt(raw, m.dec),
+            raw,
+            contract: m.token,
+            side,
+            quote: q ?? null,
+            valueUsdc: q && Number.isFinite(n) ? n * q.usdc : null,
+          });
+        };
+        push(und, "supply");
+        push(borrow, "borrow");
+      } catch {
+        /* market miss */
+      }
+    }),
+  );
+  try {
+    const len = await client.readContract({ address: BENQI_LP, abi: chefAbi, functionName: "poolLength" });
+    const n = Math.min(Number(len), 16);
+    for (let i = 0; i < n; i++) {
+      const info = await client.readContract({ address: BENQI_LP, abi: chefAbi, functionName: "userInfo", args: [BigInt(i), user] });
+      const amt = info[0];
+      if (amt === 0n) continue;
+      lines.push({
+        id: `benqi-lp-${i}`,
+        chainId: 43114,
+        chain: "AVAX",
+        symbol: "LP",
+        name: `BENQI LP #${i}`,
+        icon: "/tokens/avax.png",
+        amount: fmtAmt(amt, 18),
+        raw: amt,
+        contract: BENQI_LP,
+        side: "lp",
+        extra: "LP 質押，可隨時退出（協議）",
+      });
+    }
+  } catch {
+    /* no chef */
+  }
+  if (!lines.length) return null;
+  return { chainId: 43114, chain: "AVAX", health: "—", lines, aTokens: tokens };
 }

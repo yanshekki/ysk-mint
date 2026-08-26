@@ -309,6 +309,8 @@
     "wallet": "錢包",
     "aave": "Aave V3",
     "burrow": "Burrow",
+    "benqi": "BENQI",
+    "unstakeSavax": "解押冷卻 15 日，其後 2 日可領",
     "staking": "質押",
     "unstakeLiquid": "流動性質押，可隨時經協議兌換。首次質押時間不在本站。",
     "claimable": "可領",

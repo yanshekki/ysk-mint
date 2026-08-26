@@ -21,8 +21,11 @@ import { readBurrow } from "../../lib/nearDex.ts";
 import {
   lstStakeLines,
   readAdaStake,
+  readBenqiMarkets,
   readLidoQueue,
   readNearStake,
+  readPinnedLst,
+  readSavaxUnlocks,
   readSolStake,
   stakeBadge,
   stakeSubtitle,
@@ -143,6 +146,7 @@ export function MePage() {
   const [quotes, setQuotes] = useState<Map<string, Quote>>(new Map());
   const [aave, setAave] = useState<AaveCard[]>([]);
   const [burrow, setBurrow] = useState<AaveCard[]>([]);
+  const [benqi, setBenqi] = useState<AaveCard[]>([]);
   const [uni, setUni] = useState<UniCard[]>([]);
   const [aTokens, setATokens] = useState<Set<string>>(new Set());
   const [stakeExtra, setStakeExtra] = useState<StakeLine[]>([]);
@@ -248,6 +252,7 @@ export function MePage() {
       setQuotes(new Map());
       setAave([]);
       setBurrow([]);
+      setBenqi([]);
       setUni([]);
       setATokens(new Set());
       setStakeExtra([]);
@@ -263,9 +268,12 @@ export function MePage() {
         const c = getPublicClient(config, { chainId: id });
         if (c) clients.set(id, c);
       }
-      if (address && !clients.has(1)) {
-        const c = getPublicClient(config, { chainId: 1 });
-        if (c) clients.set(1, c);
+      if (address) {
+        for (const id of [1, 8453, 42161, 56, 43114]) {
+          if (clients.has(id)) continue;
+          const c = getPublicClient(config, { chainId: id });
+          if (c) clients.set(id, c);
+        }
       }
       await Promise.all(
         evmRows.map(async (r) => {
@@ -321,6 +329,7 @@ export function MePage() {
         setATokens(new Set());
       }
       const extra: StakeLine[] = [];
+      const liquid = t("me.unstakeLiquid");
       const ethClient = clients.get(1);
       const ethUsd = next.get(quoteKey(1, undefined, true))?.usdc ?? next.get("1:native")?.usdc;
       if (ethClient && address) extra.push(...(await readLidoQueue(ethClient, address, ethUsd).catch(() => [])));
@@ -328,6 +337,19 @@ export function MePage() {
       if (native.nearAccount) extra.push(...(await readNearStake(native.nearAccount).catch(() => [])));
       const solUsd = next.get(`101:native`)?.usdc;
       if (native.solanaAddress) extra.push(...(await readSolStake(native.solanaAddress, solUsd).catch(() => [])));
+      if (address) {
+        await Promise.all(
+          [...clients.entries()].map(async ([id, client]) => {
+            extra.push(...(await readPinnedLst(client, id, address, next, liquid).catch(() => [])));
+          }),
+        );
+        const avax = clients.get(43114);
+        if (avax) {
+          extra.push(...(await readSavaxUnlocks(avax, address, next.get("43114:native")?.usdc).catch(() => [])));
+          const b = await readBenqiMarkets(avax, address, next).catch(() => null);
+          if (!cancelled) setBenqi(b ? [b] : []);
+        } else if (!cancelled) setBenqi([]);
+      } else if (!cancelled) setBenqi([]);
       if (!cancelled) {
         setStakeExtra(extra);
         setQuotes(next);
@@ -343,21 +365,30 @@ export function MePage() {
       g.rows.filter((r) => {
         if (r.chainId != null && isLst(r.chainId, r.contract)) return false;
         if (r.contract && aTokens.has(r.contract.toLowerCase())) return false;
+        if (r.contract && benqi.some((c) => c.aTokens.has(r.contract!.toLowerCase()))) return false;
         return true;
       }),
     );
     return filter === "all" ? rows : rows.filter((r) => r.chainId === filter);
-  }, [aTokens, buckets, filter]);
+  }, [aTokens, benqi, buckets, filter]);
 
   const stakeAll = useMemo(() => {
     const lst = buckets.flatMap((g) => lstStakeLines(g.id, g.rows, quotes, t("me.unstakeLiquid")));
-    const seen = new Set(lst.map((l) => l.id));
-    return [...lst, ...stakeExtra.filter((l) => !seen.has(l.id))];
+    const merged = new Map<string, StakeLine>();
+    for (const l of [...lst, ...stakeExtra]) {
+      const k =
+        l.id.includes("unlock") || l.id.includes("unstk") || l.id.includes("lido-q") || l.id.includes("rew")
+          ? l.id
+          : `${l.chainId}:${(l.contract || l.id).toLowerCase()}:${l.status}`;
+      if (!merged.has(k)) merged.set(k, l);
+    }
+    return [...merged.values()];
   }, [buckets, quotes, stakeExtra, t]);
   const stake = filter === "all" ? stakeAll : stakeAll.filter((l) => l.chainId === filter);
 
   const aaveCards = filter === "all" ? aave : aave.filter((c) => c.chainId === filter);
   const burrowCards = filter === "all" ? burrow : burrow.filter((c) => c.chainId === filter);
+  const benqiCards = filter === "all" ? benqi : benqi.filter((c) => c.chainId === filter);
   const uniCards = filter === "all" ? uni : uni.filter((c) => c.chainId === filter);
   const visibleLaunched = filter === "all" ? launched : launched.filter((r) => r.chainId === filter);
 
@@ -368,6 +399,7 @@ export function MePage() {
   }
   for (const c of aaveCards) for (const l of c.lines) allValues.push(l.valueUsdc ?? null);
   for (const c of burrowCards) for (const l of c.lines) allValues.push(l.valueUsdc ?? null);
+  for (const c of benqiCards) for (const l of c.lines) allValues.push(l.valueUsdc ?? null);
   for (const c of uniCards) for (const l of c.lines) allValues.push(l.valueUsdc ?? null);
   for (const l of stake) if (!l.inWallet) allValues.push(l.valueUsdc ?? null);
   const quoted = allValues.filter((v): v is number => v != null);
@@ -379,9 +411,10 @@ export function MePage() {
     const nWallet = rows.filter((r) => r.raw > 0n && !isLst(r.chainId ?? 0, r.contract) && !(r.contract && aTokens.has(r.contract.toLowerCase()))).length;
     const nAave = (id === "all" ? aave : aave.filter((c) => c.chainId === id)).reduce((n, c) => n + c.lines.length, 0);
     const nBurrow = (id === "all" ? burrow : burrow.filter((c) => c.chainId === id)).reduce((n, c) => n + c.lines.length, 0);
+    const nBenqi = (id === "all" ? benqi : benqi.filter((c) => c.chainId === id)).reduce((n, c) => n + c.lines.length, 0);
     const nUni = (id === "all" ? uni : uni.filter((c) => c.chainId === id)).reduce((n, c) => n + c.lines.length, 0);
     const nStake = id === "all" ? stakeAll.length : stakeAll.filter((l) => l.chainId === id).length;
-    return nWallet + nAave + nBurrow + nUni + nStake;
+    return nWallet + nAave + nBurrow + nBenqi + nUni + nStake;
   };
 
   return (
@@ -520,6 +553,38 @@ export function MePage() {
                         tag={l.chain}
                         title={`${l.symbol}`}
                         subtitle={l.side === "borrow" ? t("me.borrowed") : t("me.supplied")}
+                        amount={l.amount}
+                        price={l.quote ? fmtUsdc(l.quote.usdc) : "—"}
+                        value={l.valueUsdc == null ? "—" : fmtUsdc(l.valueUsdc)}
+                        href={explorerFor(l.chainId, l.contract)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              ))}
+
+              {benqiCards.map((c) => (
+                <section key={`benqi-${c.chainId}`} className="me-card">
+                  <div className="me-card-head">
+                    <b>
+                      {t("me.benqi")} · {c.chain}
+                    </b>
+                    <span className="me-count">{fmtUsdc(c.lines.reduce((n, l) => n + (l.valueUsdc ?? 0), 0))}</span>
+                  </div>
+                  <div className="me-cols me-cols-5">
+                    <span>{t("me.token")}</span>
+                    <span>{t("me.quote")}</span>
+                    <span>{t("me.amount")}</span>
+                    <span>{t("me.value")}</span>
+                  </div>
+                  <div className="me-list">
+                    {c.lines.map((l) => (
+                      <Line
+                        key={l.id}
+                        icon={l.icon}
+                        tag={l.chain}
+                        title={l.symbol}
+                        subtitle={l.side === "borrow" ? t("me.borrowed") : l.side === "lp" ? l.extra ?? t("me.staking") : t("me.supplied")}
                         amount={l.amount}
                         price={l.quote ? fmtUsdc(l.quote.usdc) : "—"}
                         value={l.valueUsdc == null ? "—" : fmtUsdc(l.valueUsdc)}
