@@ -54,12 +54,12 @@
       "id": "camelot",
       "name": "Camelot",
       "sector": "dex",
-      "family": "univ2",
+      "family": "algebra",
       "status": "wired",
       "chains": [
         42161
       ],
-      "note": ""
+      "note": "V2 + Algebra V3"
     },
     {
       "id": "lfj",
@@ -198,12 +198,12 @@
       "id": "quickswap",
       "name": "QuickSwap",
       "sector": "dex",
-      "family": "univ2",
+      "family": "algebra",
       "status": "wired",
       "chains": [
         137
       ],
-      "note": "V2 已接；Algebra V3 仍 pending"
+      "note": "V2 + Algebra V3"
     },
     {
       "id": "velodrome",
@@ -457,7 +457,7 @@
       "chains": [
         "evm"
       ],
-      "note": ""
+      "note": "唔係 poolByPair AMM；DexResolver 份額報價未接"
     },
     {
       "id": "bancor",
@@ -901,11 +901,15 @@
       "name": "Fluid",
       "sector": "lending",
       "family": "fluid",
-      "status": "pending",
+      "status": "wired",
       "chains": [
-        "evm"
+        1,
+        8453,
+        42161,
+        137,
+        56
       ],
-      "note": ""
+      "note": "fToken ERC4626 + VaultResolver T1 NFT；smart col/debt 跳過"
     },
     {
       "id": "kamino",
@@ -991,23 +995,25 @@
       "name": "Silo Finance",
       "sector": "lending",
       "family": "silo",
-      "status": "pending",
+      "status": "wired",
       "chains": [
-        "evm"
+        1,
+        42161,
+        146,
+        43114
       ],
-      "note": ""
+      "note": "V2 factory idToSiloConfig + ERC4626"
     },
     {
       "id": "fraxlend",
       "name": "Fraxlend",
       "sector": "lending",
       "family": "fraxlend",
-      "status": "pending",
+      "status": "wired",
       "chains": [
-        1,
-        252
+        1
       ],
-      "note": ""
+      "note": "PairRegistry getAllPairAddresses + getUserSnapshot；Fraxtal 252 未接"
     },
     {
       "id": "euler",

@@ -61,7 +61,9 @@ const USDC_OP: SeedToken = { address: "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff8
 const USDT_OP: SeedToken = { address: "0x94b008aA00579c1307B0EF2c499aD98a8ce58e58", symbol: "USDT", decimals: 6, icon: I("usdt") };
 
 const WPOL: SeedToken = { address: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270", symbol: "WPOL", decimals: 18, icon: I("pol") };
+const WETH_POL: SeedToken = { address: "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619", symbol: "WETH", decimals: 18, icon: I("eth") };
 const USDC_POL: SeedToken = { address: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", symbol: "USDC", decimals: 6, icon: I("usdc") };
+const USDCE_POL: SeedToken = { address: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", symbol: "USDC", decimals: 6, icon: I("usdc") };
 const USDT_POL: SeedToken = { address: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F", symbol: "USDT", decimals: 6, icon: I("usdt") };
 
 const WETH_LINEA: SeedToken = { address: "0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f", symbol: "WETH", decimals: 18, icon: I("eth") };
@@ -157,6 +159,10 @@ export const SEED_PAIRS: SeedPair[] = [
   pair(10, WETH_OP, USDT_OP),
   pair(137, WPOL, USDC_POL),
   pair(137, WPOL, USDT_POL),
+  pair(137, WPOL, USDCE_POL),
+  pair(137, WETH_POL, USDCE_POL),
+  pair(137, WETH_POL, USDC_POL),
+  pair(137, WETH_POL, WPOL),
   pair(59144, WETH_LINEA, USDC_LINEA),
 ];
 

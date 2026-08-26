@@ -1,6 +1,7 @@
 import { VENUES } from "../dexVenues.ts";
 import { minswapProtocol } from "./ada/minswap.ts";
 import { makeAero } from "./evm/aerodrome.ts";
+import { ALGEBRA_VENUES, makeAlgebra } from "./evm/algebra.ts";
 import { BALANCER_CHAINS, makeBalancer } from "./evm/balancer.ts";
 import { CURVE_CHAINS, makeCurve } from "./evm/curve.ts";
 import { makeV2 } from "./evm/univ2.ts";
@@ -21,6 +22,7 @@ export function ensureProtocols() {
   }
   for (const id of CURVE_CHAINS) register(makeCurve(id));
   for (const id of BALANCER_CHAINS) register(makeBalancer(id));
+  for (const v of ALGEBRA_VENUES) register(makeAlgebra(v));
   register(nearRefProtocol);
   register(minswapProtocol);
   register(jupiterProtocol);
