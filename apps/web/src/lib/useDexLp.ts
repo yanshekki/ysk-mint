@@ -5,6 +5,8 @@ import { useConfig } from "wagmi";
 import { venuesOn, SEED_PAIRS } from "./dexVenues.ts";
 import { v2FactoryAbi, aeroFactoryAbi, erc20BalAbi, readVenuesForPair, weightedPrice } from "./dexPools.ts";
 import { pairId, canonAddr, type Addr } from "./pairKey.ts";
+import { nearMyLp } from "./nearDex.ts";
+import { adaMyLp } from "./adaDex.ts";
 
 const ZERO = "0x0000000000000000000000000000000000000000";
 
@@ -122,13 +124,19 @@ async function v3Positions(client: PublicClient, chainId: number, user: Address)
   return found;
 }
 
-export function useDexLp(address: Address | undefined, chainFilter: number | "all") {
+export function useDexLp(
+  address: Address | undefined,
+  chainFilter: number | "all",
+  native?: { near?: string; cardanoUnits?: string[] },
+) {
   const config = useConfig();
   const [rows, setRows] = useState<MyLpRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const near = native?.near ?? "";
+  const adaKey = (native?.cardanoUnits ?? []).join("|");
 
   useEffect(() => {
-    if (!address) {
+    if (!address && !near && !adaKey) {
       setRows([]);
       return;
     }
@@ -137,29 +145,54 @@ export function useDexLp(address: Address | undefined, chainFilter: number | "al
     const chainIds = [...new Set(SEED_PAIRS.map((p) => p.chainId))].filter((id) => chainFilter === "all" || id === chainFilter);
     void (async () => {
       const acc = new Map<string, MyLpRow>();
-      for (const chainId of chainIds) {
-        const client = getPublicClient(config, { chainId });
-        if (!client) continue;
-        const hits = [...(await v2Positions(client, chainId, address)), ...(await v3Positions(client, chainId, address))];
-        for (const h of hits) {
-          const id = pairId(chainId, h.a, h.b);
-          const ma = seedMeta(chainId, h.a);
-          const mb = seedMeta(chainId, h.b);
-          const venues = await readVenuesForPair(client, chainId, h.a, h.b, ma?.decimals ?? 18, mb?.decimals ?? 18).catch(() => []);
-          const names = [...new Set(venues.map((v) => v.venue.name))];
-          const price = weightedPrice(venues);
-          acc.set(id, {
-            pairId: id,
-            chainId,
-            symbolA: ma?.symbol ?? h.a.slice(0, 6),
-            symbolB: mb?.symbol ?? h.b.slice(0, 6),
-            tokenA: h.a,
-            tokenB: h.b,
-            iconA: ma?.icon ?? "/tokens/eth.png",
-            iconB: mb?.icon ?? "/tokens/eth.png",
-            venueCount: names.length || 1,
-            venueNames: names,
-            valueHint: price != null ? String(price) : "—",
+      if (address) {
+        for (const chainId of chainIds) {
+          const client = getPublicClient(config, { chainId });
+          if (!client) continue;
+          const hits = [...(await v2Positions(client, chainId, address)), ...(await v3Positions(client, chainId, address))];
+          for (const h of hits) {
+            const id = pairId(chainId, h.a, h.b);
+            const ma = seedMeta(chainId, h.a);
+            const mb = seedMeta(chainId, h.b);
+            const venues = await readVenuesForPair(client, chainId, h.a, h.b, ma?.decimals ?? 18, mb?.decimals ?? 18).catch(() => []);
+            const names = [...new Set(venues.map((v) => v.venue.name))];
+            const price = weightedPrice(venues);
+            acc.set(id, {
+              pairId: id,
+              chainId,
+              symbolA: ma?.symbol ?? h.a.slice(0, 6),
+              symbolB: mb?.symbol ?? h.b.slice(0, 6),
+              tokenA: h.a,
+              tokenB: h.b,
+              iconA: ma?.icon ?? "/tokens/eth.png",
+              iconB: mb?.icon ?? "/tokens/eth.png",
+              venueCount: names.length || 1,
+              venueNames: names,
+              valueHint: price != null ? String(price) : "—",
+            });
+          }
+        }
+      }
+      if (near && (chainFilter === "all" || chainFilter === 397)) {
+        for (const h of await nearMyLp(near).catch(() => [])) {
+          acc.set(h.pairId, h);
+        }
+      }
+      if (adaKey && (chainFilter === "all" || chainFilter === 1815)) {
+        const units = adaKey.split("|").filter(Boolean);
+        for (const h of await adaMyLp(units).catch(() => [])) {
+          acc.set(h.pairId, {
+            pairId: h.pairId,
+            chainId: h.chainId,
+            symbolA: h.symbolA,
+            symbolB: h.symbolB,
+            tokenA: h.tokenA,
+            tokenB: h.tokenB,
+            iconA: h.iconA,
+            iconB: h.iconB,
+            venueCount: h.venueNames.length || 1,
+            venueNames: h.venueNames,
+            valueHint: "—",
           });
         }
       }
@@ -171,7 +204,7 @@ export function useDexLp(address: Address | undefined, chainFilter: number | "al
     return () => {
       cancelled = true;
     };
-  }, [address, chainFilter, config]);
+  }, [address, chainFilter, config, near, adaKey]);
 
   return { rows, loading };
 }

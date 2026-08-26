@@ -5,6 +5,8 @@ import { SEED_PAIRS, SOL_SEEDS } from "./dexVenues.ts";
 import { readVenuesForPair, weightedPrice, type VenuePool } from "./dexPools.ts";
 import { pairId } from "./pairKey.ts";
 import { quoteSolMints } from "./defiQuotes.ts";
+import { loadNearMarkets } from "./nearDex.ts";
+import { loadAdaMarkets } from "./adaDex.ts";
 
 export type MarketRow = {
   pairId: string;
@@ -76,13 +78,18 @@ export function useDexMarkets(chainId: number | "all") {
     const ids =
       chainId === "all"
         ? featuredChains()
-            .filter((c) => c.evm && !c.testnet)
+            .filter((c) => !c.testnet)
             .map((c) => c.chainId)
         : [chainId];
     void (async () => {
       try {
-        const parts = await Promise.all(ids.filter((id) => id !== 101 && id !== 397 && id !== 1815).map(loadEvm));
-        const flat = parts.flat();
+        const evmIds = ids.filter((id) => ![101, 397, 1815, 398, 18151, 103].includes(id));
+        const [evmParts, near, ada] = await Promise.all([
+          Promise.all(evmIds.map(loadEvm)),
+          ids.includes(397) ? loadNearMarkets().catch(() => []) : Promise.resolve([]),
+          ids.includes(1815) ? loadAdaMarkets().catch(() => []) : Promise.resolve([]),
+        ]);
+        const flat = [...evmParts.flat(), ...near, ...ada];
         if (chainId === "all" || chainId === 101) {
           const jup = await quoteSolMints(SOL_SEEDS.map((s) => s.mintA));
           for (const s of SOL_SEEDS) {
@@ -104,6 +111,11 @@ export function useDexMarkets(chainId: number | "all") {
             });
           }
         }
+        const order = featuredChains().map((c) => c.chainId);
+        flat.sort((a, b) => {
+          const d = order.indexOf(a.chainId) - order.indexOf(b.chainId);
+          return d !== 0 ? d : a.symbolA.localeCompare(b.symbolA);
+        });
         if (!cancelled) setRows(flat);
       } catch (e) {
         if (!cancelled) {

@@ -4,6 +4,10 @@ export function canonAddr(a: string) {
   return a.toLowerCase() as Addr;
 }
 
+export function canonId(a: string) {
+  return a.toLowerCase();
+}
+
 export function sortPair(a: string, b: string): [Addr, Addr] {
   const x = canonAddr(a);
   const y = canonAddr(b);

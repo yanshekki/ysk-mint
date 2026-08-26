@@ -141,5 +141,5 @@ export function seedToken(chainId: number, address: string) {
 }
 
 export function isStable(symbol: string) {
-  return symbol === "USDC" || symbol === "USDT" || symbol === "DAI";
+  return symbol === "USDC" || symbol === "USDT" || symbol === "USDt" || symbol === "DAI" || symbol === "USDM" || symbol === "USDA" || symbol === "iUSD" || symbol === "DJED";
 }

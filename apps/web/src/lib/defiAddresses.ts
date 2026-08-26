@@ -150,6 +150,10 @@ export const LST: Record<number, Record<string, { symbol: string; name: string; 
     "0xc1cba3fcea344f92d9239c08c0568f6f2f0ee452": { symbol: "wstETH", name: "Wrapped stETH", decimals: 18, icon: "/tokens/eth.png" },
     "0x04c0599ae5a44757c0af6f9ec3b93da8976c150a": { symbol: "weETH", name: "ether.fi weETH", decimals: 18, icon: "/tokens/eth.png" },
   },
+  397: {
+    "linear-protocol.near": { symbol: "LINEAR", name: "LiNEAR", decimals: 24, icon: "/tokens/near.png" },
+    "meta-pool.near": { symbol: "stNEAR", name: "Meta Pool stNEAR", decimals: 24, icon: "/tokens/near.png" },
+  },
   42161: {
     "0x5979d7b546e38e414f7e9822514be443a4800529": { symbol: "wstETH", name: "Wrapped stETH", decimals: 18, icon: "/tokens/eth.png" },
     "0xec70dcb4a1efa46b8f2d97c310c9c4790ba5ffa8": { symbol: "rETH", name: "Rocket Pool ETH", decimals: 18, icon: "/tokens/eth.png" },

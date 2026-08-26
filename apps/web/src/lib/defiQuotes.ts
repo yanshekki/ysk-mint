@@ -49,7 +49,7 @@ const v2PairAbi = [
   { type: "function", name: "token0", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
 ] as const;
 
-export type Quote = { usdc: number; source: "v3" | "v2" | "jup" | "stable" };
+export type Quote = { usdc: number; source: "v3" | "v2" | "jup" | "stable" | "ref" | "minswap" };
 
 type Spot = { price: number; depth: number };
 

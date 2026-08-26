@@ -4,6 +4,8 @@ import { readVenuesForPair, weightedPrice, type VenuePool } from "./dexPools.ts"
 import { canonAddr } from "./pairKey.ts";
 import { quoteEvmToken, quoteSolMints, type Quote } from "./defiQuotes.ts";
 import { DEX, isUsdStableAddress, usdStables } from "./defiAddresses.ts";
+import { quoteNearToken } from "./nearDex.ts";
+import { quoteAdaToken } from "./adaDex.ts";
 
 export type Oracle = {
   usdc: number;
@@ -49,17 +51,20 @@ function uniqueUsdQuotes(chainId: number): SeedToken[] {
 }
 
 export async function oracleTokenUsdc(
-  client: PublicClient,
+  client: PublicClient | undefined,
   chainId: number,
-  token: Address | undefined,
+  token: Address | string | undefined,
   decimals: number,
   native?: boolean,
 ): Promise<Quote | null> {
+  if (chainId === 397) return quoteNearToken(token, native);
+  if (chainId === 1815) return quoteAdaToken(token, native);
+  if (!client) return null;
   const d = DEX[chainId];
   const seeds = SEED_PAIRS.filter((p) => p.chainId === chainId);
   const wrapped = d?.wrapped ?? seeds[0]?.a.address;
   const addr = (native ? wrapped : token)?.toLowerCase();
-  if (!addr) return quoteEvmToken(client, chainId, token, decimals, native);
+  if (!addr) return quoteEvmToken(client, chainId, token as Address | undefined, decimals, native);
   if (d && isUsdStableAddress(d, addr)) return { usdc: 1, source: "stable" };
 
   const asToken = seeds.flatMap((p) => [p.a, p.b]).find((t) => t.address.toLowerCase() === addr);
@@ -84,7 +89,7 @@ export async function oracleTokenUsdc(
     const price = weightedPrice(allVenues);
     if (price != null) return { usdc: price, source: "v3" };
   }
-  return quoteEvmToken(client, chainId, token, decimals, native);
+  return quoteEvmToken(client, chainId, token as Address | undefined, decimals, native);
 }
 
 export { quoteSolMints };

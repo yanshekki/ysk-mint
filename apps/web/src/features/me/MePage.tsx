@@ -17,6 +17,7 @@ import { DEX, isLst, SOL_NATIVE_MINT } from "../../lib/defiAddresses.ts";
 import { fmtUsdc, quoteKey, quoteSolMints, type Quote } from "../../lib/defiQuotes.ts";
 import { oracleTokenUsdc } from "../../lib/oracle.ts";
 import { readAave, readUniV3, stakingLines, type AaveCard, type UniCard } from "../../lib/defiPositions.ts";
+import { readBurrow } from "../../lib/nearDex.ts";
 
 const launchEvent = parseAbiItem(
   "event Launch(address indexed token, address indexed deployer, bytes32 indexed salt, string name, string symbol, uint8 supplyMode)",
@@ -130,6 +131,7 @@ export function MePage() {
   const [launched, setLaunched] = useState<LaunchRow[]>([]);
   const [quotes, setQuotes] = useState<Map<string, Quote>>(new Map());
   const [aave, setAave] = useState<AaveCard[]>([]);
+  const [burrow, setBurrow] = useState<AaveCard[]>([]);
   const [uni, setUni] = useState<UniCard[]>([]);
   const [aTokens, setATokens] = useState<Set<string>>(new Set());
 
@@ -233,6 +235,7 @@ export function MePage() {
     if (!anyWallet) {
       setQuotes(new Map());
       setAave([]);
+      setBurrow([]);
       setUni([]);
       setATokens(new Set());
       return;
@@ -258,6 +261,22 @@ export function MePage() {
       const solMints = funded.filter((r) => r.chainId === 101).map((r) => (r.native ? SOL_NATIVE_MINT : r.contract || ""));
       const jup = await quoteSolMints(solMints);
       for (const [mint, q] of jup) next.set(`101:${mint === SOL_NATIVE_MINT ? "native" : mint.toLowerCase()}`, q);
+
+      await Promise.all(
+        funded
+          .filter((r) => r.chainId === 397 || r.chainId === 1815)
+          .map(async (r) => {
+            const q = await oracleTokenUsdc(undefined, r.chainId!, r.contract, rowDecimals(r), r.native).catch(() => null);
+            if (q) next.set(quoteKey(r.chainId!, r.contract, r.native), q);
+          }),
+      );
+
+      if (native.nearAccount) {
+        const b = await readBurrow(native.nearAccount).catch(() => null);
+        if (!cancelled) setBurrow(b ? [b] : []);
+      } else if (!cancelled) {
+        setBurrow([]);
+      }
 
       if (address) {
         const aaveCards: AaveCard[] = [];
@@ -289,7 +308,7 @@ export function MePage() {
     return () => {
       cancelled = true;
     };
-  }, [address, anyWallet, buckets, config]);
+  }, [address, anyWallet, buckets, config, native.nearAccount]);
 
   const walletRows = useMemo(() => {
     const rows = buckets.flatMap((g) =>
@@ -306,6 +325,7 @@ export function MePage() {
   const stake = filter === "all" ? stakeAll : stakeAll.filter((l) => l.chainId === filter);
 
   const aaveCards = filter === "all" ? aave : aave.filter((c) => c.chainId === filter);
+  const burrowCards = filter === "all" ? burrow : burrow.filter((c) => c.chainId === filter);
   const uniCards = filter === "all" ? uni : uni.filter((c) => c.chainId === filter);
   const visibleLaunched = filter === "all" ? launched : launched.filter((r) => r.chainId === filter);
 
@@ -315,6 +335,7 @@ export function MePage() {
     allValues.push(valued(r.raw, rowDecimals(r), quotes.get(quoteKey(r.chainId ?? 0, r.contract, r.native))));
   }
   for (const c of aaveCards) for (const l of c.lines) allValues.push(l.valueUsdc ?? null);
+  for (const c of burrowCards) for (const l of c.lines) allValues.push(l.valueUsdc ?? null);
   for (const c of uniCards) for (const l of c.lines) allValues.push(l.valueUsdc ?? null);
   for (const l of stake) allValues.push(l.valueUsdc ?? null);
   const quoted = allValues.filter((v): v is number => v != null);
@@ -325,9 +346,10 @@ export function MePage() {
     const rows = id === "all" ? buckets.flatMap((g) => g.rows) : (buckets.find((g) => g.id === id)?.rows ?? []);
     const nWallet = rows.filter((r) => r.raw > 0n && !isLst(r.chainId ?? 0, r.contract) && !(r.contract && aTokens.has(r.contract.toLowerCase()))).length;
     const nAave = (id === "all" ? aave : aave.filter((c) => c.chainId === id)).reduce((n, c) => n + c.lines.length, 0);
+    const nBurrow = (id === "all" ? burrow : burrow.filter((c) => c.chainId === id)).reduce((n, c) => n + c.lines.length, 0);
     const nUni = (id === "all" ? uni : uni.filter((c) => c.chainId === id)).reduce((n, c) => n + c.lines.length, 0);
     const nStake = id === "all" ? stakeAll.length : stakeAll.filter((l) => l.chainId === id).length;
-    return nWallet + nAave + nUni + nStake;
+    return nWallet + nAave + nBurrow + nUni + nStake;
   };
 
   return (
@@ -441,6 +463,40 @@ export function MePage() {
                   </div>
                 )}
               </section>
+
+              {burrowCards.map((c) => (
+                <section key={`burrow-${c.chainId}`} className="me-card">
+                  <div className="me-card-head">
+                    <b>
+                      {t("me.burrow")} · {c.chain}
+                    </b>
+                    <span className="me-count">
+                      {t("me.health")} {c.health}
+                    </span>
+                  </div>
+                  <div className="me-cols me-cols-5">
+                    <span>{t("me.token")}</span>
+                    <span>{t("me.quote")}</span>
+                    <span>{t("me.amount")}</span>
+                    <span>{t("me.value")}</span>
+                  </div>
+                  <div className="me-list">
+                    {c.lines.map((l) => (
+                      <Line
+                        key={l.id}
+                        icon={l.icon}
+                        tag={l.chain}
+                        title={`${l.symbol}`}
+                        subtitle={l.side === "borrow" ? t("me.borrowed") : t("me.supplied")}
+                        amount={l.amount}
+                        price={l.quote ? fmtUsdc(l.quote.usdc) : "—"}
+                        value={l.valueUsdc == null ? "—" : fmtUsdc(l.valueUsdc)}
+                        href={explorerFor(l.chainId, l.contract)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              ))}
 
               {aaveCards.map((c) => (
                 <section key={`aave-${c.chainId}`} className="me-card">

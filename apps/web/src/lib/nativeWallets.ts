@@ -73,13 +73,9 @@ export function disconnectCardanoWallet() {
 
 export async function pingNearRpc(): Promise<string | null> {
   try {
-    const res = await fetch("https://rpc.mainnet.near.org", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", id: "1", method: "status", params: [] }),
-    });
-    const json = (await res.json()) as { result?: { sync_info?: { latest_block_height?: number } } };
-    const h = json.result?.sync_info?.latest_block_height;
+    const { nearRpc } = await import("./nearRpc.ts");
+    const json = await nearRpc("status", []);
+    const h = (json.result as { sync_info?: { latest_block_height?: number } } | undefined)?.sync_info?.latest_block_height;
     return typeof h === "number" ? String(h) : null;
   } catch {
     return null;

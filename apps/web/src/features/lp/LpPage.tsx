@@ -8,6 +8,8 @@ import { useDexMarkets } from "../../lib/useDexMarkets.ts";
 import { useDexLp } from "../../lib/useDexLp.ts";
 import { fmtUsdc } from "../../lib/defiQuotes.ts";
 import { chainIcon } from "../../lib/chainIcon.ts";
+import { useNativeWallets } from "../../lib/nativeWallets.ts";
+import { useCardanoHoldings } from "../../lib/useHoldings.ts";
 
 function fmtUnlock(ts: number) {
   if (!ts) return "—";
@@ -22,15 +24,22 @@ function short(a: string) {
 export function LpPage() {
   const { t } = useTranslation();
   const { address } = useAccount();
+  const native = useNativeWallets();
+  const ada = useCardanoHoldings(native.cardanoAddress, {
+    addresses: native.cardanoAddresses,
+    stake: native.cardanoStake,
+    sync: native.cardanoSync,
+  });
   const featured = featuredChains();
   const [filter, setFilter] = useState<number | "all">("all");
   const selected = filter === "all" ? undefined : featured.find((c) => c.chainId === filter);
   const lockFilter: LpFilter = filter === "all" ? "all" : (selected?.key ?? "all");
   const markets = useDexMarkets(filter);
-  const mine = useDexLp(address, filter);
+  const mine = useDexLp(address, filter, {
+    near: native.nearAccount,
+    cardanoUnits: ada.rows.map((r) => r.contract).filter((x): x is string => Boolean(x)),
+  });
   const locks = useLpFeed(lockFilter);
-
-  const nativeEmpty = selected && !selected.evm;
 
   return (
     <section className="workspace">
@@ -60,12 +69,6 @@ export function LpPage() {
             ))}
           </div>
 
-          {nativeEmpty ? (
-            <p className="field-note">
-              {selected.vm === "near" ? t("lp.nearAmm") : selected.vm === "cardano" ? t("lp.adaAmm") : t("lp.solAmm")}
-            </p>
-          ) : null}
-
           {mine.rows.length ? (
             <section className="me-card">
               <div className="me-card-head">
@@ -74,7 +77,7 @@ export function LpPage() {
               </div>
               <div className="me-list">
                 {mine.rows.map((r) => (
-                  <Link key={r.pairId} to={`/pair/${r.chainId}/${r.tokenA}/${r.tokenB}`} className="me-token me-token-5">
+                  <Link key={r.pairId} to={`/pair/${r.chainId}/${encodeURIComponent(r.tokenA)}/${encodeURIComponent(r.tokenB)}`} className="me-token me-token-5">
                     <span className="holding-ico-wrap">
                       <img src={r.iconA} alt="" className="holding-ico" />
                       <span className="holding-chain-tag">{r.symbolB.slice(0, 3)}</span>
@@ -104,7 +107,7 @@ export function LpPage() {
             ) : markets.error ? (
               <p className="me-card-empty">{t("lp.rpcError")}</p>
             ) : markets.rows.length === 0 ? (
-              <p className="me-card-empty">{nativeEmpty ? "" : t("lp.emptyMarkets")}</p>
+              <p className="me-card-empty">{t("lp.emptyMarkets")}</p>
             ) : (
               <div className="me-list">
                 <div className="me-cols me-cols-5">
@@ -114,7 +117,7 @@ export function LpPage() {
                   <span>{t("lp.depth")}</span>
                 </div>
                 {markets.rows.map((r) => (
-                  <Link key={r.pairId} to={`/pair/${r.chainId}/${r.tokenA}/${r.tokenB}`} className="me-token me-token-5">
+                  <Link key={r.pairId} to={`/pair/${r.chainId}/${encodeURIComponent(r.tokenA)}/${encodeURIComponent(r.tokenB)}`} className="me-token me-token-5">
                     <span className="holding-ico-wrap">
                       <img src={r.iconA} alt="" className="holding-ico" />
                       <span className="holding-chain-tag">{r.chainShort}</span>

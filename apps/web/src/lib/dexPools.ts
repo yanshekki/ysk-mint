@@ -76,7 +76,7 @@ export const erc20BalAbi = [
 
 export type VenuePool = {
   venue: Venue;
-  pool: Addr;
+  pool: string;
   feeLabel: string;
   priceAinB: number;
   tvlQuote: number;

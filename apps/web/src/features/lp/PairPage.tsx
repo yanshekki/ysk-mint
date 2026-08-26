@@ -9,6 +9,8 @@ import { readVenuesForPair, weightedPrice, type VenuePool } from "../../lib/dexP
 import { usePairSwaps } from "../../lib/usePairSwaps.ts";
 import { fmtCompact, fmtUsdc } from "../../lib/defiQuotes.ts";
 import { canonAddr } from "../../lib/pairKey.ts";
+import { nearToken, nearVenuesForPair } from "../../lib/nearDex.ts";
+import { adaTokenMeta, adaVenuesForPair } from "../../lib/adaDex.ts";
 
 function short(a: string) {
   if (!a || a.length < 12) return a || "—";
@@ -19,32 +21,47 @@ export function PairPage() {
   const { t } = useTranslation();
   const { chainId: cid, tokenA, tokenB } = useParams();
   const chainId = Number(cid);
-  const a = tokenA as `0x${string}`;
-  const b = tokenB as `0x${string}`;
+  const a = decodeURIComponent(tokenA || "");
+  const b = decodeURIComponent(tokenB || "");
   const chain = Object.values(CHAINS).find((c) => c.chainId === chainId);
-  const sa = seedToken(chainId, a);
-  const sb = seedToken(chainId, b);
+  const sa = seedToken(chainId, a) ?? nearToken(a) ?? adaTokenMeta(a);
+  const sb = seedToken(chainId, b) ?? nearToken(b) ?? adaTokenMeta(b);
   const { address } = useAccount();
   const [venues, setVenues] = useState<VenuePool[]>([]);
   const [loading, setLoading] = useState(true);
   const [client, setClient] = useState<PublicClient | undefined>();
 
   useEffect(() => {
-    if (!chain?.rpc || !a || !b || !Number.isFinite(chainId)) return;
-    const fallback: Record<number, string> = {
-      1: "https://ethereum-rpc.publicnode.com",
-      8453: "https://base.publicnode.com",
-      42161: "https://arbitrum-one-rpc.publicnode.com",
-      56: "https://bsc-rpc.publicnode.com",
-      43114: "https://avalanche-c-chain-rpc.publicnode.com",
-    };
-    const c = createPublicClient({ transport: http(fallback[chainId] ?? chain.rpc) });
-    setClient(c);
+    if (!a || !b || !Number.isFinite(chainId)) return;
     let cancelled = false;
     setLoading(true);
-    void readVenuesForPair(c, chainId, canonAddr(a), canonAddr(b), sa?.decimals ?? 18, sb?.decimals ?? 18)
+    const run = async () => {
+      if (chain?.vm === "near") {
+        setClient(undefined);
+        return nearVenuesForPair(a, b);
+      }
+      if (chain?.vm === "cardano") {
+        setClient(undefined);
+        return adaVenuesForPair(a, b, sa?.decimals ?? 6, sb?.decimals ?? 6);
+      }
+      if (!chain?.rpc) return [];
+      const fallback: Record<number, string> = {
+        1: "https://ethereum-rpc.publicnode.com",
+        8453: "https://base.publicnode.com",
+        42161: "https://arbitrum-one-rpc.publicnode.com",
+        56: "https://bsc-rpc.publicnode.com",
+        43114: "https://avalanche-c-chain-rpc.publicnode.com",
+      };
+      const c = createPublicClient({ transport: http(fallback[chainId] ?? chain.rpc) });
+      setClient(c);
+      return readVenuesForPair(c, chainId, canonAddr(a), canonAddr(b), sa?.decimals ?? 18, sb?.decimals ?? 18);
+    };
+    void run()
       .then((v) => {
         if (!cancelled) setVenues(v);
+      })
+      .catch(() => {
+        if (!cancelled) setVenues([]);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -55,8 +72,19 @@ export function PairPage() {
   }, [a, b, chain, chainId, sa?.decimals, sb?.decimals]);
 
   const price = useMemo(() => weightedPrice(venues), [venues]);
-  const swaps = usePairSwaps(client, venues, sa?.decimals ?? 18, sb?.decimals ?? 18);
+  const evm = chain?.vm === "evm" || chain?.evm;
+  const swaps = usePairSwaps(evm ? client : undefined, evm ? venues : [], sa?.decimals ?? 18, sb?.decimals ?? 18);
   const quoteIsStable = sb ? isStable(sb.symbol) : false;
+
+  function venueHref(pool: string) {
+    if (chain?.vm === "near") return "https://nearblocks.io/address/v2.ref-finance.near";
+    if (chain?.vm === "cardano") {
+      const unit = pool.replace(".", "");
+      if (/^[0-9a-f]{56,}$/i.test(unit)) return `${chain.explorer}/token/${unit}`;
+      return chain.explorer;
+    }
+    return chain?.explorer ? `${chain.explorer}/address/${pool}` : undefined;
+  }
 
   if (!a || !b || !Number.isFinite(chainId)) return <p className="workspace-scroll">{t("lp.pairMissing")}</p>;
 
@@ -102,7 +130,7 @@ export function PairPage() {
                   <a
                     key={`${v.venue.id}-${v.pool}-${v.feeLabel}`}
                     className="me-token me-token-5"
-                    href={`${chain?.explorer}/address/${v.pool}`}
+                    href={venueHref(v.pool)}
                     target="_blank"
                     rel="noreferrer"
                   >
@@ -132,7 +160,7 @@ export function PairPage() {
             {swaps.loading ? (
               <p className="me-card-empty">{t("lp.loading")}</p>
             ) : swaps.rows.length === 0 ? (
-              <p className="me-card-empty">{t("lp.noTrades")}</p>
+              <p className="me-card-empty">{evm ? t("lp.noTrades") : t("lp.noOnchainTrades")}</p>
             ) : (
               <div className="me-list">
                 <div className="me-cols me-cols-5">

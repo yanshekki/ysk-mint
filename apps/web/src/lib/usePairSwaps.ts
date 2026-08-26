@@ -28,7 +28,7 @@ export async function fetchSwaps(client: PublicClient, venues: VenuePool[], dec0
     const v3 = v.venue.kind === "v3";
     try {
       const logs = await client.getLogs({
-        address: v.pool,
+        address: v.pool as `0x${string}`,
         event: v3 ? v3Swap : v2Swap,
         fromBlock: from,
         toBlock: "latest",

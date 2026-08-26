@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { erc20Abi, formatUnits, type Address } from "viem";
 import { useBalance, useReadContracts } from "wagmi";
 import { addressToHex, readCardanoValue, stakeFromPayment } from "./cardanoCip30.ts";
+import { nearRpc } from "./nearRpc.ts";
 import { cardanoByUnit, solByMint, tokensFor, type TokenRecord } from "./tokenRegistry.ts";
 
 export type HoldingRow = {
@@ -512,11 +513,4 @@ function hexAscii(hex: string) {
   }
 }
 
-async function nearRpc(method: string, params: unknown) {
-  const res = await fetch("https://rpc.mainnet.near.org", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", id: "1", method, params }),
-  });
-  return (await res.json()) as { result?: unknown };
-}
+
