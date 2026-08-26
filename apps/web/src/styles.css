@@ -1280,6 +1280,13 @@ button.oft-chain:disabled {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.me-token-5 .holding-meta span.me-note {
+  white-space: normal;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
 .me-card-empty {
   margin: 0;
   padding: 16px;

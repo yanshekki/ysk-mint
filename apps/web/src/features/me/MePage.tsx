@@ -16,8 +16,18 @@ import { TOKEN_CATALOG } from "../../lib/tokenRegistry.ts";
 import { DEX, isLst, SOL_NATIVE_MINT } from "../../lib/defiAddresses.ts";
 import { fmtUsdc, quoteKey, quoteSolMints, type Quote } from "../../lib/defiQuotes.ts";
 import { oracleTokenUsdc } from "../../lib/oracle.ts";
-import { readAave, readUniV3, stakingLines, type AaveCard, type UniCard } from "../../lib/defiPositions.ts";
+import { readAave, readUniV3, type AaveCard, type UniCard } from "../../lib/defiPositions.ts";
 import { readBurrow } from "../../lib/nearDex.ts";
+import {
+  lstStakeLines,
+  readAdaStake,
+  readLidoQueue,
+  readNearStake,
+  readSolStake,
+  stakeBadge,
+  stakeSubtitle,
+  type StakeLine,
+} from "../../lib/stakingPositions.ts";
 
 const launchEvent = parseAbiItem(
   "event Launch(address indexed token, address indexed deployer, bytes32 indexed salt, string name, string symbol, uint8 supplyMode)",
@@ -77,6 +87,7 @@ type LineProps = {
   href?: string;
   internal?: boolean;
   badge?: string;
+  note?: boolean;
 };
 
 function Line(p: LineProps) {
@@ -91,7 +102,7 @@ function Line(p: LineProps) {
           {p.title}
           {p.badge ? <Badge kind="info">{p.badge}</Badge> : null}
         </b>
-        <span className="num">{p.subtitle}</span>
+        <span className={`num${p.note ? " me-note" : ""}`}>{p.subtitle}</span>
       </div>
       <span className="num me-price">{p.price ?? "—"}</span>
       <span className="num holding-amt">{p.amount}</span>
@@ -134,6 +145,7 @@ export function MePage() {
   const [burrow, setBurrow] = useState<AaveCard[]>([]);
   const [uni, setUni] = useState<UniCard[]>([]);
   const [aTokens, setATokens] = useState<Set<string>>(new Set());
+  const [stakeExtra, setStakeExtra] = useState<StakeLine[]>([]);
 
   const anyWallet = isConnected || Boolean(native.nearAccount || native.cardanoAddress || native.solanaAddress);
 
@@ -238,6 +250,7 @@ export function MePage() {
       setBurrow([]);
       setUni([]);
       setATokens(new Set());
+      setStakeExtra([]);
       return;
     }
     let cancelled = false;
@@ -249,6 +262,10 @@ export function MePage() {
       for (const id of new Set(evmRows.map((r) => r.chainId!))) {
         const c = getPublicClient(config, { chainId: id });
         if (c) clients.set(id, c);
+      }
+      if (address && !clients.has(1)) {
+        const c = getPublicClient(config, { chainId: 1 });
+        if (c) clients.set(1, c);
       }
       await Promise.all(
         evmRows.map(async (r) => {
@@ -303,12 +320,23 @@ export function MePage() {
         setUni([]);
         setATokens(new Set());
       }
-      if (!cancelled) setQuotes(next);
+      const extra: StakeLine[] = [];
+      const ethClient = clients.get(1);
+      const ethUsd = next.get(quoteKey(1, undefined, true))?.usdc ?? next.get("1:native")?.usdc;
+      if (ethClient && address) extra.push(...(await readLidoQueue(ethClient, address, ethUsd).catch(() => [])));
+      if (native.cardanoStake) extra.push(...(await readAdaStake(native.cardanoStake).catch(() => [])));
+      if (native.nearAccount) extra.push(...(await readNearStake(native.nearAccount).catch(() => [])));
+      const solUsd = next.get(`101:native`)?.usdc;
+      if (native.solanaAddress) extra.push(...(await readSolStake(native.solanaAddress, solUsd).catch(() => [])));
+      if (!cancelled) {
+        setStakeExtra(extra);
+        setQuotes(next);
+      }
     })();
     return () => {
       cancelled = true;
     };
-  }, [address, anyWallet, buckets, config, native.nearAccount]);
+  }, [address, anyWallet, buckets, config, native.nearAccount, native.cardanoStake, native.solanaAddress]);
 
   const walletRows = useMemo(() => {
     const rows = buckets.flatMap((g) =>
@@ -321,7 +349,11 @@ export function MePage() {
     return filter === "all" ? rows : rows.filter((r) => r.chainId === filter);
   }, [aTokens, buckets, filter]);
 
-  const stakeAll = useMemo(() => buckets.flatMap((g) => stakingLines(g.id, g.rows, quotes)), [buckets, quotes]);
+  const stakeAll = useMemo(() => {
+    const lst = buckets.flatMap((g) => lstStakeLines(g.id, g.rows, quotes, t("me.unstakeLiquid")));
+    const seen = new Set(lst.map((l) => l.id));
+    return [...lst, ...stakeExtra.filter((l) => !seen.has(l.id))];
+  }, [buckets, quotes, stakeExtra, t]);
   const stake = filter === "all" ? stakeAll : stakeAll.filter((l) => l.chainId === filter);
 
   const aaveCards = filter === "all" ? aave : aave.filter((c) => c.chainId === filter);
@@ -337,7 +369,7 @@ export function MePage() {
   for (const c of aaveCards) for (const l of c.lines) allValues.push(l.valueUsdc ?? null);
   for (const c of burrowCards) for (const l of c.lines) allValues.push(l.valueUsdc ?? null);
   for (const c of uniCards) for (const l of c.lines) allValues.push(l.valueUsdc ?? null);
-  for (const l of stake) allValues.push(l.valueUsdc ?? null);
+  for (const l of stake) if (!l.inWallet) allValues.push(l.valueUsdc ?? null);
   const quoted = allValues.filter((v): v is number => v != null);
   const unquoted = allValues.filter((v) => v == null).length;
   const total = quoted.reduce((a, b) => a + b, 0);
@@ -583,11 +615,21 @@ export function MePage() {
                         icon={l.icon}
                         tag={l.chain}
                         title={l.symbol}
-                        subtitle={l.name}
+                        subtitle={stakeSubtitle(l)}
                         amount={l.amount}
                         price={l.quote ? fmtUsdc(l.quote.usdc) : "—"}
                         value={l.valueUsdc == null ? "—" : fmtUsdc(l.valueUsdc)}
-                        href={explorerFor(l.chainId, l.contract)}
+                        href={
+                          l.chainId === 101
+                            ? `https://solscan.io/account/${l.contract}`
+                            : l.chainId === 397
+                              ? `https://nearblocks.io/address/${l.contract}`
+                              : l.chainId === 1815 && l.contract?.startsWith("pool")
+                                ? `https://cardanoscan.io/pool/${l.contract}`
+                                : explorerFor(l.chainId, l.contract)
+                        }
+                        badge={stakeBadge(l)}
+                        note
                       />
                     ))}
                   </div>

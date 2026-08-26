@@ -154,6 +154,11 @@ export const LST: Record<number, Record<string, { symbol: string; name: string; 
     "linear-protocol.near": { symbol: "LINEAR", name: "LiNEAR", decimals: 24, icon: "/tokens/near.png" },
     "meta-pool.near": { symbol: "stNEAR", name: "Meta Pool stNEAR", decimals: 24, icon: "/tokens/near.png" },
   },
+  101: {
+    msolzycxhdygdzu16g5qsh3i5k3z3kzk7ytfqcjm7so: { symbol: "mSOL", name: "Marinade mSOL", decimals: 9, icon: "/tokens/sol.png" },
+    j1toso1uck3rlmjorhttrvwy9hj7x8v9yyac6y7kgcpn: { symbol: "jitoSOL", name: "Jito SOL", decimals: 9, icon: "/tokens/sol.png" },
+    bso13r4tkie4kuml71lshtppl2euvfxqecgmod7hgak: { symbol: "bSOL", name: "Blaze bSOL", decimals: 9, icon: "/tokens/sol.png" },
+  },
   42161: {
     "0x5979d7b546e38e414f7e9822514be443a4800529": { symbol: "wstETH", name: "Wrapped stETH", decimals: 18, icon: "/tokens/eth.png" },
     "0xec70dcb4a1efa46b8f2d97c310c9c4790ba5ffa8": { symbol: "rETH", name: "Rocket Pool ETH", decimals: 18, icon: "/tokens/eth.png" },

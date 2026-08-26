@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { erc20Abi, formatUnits, type Address } from "viem";
 import { useBalance, useReadContracts } from "wagmi";
-import { addressToHex, readCardanoValue, stakeFromPayment } from "./cardanoCip30.ts";
+import { readCardanoValue, stakeFromPayment } from "./cardanoCip30.ts";
 import { nearRpc } from "./nearRpc.ts";
 import { cardanoByUnit, solByMint, tokensFor, type TokenRecord } from "./tokenRegistry.ts";
 
@@ -195,35 +195,6 @@ function cardanoUnit(a: CardanoAsset) {
   return `${a.policy_id ?? a.asset_policy ?? ""}${a.asset_name ?? ""}`.toLowerCase();
 }
 
-/** Unclaimed staking rewards (lovelace). Yoroi explorer has CORS; Koios POST often does not. */
-async function fetchUnclaimedAda(stake: string): Promise<bigint> {
-  const hex = addressToHex(stake);
-  if (!hex || !stake.startsWith("stake")) return 0n;
-  try {
-    const res = await fetch("https://iohk-mainnet.yoroiwallet.com/api/account/state", {
-      method: "POST",
-      headers: { "content-type": "application/json", accept: "application/json" },
-      body: JSON.stringify({ addresses: [hex] }),
-    });
-    if (res.ok) {
-      const json = (await res.json()) as Record<string, { remainingAmount?: string }>;
-      const entry = json[hex] ?? Object.values(json)[0];
-      const n = BigInt(entry?.remainingAmount ?? "0");
-      if (n >= 0n) return n;
-    }
-  } catch {
-    /* fall through */
-  }
-  try {
-    const info = (await koiosPost("account_info", { _stake_addresses: [stake] })) as Array<{
-      rewards_available?: string;
-    }>;
-    return BigInt(info[0]?.rewards_available ?? "0");
-  } catch {
-    return 0n;
-  }
-}
-
 async function koiosPost(path: string, body: unknown) {
   const res = await fetch(`https://api.koios.rest/api/v1/${path}`, {
     method: "POST",
@@ -303,11 +274,7 @@ export function useCardanoHoldings(
             const known = cardanoByUnit(unit);
             qty.set(unit, { raw, decimals: known?.decimals ?? 0 });
           }
-          let ada = cip.ada;
-          if (stake.startsWith("stake")) {
-            ada += await fetchUnclaimedAda(stake);
-          }
-          if (!cancelled) setRows(rowsFromCardano(catalog, ada, qty));
+          if (!cancelled) setRows(rowsFromCardano(catalog, cip.ada, qty));
           return;
         }
 
@@ -318,7 +285,7 @@ export function useCardanoHoldings(
             total_balance?: string;
             utxo?: string;
           }>;
-          ada = BigInt(info[0]?.total_balance ?? info[0]?.utxo ?? "0");
+          ada = BigInt(info[0]?.utxo ?? info[0]?.total_balance ?? "0");
           assets = flattenCardanoAssets(await koiosPost("account_assets", { _stake_addresses: [stake] }));
         } else {
           const addrs = Array.from(new Set([address, ...payments].filter(Boolean)));
