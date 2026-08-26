@@ -7,23 +7,36 @@ import { evmEnabledChains } from "@ysk-mint/config";
 import { LOCALES } from "../../lib/i18n.ts";
 import {
   connectAptos,
+  connectBitcoin,
   connectCardano,
+  connectKeplr,
   connectNear,
   connectSolana,
+  connectStarknet,
+  connectStellar,
   connectSui,
   connectTon,
   connectTron,
+  connectXrpl,
   disconnectAptosWallet,
+  disconnectBitcoinWallet,
   disconnectCardanoWallet,
   disconnectNearWallet,
   disconnectSolanaWallet,
   disconnectSuiWallet,
   disconnectTonWallet,
+  disconnectKeplrWallet,
+  disconnectStarknetWallet,
+  disconnectStellarWallet,
   disconnectTronWallet,
+  disconnectXrplWallet,
   listAptosWallets,
+  listBitcoinWallets,
   listCardanoWallets,
   listSolanaWallets,
+  listStarknetWallets,
   listSuiWallets,
+  listXrplWallets,
   restoreCardanoSession,
   restoreNearSession,
   restoreSolanaSession,
@@ -58,6 +71,12 @@ export function ConnectBar() {
   const [suiOpen, setSuiOpen] = useState(false);
   const [aptosWallets, setAptosWallets] = useState<ExtraWalletInfo[]>([]);
   const [aptosOpen, setAptosOpen] = useState(false);
+  const [btcWallets, setBtcWallets] = useState<ExtraWalletInfo[]>([]);
+  const [btcOpen, setBtcOpen] = useState(false);
+  const [xrplWallets, setXrplWallets] = useState<ExtraWalletInfo[]>([]);
+  const [xrplOpen, setXrplOpen] = useState(false);
+  const [strkWallets, setStrkWallets] = useState<ExtraWalletInfo[]>([]);
+  const [strkOpen, setStrkOpen] = useState(false);
   const [pos, setPos] = useState({ top: 72, right: 24 });
   const barRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -70,7 +89,13 @@ export function ConnectBar() {
   const hasSui = Boolean(native.suiAddress);
   const hasTon = Boolean(native.tonAddress);
   const hasAptos = Boolean(native.aptosAddress);
-  const any = isConnected || hasNear || hasAda || hasSol || hasTron || hasSui || hasTon || hasAptos;
+  const hasBtc = Boolean(native.bitcoinAddress);
+  const hasXrpl = Boolean(native.xrplAddress);
+  const hasStellar = Boolean(native.stellarAddress);
+  const hasKeplr = Boolean(native.cosmosAddress || native.osmosisAddress || native.celestiaAddress);
+  const hasStark = Boolean(native.starknetAddress);
+  const any =
+    isConnected || hasNear || hasAda || hasSol || hasTron || hasSui || hasTon || hasAptos || hasBtc || hasXrpl || hasStellar || hasKeplr || hasStark;
   const evmName = useEvmName(address);
   const adaName = useAdaHandle(native.cardanoAddress, native.cardanoStake);
   const solName = useSolName(native.solanaAddress);
@@ -119,6 +144,13 @@ export function ConnectBar() {
   if (hasSui) parts.push("SUI");
   if (hasTon) parts.push("TON");
   if (hasAptos) parts.push("APT");
+  if (hasBtc) parts.push("BTC");
+  if (hasXrpl) parts.push("XRP");
+  if (hasStellar) parts.push("XLM");
+  if (native.cosmosAddress) parts.push("ATOM");
+  if (native.osmosisAddress) parts.push("OSMO");
+  if (native.celestiaAddress) parts.push("TIA");
+  if (hasStark) parts.push("STRK");
   const trigger =
     parts.length === 0
       ? t("wallet.connect")
@@ -364,6 +396,109 @@ export function ConnectBar() {
                   </button>
                 )}
               </div>
+
+              <div className="session-row">
+                <div className="session-row-copy">
+                  <b>Bitcoin</b>
+                  <span className="num">{hasBtc ? short(native.bitcoinAddress, 8, 8) : t("wizard.wallet.idle")}</span>
+                </div>
+                {hasBtc ? (
+                  <button type="button" className="ghost-btn" onClick={() => disconnectBitcoinWallet()}>
+                    {t("wallet.disconnect")}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="wallet-cta"
+                    disabled={busy === "btc"}
+                    onClick={() => {
+                      setOpen(false);
+                      setBtcWallets(listBitcoinWallets());
+                      setBtcOpen(true);
+                    }}
+                  >
+                    {t("wallet.connectBtc")}
+                  </button>
+                )}
+              </div>
+              <div className="session-row">
+                <div className="session-row-copy">
+                  <b>XRPL</b>
+                  <span className="num">{hasXrpl ? short(native.xrplAddress, 8, 8) : t("wizard.wallet.idle")}</span>
+                </div>
+                {hasXrpl ? (
+                  <button type="button" className="ghost-btn" onClick={() => disconnectXrplWallet()}>
+                    {t("wallet.disconnect")}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="wallet-cta"
+                    disabled={busy === "xrpl"}
+                    onClick={() => {
+                      setOpen(false);
+                      setXrplWallets(listXrplWallets());
+                      setXrplOpen(true);
+                    }}
+                  >
+                    {t("wallet.connectXrpl")}
+                  </button>
+                )}
+              </div>
+              <div className="session-row">
+                <div className="session-row-copy">
+                  <b>Stellar</b>
+                  <span className="num">{hasStellar ? short(native.stellarAddress, 8, 8) : t("wizard.wallet.idle")}</span>
+                </div>
+                {hasStellar ? (
+                  <button type="button" className="ghost-btn" onClick={() => disconnectStellarWallet()}>
+                    {t("wallet.disconnect")}
+                  </button>
+                ) : (
+                  <button type="button" className="wallet-cta" disabled={busy === "xlm"} onClick={() => { setBusy("xlm"); void connectStellar().finally(() => setBusy(null)); }}>
+                    {t("wallet.connectStellar")}
+                  </button>
+                )}
+              </div>
+              <div className="session-row">
+                <div className="session-row-copy">
+                  <b>Keplr</b>
+                  <span className="num">{hasKeplr ? short(native.cosmosAddress || native.osmosisAddress, 8, 8) : t("wizard.wallet.idle")}</span>
+                </div>
+                {hasKeplr ? (
+                  <button type="button" className="ghost-btn" onClick={() => disconnectKeplrWallet()}>
+                    {t("wallet.disconnect")}
+                  </button>
+                ) : (
+                  <button type="button" className="wallet-cta" disabled={busy === "keplr"} onClick={() => { setBusy("keplr"); void connectKeplr().finally(() => setBusy(null)); }}>
+                    {t("wallet.connectKeplr")}
+                  </button>
+                )}
+              </div>
+              <div className="session-row">
+                <div className="session-row-copy">
+                  <b>Starknet</b>
+                  <span className="num">{hasStark ? short(native.starknetAddress, 8, 8) : t("wizard.wallet.idle")}</span>
+                </div>
+                {hasStark ? (
+                  <button type="button" className="ghost-btn" onClick={() => disconnectStarknetWallet()}>
+                    {t("wallet.disconnect")}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="wallet-cta"
+                    disabled={busy === "strk"}
+                    onClick={() => {
+                      setOpen(false);
+                      setStrkWallets(listStarknetWallets());
+                      setStrkOpen(true);
+                    }}
+                  >
+                    {t("wallet.connectArgent")}
+                  </button>
+                )}
+              </div>
             </div>
           );
           return (
@@ -436,6 +571,66 @@ export function ConnectBar() {
           setBusy("aptos");
           void connectAptos(w.id)
             .then(() => setAptosOpen(false))
+            .finally(() => setBusy(null));
+        }}
+      />
+      <WalletPicker
+        open={btcOpen}
+        kicker="Bitcoin"
+        title={t("wallet.connectBtc")}
+        empty={t("wallet.noBtc")}
+        mark="BTC"
+        wallets={btcWallets}
+        busy={busy === "btc"}
+        onClose={() => setBtcOpen(false)}
+        onPick={(w) => {
+          if (!w.installed) {
+            if (w.url) window.open(w.url, "_blank", "noopener,noreferrer");
+            return;
+          }
+          setBusy("btc");
+          void connectBitcoin(w.id)
+            .then(() => setBtcOpen(false))
+            .finally(() => setBusy(null));
+        }}
+      />
+      <WalletPicker
+        open={xrplOpen}
+        kicker="XRPL"
+        title={t("wallet.connectXrpl")}
+        empty={t("wallet.noXrpl")}
+        mark="XRP"
+        wallets={xrplWallets}
+        busy={busy === "xrpl"}
+        onClose={() => setXrplOpen(false)}
+        onPick={(w) => {
+          if (!w.installed) {
+            if (w.url) window.open(w.url, "_blank", "noopener,noreferrer");
+            return;
+          }
+          setBusy("xrpl");
+          void connectXrpl(w.id)
+            .then(() => setXrplOpen(false))
+            .finally(() => setBusy(null));
+        }}
+      />
+      <WalletPicker
+        open={strkOpen}
+        kicker="Starknet"
+        title={t("wallet.connectArgent")}
+        empty={t("wallet.noArgent")}
+        mark="STRK"
+        wallets={strkWallets}
+        busy={busy === "strk"}
+        onClose={() => setStrkOpen(false)}
+        onPick={(w) => {
+          if (!w.installed) {
+            if (w.url) window.open(w.url, "_blank", "noopener,noreferrer");
+            return;
+          }
+          setBusy("strk");
+          void connectStarknet(w.id)
+            .then(() => setStrkOpen(false))
             .finally(() => setBusy(null));
         }}
       />

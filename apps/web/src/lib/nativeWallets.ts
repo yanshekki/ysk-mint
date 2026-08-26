@@ -35,6 +35,23 @@ export {
   listTronWallets,
   type ExtraWalletInfo,
 } from "./extraWallets.ts";
+export {
+  connectBitcoin,
+  connectKeplr,
+  connectStarknet,
+  connectStellar,
+  connectXrpl,
+  disconnectBitcoinWallet,
+  disconnectKeplrWallet,
+  disconnectStarknetWallet,
+  disconnectStellarWallet,
+  disconnectXrplWallet,
+  listBitcoinWallets,
+  listKeplrWallets,
+  listStarknetWallets,
+  listStellarWallets,
+  listXrplWallets,
+} from "./altWallets.ts";
 
 export async function restoreNearSession() {
   try {

@@ -752,4 +752,163 @@ export function useAptosHoldings(address: string) {
   return useJsonHoldings(637, catalog, Boolean(address), load);
 }
 
+export function useBitcoinHoldings(address: string) {
+  const catalog = useMemo(() => tokensFor("bitcoin", 833), []);
+  const load = useMemo(() => {
+    const addr = address;
+    return async () => {
+      const out = new Map<string, { raw: bigint; decimals?: number; symbol?: string; name?: string; icon?: string; contract?: string }>();
+      if (!addr) return out;
+      const w = window as unknown as { unisat?: { getBalance?: () => Promise<{ confirmed?: number; total?: number }> } };
+      if (w.unisat?.getBalance) {
+        try {
+          const b = await w.unisat.getBalance();
+          out.set("native", { raw: BigInt(b.total ?? b.confirmed ?? 0), decimals: 8, symbol: "BTC" });
+          return out;
+        } catch {
+          /* mempool.space */
+        }
+      }
+      const json = await jsonFetch<{ chain_stats?: { funded_txo_sum?: number; spent_txo_sum?: number } }>(`https://mempool.space/api/address/${addr}`);
+      const s = json.chain_stats;
+      out.set("native", { raw: BigInt((s?.funded_txo_sum ?? 0) - (s?.spent_txo_sum ?? 0)), decimals: 8, symbol: "BTC" });
+      return out;
+    };
+  }, [address]);
+  return useJsonHoldings(833, catalog, Boolean(address), load);
+}
+
+export function useXrplHoldings(address: string) {
+  const catalog = useMemo(() => tokensFor("xrpl", 144), []);
+  const load = useMemo(() => {
+    const addr = address;
+    return async () => {
+      const out = new Map<string, { raw: bigint; decimals?: number; symbol?: string; name?: string; icon?: string; contract?: string }>();
+      if (!addr) return out;
+      const info = await jsonFetch<{ result?: { account_data?: { Balance?: string } } }>("https://xrplcluster.com", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ method: "account_info", params: [{ account: addr, ledger_index: "validated" }] }),
+      });
+      out.set("native", { raw: BigInt(info.result?.account_data?.Balance ?? "0"), decimals: 6, symbol: "XRP" });
+      try {
+        const lines = await jsonFetch<{ result?: { lines?: Array<{ currency?: string; balance?: string; account?: string }> } }>("https://xrplcluster.com", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ method: "account_lines", params: [{ account: addr, ledger_index: "validated" }] }),
+        });
+        for (const l of lines.result?.lines ?? []) {
+          const n = Number(l.balance);
+          if (!Number.isFinite(n) || n === 0) continue;
+          const raw = BigInt(Math.round(Math.abs(n) * 1e6));
+          const code = l.currency && l.currency.length <= 3 ? l.currency : (l.currency ?? "IOU").slice(0, 4);
+          out.set(`${l.account}:${l.currency}`, { raw, decimals: 6, symbol: code, contract: l.account });
+        }
+      } catch {
+        /* lines optional */
+      }
+      return out;
+    };
+  }, [address]);
+  return useJsonHoldings(144, catalog, Boolean(address), load);
+}
+
+export function useStellarHoldings(address: string) {
+  const catalog = useMemo(() => tokensFor("stellar", 148), []);
+  const load = useMemo(() => {
+    const addr = address;
+    return async () => {
+      const out = new Map<string, { raw: bigint; decimals?: number; symbol?: string; name?: string; icon?: string; contract?: string }>();
+      if (!addr) return out;
+      const res = await fetch(`https://horizon.stellar.org/accounts/${addr}`);
+      if (res.status === 404) {
+        out.set("native", { raw: 0n, decimals: 7, symbol: "XLM" });
+        return out;
+      }
+      if (!res.ok) throw new Error(String(res.status));
+      const json = (await res.json()) as { balances?: Array<{ asset_type?: string; asset_code?: string; asset_issuer?: string; balance?: string }> };
+      for (const b of json.balances ?? []) {
+        const n = Number(b.balance);
+        if (!Number.isFinite(n)) continue;
+        if (b.asset_type === "native") {
+          out.set("native", { raw: BigInt(Math.round(n * 1e7)), decimals: 7, symbol: "XLM" });
+        } else if (n > 0) {
+          const code = b.asset_code ?? "TOKEN";
+          out.set(`${code}:${b.asset_issuer}`, { raw: BigInt(Math.round(n * 1e7)), decimals: 7, symbol: code, contract: b.asset_issuer });
+        }
+      }
+      return out;
+    };
+  }, [address]);
+  return useJsonHoldings(148, catalog, Boolean(address), load);
+}
+
+function useCosmosLcd(chainId: number, lcd: string, denom: string, symbol: string, address: string) {
+  const catalog = useMemo(() => tokensFor("cosmos", chainId), [chainId]);
+  const load = useMemo(() => {
+    const addr = address;
+    return async () => {
+      const out = new Map<string, { raw: bigint; decimals?: number; symbol?: string; name?: string; icon?: string; contract?: string }>();
+      if (!addr) return out;
+      const json = await jsonFetch<{ balances?: Array<{ denom?: string; amount?: string }> }>(`${lcd}/cosmos/bank/v1beta1/balances/${addr}`);
+      for (const b of json.balances ?? []) {
+        const raw = BigInt(b.amount ?? "0");
+        if (b.denom === denom) out.set("native", { raw, decimals: 6, symbol });
+        else if (raw > 0n) out.set(b.denom ?? "coin", { raw, decimals: 6, symbol: (b.denom ?? "COIN").replace("u", "").toUpperCase().slice(0, 6), contract: b.denom });
+      }
+      return out;
+    };
+  }, [address, denom, lcd, symbol]);
+  return useJsonHoldings(chainId, catalog, Boolean(address), load);
+}
+
+export function useCosmosHoldings(address: string) {
+  return useCosmosLcd(118, "https://rest.cosmos.directory/cosmoshub", "uatom", "ATOM", address);
+}
+
+export function useOsmosisHoldings(address: string) {
+  return useCosmosLcd(100001, "https://rest.cosmos.directory/osmosis", "uosmo", "OSMO", address);
+}
+
+export function useCelestiaHoldings(address: string) {
+  return useCosmosLcd(100002, "https://rest.cosmos.directory/celestia", "utia", "TIA", address);
+}
+
+const STRK = "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
+const STRK_ETH = "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7";
+const BALANCE_OF = "0x2e4263afad30923c891518314bc6c76fb0d7785f8041c2b491b3c0c5afb690";
+
+async function starknetBalance(contract: string, owner: string) {
+  const felt = owner.toLowerCase().replace(/^0x/, "").padStart(64, "0");
+  const json = await jsonFetch<{ result?: string[] }>("https://starknet-mainnet.public.blastapi.io", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "starknet_call",
+      params: [{ contract_address: contract, entry_point_selector: BALANCE_OF, calldata: [`0x${felt}`] }, "latest"],
+    }),
+  });
+  const low = BigInt(json.result?.[0] ?? "0");
+  const high = BigInt(json.result?.[1] ?? "0");
+  return low + (high << 128n);
+}
+
+export function useStarknetHoldings(address: string) {
+  const catalog = useMemo(() => tokensFor("starknet", 100003), []);
+  const load = useMemo(() => {
+    const addr = address;
+    return async () => {
+      const out = new Map<string, { raw: bigint; decimals?: number; symbol?: string; name?: string; icon?: string; contract?: string }>();
+      if (!addr) return out;
+      const [strk, eth] = await Promise.all([starknetBalance(STRK, addr).catch(() => 0n), starknetBalance(STRK_ETH, addr).catch(() => 0n)]);
+      out.set("native", { raw: strk, decimals: 18, symbol: "STRK" });
+      if (eth > 0n) out.set(STRK_ETH, { raw: eth, decimals: 18, symbol: "ETH", contract: STRK_ETH, icon: "/tokens/eth.png" });
+      return out;
+    };
+  }, [address]);
+  return useJsonHoldings(100003, catalog, Boolean(address), load);
+}
+
 

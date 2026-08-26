@@ -75,7 +75,15 @@ library LaunchEnums {
         Boba,
         Lisk,
         Zora,
-        Robinhood
+        Robinhood,
+        Bitcoin,
+        Xrpl,
+        Stellar,
+        Cosmos,
+        Osmosis,
+        Celestia,
+        Starknet,
+        Filecoin
     }
 
     enum DexKind {

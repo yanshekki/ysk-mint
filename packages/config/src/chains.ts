@@ -1,6 +1,20 @@
 import { ChainKey } from "./enums";
 
-export type ChainVm = "evm" | "near" | "cardano" | "solana" | "tron" | "sui" | "ton" | "aptos" | "hypercore";
+export type ChainVm =
+  | "evm"
+  | "near"
+  | "cardano"
+  | "solana"
+  | "tron"
+  | "sui"
+  | "ton"
+  | "aptos"
+  | "hypercore"
+  | "bitcoin"
+  | "xrpl"
+  | "stellar"
+  | "cosmos"
+  | "starknet";
 
 export type ChainDefinition = {
   key: (typeof ChainKey)[keyof typeof ChainKey];
@@ -1064,6 +1078,132 @@ export const CHAINS: Record<(typeof ChainKey)[keyof typeof ChainKey], ChainDefin
     testnet: false,
     featured: true,
   }),
+  [ChainKey.Bitcoin]: {
+    key: ChainKey.Bitcoin,
+    name: "Bitcoin",
+    short: "BTC",
+    chainId: 833,
+    eid: 0,
+    endpoint: ZERO,
+    explorer: "https://mempool.space",
+    rpc: "https://mempool.space/api",
+    nativeSymbol: "BTC",
+    enabled: true,
+    testnet: false,
+    evm: false,
+    vm: "bitcoin",
+    featured: true,
+  },
+  [ChainKey.Xrpl]: {
+    key: ChainKey.Xrpl,
+    name: "XRP Ledger",
+    short: "XRP",
+    chainId: 144,
+    eid: 0,
+    endpoint: ZERO,
+    explorer: "https://livenet.xrpl.org",
+    rpc: "https://xrplcluster.com",
+    nativeSymbol: "XRP",
+    enabled: true,
+    testnet: false,
+    evm: false,
+    vm: "xrpl",
+    featured: true,
+  },
+  [ChainKey.Stellar]: {
+    key: ChainKey.Stellar,
+    name: "Stellar",
+    short: "XLM",
+    chainId: 148,
+    eid: 0,
+    endpoint: ZERO,
+    explorer: "https://stellar.expert/explorer/public",
+    rpc: "https://horizon.stellar.org",
+    nativeSymbol: "XLM",
+    enabled: true,
+    testnet: false,
+    evm: false,
+    vm: "stellar",
+    featured: true,
+  },
+  [ChainKey.Cosmos]: {
+    key: ChainKey.Cosmos,
+    name: "Cosmos Hub",
+    short: "ATOM",
+    chainId: 118,
+    eid: 0,
+    endpoint: ZERO,
+    explorer: "https://www.mintscan.io/cosmos",
+    rpc: "https://rest.cosmos.directory/cosmoshub",
+    nativeSymbol: "ATOM",
+    enabled: true,
+    testnet: false,
+    evm: false,
+    vm: "cosmos",
+    featured: true,
+  },
+  [ChainKey.Osmosis]: {
+    key: ChainKey.Osmosis,
+    name: "Osmosis",
+    short: "OSMO",
+    chainId: 100001,
+    eid: 0,
+    endpoint: ZERO,
+    explorer: "https://www.mintscan.io/osmosis",
+    rpc: "https://rest.cosmos.directory/osmosis",
+    nativeSymbol: "OSMO",
+    enabled: true,
+    testnet: false,
+    evm: false,
+    vm: "cosmos",
+    featured: true,
+  },
+  [ChainKey.Celestia]: {
+    key: ChainKey.Celestia,
+    name: "Celestia",
+    short: "TIA",
+    chainId: 100002,
+    eid: 0,
+    endpoint: ZERO,
+    explorer: "https://www.mintscan.io/celestia",
+    rpc: "https://rest.cosmos.directory/celestia",
+    nativeSymbol: "TIA",
+    enabled: true,
+    testnet: false,
+    evm: false,
+    vm: "cosmos",
+    featured: true,
+  },
+  [ChainKey.Starknet]: {
+    key: ChainKey.Starknet,
+    name: "Starknet",
+    short: "STRK",
+    chainId: 100003,
+    eid: 0,
+    endpoint: ZERO,
+    explorer: "https://starkscan.co",
+    rpc: "https://starknet-mainnet.public.blastapi.io",
+    nativeSymbol: "STRK",
+    enabled: true,
+    testnet: false,
+    evm: false,
+    vm: "starknet",
+    featured: true,
+  },
+  [ChainKey.Filecoin]: evmChain({
+    key: ChainKey.Filecoin,
+    name: "Filecoin",
+    short: "FIL",
+    chainId: 314,
+    eid: 0,
+    endpoint: ZERO,
+    explorer: "https://filfox.info/en",
+    rpc: "https://api.node.glif.io/rpc/v1",
+    nativeSymbol: "FIL",
+    enabled: true,
+    testnet: false,
+    featured: true,
+  }),
 };
 
 /** Product bar: ETH · AVAX · Base · Arb · ADA · NEAR · BNB · SOL, then the extra holdings chains. */
@@ -1132,6 +1272,14 @@ const FEATURED_ORDER: Array<(typeof ChainKey)[keyof typeof ChainKey]> = [
   ChainKey.Lisk,
   ChainKey.Zora,
   ChainKey.Robinhood,
+  ChainKey.Bitcoin,
+  ChainKey.Xrpl,
+  ChainKey.Stellar,
+  ChainKey.Cosmos,
+  ChainKey.Osmosis,
+  ChainKey.Celestia,
+  ChainKey.Starknet,
+  ChainKey.Filecoin,
 ];
 
 /** Wizard mint targets. Holdings-only EVM stay off this list. */

@@ -71,7 +71,15 @@
     "Boba": 68,
     "Lisk": 69,
     "Zora": 70,
-    "Robinhood": 71
+    "Robinhood": 71,
+    "Bitcoin": 72,
+    "Xrpl": 73,
+    "Stellar": 74,
+    "Cosmos": 75,
+    "Osmosis": 76,
+    "Celestia": 77,
+    "Starknet": 78,
+    "Filecoin": 79
   },
   "DexKind": {
     "UniswapV2": 0,

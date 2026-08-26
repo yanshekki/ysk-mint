@@ -39,6 +39,14 @@ contract EnumParityTest is Test {
         assertEq(uint8(LaunchEnums.ChainKey.Aptos), uint8(json.readUint(".ChainKey.Aptos")));
         assertEq(uint8(LaunchEnums.ChainKey.Monad), uint8(json.readUint(".ChainKey.Monad")));
         assertEq(uint8(LaunchEnums.ChainKey.Robinhood), uint8(json.readUint(".ChainKey.Robinhood")));
+        assertEq(uint8(LaunchEnums.ChainKey.Bitcoin), uint8(json.readUint(".ChainKey.Bitcoin")));
+        assertEq(uint8(LaunchEnums.ChainKey.Xrpl), uint8(json.readUint(".ChainKey.Xrpl")));
+        assertEq(uint8(LaunchEnums.ChainKey.Stellar), uint8(json.readUint(".ChainKey.Stellar")));
+        assertEq(uint8(LaunchEnums.ChainKey.Cosmos), uint8(json.readUint(".ChainKey.Cosmos")));
+        assertEq(uint8(LaunchEnums.ChainKey.Osmosis), uint8(json.readUint(".ChainKey.Osmosis")));
+        assertEq(uint8(LaunchEnums.ChainKey.Celestia), uint8(json.readUint(".ChainKey.Celestia")));
+        assertEq(uint8(LaunchEnums.ChainKey.Starknet), uint8(json.readUint(".ChainKey.Starknet")));
+        assertEq(uint8(LaunchEnums.ChainKey.Filecoin), uint8(json.readUint(".ChainKey.Filecoin")));
 
         assertEq(uint8(LaunchEnums.DexKind.UniswapV2), uint8(json.readUint(".DexKind.UniswapV2")));
         assertEq(uint8(LaunchEnums.DexKind.PancakeV2), uint8(json.readUint(".DexKind.PancakeV2")));

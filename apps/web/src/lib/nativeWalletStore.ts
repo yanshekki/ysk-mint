@@ -18,6 +18,18 @@ type NativeState = {
   tonWallet: string;
   aptosAddress: string;
   aptosWallet: string;
+  bitcoinAddress: string;
+  bitcoinWallet: string;
+  xrplAddress: string;
+  xrplWallet: string;
+  stellarAddress: string;
+  stellarWallet: string;
+  cosmosAddress: string;
+  osmosisAddress: string;
+  celestiaAddress: string;
+  keplrWallet: string;
+  starknetAddress: string;
+  starknetWallet: string;
   setNear: (nearAccount: string) => void;
   setCardano: (cardanoAddress: string, cardanoWallet?: string, extras?: { addresses?: string[]; stake?: string }) => void;
   setSolana: (solanaAddress: string, solanaWallet?: string) => void;
@@ -25,6 +37,11 @@ type NativeState = {
   setSui: (suiAddress: string, suiWallet?: string) => void;
   setTon: (tonAddress: string, tonWallet?: string) => void;
   setAptos: (aptosAddress: string, aptosWallet?: string) => void;
+  setBitcoin: (bitcoinAddress: string, bitcoinWallet?: string) => void;
+  setXrpl: (xrplAddress: string, xrplWallet?: string) => void;
+  setStellar: (stellarAddress: string, stellarWallet?: string) => void;
+  setKeplr: (addrs: { cosmos: string; osmosis: string; celestia: string }, keplrWallet?: string) => void;
+  setStarknet: (starknetAddress: string, starknetWallet?: string) => void;
   disconnectNear: () => void;
   disconnectCardano: () => void;
   disconnectSolana: () => void;
@@ -32,6 +49,11 @@ type NativeState = {
   disconnectSui: () => void;
   disconnectTon: () => void;
   disconnectAptos: () => void;
+  disconnectBitcoin: () => void;
+  disconnectXrpl: () => void;
+  disconnectStellar: () => void;
+  disconnectKeplr: () => void;
+  disconnectStarknet: () => void;
 };
 
 export const useNativeWallets = create<NativeState>()(
@@ -53,6 +75,18 @@ export const useNativeWallets = create<NativeState>()(
       tonWallet: "",
       aptosAddress: "",
       aptosWallet: "",
+      bitcoinAddress: "",
+      bitcoinWallet: "",
+      xrplAddress: "",
+      xrplWallet: "",
+      stellarAddress: "",
+      stellarWallet: "",
+      cosmosAddress: "",
+      osmosisAddress: "",
+      celestiaAddress: "",
+      keplrWallet: "",
+      starknetAddress: "",
+      starknetWallet: "",
       setNear: (nearAccount) => set({ nearAccount }),
       setCardano: (cardanoAddress, cardanoWallet = "", extras = {}) =>
         set((s) => {
@@ -78,6 +112,17 @@ export const useNativeWallets = create<NativeState>()(
       setSui: (suiAddress, suiWallet = "") => set({ suiAddress, suiWallet }),
       setTon: (tonAddress, tonWallet = "") => set({ tonAddress, tonWallet }),
       setAptos: (aptosAddress, aptosWallet = "") => set({ aptosAddress, aptosWallet }),
+      setBitcoin: (bitcoinAddress, bitcoinWallet = "") => set({ bitcoinAddress, bitcoinWallet }),
+      setXrpl: (xrplAddress, xrplWallet = "") => set({ xrplAddress, xrplWallet }),
+      setStellar: (stellarAddress, stellarWallet = "") => set({ stellarAddress, stellarWallet }),
+      setKeplr: (addrs, keplrWallet = "keplr") =>
+        set({
+          cosmosAddress: addrs.cosmos,
+          osmosisAddress: addrs.osmosis,
+          celestiaAddress: addrs.celestia,
+          keplrWallet,
+        }),
+      setStarknet: (starknetAddress, starknetWallet = "") => set({ starknetAddress, starknetWallet }),
       disconnectNear: () => set({ nearAccount: "" }),
       disconnectCardano: () => set({ cardanoAddress: "", cardanoAddresses: [], cardanoStake: "", cardanoWallet: "" }),
       disconnectSolana: () => set({ solanaAddress: "", solanaWallet: "" }),
@@ -85,6 +130,11 @@ export const useNativeWallets = create<NativeState>()(
       disconnectSui: () => set({ suiAddress: "", suiWallet: "" }),
       disconnectTon: () => set({ tonAddress: "", tonWallet: "" }),
       disconnectAptos: () => set({ aptosAddress: "", aptosWallet: "" }),
+      disconnectBitcoin: () => set({ bitcoinAddress: "", bitcoinWallet: "" }),
+      disconnectXrpl: () => set({ xrplAddress: "", xrplWallet: "" }),
+      disconnectStellar: () => set({ stellarAddress: "", stellarWallet: "" }),
+      disconnectKeplr: () => set({ cosmosAddress: "", osmosisAddress: "", celestiaAddress: "", keplrWallet: "" }),
+      disconnectStarknet: () => set({ starknetAddress: "", starknetWallet: "" }),
     }),
     {
       name: "ysk-mint.native-wallets",

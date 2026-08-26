@@ -7,14 +7,21 @@ import { getPublicClient } from "wagmi/actions";
 import { CHAINS, evmEnabledChains, featuredChains, isConfigured, type ChainDefinition } from "@ysk-mint/sdk";
 import {
   useAptosHoldings,
+  useBitcoinHoldings,
   useCardanoHoldings,
+  useCelestiaHoldings,
+  useCosmosHoldings,
   useEvmHoldings,
   useHyperCoreHoldings,
   useNearHoldings,
+  useOsmosisHoldings,
   useSolanaHoldings,
+  useStarknetHoldings,
+  useStellarHoldings,
   useSuiHoldings,
   useTonHoldings,
   useTronHoldings,
+  useXrplHoldings,
   type HoldingRow,
 } from "../../lib/useHoldings.ts";
 import { useNativeWallets } from "../../lib/nativeWallets.ts";
@@ -79,6 +86,11 @@ function explorerFor(chainId: number, contract?: string) {
   if (chain.vm === "ton") return `${chain.explorer}/${contract}`;
   if (chain.vm === "aptos") return `${chain.explorer}/fungible_asset/${contract}`;
   if (chain.vm === "hypercore") return chain.explorer;
+  if (chain.vm === "bitcoin") return `${chain.explorer}/address/${contract}`;
+  if (chain.vm === "xrpl") return `${chain.explorer}/accounts/${contract}`;
+  if (chain.vm === "stellar") return `${chain.explorer}/account/${contract}`;
+  if (chain.vm === "cosmos") return `${chain.explorer}/address/${contract}`;
+  if (chain.vm === "starknet") return `${chain.explorer}/contract/${contract}`;
   return `${chain.explorer}/token/${contract}`;
 }
 
@@ -185,6 +197,13 @@ export function MePage() {
   const sui = useSuiHoldings(native.suiAddress);
   const ton = useTonHoldings(native.tonAddress);
   const aptos = useAptosHoldings(native.aptosAddress);
+  const btc = useBitcoinHoldings(native.bitcoinAddress);
+  const xrpl = useXrplHoldings(native.xrplAddress);
+  const xlm = useStellarHoldings(native.stellarAddress);
+  const atom = useCosmosHoldings(native.cosmosAddress);
+  const osmo = useOsmosisHoldings(native.osmosisAddress);
+  const tia = useCelestiaHoldings(native.celestiaAddress);
+  const strk = useStarknetHoldings(native.starknetAddress);
   const hyper = useHyperCoreHoldings(address);
   const evmName = useEvmName(address);
   const adaName = useAdaHandle(native.cardanoAddress, native.cardanoStake);
@@ -202,7 +221,22 @@ export function MePage() {
 
   const anyWallet =
     isConnected ||
-    Boolean(native.nearAccount || native.cardanoAddress || native.solanaAddress || native.tronAddress || native.suiAddress || native.tonAddress || native.aptosAddress);
+    Boolean(
+      native.nearAccount ||
+        native.cardanoAddress ||
+        native.solanaAddress ||
+        native.tronAddress ||
+        native.suiAddress ||
+        native.tonAddress ||
+        native.aptosAddress ||
+        native.bitcoinAddress ||
+        native.xrplAddress ||
+        native.stellarAddress ||
+        native.cosmosAddress ||
+        native.osmosisAddress ||
+        native.celestiaAddress ||
+        native.starknetAddress,
+    );
 
   const liveFactories = useMemo(() => evmEnabledChains().filter((c) => isConfigured(resolvedContracts(c))), []);
 
@@ -278,43 +312,58 @@ export function MePage() {
     add(sui.rows, Boolean(native.suiAddress));
     add(ton.rows, Boolean(native.tonAddress));
     add(aptos.rows, Boolean(native.aptosAddress));
+    add(btc.rows, Boolean(native.bitcoinAddress));
+    add(xrpl.rows, Boolean(native.xrplAddress));
+    add(xlm.rows, Boolean(native.stellarAddress));
+    add(atom.rows, Boolean(native.cosmosAddress));
+    add(osmo.rows, Boolean(native.osmosisAddress));
+    add(tia.rows, Boolean(native.celestiaAddress));
+    add(strk.rows, Boolean(native.starknetAddress));
     add(hyper.rows, isConnected);
+    const connectedFor = (c: ChainDefinition) => {
+      if (c.vm === "cardano") return Boolean(native.cardanoAddress);
+      if (c.vm === "near") return Boolean(native.nearAccount);
+      if (c.vm === "solana") return Boolean(native.solanaAddress);
+      if (c.vm === "tron") return Boolean(native.tronAddress);
+      if (c.vm === "sui") return Boolean(native.suiAddress);
+      if (c.vm === "ton") return Boolean(native.tonAddress);
+      if (c.vm === "aptos") return Boolean(native.aptosAddress);
+      if (c.vm === "bitcoin") return Boolean(native.bitcoinAddress);
+      if (c.vm === "xrpl") return Boolean(native.xrplAddress);
+      if (c.vm === "stellar") return Boolean(native.stellarAddress);
+      if (c.vm === "cosmos") {
+        if (c.chainId === 118) return Boolean(native.cosmosAddress);
+        if (c.chainId === 100001) return Boolean(native.osmosisAddress);
+        if (c.chainId === 100002) return Boolean(native.celestiaAddress);
+        return false;
+      }
+      if (c.vm === "starknet") return Boolean(native.starknetAddress);
+      return isConnected;
+    };
+    const loadingFor = (c: ChainDefinition) => {
+      if (c.vm === "cardano") return ada.loading;
+      if (c.vm === "near") return near.loading;
+      if (c.vm === "solana") return sol.loading;
+      if (c.vm === "tron") return tron.loading;
+      if (c.vm === "sui") return sui.loading;
+      if (c.vm === "ton") return ton.loading;
+      if (c.vm === "aptos") return aptos.loading;
+      if (c.vm === "bitcoin") return btc.loading;
+      if (c.vm === "xrpl") return xrpl.loading;
+      if (c.vm === "stellar") return xlm.loading;
+      if (c.vm === "cosmos") {
+        if (c.chainId === 118) return atom.loading;
+        if (c.chainId === 100001) return osmo.loading;
+        if (c.chainId === 100002) return tia.loading;
+        return false;
+      }
+      if (c.vm === "starknet") return strk.loading;
+      if (c.vm === "hypercore") return hyper.loading;
+      return evm.loading;
+    };
     return GROUPS.map((c) => {
-      const connected =
-        c.vm === "cardano"
-          ? Boolean(native.cardanoAddress)
-          : c.vm === "near"
-            ? Boolean(native.nearAccount)
-            : c.vm === "solana"
-              ? Boolean(native.solanaAddress)
-              : c.vm === "tron"
-                ? Boolean(native.tronAddress)
-                : c.vm === "sui"
-                  ? Boolean(native.suiAddress)
-                  : c.vm === "ton"
-                    ? Boolean(native.tonAddress)
-                    : c.vm === "aptos"
-                      ? Boolean(native.aptosAddress)
-                      : isConnected;
       const rows = map.get(c.chainId) ?? [];
-      const loading =
-        c.vm === "cardano"
-          ? ada.loading
-          : c.vm === "near"
-            ? near.loading
-            : c.vm === "solana"
-              ? sol.loading
-              : c.vm === "tron"
-                ? tron.loading
-                : c.vm === "sui"
-                  ? sui.loading
-                  : c.vm === "ton"
-                    ? ton.loading
-                    : c.vm === "aptos"
-                      ? aptos.loading
-                      : c.vm === "hypercore"
-                        ? hyper.loading
-                        : evm.loading;
+      const connected = connectedFor(c);
       return {
         id: c.chainId,
         label: c.short,
@@ -322,7 +371,7 @@ export function MePage() {
         icon: chainIcon(c),
         rows,
         funded: rows.filter((r) => r.raw > 0n).length,
-        loading,
+        loading: loadingFor(c),
         connected,
       };
     }).filter((g) => g.connected);
@@ -331,28 +380,49 @@ export function MePage() {
     ada.rows,
     aptos.loading,
     aptos.rows,
+    atom.loading,
+    atom.rows,
+    btc.loading,
+    btc.rows,
     evm.loading,
     evm.rows,
     hyper.loading,
     hyper.rows,
     isConnected,
     native.aptosAddress,
+    native.bitcoinAddress,
     native.cardanoAddress,
+    native.celestiaAddress,
+    native.cosmosAddress,
     native.nearAccount,
+    native.osmosisAddress,
     native.solanaAddress,
+    native.starknetAddress,
+    native.stellarAddress,
     native.suiAddress,
     native.tonAddress,
     native.tronAddress,
+    native.xrplAddress,
     near.loading,
     near.rows,
+    osmo.loading,
+    osmo.rows,
     sol.loading,
     sol.rows,
+    strk.loading,
+    strk.rows,
     sui.loading,
     sui.rows,
+    tia.loading,
+    tia.rows,
     ton.loading,
     ton.rows,
     tron.loading,
     tron.rows,
+    xlm.loading,
+    xlm.rows,
+    xrpl.loading,
+    xrpl.rows,
   ]);
 
   const bucketsRef = useRef(buckets);
@@ -645,6 +715,87 @@ export function MePage() {
                     <div>
                       <b>{solName || "SOL"}</b>
                       <span className="num">{short(native.solanaAddress, 4, 4)}</span>
+                    </div>
+                  </div>
+                ) : null}
+                {native.tronAddress ? (
+                  <div className="me-id">
+                    <img src="/tokens/trx.png" alt="" width={28} height={28} />
+                    <div>
+                      <b>TRX</b>
+                      <span className="num">{short(native.tronAddress, 8, 6)}</span>
+                    </div>
+                  </div>
+                ) : null}
+                {native.suiAddress ? (
+                  <div className="me-id">
+                    <img src="/tokens/sui.png" alt="" width={28} height={28} />
+                    <div>
+                      <b>SUI</b>
+                      <span className="num">{short(native.suiAddress, 8, 6)}</span>
+                    </div>
+                  </div>
+                ) : null}
+                {native.tonAddress ? (
+                  <div className="me-id">
+                    <img src="/tokens/ton.png" alt="" width={28} height={28} />
+                    <div>
+                      <b>TON</b>
+                      <span className="num">{short(native.tonAddress, 8, 6)}</span>
+                    </div>
+                  </div>
+                ) : null}
+                {native.aptosAddress ? (
+                  <div className="me-id">
+                    <img src="/tokens/apt.png" alt="" width={28} height={28} />
+                    <div>
+                      <b>APT</b>
+                      <span className="num">{short(native.aptosAddress, 8, 6)}</span>
+                    </div>
+                  </div>
+                ) : null}
+                {native.bitcoinAddress ? (
+                  <div className="me-id">
+                    <img src="/tokens/btc.png" alt="" width={28} height={28} />
+                    <div>
+                      <b>BTC</b>
+                      <span className="num">{short(native.bitcoinAddress, 8, 6)}</span>
+                    </div>
+                  </div>
+                ) : null}
+                {native.xrplAddress ? (
+                  <div className="me-id">
+                    <img src="/tokens/xrp.png" alt="" width={28} height={28} />
+                    <div>
+                      <b>XRP</b>
+                      <span className="num">{short(native.xrplAddress, 8, 6)}</span>
+                    </div>
+                  </div>
+                ) : null}
+                {native.stellarAddress ? (
+                  <div className="me-id">
+                    <img src="/tokens/xlm.png" alt="" width={28} height={28} />
+                    <div>
+                      <b>XLM</b>
+                      <span className="num">{short(native.stellarAddress, 8, 6)}</span>
+                    </div>
+                  </div>
+                ) : null}
+                {native.cosmosAddress || native.osmosisAddress || native.celestiaAddress ? (
+                  <div className="me-id">
+                    <img src="/tokens/atom.png" alt="" width={28} height={28} />
+                    <div>
+                      <b>Keplr</b>
+                      <span className="num">{short(native.cosmosAddress || native.osmosisAddress || native.celestiaAddress, 8, 6)}</span>
+                    </div>
+                  </div>
+                ) : null}
+                {native.starknetAddress ? (
+                  <div className="me-id">
+                    <img src="/tokens/strk.png" alt="" width={28} height={28} />
+                    <div>
+                      <b>STRK</b>
+                      <span className="num">{short(native.starknetAddress, 8, 6)}</span>
                     </div>
                   </div>
                 ) : null}

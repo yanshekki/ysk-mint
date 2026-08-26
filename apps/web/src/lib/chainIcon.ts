@@ -9,6 +9,14 @@ export function chainIcon(c: ChainDefinition): string {
   if (c.vm === "ton") return "/tokens/ton.png";
   if (c.vm === "aptos") return "/tokens/apt.png";
   if (c.vm === "hypercore") return "/tokens/hype.png";
+  if (c.vm === "bitcoin") return "/tokens/btc.png";
+  if (c.vm === "xrpl") return "/tokens/xrp.png";
+  if (c.vm === "stellar") return "/tokens/xlm.png";
+  if (c.vm === "starknet") return "/tokens/strk.png";
+  if (c.nativeSymbol === "ATOM") return "/tokens/atom.png";
+  if (c.nativeSymbol === "OSMO") return "/tokens/osmo.png";
+  if (c.nativeSymbol === "TIA") return "/tokens/tia.png";
+  if (c.nativeSymbol === "FIL") return "/tokens/fil.png";
   if (c.nativeSymbol === "BNB") return "/tokens/bnb.png";
   if (c.nativeSymbol === "AVAX") return "/tokens/avax.png";
   if (c.nativeSymbol === "POL") return "/tokens/pol.png";

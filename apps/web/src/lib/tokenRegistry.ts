@@ -1,7 +1,21 @@
 import { featuredChains } from "@ysk-mint/config";
 import cmc from "./cmcCatalog.json";
 
-export type TokenVm = "evm" | "near" | "cardano" | "solana" | "tron" | "sui" | "ton" | "aptos" | "hypercore";
+export type TokenVm =
+  | "evm"
+  | "near"
+  | "cardano"
+  | "solana"
+  | "tron"
+  | "sui"
+  | "ton"
+  | "aptos"
+  | "hypercore"
+  | "bitcoin"
+  | "xrpl"
+  | "stellar"
+  | "cosmos"
+  | "starknet";
 
 export type TokenRecord = {
   id: string;
@@ -58,7 +72,9 @@ const NATIVES: TokenRecord[] = [
 function nativeDecimals(vm: string, symbol: string) {
   if (symbol === "USD") return 6;
   if (vm === "near") return 24;
-  if (vm === "cardano" || vm === "tron") return 6;
+  if (vm === "cardano" || vm === "tron" || vm === "xrpl" || vm === "cosmos") return 6;
+  if (vm === "stellar") return 7;
+  if (vm === "bitcoin") return 8;
   if (vm === "solana" || vm === "sui" || vm === "ton") return 9;
   if (vm === "aptos" || vm === "hypercore") return 8;
   return 18;
@@ -66,7 +82,8 @@ function nativeDecimals(vm: string, symbol: string) {
 
 function nativeIcon(symbol: string, chainId: number) {
   const s = symbol.toLowerCase();
-  if (["eth", "bnb", "avax", "pol", "ftm", "mnt", "hype", "ada", "near", "sol", "trx", "sui", "ton", "apt", "op"].includes(s)) return s === "eth" ? "eth" : s;
+  if (["eth", "bnb", "avax", "pol", "ftm", "mnt", "hype", "ada", "near", "sol", "trx", "sui", "ton", "apt", "op", "btc", "xrp", "xlm", "atom", "osmo", "tia", "strk", "fil"].includes(s))
+    return s === "eth" ? "eth" : s;
   if (chainId === 10) return "op";
   if (chainId === 480) return "wld";
   return "eth";
