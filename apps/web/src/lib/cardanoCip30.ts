@@ -14,13 +14,32 @@ type Cip30Enabled = {
 export type CardanoValue = { ada: bigint; assets: Map<string, bigint> };
 
 let enabledApi: Cip30Enabled | null = null;
+let cipEpoch = 0;
+const cipListeners = new Set<() => void>();
 
 export function cardanoApi() {
   return enabledApi;
 }
 
+export function cipEpochNow() {
+  return cipEpoch;
+}
+
+export function subscribeCip(fn: () => void) {
+  cipListeners.add(fn);
+  return () => {
+    cipListeners.delete(fn);
+  };
+}
+
+function bumpCip() {
+  cipEpoch += 1;
+  for (const fn of cipListeners) fn();
+}
+
 export function clearCardanoApi() {
   enabledApi = null;
+  bumpCip();
 }
 
 export type CardanoSession = {
@@ -228,6 +247,7 @@ export async function enableCardano(walletId: string): Promise<CardanoSession> {
   const address = payments[0] ?? "";
   if (!address || !isCardanoAddress(address)) throw new Error("address");
   enabledApi = api;
+  bumpCip();
   return { address, addresses: payments, stake };
 }
 
@@ -421,7 +441,7 @@ export async function readCardanoValue(): Promise<CardanoValue | null> {
   }
   try {
     const utxos = (await api.getUtxos?.()) ?? [];
-    if (!utxos.length) return { ada: 0n, assets: new Map() };
+    if (!utxos.length) return null;
     const total: CardanoValue = { ada: 0n, assets: new Map() };
     for (const hex of utxos) {
       try {

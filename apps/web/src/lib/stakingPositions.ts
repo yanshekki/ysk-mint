@@ -6,6 +6,7 @@ import type { AaveCard, ProtocolLine } from "./defiPositions.ts";
 import { quoteNearToken } from "./nearDex.ts";
 import { quoteAdaToken } from "./adaDex.ts";
 import { stakeFromPayment } from "./cardanoCip30.ts";
+import { koiosPost } from "./koios.ts";
 
 export type StakeStatus = "liquid" | "active" | "unstaking" | "claimable";
 
@@ -66,16 +67,6 @@ function fmtAmt(raw: bigint, decimals: number) {
   if (n >= 1000) return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
   if (n >= 1) return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
   return n.toLocaleString(undefined, { maximumFractionDigits: 6 });
-}
-
-async function koiosPost(path: string, body: unknown) {
-  const res = await fetch(`https://api.koios.rest/api/v1/${path}`, {
-    method: "POST",
-    headers: { "content-type": "application/json", accept: "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(`koios ${path}`);
-  return res.json() as Promise<unknown>;
 }
 
 export function lstStakeLines(
@@ -213,27 +204,17 @@ function withdrawable(row: AdaAccount) {
 async function koiosAccounts(stakes: string[]): Promise<AdaAccount[]> {
   if (!stakes.length) return [];
   const body = { _stake_addresses: stakes };
-  for (const path of ["account_info", "account_info_cached"]) {
-    try {
-      const rows = unwrapAccounts(await koiosPost(path, body));
-      if (rows.length) return rows;
-    } catch {
-      /* next */
-    }
+  try {
+    const rows = unwrapAccounts(await koiosPost("account_info", body));
+    if (rows.length) return rows;
+  } catch {
+    /* cached */
   }
-  const out: AdaAccount[] = [];
-  for (const s of stakes) {
-    try {
-      const res = await fetch(`https://api.koios.rest/api/v1/account_info?_stake_address=${encodeURIComponent(s)}`, {
-        headers: { accept: "application/json" },
-      });
-      if (!res.ok) continue;
-      out.push(...unwrapAccounts(await res.json()));
-    } catch {
-      /* skip */
-    }
+  try {
+    return unwrapAccounts(await koiosPost("account_info_cached", body));
+  } catch {
+    return [];
   }
-  return out;
 }
 
 export async function readAdaStake(stakeAddr: string, payments: string[] = []): Promise<StakeLine[]> {

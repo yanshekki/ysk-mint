@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { syncLiveFlag, useLiveStatus } from "./liveStatus.ts";
 import { erc20Abi, formatUnits, type Address } from "viem";
 import { useBalance, useReadContracts } from "wagmi";
-import { readCardanoValue, stakeFromPayment } from "./cardanoCip30.ts";
+import { cipEpochNow, readCardanoValue, stakeFromPayment, subscribeCip } from "./cardanoCip30.ts";
+import { koiosPost } from "./koios.ts";
 import { nearRpc } from "./nearRpc.ts";
 import { cardanoByUnit, solByMint, tokensFor, type TokenRecord } from "./tokenRegistry.ts";
 
@@ -220,16 +221,6 @@ function cardanoUnit(a: CardanoAsset) {
   return `${a.policy_id ?? a.asset_policy ?? ""}${a.asset_name ?? ""}`.toLowerCase();
 }
 
-async function koiosPost(path: string, body: unknown) {
-  const res = await fetch(`https://api.koios.rest/api/v1/${path}`, {
-    method: "POST",
-    headers: { "content-type": "application/json", accept: "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(`koios ${path}`);
-  return res.json() as Promise<unknown>;
-}
-
 function chunk<T>(items: T[], size: number) {
   const out: T[][] = [];
   for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
@@ -279,9 +270,12 @@ export function useCardanoHoldings(
   const catalog = useMemo(() => tokensFor("cardano", 1815), []);
   const [rows, setRows] = useState<HoldingRow[]>(() => catalog.map((t) => row(t, null, false)));
   const [loading, setLoading] = useState(false);
+  const [cipTick, setCipTick] = useState(0);
   const stake = extras?.stake || (address ? stakeFromPayment(address) : "");
-  const payments = extras?.addresses?.filter(Boolean) ?? [];
-  const addrKey = [address, stake, extras?.sync ?? 0, ...payments].join("|");
+  const payKey = (extras?.addresses ?? []).filter(Boolean).join("|");
+  const addrKey = [address, stake, extras?.sync ?? 0, payKey].join("|");
+
+  useEffect(() => subscribeCip(() => setCipTick(cipEpochNow())), []);
 
   useEffect(() => {
     if (!address) {
@@ -290,10 +284,14 @@ export function useCardanoHoldings(
     }
     let cancelled = false;
     setLoading(true);
+    const payments = payKey ? payKey.split("|") : [];
     void (async () => {
       try {
-        const cip = await readCardanoValue();
-        if (cip) {
+        for (const wait of [0, 500, 1500]) {
+          if (wait) await new Promise((r) => window.setTimeout(r, wait));
+          if (cancelled) return;
+          const cip = await readCardanoValue();
+          if (!cip) continue;
           const qty = new Map<string, { raw: bigint; decimals: number }>();
           for (const [unit, raw] of cip.assets) {
             const known = cardanoByUnit(unit);
@@ -330,7 +328,9 @@ export function useCardanoHoldings(
         }
         if (!cancelled) setRows(rowsFromCardano(catalog, ada, qty));
       } catch {
-        if (!cancelled) setRows(catalog.map((t) => row(t, null, true)));
+        if (!cancelled) {
+          setRows((prev) => (prev.some((r) => r.raw > 0n) ? prev : catalog.map((t) => row(t, null, true))));
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -338,7 +338,7 @@ export function useCardanoHoldings(
     return () => {
       cancelled = true;
     };
-  }, [address, addrKey, catalog, stake]);
+  }, [address, addrKey, catalog, stake, payKey, cipTick]);
 
   const funded = rows.filter((r) => r.raw > 0n).length;
   useEffect(() => {
