@@ -32,7 +32,7 @@
     "solDetail": "SOL uses classic SPL Token. Independent issuance, not LayerZero OFT. Program address is empty.",
     "adaAmm": "Cardano quotes come from the Minswap aggregator, not a Blockfrost key.",
     "nearAmm": "NEAR quotes come from Rhea/Ref get_pool reserves.",
-    "solAmm": "Solana lists pinned major pools and Jupiter quotes only.",
+    "solAmm": "Solana quotes come from Jupiter. Only top-100 mints that return a price.",
     "markets": "Markets",
     "myLp": "My liquidity",
     "venues": "Venues",
