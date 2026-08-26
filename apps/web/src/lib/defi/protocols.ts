@@ -1,6 +1,8 @@
 import { VENUES } from "../dexVenues.ts";
 import { minswapProtocol } from "./ada/minswap.ts";
 import { makeAero } from "./evm/aerodrome.ts";
+import { BALANCER_CHAINS, makeBalancer } from "./evm/balancer.ts";
+import { CURVE_CHAINS, makeCurve } from "./evm/curve.ts";
 import { makeV2 } from "./evm/univ2.ts";
 import { makeV3 } from "./evm/univ3.ts";
 import { nearRefProtocol } from "./near/ref.ts";
@@ -17,6 +19,8 @@ export function ensureProtocols() {
     else if (v.kind === "aero") register(makeAero(v));
     else register(makeV3(v));
   }
+  for (const id of CURVE_CHAINS) register(makeCurve(id));
+  for (const id of BALANCER_CHAINS) register(makeBalancer(id));
   register(nearRefProtocol);
   register(minswapProtocol);
   register(jupiterProtocol);

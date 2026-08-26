@@ -121,34 +121,34 @@
       "name": "Curve",
       "sector": "dex",
       "family": "curve",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         "evm"
       ],
-      "note": ""
+      "note": "MetaRegistry find_pool_for_coins"
     },
     {
       "id": "balancer",
       "name": "Balancer",
       "sector": "dex",
       "family": "balancer",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         "evm"
       ],
-      "note": ""
+      "note": "Vault getPoolTokens，核心池種子"
     },
     {
       "id": "beets",
       "name": "Beets",
       "sector": "dex",
       "family": "balancer",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         146,
         10
       ],
-      "note": ""
+      "note": "OP 用同一 Vault"
     },
     {
       "id": "raydium",

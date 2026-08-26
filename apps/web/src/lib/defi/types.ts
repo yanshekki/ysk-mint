@@ -30,7 +30,7 @@ export type VenueQuote = {
   reserveA: number;
   reserveB: number;
   tvlQuote: number;
-  kind: "v2" | "v3" | "aero" | "ref" | "minswap" | "jup";
+  kind: "v2" | "v3" | "aero" | "ref" | "minswap" | "jup" | "curve" | "balancer";
 };
 
 export type QuoteSource = "v3" | "v2" | "jup" | "stable" | "ref" | "minswap" | "agg";
