@@ -155,33 +155,33 @@
       "name": "Raydium",
       "sector": "dex",
       "family": "sol-amm",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         101
       ],
-      "note": ""
+      "note": "api-v3.raydium.io pools/info/list"
     },
     {
       "id": "meteora",
       "name": "Meteora",
       "sector": "dex",
       "family": "sol-amm",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         101
       ],
-      "note": ""
+      "note": "dlmm.datapi.meteora.ag /pools tvl"
     },
     {
       "id": "orca",
       "name": "Orca",
       "sector": "dex",
       "family": "sol-amm",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         101
       ],
-      "note": ""
+      "note": "api.orca.so/v2/solana/pools"
     },
     {
       "id": "lifinity",
@@ -221,22 +221,22 @@
       "name": "Thena",
       "sector": "dex",
       "family": "aero",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         56
       ],
-      "note": ""
+      "note": "PairFactory getPool + Fusion Algebra poolByPair"
     },
     {
       "id": "ramses",
       "name": "Ramses Exchange",
       "sector": "dex",
       "family": "aero",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         42161
       ],
-      "note": ""
+      "note": "PairFactory getPool volatile/stable"
     },
     {
       "id": "shadow",
@@ -973,11 +973,11 @@
       "name": "HyperLend",
       "sector": "lending",
       "family": "aave-v3",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         999
       ],
-      "note": ""
+      "note": "Core Pool + ProtocolDataProvider；唔當官方 Aave"
     },
     {
       "id": "moonwell",
@@ -1032,12 +1032,12 @@
       "name": "ZeroLend",
       "sector": "lending",
       "family": "aave-v3",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         324,
         59144
       ],
-      "note": ""
+      "note": "Pool proxy + PoolDataProvider；同鏈官方 Aave 分開顯示"
     },
     {
       "id": "suilend",

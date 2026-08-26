@@ -10,6 +10,7 @@ export type Venue = {
   factory: Addr;
   npm?: Addr;
   fees?: number[];
+  poolFn?: "getPool" | "getPair";
 };
 
 export type SeedToken = { address: Addr; symbol: string; decimals: number; icon: string };
@@ -82,12 +83,14 @@ export const VENUES: Venue[] = [
 
   { id: "uni-v3-42161", name: "Uniswap V3", chainId: 42161, kind: "v3", factory: UNI_V3_FACTORY, npm: UNI_V3_NPM, fees: V3_FEES },
   { id: "camelot-v2-42161", name: "Camelot V2", chainId: 42161, kind: "v2", factory: "0x6EcCab9c1451EA7fAb3BdC15d17D3A4CE035a8dB" },
+  { id: "ramses-v2-42161", name: "Ramses", chainId: 42161, kind: "aero", factory: "0xAAA20D08e59F6561f242b08513D36266C5A29415", poolFn: "getPair" },
   { id: "cake-v3-42161", name: "Pancake V3", chainId: 42161, kind: "v3", factory: CAKE_V3_FACTORY, npm: CAKE_V3_NPM, fees: V3_FEES },
   { id: "sushi-v2-42161", name: "Sushi V2", chainId: 42161, kind: "v2", factory: "0xc35DADB65012eC5796536bD9864eD8773aBc74C4" },
 
   { id: "cake-v2-56", name: "Pancake V2", chainId: 56, kind: "v2", factory: "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73" },
   { id: "cake-v3-56", name: "Pancake V3", chainId: 56, kind: "v3", factory: CAKE_V3_FACTORY, npm: CAKE_V3_NPM, fees: V3_FEES },
   { id: "uni-v3-56", name: "Uniswap V3", chainId: 56, kind: "v3", factory: "0xdB1d10011AD0Ff90774D0C6Bb92e5C5c8b4461F7", npm: "0x7b8A01B39D58278b5DE7e48c8449c9f4F5170613", fees: V3_FEES },
+  { id: "thena-v2-56", name: "Thena", chainId: 56, kind: "aero", factory: "0xAFD89d21BdB66d00817d4153E055830B1c2B3970", poolFn: "getPair" },
 
   { id: "joe-v1-43114", name: "Trader Joe", chainId: 43114, kind: "v2", factory: "0x9Ad6C38BE94206cA50bb0d90783181662f0Cfa10" },
   { id: "pangolin-43114", name: "Pangolin", chainId: 43114, kind: "v2", factory: "0xefa94DE7a4656D787667C749f7E69713D5aa241B" },

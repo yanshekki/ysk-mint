@@ -259,6 +259,13 @@ export const DEX: Record<number, DexChain> = {
       data: "0xE28E2c8d240dd5eBd0adcab86fbD79df7a052034",
     },
   },
+  999: {
+    chainId: 999,
+    short: "HyperEVM",
+    usdc: "0xb88339CB7199b77E23DB6E890353E22632Ba630f",
+    usdcDecimals: 6,
+    wrapped: "0x5555555555555555555555555555555555555555",
+  },
   1868: {
     chainId: 1868,
     short: "Soneium",

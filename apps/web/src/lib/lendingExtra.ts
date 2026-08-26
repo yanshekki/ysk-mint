@@ -152,6 +152,33 @@ const SPARK: Record<number, { pool: Address; data: Address }> = {
   1: { pool: "0xC13e21B648A5Ee794902342038FF3aDAB66BE987", data: "0xFc21d6d146E6086B8359705C8b28512a983db0cb" },
 };
 
+const AAVE_FORKS: Record<number, Array<{ pool: Address; data: Address; name: string; slug: string }>> = {
+  999: [
+    {
+      pool: "0x00A89d7a5A02160f20150EbEA7a2b5E4879A1A8b",
+      data: "0x4f4d4cA1e0a8A21FE0B460613bEbe917f2eb4326",
+      name: "HyperLend",
+      slug: "hyperlend",
+    },
+  ],
+  324: [
+    {
+      pool: "0x4d9429246EA989C9CeE203B43F6d1C7D83e3B8F8",
+      data: "0xB73550bC1393207960A385fC8b34790e5133175E",
+      name: "ZeroLend",
+      slug: "zerolend",
+    },
+  ],
+  59144: [
+    {
+      pool: "0x2f9bB73a8e98793e26Cb2F6C4ad037BDf1C6B269",
+      data: "0x67f93E36792c49a4493652B91ad4bD59f428AD15",
+      name: "ZeroLend",
+      slug: "zerolend",
+    },
+  ],
+};
+
 const MORPHO_MARKETS: Record<number, `0x${string}`[]> = {
   1: [
     "0x3a85e619751152991742810df6ec69ce473daef99e28a64ab2340d7b7ccfee49",
@@ -1150,6 +1177,11 @@ export async function readExtraLending(
   jobs.push(readSeamless(client, chainId, user, quotes));
   jobs.push(readDolomite(client, chainId, user, quotes));
   jobs.push(readLista(client, chainId, user, quotes));
+  for (const fork of AAVE_FORKS[chainId] ?? []) {
+    jobs.push(
+      readAaveMarket(client, chainId, user, fork, chainShort(chainId), fork.slug).then((c) => (c ? { ...c, protocol: fork.name } : null)),
+    );
+  }
   const rows = await Promise.all(jobs);
   return rows.filter((c): c is LendCard => Boolean(c));
 }

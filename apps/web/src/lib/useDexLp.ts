@@ -92,8 +92,8 @@ async function v2Positions(client: PublicClient, chainId: number, user: Address)
         const addrs: Address[] = [];
         if (venue.kind === "aero") {
           const [vol, st] = await Promise.all([
-            client.readContract({ address: venue.factory, abi: aeroFactoryAbi, functionName: "getPool", args: [s.a.address, s.b.address, false] }),
-            client.readContract({ address: venue.factory, abi: aeroFactoryAbi, functionName: "getPool", args: [s.a.address, s.b.address, true] }),
+            client.readContract({ address: venue.factory, abi: aeroFactoryAbi, functionName: venue.poolFn ?? "getPool", args: [s.a.address, s.b.address, false] }),
+            client.readContract({ address: venue.factory, abi: aeroFactoryAbi, functionName: venue.poolFn ?? "getPool", args: [s.a.address, s.b.address, true] }),
           ]);
           if (vol && vol !== ZERO) addrs.push(vol);
           if (st && st !== ZERO) addrs.push(st);

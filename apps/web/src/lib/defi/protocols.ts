@@ -9,6 +9,7 @@ import { makeV3 } from "./evm/univ3.ts";
 import { nearRefProtocol } from "./near/ref.ts";
 import { register } from "./registry.ts";
 import { jupiterProtocol } from "./sol/jupiter.ts";
+import { meteoraProtocol, orcaProtocol, raydiumProtocol } from "./sol/amm.ts";
 
 let ready = false;
 
@@ -26,4 +27,7 @@ export function ensureProtocols() {
   register(nearRefProtocol);
   register(minswapProtocol);
   register(jupiterProtocol);
+  register(raydiumProtocol);
+  register(orcaProtocol);
+  register(meteoraProtocol);
 }

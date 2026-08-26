@@ -470,7 +470,7 @@ export function MePage() {
         if (c) clients.set(id, c);
       }
       if (address) {
-        for (const id of [1, 8453, 42161, 56, 43114, 10, 137]) {
+        for (const id of [1, 8453, 42161, 56, 43114, 10, 137, 324, 59144, 999]) {
           if (clients.has(id)) continue;
           const c = getPublicClient(config, { chainId: id });
           if (c) clients.set(id, c);

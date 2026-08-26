@@ -126,7 +126,7 @@ export function useDexMarkets(chainId: number | "all") {
               const parts = await Promise.all(
                 protocolsOn(id).map((p) => p.markets?.({}).catch(() => []) ?? Promise.resolve([])),
               );
-              return parts.flat().map((r) => ({ ...r, venues: [] }));
+              return parts.flat().map(asRow);
             }),
           );
         }

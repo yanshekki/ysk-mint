@@ -23,6 +23,17 @@ export const aeroFactoryAbi = [
     ],
     outputs: [{ type: "address" }],
   },
+  {
+    type: "function",
+    name: "getPair",
+    stateMutability: "view",
+    inputs: [
+      { name: "tokenA", type: "address" },
+      { name: "tokenB", type: "address" },
+      { name: "stable", type: "bool" },
+    ],
+    outputs: [{ type: "address" }],
+  },
 ] as const;
 
 export const v3FactoryAbi = [

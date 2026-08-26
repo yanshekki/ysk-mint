@@ -7,6 +7,7 @@ import { ZERO } from "./math.ts";
 import { readV2Pool } from "./univ2.ts";
 
 export function makeAero(venue: Venue): DefiProtocol {
+  const fn = venue.poolFn ?? "getPool";
   return {
     id: venue.id,
     name: venue.name,
@@ -20,13 +21,13 @@ export function makeAero(venue: Venue): DefiProtocol {
           client.readContract({
             address: venue.factory,
             abi: aeroFactoryAbi,
-            functionName: "getPool",
+            functionName: fn,
             args: [tokenA.address as Address, tokenB.address as Address, false],
           }),
           client.readContract({
             address: venue.factory,
             abi: aeroFactoryAbi,
-            functionName: "getPool",
+            functionName: fn,
             args: [tokenA.address as Address, tokenB.address as Address, true],
           }),
         ]);
@@ -68,13 +69,13 @@ export function makeAero(venue: Venue): DefiProtocol {
             {
               address: venue.factory,
               abi: aeroFactoryAbi,
-              functionName: "getPool" as const,
+              functionName: fn,
               args: [p.a.address as Address, p.b.address as Address, false] as const,
             },
             {
               address: venue.factory,
               abi: aeroFactoryAbi,
-              functionName: "getPool" as const,
+              functionName: fn,
               args: [p.a.address as Address, p.b.address as Address, true] as const,
             },
           ]);

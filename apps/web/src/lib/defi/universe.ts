@@ -23,6 +23,7 @@ const WRAP_META: Record<number, { symbol: string; icon: string }> = {
   130: { symbol: "WETH", icon: "/tokens/eth.png" },
   146: { symbol: "wS", icon: "/tokens/eth.png" },
   1868: { symbol: "WETH", icon: "/tokens/eth.png" },
+  999: { symbol: "WHYPE", icon: "/tokens/hype.png" },
 };
 
 export function topCmcIds(limit = 100) {

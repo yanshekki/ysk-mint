@@ -211,4 +211,10 @@ export const ALGEBRA_VENUES: AlgebraVenue[] = [
     chainId: 42161,
     factory: "0x1a3c9B1d2F0529D97f2afC5136Cc23e58F1FD35B",
   },
+  {
+    id: "thena-cl-56",
+    name: "Thena Fusion",
+    chainId: 56,
+    factory: "0x306F06C147f064A010530292A1EB6737c3e378e4",
+  },
 ];
