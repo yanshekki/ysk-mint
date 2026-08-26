@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { formatUnits, parseAbiItem, type Address } from "viem";
@@ -19,7 +19,8 @@ import { TOKEN_CATALOG } from "../../lib/tokenRegistry.ts";
 import { DEX, isLst, SOL_NATIVE_MINT } from "../../lib/defiAddresses.ts";
 import { fmtUsdc, quoteKey, quoteSolMints, type Quote } from "../../lib/defiQuotes.ts";
 import { oracleTokenUsdc } from "../../lib/oracle.ts";
-import { readAave, readUniV3, type AaveCard, type UniCard } from "../../lib/defiPositions.ts";
+import { readAave, readUniV3, type AaveCard, type ProtocolLine, type UniCard } from "../../lib/defiPositions.ts";
+import { SortHead, useSort, type SortDir } from "../../shared/ui/SortTable.tsx";
 import { readBurrow } from "../../lib/nearDex.ts";
 import {
   lstStakeLines,
@@ -125,6 +126,35 @@ function Line(p: LineProps) {
     );
   }
   return <div className={cls}>{inner}</div>;
+}
+
+function ValueHeads({ sort }: { sort: { key: string; dir: SortDir; toggle: (id: string) => void } }) {
+  const { t } = useTranslation();
+  return (
+    <div className="me-cols me-cols-5">
+      <SortHead id="name" label={t("me.token")} active={sort.key === "name"} dir={sort.dir} onToggle={sort.toggle} align="left" />
+      <SortHead id="quote" label={t("me.quote")} active={sort.key === "quote"} dir={sort.dir} onToggle={sort.toggle} />
+      <SortHead id="amount" label={t("me.amount")} active={sort.key === "amount"} dir={sort.dir} onToggle={sort.toggle} />
+      <SortHead id="value" label={t("me.value")} active={sort.key === "value"} dir={sort.dir} onToggle={sort.toggle} />
+    </div>
+  );
+}
+
+function protocolSortGet(l: ProtocolLine, k: string) {
+  if (k === "name") return l.symbol;
+  if (k === "quote") return l.quote?.usdc ?? null;
+  if (k === "amount") return Number(String(l.amount).replace(/,/g, ""));
+  return l.valueUsdc ?? null;
+}
+
+function ProtocolTable({ lines, render }: { lines: ProtocolLine[]; render: (l: ProtocolLine) => ReactNode }) {
+  const sort = useSort(lines, "value", protocolSortGet);
+  return (
+    <>
+      <ValueHeads sort={sort} />
+      <div className="me-list">{sort.sorted.map(render)}</div>
+    </>
+  );
 }
 
 export function MePage() {
@@ -437,12 +467,26 @@ export function MePage() {
     return [...merged.values()];
   }, [buckets, quotes, stakeExtra, adaStakeLines, t]);
   const stake = filter === "all" ? stakeAll : stakeAll.filter((l) => l.chainId === filter);
+  const walletGet = useCallback(
+    (r: HoldingRow, k: string) => {
+      const q = quotes.get(quoteKey(r.chainId ?? 0, r.contract, r.native));
+      if (k === "name") return r.symbol;
+      if (k === "quote") return q?.usdc ?? null;
+      if (k === "amount") return Number(formatUnits(r.raw, rowDecimals(r)));
+      return valued(r.raw, rowDecimals(r), q);
+    },
+    [quotes],
+  );
+  const walletSort = useSort(walletRows, "value", walletGet);
+  const stakeSort = useSort(stake, "value", protocolSortGet);
 
   const aaveCards = filter === "all" ? aave : aave.filter((c) => c.chainId === filter);
   const burrowCards = filter === "all" ? burrow : burrow.filter((c) => c.chainId === filter);
   const benqiCards = filter === "all" ? benqi : benqi.filter((c) => c.chainId === filter);
   const uniCards = filter === "all" ? uni : uni.filter((c) => c.chainId === filter);
   const visibleLaunched = filter === "all" ? launched : launched.filter((r) => r.chainId === filter);
+  const launchedGet = useCallback((r: LaunchRow, k: string) => (k === "name" ? r.symbol : r.chain), []);
+  const launchedSort = useSort(visibleLaunched, "name", launchedGet, "asc");
 
   const allValues: Array<number | null> = [];
   for (const r of walletRows) {
@@ -552,17 +596,12 @@ export function MePage() {
                   <b>{t("me.wallet")}</b>
                   <span className="me-count">{fmtUsdc(walletRows.reduce((n, r) => n + (valued(r.raw, rowDecimals(r), quotes.get(quoteKey(r.chainId ?? 0, r.contract, r.native))) ?? 0), 0))}</span>
                 </div>
-                <div className="me-cols me-cols-5">
-                  <span>{t("me.token")}</span>
-                  <span>{t("me.quote")}</span>
-                  <span>{t("me.amount")}</span>
-                  <span>{t("me.value")}</span>
-                </div>
+                <ValueHeads sort={walletSort} />
                 {walletRows.length === 0 ? (
                   <p className="me-card-empty">{t("me.emptyChain")}</p>
                 ) : (
                   <div className="me-list">
-                    {walletRows.map((r) => {
+                    {walletSort.sorted.map((r) => {
                       const q = quotes.get(quoteKey(r.chainId ?? 0, r.contract, r.native));
                       const v = valued(r.raw, rowDecimals(r), q);
                       const loading = buckets.find((g) => g.id === r.chainId)?.loading;
@@ -596,14 +635,9 @@ export function MePage() {
                       {t("me.health")} {c.health}
                     </span>
                   </div>
-                  <div className="me-cols me-cols-5">
-                    <span>{t("me.token")}</span>
-                    <span>{t("me.quote")}</span>
-                    <span>{t("me.amount")}</span>
-                    <span>{t("me.value")}</span>
-                  </div>
-                  <div className="me-list">
-                    {c.lines.map((l) => (
+                  <ProtocolTable
+                    lines={c.lines}
+                    render={(l) => (
                       <Line
                         key={l.id}
                         icon={l.icon}
@@ -615,8 +649,8 @@ export function MePage() {
                         value={l.valueUsdc == null ? "—" : fmtUsdc(l.valueUsdc)}
                         href={explorerFor(l.chainId, l.contract)}
                       />
-                    ))}
-                  </div>
+                    )}
+                  />
                 </section>
               ))}
 
@@ -628,14 +662,9 @@ export function MePage() {
                     </b>
                     <span className="me-count">{fmtUsdc(c.lines.reduce((n, l) => n + (l.valueUsdc ?? 0), 0))}</span>
                   </div>
-                  <div className="me-cols me-cols-5">
-                    <span>{t("me.token")}</span>
-                    <span>{t("me.quote")}</span>
-                    <span>{t("me.amount")}</span>
-                    <span>{t("me.value")}</span>
-                  </div>
-                  <div className="me-list">
-                    {c.lines.map((l) => (
+                  <ProtocolTable
+                    lines={c.lines}
+                    render={(l) => (
                       <Line
                         key={l.id}
                         icon={l.icon}
@@ -647,8 +676,8 @@ export function MePage() {
                         value={l.valueUsdc == null ? "—" : fmtUsdc(l.valueUsdc)}
                         href={explorerFor(l.chainId, l.contract)}
                       />
-                    ))}
-                  </div>
+                    )}
+                  />
                 </section>
               ))}
 
@@ -662,14 +691,9 @@ export function MePage() {
                       {t("me.health")} {c.health}
                     </span>
                   </div>
-                  <div className="me-cols me-cols-5">
-                    <span>{t("me.token")}</span>
-                    <span>{t("me.quote")}</span>
-                    <span>{t("me.amount")}</span>
-                    <span>{t("me.value")}</span>
-                  </div>
-                  <div className="me-list">
-                    {c.lines.map((l) => (
+                  <ProtocolTable
+                    lines={c.lines}
+                    render={(l) => (
                       <Line
                         key={l.id}
                         icon={l.icon}
@@ -681,8 +705,8 @@ export function MePage() {
                         value={l.valueUsdc == null ? "—" : fmtUsdc(l.valueUsdc)}
                         href={explorerFor(l.chainId, l.contract)}
                       />
-                    ))}
-                  </div>
+                    )}
+                  />
                 </section>
               ))}
 
@@ -694,14 +718,9 @@ export function MePage() {
                     </b>
                     <span className="me-count">{fmtUsdc(c.lines.reduce((n, l) => n + (l.valueUsdc ?? 0), 0))}</span>
                   </div>
-                  <div className="me-cols me-cols-5">
-                    <span>{t("me.token")}</span>
-                    <span>{t("me.quote")}</span>
-                    <span>{t("me.amount")}</span>
-                    <span>{t("me.value")}</span>
-                  </div>
-                  <div className="me-list">
-                    {c.lines.map((l) => (
+                  <ProtocolTable
+                    lines={c.lines}
+                    render={(l) => (
                       <Line
                         key={l.id}
                         icon={l.icon}
@@ -713,8 +732,8 @@ export function MePage() {
                         value={l.valueUsdc == null ? "—" : fmtUsdc(l.valueUsdc)}
                         href={explorerFor(l.chainId, l.contract)}
                       />
-                    ))}
-                  </div>
+                    )}
+                  />
                 </section>
               ))}
 
@@ -724,14 +743,9 @@ export function MePage() {
                     <b>{t("me.staking")}</b>
                     <span className="me-count">{fmtUsdc(stake.reduce((n, l) => n + (l.valueUsdc ?? 0), 0))}</span>
                   </div>
-                  <div className="me-cols me-cols-5">
-                    <span>{t("me.token")}</span>
-                    <span>{t("me.quote")}</span>
-                    <span>{t("me.amount")}</span>
-                    <span>{t("me.value")}</span>
-                  </div>
+                  <ValueHeads sort={stakeSort} />
                   <div className="me-list">
-                    {stake.map((l) => (
+                    {stakeSort.sorted.map((l) => (
                       <Line
                         key={l.id}
                         icon={l.icon}
@@ -766,13 +780,13 @@ export function MePage() {
                     <span className="me-count">{visibleLaunched.length}</span>
                   </div>
                   <div className="me-cols me-cols-5">
-                    <span>{t("me.token")}</span>
+                    <SortHead id="name" label={t("me.token")} active={launchedSort.key === "name"} dir={launchedSort.dir} onToggle={launchedSort.toggle} align="left" />
                     <span>{t("me.quote")}</span>
                     <span>{t("me.amount")}</span>
-                    <span>{t("me.value")}</span>
+                    <SortHead id="chain" label={t("lp.cols.chain")} active={launchedSort.key === "chain"} dir={launchedSort.dir} onToggle={launchedSort.toggle} />
                   </div>
                   <div className="me-list">
-                    {visibleLaunched.map((r) => (
+                    {launchedSort.sorted.map((r) => (
                       <Line
                         key={`${r.chainId}-${r.token}`}
                         icon={(r.symbol || "OFT").slice(0, 2)}

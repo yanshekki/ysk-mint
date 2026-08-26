@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { createPublicClient, http, type PublicClient } from "viem";
@@ -6,12 +6,13 @@ import { useAccount } from "wagmi";
 import { CHAINS } from "@ysk-mint/config";
 import { seedToken, isStable } from "../../lib/dexVenues.ts";
 import { readVenuesForPair, weightedPrice, type VenuePool } from "../../lib/dexPools.ts";
-import { usePairSwaps } from "../../lib/usePairSwaps.ts";
+import { usePairSwaps, type SwapRow } from "../../lib/usePairSwaps.ts";
 import { trackLive, useLiveStatus } from "../../lib/liveStatus.ts";
 import { fmtCompact, fmtUsdc } from "../../lib/defiQuotes.ts";
 import { canonAddr } from "../../lib/pairKey.ts";
 import { nearToken, nearVenuesForPair } from "../../lib/nearDex.ts";
 import { adaTokenMeta, adaVenuesForPair } from "../../lib/adaDex.ts";
+import { SortHead, useSort } from "../../shared/ui/SortTable.tsx";
 
 function short(a: string) {
   if (!a || a.length < 12) return a || "—";
@@ -76,6 +77,20 @@ export function PairPage() {
   const price = useMemo(() => weightedPrice(venues), [venues]);
   const evm = chain?.vm === "evm" || chain?.evm;
   const swaps = usePairSwaps(evm ? client : undefined, evm ? venues : [], sa?.decimals ?? 18, sb?.decimals ?? 18, chainId);
+  const venueGet = useCallback((v: VenuePool, k: string) => {
+    if (k === "name") return v.venue.name;
+    if (k === "quote") return v.priceAinB;
+    if (k === "amount") return v.reserveA;
+    return v.tvlQuote;
+  }, []);
+  const venueSort = useSort(venues, "depth", venueGet);
+  const tradeGet = useCallback((s: SwapRow, k: string) => {
+    if (k === "name") return s.venue;
+    if (k === "a") return s.amount0;
+    if (k === "b") return s.amount1;
+    return Number(s.block);
+  }, []);
+  const tradeSort = useSort(swaps.rows, "a", tradeGet);
   const quoteIsStable = sb ? isStable(sb.symbol) : false;
 
   function venueHref(pool: string) {
@@ -123,12 +138,12 @@ export function PairPage() {
             ) : (
               <div className="me-list">
                 <div className="me-cols me-cols-5">
-                  <span>{t("lp.venues")}</span>
-                  <span>{t("me.quote")}</span>
-                  <span>{sa?.symbol ?? "A"}</span>
-                  <span>{t("lp.depth")}</span>
+                  <SortHead id="name" label={t("lp.venues")} active={venueSort.key === "name"} dir={venueSort.dir} onToggle={venueSort.toggle} align="left" />
+                  <SortHead id="quote" label={t("me.quote")} active={venueSort.key === "quote"} dir={venueSort.dir} onToggle={venueSort.toggle} />
+                  <SortHead id="amount" label={sa?.symbol ?? "A"} active={venueSort.key === "amount"} dir={venueSort.dir} onToggle={venueSort.toggle} />
+                  <SortHead id="depth" label={t("lp.depth")} active={venueSort.key === "depth"} dir={venueSort.dir} onToggle={venueSort.toggle} />
                 </div>
-                {venues.map((v) => (
+                {venueSort.sorted.map((v) => (
                   <a
                     key={`${v.venue.id}-${v.pool}-${v.feeLabel}`}
                     className="me-token me-token-5"
@@ -166,12 +181,12 @@ export function PairPage() {
             ) : (
               <div className="me-list">
                 <div className="me-cols me-cols-5">
-                  <span>{t("lp.trades")}</span>
-                  <span>{sa?.symbol ?? "A"}</span>
-                  <span>{sb?.symbol ?? "B"}</span>
-                  <span />
+                  <SortHead id="name" label={t("lp.trades")} active={tradeSort.key === "name"} dir={tradeSort.dir} onToggle={tradeSort.toggle} align="left" />
+                  <SortHead id="a" label={sa?.symbol ?? "A"} active={tradeSort.key === "a"} dir={tradeSort.dir} onToggle={tradeSort.toggle} />
+                  <SortHead id="b" label={sb?.symbol ?? "B"} active={tradeSort.key === "b"} dir={tradeSort.dir} onToggle={tradeSort.toggle} />
+                  <SortHead id="block" label={t("lp.block")} active={tradeSort.key === "block"} dir={tradeSort.dir} onToggle={tradeSort.toggle} />
                 </div>
-                {swaps.rows.map((s) => {
+                {tradeSort.sorted.map((s) => {
                   const href = s.tx && chain?.explorer ? `${chain.explorer}/tx/${s.tx}` : undefined;
                   const inner = (
                     <>
@@ -184,7 +199,7 @@ export function PairPage() {
                       </div>
                       <span className="num me-price">{fmtCompact(s.amount0)}</span>
                       <span className="num holding-amt">{fmtCompact(s.amount1)}</span>
-                      <span className="num me-value">{href ? t("lp.open") : ""}</span>
+                      <span className="num me-value">{s.block.toString()}</span>
                     </>
                   );
                   return href ? (

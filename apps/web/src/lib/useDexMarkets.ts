@@ -62,12 +62,7 @@ async function mapLimit<T>(ids: T[], n: number, fn: (id: T) => Promise<void>) {
 }
 
 function sortMarkets(rows: MarketRow[]) {
-  const order = featuredChains().map((c) => c.chainId);
-  rows.sort((a, b) => {
-    const d = order.indexOf(a.chainId) - order.indexOf(b.chainId);
-    if (d !== 0) return d;
-    return (b.depth || 0) - (a.depth || 0);
-  });
+  rows.sort((a, b) => (b.depth || 0) - (a.depth || 0));
   return rows;
 }
 

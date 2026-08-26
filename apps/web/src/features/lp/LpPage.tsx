@@ -1,17 +1,18 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAccount } from "wagmi";
 import { featuredChains, isConfigured, launchContracts } from "@ysk-mint/config";
-import { useLpFeed, type LpFilter } from "../../lib/useLpFeed.ts";
-import { useDexMarkets } from "../../lib/useDexMarkets.ts";
-import { useDexLp } from "../../lib/useDexLp.ts";
+import { useLpFeed, type LpFilter, type LpRow } from "../../lib/useLpFeed.ts";
+import { useDexMarkets, type MarketRow } from "../../lib/useDexMarkets.ts";
+import { useDexLp, type MyLpRow } from "../../lib/useDexLp.ts";
 import { fmtUsdc } from "../../lib/defiQuotes.ts";
 import { chainIcon } from "../../lib/chainIcon.ts";
 import { useNativeWallets } from "../../lib/nativeWallets.ts";
 import { useCardanoHoldings } from "../../lib/useHoldings.ts";
 import { ChipBusy } from "../../shared/ui/LiveDock.tsx";
 import { useLiveStatus } from "../../lib/liveStatus.ts";
+import { SortHead, useSort } from "../../shared/ui/SortTable.tsx";
 
 function fmtUnlock(ts: number) {
   if (!ts) return "—";
@@ -56,6 +57,26 @@ export function LpPage() {
     return marketJobs.find((j) => j.phase === "run") ?? marketJobs[0];
   }, [jobs]);
   const readingShort = featured.find((c) => c.chainId === reading?.chainId)?.short;
+  const marketGet = useCallback((r: MarketRow, k: string) => {
+    if (k === "name") return `${r.symbolA}/${r.symbolB}`;
+    if (k === "quote") return r.price;
+    if (k === "venues") return r.venues.length || r.venueNames.length;
+    return r.depth;
+  }, []);
+  const marketSort = useSort(markets.rows, "depth", marketGet);
+  const lpGet = useCallback((r: MyLpRow, k: string) => {
+    if (k === "name") return `${r.symbolA}/${r.symbolB}`;
+    if (k === "venues") return r.venueCount;
+    const n = Number(r.valueHint);
+    return Number.isFinite(n) ? n : null;
+  }, []);
+  const lpSort = useSort(mine.rows, "value", lpGet);
+  const lockGet = useCallback((r: LpRow, k: string) => {
+    if (k === "name") return r.symbol;
+    if (k === "unlock") return r.unlockAt;
+    return Number(r.liquidity);
+  }, []);
+  const lockSort = useSort(locks.rows, "amount", lockGet);
 
   return (
     <section className="workspace">
@@ -92,8 +113,14 @@ export function LpPage() {
                 <b>{t("lp.myLp")}</b>
                 <span className="me-count">{mine.rows.length}</span>
               </div>
+              <div className="me-cols me-cols-5">
+                <SortHead id="name" label={t("lp.myLp")} active={lpSort.key === "name"} dir={lpSort.dir} onToggle={lpSort.toggle} align="left" />
+                <SortHead id="venues" label={t("lp.venues")} active={lpSort.key === "venues"} dir={lpSort.dir} onToggle={lpSort.toggle} />
+                <SortHead id="value" label={t("me.value")} active={lpSort.key === "value"} dir={lpSort.dir} onToggle={lpSort.toggle} />
+                <span />
+              </div>
               <div className="me-list">
-                {mine.rows.map((r) => (
+                {lpSort.sorted.map((r) => (
                   <Link key={r.pairId} to={`/pair/${r.chainId}/${encodeURIComponent(r.tokenA)}/${encodeURIComponent(r.tokenB)}`} className="me-token me-token-5">
                     <span className="holding-ico-wrap">
                       <img src={r.iconA} alt="" className="holding-ico" />
@@ -128,13 +155,13 @@ export function LpPage() {
             ) : (
               <div className="me-list">
                 <div className="me-cols me-cols-5">
-                  <span>{t("lp.markets")}</span>
-                  <span>{t("me.quote")}</span>
-                  <span>{t("lp.venues")}</span>
-                  <span>{t("lp.depth")}</span>
+                  <SortHead id="name" label={t("lp.markets")} active={marketSort.key === "name"} dir={marketSort.dir} onToggle={marketSort.toggle} align="left" />
+                  <SortHead id="quote" label={t("me.quote")} active={marketSort.key === "quote"} dir={marketSort.dir} onToggle={marketSort.toggle} />
+                  <SortHead id="venues" label={t("lp.venues")} active={marketSort.key === "venues"} dir={marketSort.dir} onToggle={marketSort.toggle} />
+                  <SortHead id="depth" label={t("lp.depth")} active={marketSort.key === "depth"} dir={marketSort.dir} onToggle={marketSort.toggle} />
                 </div>
                 {markets.loading && readingShort ? <p className="me-card-empty">{t("lp.loadingChain", { chain: readingShort })}</p> : null}
-                {markets.rows.map((r) => (
+                {marketSort.sorted.map((r) => (
                   <Link key={r.pairId} to={`/pair/${r.chainId}/${encodeURIComponent(r.tokenA)}/${encodeURIComponent(r.tokenB)}`} className="me-token me-token-5">
                     <span className="holding-ico-wrap">
                       <img src={r.iconA} alt="" className="holding-ico" />
@@ -161,8 +188,14 @@ export function LpPage() {
                 <b>{t("lp.productLocks")}</b>
                 <span className="me-count">{locks.rows.length}</span>
               </div>
+              <div className="me-cols me-cols-5">
+                <SortHead id="name" label={t("lp.cols.token")} active={lockSort.key === "name"} dir={lockSort.dir} onToggle={lockSort.toggle} align="left" />
+                <SortHead id="unlock" label={t("lp.cols.unlock")} active={lockSort.key === "unlock"} dir={lockSort.dir} onToggle={lockSort.toggle} />
+                <SortHead id="amount" label={t("lp.cols.amount")} active={lockSort.key === "amount"} dir={lockSort.dir} onToggle={lockSort.toggle} />
+                <span />
+              </div>
               <div className="me-list">
-                {locks.rows.map((r) => (
+                {lockSort.sorted.map((r) => (
                   <div key={`${r.chainId}-${r.lockId}-${r.lpToken}`} className="me-token me-token-5">
                     <span className="holding-ico-wrap">
                       <span className="holding-ico me-oft-mark">LP</span>

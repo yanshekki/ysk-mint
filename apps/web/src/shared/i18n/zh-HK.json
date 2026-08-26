@@ -65,6 +65,7 @@
     "timed": "定期鎖",
     "burn": "銷毀 LP",
     "open": "區塊瀏覽器",
+    "block": "區塊",
     "cols": {
       "chain": "鏈",
       "token": "代幣",

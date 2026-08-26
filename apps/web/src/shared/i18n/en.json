@@ -65,6 +65,7 @@
     "timed": "Timed",
     "burn": "Burn LP",
     "open": "Explorer",
+    "block": "Block",
     "cols": {
       "chain": "Chain",
       "token": "Token",
