@@ -31,6 +31,7 @@ function iconOf(symbol: string) {
   if (s.includes("eth")) return "/tokens/eth.png";
   if (s.includes("sol")) return "/tokens/sol.png";
   if (s.includes("sui")) return "/tokens/sui.png";
+  if (s.includes("apt")) return "/tokens/apt.png";
   if (s.includes("trx") || s.includes("jst")) return "/tokens/trx.png";
   if (s.includes("usd") || s.includes("dai")) return "/tokens/usdc.png";
   return "/tokens/eth.png";
@@ -476,7 +477,208 @@ export async function readJustLend(user: string): Promise<LendCard | null> {
   return card("JustLend", 728126428, "TRX", lines, health);
 }
 
-export async function readNativeLending(opts: { sol?: string; sui?: string; tron?: string; quotes: Map<string, Quote> }): Promise<LendCard[]> {
+const SCALLOP_CORE = "0xefe8b36d5b2e43728cc323298626b83177803521d195cfb11e15b910e892fddf";
+const SCALLOP_KEY = `${SCALLOP_CORE}::obligation::ObligationKey`;
+const ECHELON = "0xc6bc659f1649553c1a3fa05d9727433dc03843baac29473c817d06d39e7621ba";
+const APTOS_RPCS = ["https://fullnode.mainnet.aptoslabs.com/v1", "https://api.mainnet.aptoslabs.com/v1"];
+
+function normType(t: string) {
+  return (t.startsWith("0x") ? t : `0x${t}`).toLowerCase();
+}
+
+function tableIdOf(x: unknown): string | null {
+  if (!x || typeof x !== "object") return null;
+  const f = (x as Json).fields as Json | undefined;
+  const id = f?.id ?? (x as Json).id;
+  if (typeof id === "string" && id.startsWith("0x")) return id;
+  if (id && typeof id === "object") {
+    const inner = (id as Json).id ?? (id as Json).inner;
+    if (typeof inner === "string" && inner.startsWith("0x")) return inner;
+  }
+  return null;
+}
+
+function fp64(v: unknown): number {
+  const s = typeof v === "object" && v && "v" in (v as Json) ? String((v as Json).v) : String(v ?? "");
+  if (!/^\d+$/.test(s)) return 0;
+  try {
+    return Number(BigInt(s)) / 2 ** 64;
+  } catch {
+    return 0;
+  }
+}
+
+function mantissaDecimals(raw: string): number {
+  try {
+    let x = BigInt(raw || "1");
+    if (x <= 0n) return 8;
+    let d = 0;
+    while (x >= 10n && x % 10n === 0n && d < 18) {
+      x /= 10n;
+      d++;
+    }
+    return d || 8;
+  } catch {
+    return 8;
+  }
+}
+
+async function aptosView(fn: string, args: unknown[], types: string[] = []): Promise<unknown> {
+  const body = JSON.stringify({ function: fn, type_arguments: types, arguments: args });
+  for (const base of APTOS_RPCS) {
+    try {
+      const res = await fetch(`${base}/view`, { method: "POST", headers: { "content-type": "application/json" }, body });
+      if (!res.ok) continue;
+      return await res.json();
+    } catch {
+      /* next */
+    }
+  }
+  return null;
+}
+
+type ScallopPool = {
+  symbol?: string;
+  coinType?: string;
+  sCoinType?: string;
+  coinDecimal?: number;
+  coinPrice?: number;
+  conversionRate?: number;
+  borrowIndex?: number;
+};
+
+export async function readScallop(user: string): Promise<LendCard | null> {
+  if (!user) return null;
+  const market = await getJson<{ pools?: ScallopPool[]; collaterals?: ScallopPool[] }>("https://sdk.api.scallop.io/api/market");
+  const pools = [...(market?.pools ?? []), ...(market?.collaterals ?? [])];
+  const byCoin = new Map<string, ScallopPool>();
+  const bySCoin = new Map<string, ScallopPool>();
+  for (const p of pools) {
+    if (p.coinType) byCoin.set(normType(p.coinType), p);
+    if (p.sCoinType) bySCoin.set(normType(p.sCoinType), p);
+  }
+  const lines: ProtocolLine[] = [];
+  const bals = (await suiRpc("suix_getAllBalances", [user])) as Array<{ coinType?: string; totalBalance?: string }> | null;
+  for (const b of bals ?? []) {
+    const coin = normType(b.coinType || "");
+    const pool = bySCoin.get(coin);
+    if (!pool) continue;
+    const raw = BigInt(b.totalBalance || "0");
+    if (raw === 0n) continue;
+    const decimals = pool.coinDecimal ?? coinDecimals(pool.coinType || "");
+    const n = Number(formatUnits(raw, decimals)) * (Number(pool.conversionRate) || 1);
+    if (n <= 0) continue;
+    const q: Quote | null = Number(pool.coinPrice) > 0 ? { usdc: Number(pool.coinPrice), source: "agg" } : null;
+    const { raw: adj } = fromHuman(String(n), decimals);
+    lines.push(line("scallop", 784, "SUI", pool.symbol || coinSymbol(pool.coinType || ""), adj || raw, decimals, "supply", pool.coinType || coin, q, n));
+  }
+  const keys: string[] = [];
+  let cursor: string | null = null;
+  for (let i = 0; i < 4; i++) {
+    const page = (await suiRpc("suix_getOwnedObjects", [
+      user,
+      { filter: { StructType: SCALLOP_KEY }, options: { showContent: true, showType: true }, cursor, limit: 50 },
+    ])) as { data?: Array<{ data?: Json }>; nextCursor?: string | null; hasNextPage?: boolean } | null;
+    for (const row of page?.data ?? []) {
+      const f = fieldsOf(row.data ?? row);
+      const oid = String(f.obligation_id ?? f.obligationId ?? f.ownership ?? "");
+      if (oid && oid !== "0x0") keys.push(oid.startsWith("0x") ? oid : `0x${oid}`);
+    }
+    if (!page?.hasNextPage) break;
+    cursor = page.nextCursor ?? null;
+    if (!cursor) break;
+  }
+  const addTable = async (tid: string | null, side: "supply" | "borrow") => {
+    if (!tid) return;
+    const page = (await suiRpc("suix_getDynamicFields", [{ parentId: tid, cursor: null, limit: 50 }])) as {
+      data?: Array<{ objectId?: string; name?: { type?: string; value?: unknown } }>;
+    } | null;
+    await Promise.all(
+      (page?.data ?? []).slice(0, 24).map(async (df) => {
+        const obj = await suiRpc("sui_getObject", [df.objectId, { showContent: true }]);
+        const f = fieldsOf(obj);
+        const nameVal = df.name?.value;
+        const coin =
+          typeof nameVal === "string"
+            ? nameVal
+            : typeName(nameVal) || typeName(f.name) || String((f as Json).name ?? "");
+        const amount = BigInt(String(f.amount ?? f.value ?? "0"));
+        if (amount === 0n) return;
+        const idx = Number(f.borrow_index ?? f.borrowIndex ?? 0);
+        const pool = byCoin.get(normType(coin));
+        const decimals = pool?.coinDecimal ?? coinDecimals(coin);
+        let n = Number(formatUnits(amount, decimals));
+        if (side === "borrow" && idx > 0 && pool?.borrowIndex) n = n * (Number(pool.borrowIndex) / idx);
+        if (!Number.isFinite(n) || n <= 0) return;
+        const q: Quote | null = Number(pool?.coinPrice) > 0 ? { usdc: Number(pool?.coinPrice), source: "agg" } : null;
+        const { raw } = fromHuman(String(n), decimals);
+        lines.push(line("scallop", 784, "SUI", pool?.symbol || coinSymbol(coin), raw || amount, decimals, side, coin, q, n));
+      }),
+    );
+  };
+  await Promise.all(
+    [...new Set(keys)].slice(0, 8).map(async (oid) => {
+      const obj = await suiRpc("sui_getObject", [oid, { showContent: true }]);
+      const f = fieldsOf(obj);
+      await addTable(tableIdOf(f.collaterals), "supply");
+      await addTable(tableIdOf(f.debts), "borrow");
+    }),
+  );
+  return card("Scallop", 784, "SUI", lines);
+}
+
+export async function readEchelon(user: string): Promise<LendCard | null> {
+  if (!user) return null;
+  const marketsRaw = await aptosView(`${ECHELON}::lending::market_objects`, []);
+  const markets = (Array.isArray(marketsRaw) ? marketsRaw[0] : marketsRaw) as Array<{ inner?: string } | string> | null;
+  const ids = (markets ?? [])
+    .map((m) => (typeof m === "string" ? m : m?.inner))
+    .filter((x): x is string => Boolean(x))
+    .slice(0, 40);
+  if (!ids.length) return null;
+  const lines: ProtocolLine[] = [];
+  await Promise.all(
+    ids.map(async (market) => {
+      try {
+        const [coins, debt, name, mantissa, price] = await Promise.all([
+          aptosView(`${ECHELON}::lending::account_coins`, [user, market]),
+          aptosView(`${ECHELON}::lending::account_liability`, [user, market]),
+          aptosView(`${ECHELON}::lending::market_asset_name`, [market]),
+          aptosView(`${ECHELON}::lending::market_asset_mantissa`, [market]),
+          aptosView(`${ECHELON}::lending::asset_price`, [market]),
+        ]);
+        const supply = BigInt(String(Array.isArray(coins) ? coins[0] : coins ?? "0"));
+        const borrow = BigInt(String(Array.isArray(debt) ? debt[0] : debt ?? "0"));
+        if (supply === 0n && borrow === 0n) return;
+        const decimals = mantissaDecimals(String(Array.isArray(mantissa) ? mantissa[0] : mantissa ?? "100000000"));
+        const symbol = String(Array.isArray(name) ? name[0] : name || "TKN").replace(/ Coin$/i, "") || "TKN";
+        const px = fp64(Array.isArray(price) ? price[0] : price);
+        const q: Quote | null = px > 0 && px < 1e7 ? { usdc: px, source: "agg" } : null;
+        if (supply > 0n) lines.push(line("echelon", 637, "APT", symbol, supply, decimals, "supply", market, q));
+        if (borrow > 0n) lines.push(line("echelon", 637, "APT", symbol, borrow, decimals, "borrow", market, q));
+      } catch {
+        /* market miss */
+      }
+    }),
+  );
+  let health = "—";
+  try {
+    const lend = fp64(((await aptosView(`${ECHELON}::lending::account_lend_value`, [user])) as unknown[])?.[0]);
+    const liab = fp64(((await aptosView(`${ECHELON}::lending::account_liability_value`, [user])) as unknown[])?.[0]);
+    if (liab > 0 && lend > 0) health = (lend / liab).toFixed(2);
+  } catch {
+    /* no hf */
+  }
+  return card("Echelon", 637, "APT", lines, health);
+}
+
+export async function readNativeLending(opts: {
+  sol?: string;
+  sui?: string;
+  tron?: string;
+  aptos?: string;
+  quotes: Map<string, Quote>;
+}): Promise<LendCard[]> {
   const jobs: Array<Promise<LendCard | null>> = [];
   if (opts.sol) {
     jobs.push(readKamino(opts.sol, opts.quotes));
@@ -485,8 +687,10 @@ export async function readNativeLending(opts: { sol?: string; sui?: string; tron
   if (opts.sui) {
     jobs.push(readNavi(opts.sui));
     jobs.push(readSuilend(opts.sui));
+    jobs.push(readScallop(opts.sui));
   }
   if (opts.tron) jobs.push(readJustLend(opts.tron));
+  if (opts.aptos) jobs.push(readEchelon(opts.aptos));
   const rows = await Promise.all(jobs);
   return rows.filter((c): c is LendCard => Boolean(c));
 }

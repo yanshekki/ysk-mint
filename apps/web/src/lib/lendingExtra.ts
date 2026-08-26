@@ -809,6 +809,322 @@ async function readFraxlend(client: PublicClient, chainId: number, user: Address
   return { chainId, chain: chainShort(chainId), health: "—", lines, aTokens: tokens, protocol: "Fraxlend" };
 }
 
+const providerAbi = [
+  { type: "function", name: "getPoolDataProvider", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
+] as const;
+
+const SEAMLESS_POOL = "0x8F44Fd754285aa6A2b8B9B97739B79746e0475a7" as Address;
+const SEAMLESS_PROVIDER = "0x0E02EB705be325407707662C6f6d3466E939f3a0" as Address;
+const SEAMLESS_DATA = "0x2A0979257105834789bC6b9E1B00446DFbA8dFBa" as Address;
+const SEAMLESS_VAULTS: Address[] = [
+  "0x616a4E1db48e22028f6bbf20444Cd3b8e3273738",
+  "0x5a47C803488FE2BB0A0EAaf346b420e4dF22F3C7",
+  "0x27d8c7273fd3fcc6956a0b370ce5fd4a7fc65c18",
+];
+
+const DOLOMITE_MARGIN: Record<number, Address> = {
+  42161: "0x6Bd780E7fDf01D77e4d475c821f1e7AE05409072",
+  8453: "0x003Ca23Fd5F0ca87D01F6eC6CD14A8AE60c2b97D",
+  1: "0x003Ca23Fd5F0ca87D01F6eC6CD14A8AE60c2b97D",
+};
+
+const dolomiteAbi = [
+  {
+    type: "function",
+    name: "getAccountNumberOfMarketsWithBalances",
+    stateMutability: "view",
+    inputs: [{ type: "tuple", components: [{ name: "owner", type: "address" }, { name: "number", type: "uint256" }] }],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "getAccountBalances",
+    stateMutability: "view",
+    inputs: [{ type: "tuple", components: [{ name: "owner", type: "address" }, { name: "number", type: "uint256" }] }],
+    outputs: [
+      { type: "uint256[]" },
+      { type: "address[]" },
+      { type: "tuple[]", components: [{ name: "sign", type: "bool" }, { name: "value", type: "uint128" }] },
+      { type: "tuple[]", components: [{ name: "sign", type: "bool" }, { name: "value", type: "uint256" }] },
+    ],
+  },
+  {
+    type: "function",
+    name: "getAccountValues",
+    stateMutability: "view",
+    inputs: [{ type: "tuple", components: [{ name: "owner", type: "address" }, { name: "number", type: "uint256" }] }],
+    outputs: [
+      { type: "tuple", components: [{ name: "value", type: "uint256" }] },
+      { type: "tuple", components: [{ name: "value", type: "uint256" }] },
+    ],
+  },
+] as const;
+
+const MOOLAH = "0x8F73b65B4caAf64FBA2aF91cC5D4a2A1318E5D8C" as Address;
+const LISTA_INTERACTION = "0xB68443Ee3e828baD1526b3e0Bdf2Dfc6b1975ec4" as Address;
+const LISTA_VAULTS_FALLBACK: Address[] = [
+  "0x57134a64B7cD9F9eb72F8255A671F5Bf2fe3E2d0",
+  "0xfa27f172e0b6ebcEF9c51ABf817E2cb142FbE627",
+  "0x9A17Fd5Cb8EFc25d11567e713aE795A89775a759",
+  "0xe03d86e5baa3509ac4a059a41737baa8169b6529",
+  "0x6d6783C146F2B0B2774C1725297f1845dc502525",
+  "0xE46b8E65006e6450bdd8cb7D3274AB4F76f4C705",
+  "0xEB4F6FFB1038E1cCa701e7d53083B37ec5b6Ba33",
+  "0x4109415de2271097fb5fa16af8a753aab8c46d6f",
+];
+const LISTA_CDP: Address[] = [
+  "0xB0b84D294e0C75A6abe60171b70edEb2EFd14A1B",
+  "0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c",
+  "0xa2E3356610840701BDf5611a53974510Ae27E2e1",
+  "0x2170Ed0880ac9A755fd29B2688956BD959F933F8",
+  "0x55d398326f99059fF775485246999027B3197955",
+  "0x8d0D000Ee44948FC98c9B98A4fA4921476f08B0d",
+  "0xc5f0f7bD48de13CE11B94120688484b19e183454",
+  "0x4aae823a6a0b376De6A78e74eCC5b079d38cBCf7",
+  "0x26c5e01524d2E6280A48F2c475Ff3eB9B4dc3d76",
+  "0x0782b6d8c4551B9760e74c0545A9bCD90bdc41E5",
+];
+
+const listaCdpAbi = [
+  { type: "function", name: "locked", stateMutability: "view", inputs: [{ type: "address" }, { type: "address" }], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "borrowed", stateMutability: "view", inputs: [{ type: "address" }, { type: "address" }], outputs: [{ type: "uint256" }] },
+] as const;
+
+async function readErc4626Vaults(
+  client: PublicClient,
+  chainId: number,
+  user: Address,
+  quotes: Map<string, Quote>,
+  vaults: Address[],
+  slug: string,
+): Promise<{ lines: ProtocolLine[]; tokens: Set<string> }> {
+  const lines: ProtocolLine[] = [];
+  const tokens = new Set<string>();
+  const list = vaults.slice(0, 40);
+  const bals = await client.multicall({
+    contracts: list.map((v) => ({ address: v, abi: erc4626Abi, functionName: "balanceOf" as const, args: [user] })),
+    allowFailure: true,
+  });
+  await Promise.all(
+    list.map(async (vault, i) => {
+      const row = bals[i];
+      if (row.status !== "success" || row.result === 0n) return;
+      try {
+        const [asset, assets] = await Promise.all([
+          client.readContract({ address: vault, abi: erc4626Abi, functionName: "asset" }),
+          client.readContract({ address: vault, abi: erc4626Abi, functionName: "convertToAssets", args: [row.result] }),
+        ]);
+        if (assets === 0n) return;
+        const m = await tokenMeta(client, asset);
+        const q = await lineQuote(client, quotes, chainId, asset, m.decimals);
+        tokens.add(vault.toLowerCase());
+        pushLine(lines, chainId, slug, m.symbol, assets, m.decimals, "supply", asset, q);
+      } catch {
+        /* vault miss */
+      }
+    }),
+  );
+  return { lines, tokens };
+}
+
+async function readSeamless(client: PublicClient, chainId: number, user: Address, quotes: Map<string, Quote>): Promise<LendCard | null> {
+  if (chainId !== 8453) return null;
+  const lines: ProtocolLine[] = [];
+  const tokens = new Set<string>();
+  try {
+    const data =
+      ((await client.readContract({ address: SEAMLESS_PROVIDER, abi: providerAbi, functionName: "getPoolDataProvider" }).catch(() => SEAMLESS_DATA)) as Address) ||
+      SEAMLESS_DATA;
+    const leftover = await readAaveMarket(client, chainId, user, { pool: SEAMLESS_POOL, data }, chainShort(chainId), "seamless");
+    if (leftover) {
+      lines.push(...leftover.lines);
+      for (const t of leftover.aTokens) tokens.add(t);
+    }
+  } catch {
+    /* leftover miss */
+  }
+  const vaults = await readErc4626Vaults(client, chainId, user, quotes, SEAMLESS_VAULTS, "seamless");
+  lines.push(...vaults.lines);
+  for (const t of vaults.tokens) tokens.add(t);
+  if (!lines.length) return null;
+  return { chainId, chain: chainShort(chainId), health: "—", lines, aTokens: tokens, protocol: "Seamless" };
+}
+
+async function readDolomite(client: PublicClient, chainId: number, user: Address, quotes: Map<string, Quote>): Promise<LendCard | null> {
+  const margin = DOLOMITE_MARGIN[chainId];
+  if (!margin) return null;
+  const lines: ProtocolLine[] = [];
+  const tokens = new Set<string>();
+  let suppliedUsd = 0n;
+  let borrowedUsd = 0n;
+  const nums = Array.from({ length: 12 }, (_, i) => BigInt(i));
+  await Promise.all(
+    nums.map(async (number) => {
+      const account = { owner: user, number } as const;
+      try {
+        const n = await client.readContract({
+          address: margin,
+          abi: dolomiteAbi,
+          functionName: "getAccountNumberOfMarketsWithBalances",
+          args: [account],
+        });
+        if (n === 0n) return;
+        const [ids, addrs, , weis] = await client.readContract({
+          address: margin,
+          abi: dolomiteAbi,
+          functionName: "getAccountBalances",
+          args: [account],
+        });
+        await Promise.all(
+          addrs.map(async (token, i) => {
+            const wei = weis[i];
+            const raw = BigInt(wei.value);
+            if (raw === 0n) return;
+            const side: "supply" | "borrow" = wei.sign ? "supply" : "borrow";
+            const m = await tokenMeta(client, token);
+            const q = await lineQuote(client, quotes, chainId, token, m.decimals);
+            tokens.add(token.toLowerCase());
+            pushLine(lines, chainId, "dolomite", m.symbol, raw, m.decimals, side, token, q);
+          }),
+        );
+        const vals = await client.readContract({ address: margin, abi: dolomiteAbi, functionName: "getAccountValues", args: [account] }).catch(() => null);
+        if (vals) {
+          suppliedUsd += BigInt(vals[0].value);
+          borrowedUsd += BigInt(vals[1].value);
+        }
+        void ids;
+      } catch {
+        /* account miss */
+      }
+    }),
+  );
+  if (!lines.length) return null;
+  let health = "—";
+  if (borrowedUsd > 0n) {
+    const hf = Number(suppliedUsd) / Number(borrowedUsd);
+    if (Number.isFinite(hf) && hf > 0) health = hf.toFixed(2);
+  }
+  return { chainId, chain: chainShort(chainId), health, lines, aTokens: tokens, protocol: "Dolomite" };
+}
+
+async function listaMarketIds(user: Address): Promise<`0x${string}`[]> {
+  const urls = [
+    `https://api.lista.org/api/moolah/borrow/userMarketList?address=${user}&chain=bsc`,
+    `https://api.lista.org/api/moolah/borrow/userPositions?address=${user}&chain=bsc`,
+  ];
+  const out: `0x${string}`[] = [];
+  const seen = new Set<string>();
+  const take = (data: unknown) => {
+    const rows = Array.isArray(data) ? data : Array.isArray((data as { list?: unknown[] } | null)?.list) ? (data as { list: unknown[] }).list : [];
+    for (const row of rows) {
+      const id = typeof row === "string" ? row : (row as { marketId?: string })?.marketId;
+      if (!id || !id.startsWith("0x") || id.length !== 66) continue;
+      const k = id.toLowerCase();
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(id as `0x${string}`);
+    }
+  };
+  await Promise.all(
+    urls.map(async (url) => {
+      try {
+        const ac = new AbortController();
+        const t = setTimeout(() => ac.abort(), 12000);
+        const res = await fetch(url, { signal: ac.signal });
+        clearTimeout(t);
+        if (!res.ok) return;
+        const json = (await res.json()) as { data?: unknown };
+        take(json.data);
+      } catch {
+        /* api miss */
+      }
+    }),
+  );
+  return out.slice(0, 40);
+}
+
+async function listaVaults(): Promise<Address[]> {
+  try {
+    const ac = new AbortController();
+    const t = setTimeout(() => ac.abort(), 12000);
+    const res = await fetch("https://api.lista.org/api/moolah/vault/list?page=1&pageSize=50&chain=bsc", { signal: ac.signal });
+    clearTimeout(t);
+    if (!res.ok) return LISTA_VAULTS_FALLBACK;
+    const json = (await res.json()) as { data?: { list?: Array<{ address?: string }> } };
+    const list = (json.data?.list ?? []).map((v) => v.address).filter((a): a is string => Boolean(a && a.startsWith("0x")));
+    return (list.length ? list : LISTA_VAULTS_FALLBACK) as Address[];
+  } catch {
+    return LISTA_VAULTS_FALLBACK;
+  }
+}
+
+async function readLista(client: PublicClient, chainId: number, user: Address, quotes: Map<string, Quote>): Promise<LendCard | null> {
+  if (chainId !== 56) return null;
+  const lines: ProtocolLine[] = [];
+  const tokens = new Set<string>();
+  const vaults = await readErc4626Vaults(client, chainId, user, quotes, await listaVaults(), "lista");
+  lines.push(...vaults.lines);
+  for (const t of vaults.tokens) tokens.add(t);
+  const ids = await listaMarketIds(user);
+  await Promise.all(
+    ids.map(async (id) => {
+      try {
+        const [pos, mkt, params] = await Promise.all([
+          client.readContract({ address: MOOLAH, abi: morphoAbi, functionName: "position", args: [id, user] }),
+          client.readContract({ address: MOOLAH, abi: morphoAbi, functionName: "market", args: [id] }),
+          client.readContract({ address: MOOLAH, abi: morphoAbi, functionName: "idToMarketParams", args: [id] }),
+        ]);
+        const supplyShares = pos[0];
+        const borrowShares = BigInt(pos[1]);
+        const collateral = BigInt(pos[2]);
+        if (supplyShares === 0n && borrowShares === 0n && collateral === 0n) return;
+        const totSupA = BigInt(mkt[0]);
+        const totSupS = BigInt(mkt[1]);
+        const totBorA = BigInt(mkt[2]);
+        const totBorS = BigInt(mkt[3]);
+        const supplyAssets = totSupS === 0n ? 0n : (supplyShares * totSupA) / totSupS;
+        const borrowAssets = totBorS === 0n ? 0n : (borrowShares * totBorA) / totBorS;
+        const loanToken = params[0] as Address;
+        const colToken = params[1] as Address;
+        const loan = await tokenMeta(client, loanToken);
+        const col = await tokenMeta(client, colToken);
+        const loanQ = await lineQuote(client, quotes, chainId, loanToken, loan.decimals);
+        const colQ = await lineQuote(client, quotes, chainId, colToken, col.decimals);
+        tokens.add(loanToken.toLowerCase());
+        tokens.add(colToken.toLowerCase());
+        pushLine(lines, chainId, "lista", loan.symbol, supplyAssets, loan.decimals, "supply", loanToken, loanQ);
+        pushLine(lines, chainId, "lista", loan.symbol, borrowAssets, loan.decimals, "borrow", loanToken, loanQ);
+        pushLine(lines, chainId, "lista", col.symbol, collateral, col.decimals, "supply", colToken, colQ);
+      } catch {
+        /* market miss */
+      }
+    }),
+  );
+  await Promise.all(
+    LISTA_CDP.map(async (token) => {
+      try {
+        const [locked, borrowed] = await Promise.all([
+          client.readContract({ address: LISTA_INTERACTION, abi: listaCdpAbi, functionName: "locked", args: [token, user] }),
+          client.readContract({ address: LISTA_INTERACTION, abi: listaCdpAbi, functionName: "borrowed", args: [token, user] }),
+        ]);
+        if (locked === 0n && borrowed === 0n) return;
+        const m = await tokenMeta(client, token);
+        const q = await lineQuote(client, quotes, chainId, token, m.decimals);
+        tokens.add(token.toLowerCase());
+        pushLine(lines, chainId, "lista", m.symbol, locked, m.decimals, "supply", token, q);
+        if (borrowed > 0n) {
+          const lisQ = await lineQuote(client, quotes, chainId, "0x0782b6d8c4551B9760e74c0545A9bCD90bdc41E5", 18);
+          pushLine(lines, chainId, "lista", "lisUSD", borrowed, 18, "borrow", "0x0782b6d8c4551B9760e74c0545A9bCD90bdc41E5", lisQ);
+        }
+      } catch {
+        /* cdp miss */
+      }
+    }),
+  );
+  if (!lines.length) return null;
+  return { chainId, chain: chainShort(chainId), health: "—", lines, aTokens: tokens, protocol: "Lista" };
+}
+
 export async function readExtraLending(
   client: PublicClient,
   chainId: number,
@@ -831,6 +1147,9 @@ export async function readExtraLending(
   jobs.push(readFluid(client, chainId, user, quotes));
   jobs.push(readSilo(client, chainId, user, quotes));
   jobs.push(readFraxlend(client, chainId, user, quotes));
+  jobs.push(readSeamless(client, chainId, user, quotes));
+  jobs.push(readDolomite(client, chainId, user, quotes));
+  jobs.push(readLista(client, chainId, user, quotes));
   const rows = await Promise.all(jobs);
   return rows.filter((c): c is LendCard => Boolean(c));
 }

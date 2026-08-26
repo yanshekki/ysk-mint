@@ -522,6 +522,7 @@ export function MePage() {
         ...(native.solanaAddress ? [101] : []),
         ...(native.suiAddress ? [784] : []),
         ...(native.tronAddress ? [728126428] : []),
+        ...(native.aptosAddress ? [637] : []),
       ];
       for (const id of defiIds) useLiveStatus.getState().start(`defi:${id}`, id, "defi", "wait");
 
@@ -552,6 +553,14 @@ export function MePage() {
             }
             if (id === 728126428) {
               const more = await readNativeLending({ tron: native.tronAddress, quotes: next }).catch(() => []);
+              for (const card of more) {
+                lendCards.push(card);
+                for (const x of card.aTokens) tokens.add(x);
+              }
+              return;
+            }
+            if (id === 637) {
+              const more = await readNativeLending({ aptos: native.aptosAddress, quotes: next }).catch(() => []);
               for (const card of more) {
                 lendCards.push(card);
                 for (const x of card.aTokens) tokens.add(x);
@@ -596,7 +605,7 @@ export function MePage() {
       useLiveStatus.getState().clear("quote:");
       useLiveStatus.getState().clear("defi:");
     };
-  }, [address, anyWallet, holdingsKey, config, native.nearAccount, native.solanaAddress, native.suiAddress, native.tronAddress, unstakeLiquid]);
+  }, [address, anyWallet, holdingsKey, config, native.nearAccount, native.solanaAddress, native.suiAddress, native.tronAddress, native.aptosAddress, unstakeLiquid]);
 
   const adaPays = (native.cardanoAddresses ?? []).join("|");
   useEffect(() => {

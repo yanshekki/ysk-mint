@@ -960,12 +960,13 @@
       "name": "Dolomite",
       "sector": "lending",
       "family": "dolomite",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         42161,
-        146
+        8453,
+        1
       ],
-      "note": ""
+      "note": "DolomiteMargin getAccountBalances account 0–11；Sonic 146 官方未列 Margin，未接"
     },
     {
       "id": "hyperlend",
@@ -1061,15 +1062,26 @@
       "note": "Storage user_info + reserve scaled balances"
     },
     {
+      "id": "echelon",
+      "name": "Echelon",
+      "sector": "lending",
+      "family": "aptos-lend",
+      "status": "wired",
+      "chains": [
+        637
+      ],
+      "note": "Aptos lending::account_coins / account_liability；Aries 2026-07 已撤流動性未接"
+    },
+    {
       "id": "scallop",
       "name": "Scallop",
       "sector": "lending",
       "family": "sui-lend",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         784
       ],
-      "note": ""
+      "note": "ObligationKey + sCoin；sdk.api.scallop.io conversionRate"
     },
     {
       "id": "justlend",
@@ -1087,22 +1099,22 @@
       "name": "Seamless",
       "sector": "lending",
       "family": "aave-v3",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         8453
       ],
-      "note": ""
+      "note": "遺留 Aave V3 Pool + Morpho ERC4626 vault"
     },
     {
       "id": "lista",
       "name": "Lista",
       "sector": "lending",
-      "family": "compound-v2",
-      "status": "pending",
+      "family": "moolah",
+      "status": "wired",
       "chains": [
         56
       ],
-      "note": ""
+      "note": "Moolah Morpho-fork + ERC4626 vault + Interaction CDP；唔係 Compound"
     },
     {
       "id": "maple",
