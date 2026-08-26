@@ -1,71 +1,40 @@
 import { getDefaultConfig } from "@rainbow-me/rainbowkit";
-import { defineChain } from "viem";
-import { http } from "wagmi";
-import {
-  mainnet,
-  avalanche,
-  avalancheFuji,
-  base,
-  arbitrum,
-  bsc,
-  bscTestnet,
-  sepolia,
-  baseSepolia,
-  arbitrumSepolia,
-  polygon,
-  optimism,
-  fantom,
-  mantle,
-  worldchain,
-} from "wagmi/chains";
+import { featuredChains, type ChainDefinition } from "@ysk-mint/config";
+import { defineChain, type Chain, http } from "viem";
+import * as wagmiChains from "wagmi/chains";
+import { arbitrumSepolia, avalancheFuji, baseSepolia, bscTestnet, sepolia } from "wagmi/chains";
 
 const projectId = import.meta.env.VITE_WC_PROJECT_ID || "ysk-mint-local";
 
-const hyperEvm = defineChain({
-  id: 999,
-  name: "HyperEVM",
-  nativeCurrency: { name: "HYPE", symbol: "HYPE", decimals: 18 },
-  rpcUrls: { default: { http: ["https://rpc.hyperliquid.xyz/evm"] } },
-  blockExplorers: { default: { name: "HyperEVMScan", url: "https://hyperevmscan.io" } },
-});
+const known: Record<number, Chain> = {};
+for (const v of Object.values(wagmiChains)) {
+  if (!v || typeof v !== "object" || !("id" in v) || !("rpcUrls" in v)) continue;
+  const c = v as Chain;
+  if (typeof c.id === "number") known[c.id] = c;
+}
 
-export const appChains = [
-  mainnet,
-  avalanche,
-  base,
-  arbitrum,
-  bsc,
-  polygon,
-  optimism,
-  fantom,
-  mantle,
-  worldchain,
-  hyperEvm,
-  sepolia,
-  avalancheFuji,
-  baseSepolia,
-  arbitrumSepolia,
-  bscTestnet,
-] as const;
+function toChain(c: ChainDefinition): Chain {
+  const hit = known[c.chainId];
+  if (hit) return hit;
+  return defineChain({
+    id: c.chainId,
+    name: c.name,
+    nativeCurrency: { name: c.nativeSymbol, symbol: c.nativeSymbol, decimals: c.nativeSymbol === "USD" ? 6 : 18 },
+    rpcUrls: { default: { http: [c.rpc] } },
+    blockExplorers: { default: { name: c.short, url: c.explorer } },
+  });
+}
 
-const transports = {
-  [mainnet.id]: http("https://ethereum-rpc.publicnode.com"),
-  [avalanche.id]: http("https://api.avax.network/ext/bc/C/rpc"),
-  [base.id]: http("https://mainnet.base.org"),
-  [arbitrum.id]: http("https://arb1.arbitrum.io/rpc"),
-  [bsc.id]: http("https://bsc-dataseed.binance.org"),
-  [polygon.id]: http("https://polygon-bor-rpc.publicnode.com"),
-  [optimism.id]: http("https://mainnet.optimism.io"),
-  [fantom.id]: http("https://fantom-rpc.publicnode.com"),
-  [mantle.id]: http("https://rpc.mantle.xyz"),
-  [worldchain.id]: http("https://worldchain.drpc.org"),
-  [hyperEvm.id]: http("https://rpc.hyperliquid.xyz/evm"),
-  [sepolia.id]: http("https://ethereum-sepolia-rpc.publicnode.com"),
-  [avalancheFuji.id]: http("https://api.avax-test.network/ext/bc/C/rpc"),
-  [baseSepolia.id]: http("https://sepolia.base.org"),
-  [arbitrumSepolia.id]: http("https://sepolia-rollup.arbitrum.io/rpc"),
-  [bscTestnet.id]: http("https://bsc-testnet-rpc.publicnode.com"),
-} as const;
+const featuredEvm = featuredChains().filter((c) => c.evm && !c.testnet).map(toChain);
+const tests = [sepolia, avalancheFuji, baseSepolia, arbitrumSepolia, bscTestnet];
+const seen = new Set<number>();
+export const appChains = [...featuredEvm, ...tests].filter((c) => {
+  if (seen.has(c.id)) return false;
+  seen.add(c.id);
+  return true;
+}) as unknown as [Chain, ...Chain[]];
+
+const transports = Object.fromEntries(appChains.map((c) => [c.id, http(c.rpcUrls.default.http[0] ?? "https://ethereum-rpc.publicnode.com")]));
 
 export const wagmiConfig = getDefaultConfig({
   appName: "ysk-mint",

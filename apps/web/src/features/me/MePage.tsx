@@ -83,14 +83,7 @@ function explorerFor(chainId: number, contract?: string) {
 }
 
 function rowDecimals(r: HoldingRow) {
-  if (r.native) {
-    if (r.chainId === 397) return 24;
-    if (r.chainId === 1815 || r.chainId === 728126428) return 6;
-    if (r.chainId === 101 || r.chainId === 784 || r.chainId === 607) return 9;
-    if (r.chainId === 637 || r.chainId === 998) return 8;
-    return 18;
-  }
-  return TOKEN_CATALOG.find((t) => t.id === r.id)?.decimals ?? 18;
+  return TOKEN_CATALOG.find((t) => t.id === r.id)?.decimals ?? (r.native ? 18 : 18);
 }
 
 function valued(raw: bigint, decimals: number, q?: Quote | null) {

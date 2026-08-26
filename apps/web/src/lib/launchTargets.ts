@@ -1,6 +1,6 @@
 import {
   CHAINS,
-  featuredChains,
+  issuanceChains,
   isConfigured,
   testnetChains,
   type ChainDefinition,
@@ -20,7 +20,7 @@ export const ISSUANCE_GROUP_TITLE: Partial<Record<ChainVm, string>> = {
 };
 
 export function issuanceGroups() {
-  const main = featuredChains();
+  const main = issuanceChains().filter((c) => !c.testnet);
   const tests = testnetChains();
   return ISSUANCE_VMS.map((vm) => ({
     vm,

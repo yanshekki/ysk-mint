@@ -1,3 +1,4 @@
+import { featuredChains } from "@ysk-mint/config";
 import cmc from "./cmcCatalog.json";
 
 export type TokenVm = "evm" | "near" | "cardano" | "solana" | "tron" | "sui" | "ton" | "aptos" | "hypercore";
@@ -54,6 +55,38 @@ const NATIVES: TokenRecord[] = [
   NAT("hypercore", 998, "hypercore-native", "HYPE", "HYPE", 8, "hype"),
 ];
 
+function nativeDecimals(vm: string, symbol: string) {
+  if (symbol === "USD") return 6;
+  if (vm === "near") return 24;
+  if (vm === "cardano" || vm === "tron") return 6;
+  if (vm === "solana" || vm === "sui" || vm === "ton") return 9;
+  if (vm === "aptos" || vm === "hypercore") return 8;
+  return 18;
+}
+
+function nativeIcon(symbol: string, chainId: number) {
+  const s = symbol.toLowerCase();
+  if (["eth", "bnb", "avax", "pol", "ftm", "mnt", "hype", "ada", "near", "sol", "trx", "sui", "ton", "apt", "op"].includes(s)) return s === "eth" ? "eth" : s;
+  if (chainId === 10) return "op";
+  if (chainId === 480) return "wld";
+  return "eth";
+}
+
+const HAVE_NATIVE = new Set(NATIVES.map((t) => t.chainId));
+const AUTO_NATIVES: TokenRecord[] = featuredChains()
+  .filter((c) => !c.testnet && !HAVE_NATIVE.has(c.chainId))
+  .map((c) =>
+    NAT(
+      c.vm as TokenVm,
+      c.chainId,
+      `${c.key}-${c.chainId}-native`,
+      c.nativeSymbol,
+      c.name,
+      nativeDecimals(c.vm, c.nativeSymbol),
+      nativeIcon(c.nativeSymbol, c.chainId),
+    ),
+  );
+
 const EXTRA: TokenRecord[] = [
   { id: "pol-usdc", vm: "evm", chainId: 137, symbol: "USDC", name: "USD Coin", decimals: 6, address: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", icon: I("usdc") },
   { id: "pol-usdt", vm: "evm", chainId: 137, symbol: "USDT", name: "Tether", decimals: 6, address: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F", icon: I("usdt") },
@@ -72,7 +105,7 @@ const EXTRA: TokenRecord[] = [
 
 const fromCmc = (cmc as TokenRecord[]).filter((t) => t.address);
 
-export const TOKEN_CATALOG: TokenRecord[] = [...NATIVES, ...EXTRA, ...fromCmc];
+export const TOKEN_CATALOG: TokenRecord[] = [...NATIVES, ...AUTO_NATIVES, ...EXTRA, ...fromCmc];
 
 export function tokensFor(vm: TokenVm, chainId?: number) {
   return TOKEN_CATALOG.filter((t) => t.vm === vm && (chainId == null || t.chainId === chainId));

@@ -22,27 +22,7 @@ export type HoldingRow = {
   chainId?: number;
 };
 
-const CHAIN_TAG: Record<number, string> = {
-  1: "ETH",
-  8453: "Base",
-  42161: "Arb",
-  56: "BNB",
-  43114: "AVAX",
-  137: "POL",
-  10: "OP",
-  250: "FTM",
-  5000: "MNT",
-  480: "World",
-  999: "HyperEVM",
-  397: "NEAR",
-  1815: "ADA",
-  101: "SOL",
-  728126428: "TRX",
-  784: "SUI",
-  607: "TON",
-  637: "APT",
-  998: "HyperCore",
-};
+const CHAIN_TAG: Record<number, string> = Object.fromEntries(featuredChains().map((c) => [c.chainId, c.short]));
 
 const EVM_HOLD_IDS = featuredChains()
   .filter((c) => c.evm && !c.testnet)

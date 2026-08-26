@@ -37,6 +37,8 @@ contract EnumParityTest is Test {
         assertEq(uint8(LaunchEnums.ChainKey.Ton), uint8(json.readUint(".ChainKey.Ton")));
         assertEq(uint8(LaunchEnums.ChainKey.HyperCore), uint8(json.readUint(".ChainKey.HyperCore")));
         assertEq(uint8(LaunchEnums.ChainKey.Aptos), uint8(json.readUint(".ChainKey.Aptos")));
+        assertEq(uint8(LaunchEnums.ChainKey.Monad), uint8(json.readUint(".ChainKey.Monad")));
+        assertEq(uint8(LaunchEnums.ChainKey.Robinhood), uint8(json.readUint(".ChainKey.Robinhood")));
 
         assertEq(uint8(LaunchEnums.DexKind.UniswapV2), uint8(json.readUint(".DexKind.UniswapV2")));
         assertEq(uint8(LaunchEnums.DexKind.PancakeV2), uint8(json.readUint(".DexKind.PancakeV2")));
