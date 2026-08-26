@@ -12,6 +12,17 @@ const WRAP_META: Record<number, { symbol: string; icon: string }> = {
   42161: { symbol: "WETH", icon: "/tokens/eth.png" },
   56: { symbol: "WBNB", icon: "/tokens/bnb.png" },
   43114: { symbol: "WAVAX", icon: "/tokens/avax.png" },
+  10: { symbol: "WETH", icon: "/tokens/eth.png" },
+  137: { symbol: "WPOL", icon: "/tokens/pol.png" },
+  59144: { symbol: "WETH", icon: "/tokens/eth.png" },
+  534352: { symbol: "WETH", icon: "/tokens/eth.png" },
+  480: { symbol: "WETH", icon: "/tokens/eth.png" },
+  42220: { symbol: "CELO", icon: "/tokens/cmc-5567.png" },
+  100: { symbol: "WXDAI", icon: "/tokens/eth.png" },
+  324: { symbol: "WETH", icon: "/tokens/eth.png" },
+  130: { symbol: "WETH", icon: "/tokens/eth.png" },
+  146: { symbol: "wS", icon: "/tokens/eth.png" },
+  1868: { symbol: "WETH", icon: "/tokens/eth.png" },
 };
 
 export function topCmcIds(limit = 100) {

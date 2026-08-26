@@ -1,0 +1,1189 @@
+{
+  "asOf": "2026-08-26",
+  "source": "Token Terminal public explorer markets/exchange + markets/lending",
+  "ttTotals": {
+    "dex": 241,
+    "lending": 120
+  },
+  "projects": [
+    {
+      "id": "uniswap",
+      "name": "Uniswap",
+      "sector": "dex",
+      "family": "univ3",
+      "status": "wired",
+      "chains": [
+        "evm"
+      ],
+      "note": "V2/V3 已接 ETH Base Arb BNB AVAX；將鋪官方多鏈"
+    },
+    {
+      "id": "pancakeswap",
+      "name": "PancakeSwap",
+      "sector": "dex",
+      "family": "univ3",
+      "status": "wired",
+      "chains": [
+        "evm"
+      ],
+      "note": ""
+    },
+    {
+      "id": "sushiswap",
+      "name": "SushiSwap",
+      "sector": "dex",
+      "family": "univ2",
+      "status": "wired",
+      "chains": [
+        "evm"
+      ],
+      "note": ""
+    },
+    {
+      "id": "aerodrome",
+      "name": "Aerodrome",
+      "sector": "dex",
+      "family": "aero",
+      "status": "wired",
+      "chains": [
+        8453
+      ],
+      "note": ""
+    },
+    {
+      "id": "camelot",
+      "name": "Camelot",
+      "sector": "dex",
+      "family": "univ2",
+      "status": "wired",
+      "chains": [
+        42161
+      ],
+      "note": ""
+    },
+    {
+      "id": "lfj",
+      "name": "LFJ",
+      "sector": "dex",
+      "family": "univ2",
+      "status": "wired",
+      "chains": [
+        43114
+      ],
+      "note": "Trader Joe V1"
+    },
+    {
+      "id": "pangolin",
+      "name": "Pangolin",
+      "sector": "dex",
+      "family": "univ2",
+      "status": "wired",
+      "chains": [
+        43114
+      ],
+      "note": ""
+    },
+    {
+      "id": "ref-finance",
+      "name": "Ref Finance",
+      "sector": "dex",
+      "family": "near-amm",
+      "status": "wired",
+      "chains": [
+        397
+      ],
+      "note": ""
+    },
+    {
+      "id": "minswap",
+      "name": "Minswap",
+      "sector": "dex",
+      "family": "ada-amm",
+      "status": "wired",
+      "chains": [
+        1815
+      ],
+      "note": ""
+    },
+    {
+      "id": "jupiter",
+      "name": "Jupiter",
+      "sector": "dex",
+      "family": "sol-amm",
+      "status": "wired",
+      "chains": [
+        101
+      ],
+      "note": "報價用 Jupiter，唔當獨立 CLMM 曲線"
+    },
+    {
+      "id": "curve",
+      "name": "Curve",
+      "sector": "dex",
+      "family": "curve",
+      "status": "pending",
+      "chains": [
+        "evm"
+      ],
+      "note": ""
+    },
+    {
+      "id": "balancer",
+      "name": "Balancer",
+      "sector": "dex",
+      "family": "balancer",
+      "status": "pending",
+      "chains": [
+        "evm"
+      ],
+      "note": ""
+    },
+    {
+      "id": "beets",
+      "name": "Beets",
+      "sector": "dex",
+      "family": "balancer",
+      "status": "pending",
+      "chains": [
+        146,
+        10
+      ],
+      "note": ""
+    },
+    {
+      "id": "raydium",
+      "name": "Raydium",
+      "sector": "dex",
+      "family": "sol-amm",
+      "status": "pending",
+      "chains": [
+        101
+      ],
+      "note": ""
+    },
+    {
+      "id": "meteora",
+      "name": "Meteora",
+      "sector": "dex",
+      "family": "sol-amm",
+      "status": "pending",
+      "chains": [
+        101
+      ],
+      "note": ""
+    },
+    {
+      "id": "orca",
+      "name": "Orca",
+      "sector": "dex",
+      "family": "sol-amm",
+      "status": "pending",
+      "chains": [
+        101
+      ],
+      "note": ""
+    },
+    {
+      "id": "lifinity",
+      "name": "Lifinity",
+      "sector": "dex",
+      "family": "sol-amm",
+      "status": "pending",
+      "chains": [
+        101
+      ],
+      "note": ""
+    },
+    {
+      "id": "quickswap",
+      "name": "QuickSwap",
+      "sector": "dex",
+      "family": "univ2",
+      "status": "wired",
+      "chains": [
+        137
+      ],
+      "note": "V2 已接；Algebra V3 仍 pending"
+    },
+    {
+      "id": "velodrome",
+      "name": "Velodrome",
+      "sector": "dex",
+      "family": "aero",
+      "status": "wired",
+      "chains": [
+        10
+      ],
+      "note": "Velodrome V2／CL"
+    },
+    {
+      "id": "thena",
+      "name": "Thena",
+      "sector": "dex",
+      "family": "aero",
+      "status": "pending",
+      "chains": [
+        56
+      ],
+      "note": ""
+    },
+    {
+      "id": "ramses",
+      "name": "Ramses Exchange",
+      "sector": "dex",
+      "family": "aero",
+      "status": "pending",
+      "chains": [
+        42161
+      ],
+      "note": ""
+    },
+    {
+      "id": "shadow",
+      "name": "Shadow",
+      "sector": "dex",
+      "family": "aero",
+      "status": "pending",
+      "chains": [
+        146
+      ],
+      "note": ""
+    },
+    {
+      "id": "blackhole",
+      "name": "Blackhole",
+      "sector": "dex",
+      "family": "aero",
+      "status": "pending",
+      "chains": [
+        43114
+      ],
+      "note": ""
+    },
+    {
+      "id": "solidlizard",
+      "name": "SolidLizard",
+      "sector": "dex",
+      "family": "aero",
+      "status": "pending",
+      "chains": [
+        42161
+      ],
+      "note": ""
+    },
+    {
+      "id": "thruster",
+      "name": "Thruster",
+      "sector": "dex",
+      "family": "univ3",
+      "status": "pending",
+      "chains": [
+        81457
+      ],
+      "note": ""
+    },
+    {
+      "id": "kyberswap",
+      "name": "KyberSwap",
+      "sector": "dex",
+      "family": "univ3",
+      "status": "pending",
+      "chains": [
+        "evm"
+      ],
+      "note": ""
+    },
+    {
+      "id": "biswap",
+      "name": "Biswap",
+      "sector": "dex",
+      "family": "univ2",
+      "status": "pending",
+      "chains": [
+        56
+      ],
+      "note": ""
+    },
+    {
+      "id": "apeswap",
+      "name": "ApeSwap",
+      "sector": "dex",
+      "family": "univ2",
+      "status": "pending",
+      "chains": [
+        56,
+        137
+      ],
+      "note": ""
+    },
+    {
+      "id": "syncswap",
+      "name": "SyncSwap",
+      "sector": "dex",
+      "family": "univ2",
+      "status": "pending",
+      "chains": [
+        324
+      ],
+      "note": ""
+    },
+    {
+      "id": "zkswap-finance",
+      "name": "zkSwap Finance",
+      "sector": "dex",
+      "family": "univ2",
+      "status": "pending",
+      "chains": [
+        324
+      ],
+      "note": ""
+    },
+    {
+      "id": "maverick",
+      "name": "Maverick Protocol",
+      "sector": "dex",
+      "family": "maverick",
+      "status": "pending",
+      "chains": [
+        "evm"
+      ],
+      "note": ""
+    },
+    {
+      "id": "wombat",
+      "name": "Wombat Exchange",
+      "sector": "dex",
+      "family": "stableswap",
+      "status": "pending",
+      "chains": [
+        56
+      ],
+      "note": ""
+    },
+    {
+      "id": "xswap",
+      "name": "XSwap",
+      "sector": "dex",
+      "family": "univ2",
+      "status": "pending",
+      "chains": [
+        50
+      ],
+      "note": ""
+    },
+    {
+      "id": "zyberswap",
+      "name": "Zyberswap",
+      "sector": "dex",
+      "family": "univ2",
+      "status": "pending",
+      "chains": [
+        42161
+      ],
+      "note": ""
+    },
+    {
+      "id": "verse",
+      "name": "Verse",
+      "sector": "dex",
+      "family": "univ2",
+      "status": "pending",
+      "chains": [
+        1
+      ],
+      "note": ""
+    },
+    {
+      "id": "cetus",
+      "name": "Cetus",
+      "sector": "dex",
+      "family": "sui-amm",
+      "status": "pending",
+      "chains": [
+        784
+      ],
+      "note": ""
+    },
+    {
+      "id": "stonfi",
+      "name": "STON.fi",
+      "sector": "dex",
+      "family": "ton-amm",
+      "status": "pending",
+      "chains": [
+        607
+      ],
+      "note": ""
+    },
+    {
+      "id": "dedust",
+      "name": "DeDust",
+      "sector": "dex",
+      "family": "ton-amm",
+      "status": "pending",
+      "chains": [
+        607
+      ],
+      "note": ""
+    },
+    {
+      "id": "hyperswap",
+      "name": "HyperSwap",
+      "sector": "dex",
+      "family": "univ3",
+      "status": "pending",
+      "chains": [
+        999
+      ],
+      "note": ""
+    },
+    {
+      "id": "kodiak",
+      "name": "Kodiak Finance",
+      "sector": "dex",
+      "family": "univ3",
+      "status": "pending",
+      "chains": [
+        80094
+      ],
+      "note": ""
+    },
+    {
+      "id": "fluid-dex",
+      "name": "Fluid",
+      "sector": "dex",
+      "family": "fluid",
+      "status": "pending",
+      "chains": [
+        "evm"
+      ],
+      "note": ""
+    },
+    {
+      "id": "bancor",
+      "name": "Bancor",
+      "sector": "dex",
+      "family": "bancor",
+      "status": "pending",
+      "chains": [
+        1
+      ],
+      "note": ""
+    },
+    {
+      "id": "dodo",
+      "name": "DODO",
+      "sector": "dex",
+      "family": "pmm",
+      "status": "pending",
+      "chains": [
+        "evm"
+      ],
+      "note": ""
+    },
+    {
+      "id": "o1-exchange",
+      "name": "o1.exchange",
+      "sector": "dex",
+      "family": "univ3",
+      "status": "pending",
+      "chains": [],
+      "note": ""
+    },
+    {
+      "id": "katana-dex",
+      "name": "Katana",
+      "sector": "dex",
+      "family": "univ2",
+      "status": "pending",
+      "chains": [
+        2020
+      ],
+      "note": ""
+    },
+    {
+      "id": "flowx",
+      "name": "FlowX Finance",
+      "sector": "dex",
+      "family": "sui-amm",
+      "status": "pending",
+      "chains": [
+        784
+      ],
+      "note": ""
+    },
+    {
+      "id": "hyperion",
+      "name": "Hyperion",
+      "sector": "dex",
+      "family": "aptos-amm",
+      "status": "pending",
+      "chains": [
+        637
+      ],
+      "note": ""
+    },
+    {
+      "id": "pendle",
+      "name": "Pendle Yield Tokenization",
+      "sector": "dex",
+      "family": "yt",
+      "status": "skip",
+      "chains": [
+        "evm"
+      ],
+      "note": "YT/PT，唔當現貨 pair"
+    },
+    {
+      "id": "dydx-v4",
+      "name": "dYdX V4",
+      "sector": "dex",
+      "family": "perp",
+      "status": "skip",
+      "chains": [],
+      "note": "perp，獨立板塊"
+    },
+    {
+      "id": "dydx-v3",
+      "name": "dYdX V3",
+      "sector": "dex",
+      "family": "perp",
+      "status": "skip",
+      "chains": [],
+      "note": ""
+    },
+    {
+      "id": "variational-omni",
+      "name": "Variational Omni",
+      "sector": "dex",
+      "family": "perp",
+      "status": "skip",
+      "chains": [],
+      "note": ""
+    },
+    {
+      "id": "hydration-dex",
+      "name": "Hydration DEX",
+      "sector": "dex",
+      "family": "other",
+      "status": "skip",
+      "chains": [],
+      "note": "未接 Polkadot 錢包"
+    },
+    {
+      "id": "xrpl-amm",
+      "name": "XRPL AMM",
+      "sector": "dex",
+      "family": "xrpl",
+      "status": "skip",
+      "chains": [
+        144
+      ],
+      "note": "後期 Crossmark"
+    },
+    {
+      "id": "zeroex",
+      "name": "0x",
+      "sector": "dex",
+      "family": "aggregator",
+      "status": "skip",
+      "chains": [],
+      "note": "聚合器"
+    },
+    {
+      "id": "1inch",
+      "name": "1inch",
+      "sector": "dex",
+      "family": "aggregator",
+      "status": "skip",
+      "chains": [],
+      "note": ""
+    },
+    {
+      "id": "cow",
+      "name": "CoW Protocol",
+      "sector": "dex",
+      "family": "aggregator",
+      "status": "skip",
+      "chains": [],
+      "note": ""
+    },
+    {
+      "id": "tokenlon",
+      "name": "Tokenlon",
+      "sector": "dex",
+      "family": "aggregator",
+      "status": "skip",
+      "chains": [],
+      "note": ""
+    },
+    {
+      "id": "oku",
+      "name": "Oku Trade",
+      "sector": "dex",
+      "family": "aggregator",
+      "status": "skip",
+      "chains": [],
+      "note": ""
+    },
+    {
+      "id": "metamask-swap",
+      "name": "MetaMask",
+      "sector": "dex",
+      "family": "aggregator",
+      "status": "skip",
+      "chains": [],
+      "note": ""
+    },
+    {
+      "id": "pumpfun",
+      "name": "pump.fun",
+      "sector": "dex",
+      "family": "launchpad",
+      "status": "skip",
+      "chains": [
+        101
+      ],
+      "note": ""
+    },
+    {
+      "id": "axiom",
+      "name": "Axiom Trade",
+      "sector": "dex",
+      "family": "terminal",
+      "status": "skip",
+      "chains": [
+        101
+      ],
+      "note": ""
+    },
+    {
+      "id": "photon",
+      "name": "Photon",
+      "sector": "dex",
+      "family": "terminal",
+      "status": "skip",
+      "chains": [
+        101
+      ],
+      "note": ""
+    },
+    {
+      "id": "bankr",
+      "name": "Bankr",
+      "sector": "dex",
+      "family": "terminal",
+      "status": "skip",
+      "chains": [],
+      "note": ""
+    },
+    {
+      "id": "chainflip",
+      "name": "Chainflip",
+      "sector": "dex",
+      "family": "bridge",
+      "status": "skip",
+      "chains": [],
+      "note": ""
+    },
+    {
+      "id": "hyperliquid",
+      "name": "Hyperliquid",
+      "sector": "dex",
+      "family": "perp",
+      "status": "skip",
+      "chains": [
+        998
+      ],
+      "note": "perp／現貨另板塊"
+    },
+    {
+      "id": "blur",
+      "name": "Blur",
+      "sector": "dex",
+      "family": "nft",
+      "status": "skip",
+      "chains": [
+        1
+      ],
+      "note": ""
+    },
+    {
+      "id": "opensea",
+      "name": "OpenSea",
+      "sector": "dex",
+      "family": "nft",
+      "status": "skip",
+      "chains": [],
+      "note": ""
+    },
+    {
+      "id": "immutable",
+      "name": "Immutable",
+      "sector": "dex",
+      "family": "nft",
+      "status": "skip",
+      "chains": [
+        13371
+      ],
+      "note": ""
+    },
+    {
+      "id": "integral",
+      "name": "Integral",
+      "sector": "dex",
+      "family": "other",
+      "status": "skip",
+      "chains": [
+        1
+      ],
+      "note": ""
+    },
+    {
+      "id": "aperture",
+      "name": "Aperture",
+      "sector": "dex",
+      "family": "other",
+      "status": "skip",
+      "chains": [],
+      "note": ""
+    },
+    {
+      "id": "honeypop",
+      "name": "Honeypop",
+      "sector": "dex",
+      "family": "other",
+      "status": "skip",
+      "chains": [],
+      "note": ""
+    },
+    {
+      "id": "dfx",
+      "name": "DFX Finance",
+      "sector": "dex",
+      "family": "other",
+      "status": "skip",
+      "chains": [],
+      "note": ""
+    },
+    {
+      "id": "ethervista",
+      "name": "Ethervista",
+      "sector": "dex",
+      "family": "other",
+      "status": "skip",
+      "chains": [],
+      "note": ""
+    },
+    {
+      "id": "synthswap",
+      "name": "Synthswap",
+      "sector": "dex",
+      "family": "other",
+      "status": "skip",
+      "chains": [],
+      "note": ""
+    },
+    {
+      "id": "degate",
+      "name": "DeGate",
+      "sector": "dex",
+      "family": "orderbook",
+      "status": "skip",
+      "chains": [],
+      "note": ""
+    },
+    {
+      "id": "humidifi",
+      "name": "HumidiFi",
+      "sector": "dex",
+      "family": "other",
+      "status": "skip",
+      "chains": [],
+      "note": ""
+    },
+    {
+      "id": "icecreamswap",
+      "name": "IceCreamSwap",
+      "sector": "dex",
+      "family": "univ2",
+      "status": "skip",
+      "chains": [],
+      "note": ""
+    },
+    {
+      "id": "fathom",
+      "name": "Fathom",
+      "sector": "dex",
+      "family": "other",
+      "status": "skip",
+      "chains": [],
+      "note": ""
+    },
+    {
+      "id": "bifrost",
+      "name": "Bifrost",
+      "sector": "dex",
+      "family": "other",
+      "status": "skip",
+      "chains": [],
+      "note": ""
+    },
+    {
+      "id": "near-protocol",
+      "name": "NEAR Protocol",
+      "sector": "dex",
+      "family": "other",
+      "status": "skip",
+      "chains": [
+        397
+      ],
+      "note": "鏈成交，唔係 AMM 名"
+    },
+    {
+      "id": "aave",
+      "name": "Aave",
+      "sector": "lending",
+      "family": "aave-v3",
+      "status": "wired",
+      "chains": [
+        "evm"
+      ],
+      "note": ""
+    },
+    {
+      "id": "benqi",
+      "name": "BENQI",
+      "sector": "lending",
+      "family": "compound-v2",
+      "status": "wired",
+      "chains": [
+        43114
+      ],
+      "note": ""
+    },
+    {
+      "id": "burrow",
+      "name": "Burrow",
+      "sector": "lending",
+      "family": "near-lend",
+      "status": "wired",
+      "chains": [
+        397
+      ],
+      "note": ""
+    },
+    {
+      "id": "morpho",
+      "name": "Morpho",
+      "sector": "lending",
+      "family": "morpho-blue",
+      "status": "pending",
+      "chains": [
+        "evm"
+      ],
+      "note": ""
+    },
+    {
+      "id": "spark",
+      "name": "Spark",
+      "sector": "lending",
+      "family": "aave-v3",
+      "status": "pending",
+      "chains": [
+        1,
+        8453
+      ],
+      "note": ""
+    },
+    {
+      "id": "fluid",
+      "name": "Fluid",
+      "sector": "lending",
+      "family": "fluid",
+      "status": "pending",
+      "chains": [
+        "evm"
+      ],
+      "note": ""
+    },
+    {
+      "id": "kamino",
+      "name": "Kamino",
+      "sector": "lending",
+      "family": "sol-lend",
+      "status": "pending",
+      "chains": [
+        101
+      ],
+      "note": ""
+    },
+    {
+      "id": "jupiter-lend",
+      "name": "Jupiter Lend",
+      "sector": "lending",
+      "family": "sol-lend",
+      "status": "pending",
+      "chains": [
+        101
+      ],
+      "note": ""
+    },
+    {
+      "id": "compound",
+      "name": "Compound",
+      "sector": "lending",
+      "family": "compound-v3",
+      "status": "pending",
+      "chains": [
+        1
+      ],
+      "note": ""
+    },
+    {
+      "id": "venus",
+      "name": "Venus",
+      "sector": "lending",
+      "family": "compound-v2",
+      "status": "pending",
+      "chains": [
+        56
+      ],
+      "note": ""
+    },
+    {
+      "id": "dolomite",
+      "name": "Dolomite",
+      "sector": "lending",
+      "family": "dolomite",
+      "status": "pending",
+      "chains": [
+        42161,
+        146
+      ],
+      "note": ""
+    },
+    {
+      "id": "hyperlend",
+      "name": "HyperLend",
+      "sector": "lending",
+      "family": "aave-v3",
+      "status": "pending",
+      "chains": [
+        999
+      ],
+      "note": ""
+    },
+    {
+      "id": "moonwell",
+      "name": "Moonwell",
+      "sector": "lending",
+      "family": "compound-v2",
+      "status": "pending",
+      "chains": [
+        8453,
+        10
+      ],
+      "note": ""
+    },
+    {
+      "id": "silo",
+      "name": "Silo Finance",
+      "sector": "lending",
+      "family": "silo",
+      "status": "pending",
+      "chains": [
+        "evm"
+      ],
+      "note": ""
+    },
+    {
+      "id": "fraxlend",
+      "name": "Fraxlend",
+      "sector": "lending",
+      "family": "fraxlend",
+      "status": "pending",
+      "chains": [
+        1,
+        252
+      ],
+      "note": ""
+    },
+    {
+      "id": "euler",
+      "name": "Euler",
+      "sector": "lending",
+      "family": "euler-v2",
+      "status": "pending",
+      "chains": [
+        "evm"
+      ],
+      "note": ""
+    },
+    {
+      "id": "zerolend",
+      "name": "ZeroLend",
+      "sector": "lending",
+      "family": "aave-v3",
+      "status": "pending",
+      "chains": [
+        324,
+        59144
+      ],
+      "note": ""
+    },
+    {
+      "id": "suilend",
+      "name": "Suilend",
+      "sector": "lending",
+      "family": "sui-lend",
+      "status": "pending",
+      "chains": [
+        784
+      ],
+      "note": ""
+    },
+    {
+      "id": "navi",
+      "name": "NAVI Protocol",
+      "sector": "lending",
+      "family": "sui-lend",
+      "status": "pending",
+      "chains": [
+        784
+      ],
+      "note": ""
+    },
+    {
+      "id": "scallop",
+      "name": "Scallop",
+      "sector": "lending",
+      "family": "sui-lend",
+      "status": "pending",
+      "chains": [
+        784
+      ],
+      "note": ""
+    },
+    {
+      "id": "justlend",
+      "name": "JustLend",
+      "sector": "lending",
+      "family": "tron-lend",
+      "status": "pending",
+      "chains": [
+        728126428
+      ],
+      "note": ""
+    },
+    {
+      "id": "seamless",
+      "name": "Seamless",
+      "sector": "lending",
+      "family": "aave-v3",
+      "status": "pending",
+      "chains": [
+        8453
+      ],
+      "note": ""
+    },
+    {
+      "id": "lista",
+      "name": "Lista",
+      "sector": "lending",
+      "family": "compound-v2",
+      "status": "pending",
+      "chains": [
+        56
+      ],
+      "note": ""
+    },
+    {
+      "id": "maple",
+      "name": "Maple Finance",
+      "sector": "lending",
+      "family": "permissioned",
+      "status": "skip",
+      "chains": [],
+      "note": "機構貸"
+    },
+    {
+      "id": "goldfinch",
+      "name": "Goldfinch",
+      "sector": "lending",
+      "family": "permissioned",
+      "status": "skip",
+      "chains": [],
+      "note": ""
+    },
+    {
+      "id": "truefi",
+      "name": "TrueFi",
+      "sector": "lending",
+      "family": "permissioned",
+      "status": "skip",
+      "chains": [],
+      "note": ""
+    },
+    {
+      "id": "benddao",
+      "name": "BendDAO",
+      "sector": "lending",
+      "family": "nft",
+      "status": "skip",
+      "chains": [
+        1
+      ],
+      "note": ""
+    },
+    {
+      "id": "hydration-lending",
+      "name": "Hydration Lending",
+      "sector": "lending",
+      "family": "other",
+      "status": "skip",
+      "chains": [],
+      "note": ""
+    },
+    {
+      "id": "blend",
+      "name": "Blend",
+      "sector": "lending",
+      "family": "stellar",
+      "status": "skip",
+      "chains": [
+        148
+      ],
+      "note": "後期 Freighter"
+    },
+    {
+      "id": "cash",
+      "name": "Cash",
+      "sector": "lending",
+      "family": "other",
+      "status": "skip",
+      "chains": [],
+      "note": ""
+    },
+    {
+      "id": "current",
+      "name": "Current",
+      "sector": "lending",
+      "family": "other",
+      "status": "skip",
+      "chains": [],
+      "note": ""
+    },
+    {
+      "id": "seamless-lt",
+      "name": "Seamless Leverage Tokens",
+      "sector": "lending",
+      "family": "other",
+      "status": "skip",
+      "chains": [
+        8453
+      ],
+      "note": ""
+    }
+  ]
+}

@@ -57,6 +57,7 @@
     "noOnchainTrades": "這條鏈沒有 EVM Swap 日誌，不編造成交紀錄。",
     "noVenues": "已支援工廠上沒有這個交易對。",
     "emptyMarkets": "沒有已支援的公開交易對。",
+    "ttCoverage": "Token Terminal 公開名冊 {{asOf}}。DEX 已接 {{dexWired}}／{{dexTotal}}，Lending 已接 {{lendWired}}／{{lendTotal}}。未接唔填假 TVL。",
     "depth": "深度",
     "productLocks": "本站鎖定",
     "pairMissing": "需要 chainId 與兩個代幣地址。",

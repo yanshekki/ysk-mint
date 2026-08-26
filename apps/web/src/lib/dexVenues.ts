@@ -56,6 +56,17 @@ const WAVAX: SeedToken = { address: "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7"
 const USDC_AVAX: SeedToken = { address: "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c6dBe1", symbol: "USDC", decimals: 6, icon: I("usdc") };
 const USDT_AVAX: SeedToken = { address: "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7", symbol: "USDT", decimals: 6, icon: I("usdt") };
 
+const WETH_OP: SeedToken = { address: "0x4200000000000000000000000000000000000006", symbol: "WETH", decimals: 18, icon: I("eth") };
+const USDC_OP: SeedToken = { address: "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85", symbol: "USDC", decimals: 6, icon: I("usdc") };
+const USDT_OP: SeedToken = { address: "0x94b008aA00579c1307B0EF2c499aD98a8ce58e58", symbol: "USDT", decimals: 6, icon: I("usdt") };
+
+const WPOL: SeedToken = { address: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270", symbol: "WPOL", decimals: 18, icon: I("pol") };
+const USDC_POL: SeedToken = { address: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", symbol: "USDC", decimals: 6, icon: I("usdc") };
+const USDT_POL: SeedToken = { address: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F", symbol: "USDT", decimals: 6, icon: I("usdt") };
+
+const WETH_LINEA: SeedToken = { address: "0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f", symbol: "WETH", decimals: 18, icon: I("eth") };
+const USDC_LINEA: SeedToken = { address: "0x176211869cA2b568f2A7D4EE941E073a821EE1ff", symbol: "USDC", decimals: 6, icon: I("usdc") };
+
 export const VENUES: Venue[] = [
   { id: "uni-v3-1", name: "Uniswap V3", chainId: 1, kind: "v3", factory: UNI_V3_FACTORY, npm: UNI_V3_NPM, fees: V3_FEES },
   { id: "uni-v2-1", name: "Uniswap V2", chainId: 1, kind: "v2", factory: "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f" },
@@ -79,6 +90,37 @@ export const VENUES: Venue[] = [
   { id: "joe-v1-43114", name: "Trader Joe", chainId: 43114, kind: "v2", factory: "0x9Ad6C38BE94206cA50bb0d90783181662f0Cfa10" },
   { id: "pangolin-43114", name: "Pangolin", chainId: 43114, kind: "v2", factory: "0xefa94DE7a4656D787667C749f7E69713D5aa241B" },
   { id: "uni-v3-43114", name: "Uniswap V3", chainId: 43114, kind: "v3", factory: "0x740b1c1de25031C31FF4fC9A62f554A55cdC1baD", npm: "0x655C406EBFa14EE2006250925e54ec9AD62C71A3", fees: V3_FEES },
+
+  { id: "uni-v3-10", name: "Uniswap V3", chainId: 10, kind: "v3", factory: "0x1F98431c8aD98523631AE4a59f267346ea31F984", npm: "0xC36442b4a4522E871399CD717aBDD847Ab11FE88", fees: V3_FEES },
+  { id: "uni-v2-10", name: "Uniswap V2", chainId: 10, kind: "v2", factory: "0x0c3c1c532F1e39EdF36BE9Fe0bE1410313E074Bf" },
+  { id: "velo-v2-10", name: "Velodrome", chainId: 10, kind: "aero", factory: "0xF104d3C995D3275efe009325247ffF80F90C141E" },
+  { id: "velo-cl-10", name: "Velodrome CL", chainId: 10, kind: "v3", factory: "0xCc0bDDB707055e04e497aB22a59c2aF4391cd12F", npm: "0x416b433906b1B72FA758e166e239c43d68dC6F29", fees: V3_FEES },
+
+  { id: "uni-v3-137", name: "Uniswap V3", chainId: 137, kind: "v3", factory: "0x1F98431c8aD98523631AE4a59f267346ea31F984", npm: "0xC36442b4a4522E871399CD717aBDD847Ab11FE88", fees: V3_FEES },
+  { id: "uni-v2-137", name: "Uniswap V2", chainId: 137, kind: "v2", factory: "0x9e5A52f57b3038F1B8EeE45F28b3C1967e22799C" },
+  { id: "quick-v2-137", name: "QuickSwap V2", chainId: 137, kind: "v2", factory: "0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32" },
+  { id: "sushi-v2-137", name: "Sushi V2", chainId: 137, kind: "v2", factory: "0xc35DADB65012eC5796536bD9864eD8773aBc74C4" },
+
+  { id: "uni-v3-59144", name: "Uniswap V3", chainId: 59144, kind: "v3", factory: "0x31FAfd4889FA1269F7a13A66eE0fB458f27D72A9", npm: "0x4615C383F85D0a2BbED973d83ccecf5CB7121463", fees: V3_FEES },
+  { id: "cake-v3-59144", name: "Pancake V3", chainId: 59144, kind: "v3", factory: CAKE_V3_FACTORY, npm: CAKE_V3_NPM, fees: V3_FEES },
+
+  { id: "uni-v3-534352", name: "Uniswap V3", chainId: 534352, kind: "v3", factory: "0x70C62C8b8e801124A4Aa81ce07b637A3e83cb919", fees: V3_FEES },
+
+  { id: "uni-v3-480", name: "Uniswap V3", chainId: 480, kind: "v3", factory: "0x7a5028BDa40e7B173C278C5342087826455ea25a", npm: "0xec12a9F9a09f50550686363766Cc153D03c27b5e", fees: V3_FEES },
+
+  { id: "uni-v3-42220", name: "Uniswap V3", chainId: 42220, kind: "v3", factory: "0xAfE208a311B21f13EF87E33A90049fC17A7acDEc", npm: "0x3d79EdAaBC0EaB6F08ED885C05Fc0B014290D95A", fees: V3_FEES },
+
+  { id: "uni-v3-100", name: "Uniswap V3", chainId: 100, kind: "v3", factory: "0xe32F7dD7e3f098D518ff19A22d5f028e076489B1", fees: V3_FEES },
+
+  { id: "uni-v3-324", name: "Uniswap V3", chainId: 324, kind: "v3", factory: "0x8FdA5a7a8dCA67BBcDd10F02Fa0649A937215422", npm: "0x0616e5762c1E7Dc3723c50663dF10a162D690a86", fees: V3_FEES },
+  { id: "cake-v3-324", name: "Pancake V3", chainId: 324, kind: "v3", factory: CAKE_V3_FACTORY, npm: CAKE_V3_NPM, fees: V3_FEES },
+
+  { id: "uni-v3-130", name: "Uniswap V3", chainId: 130, kind: "v3", factory: "0x1F98400000000000000000000000000000000003", npm: "0x943e6e07a7e8e791dafc44083e54041d743c46e9", fees: V3_FEES },
+  { id: "uni-v2-130", name: "Uniswap V2", chainId: 130, kind: "v2", factory: "0x1f98400000000000000000000000000000000002" },
+
+  { id: "uni-v3-146", name: "Uniswap V3", chainId: 146, kind: "v3", factory: "0xcb2436774C3e191c85056d248EF4260ce5f27A9D", fees: V3_FEES },
+
+  { id: "uni-v3-1868", name: "Uniswap V3", chainId: 1868, kind: "v3", factory: "0x42ae7ec7ff020412639d443e245d936429fbe717", npm: "0x56c1205b0244332011c1e866f4ea5384eb6bfa2c", fees: V3_FEES },
 ];
 
 function pair(chainId: number, a: SeedToken, b: SeedToken): SeedPair {
@@ -110,6 +152,12 @@ export const SEED_PAIRS: SeedPair[] = [
 
   pair(43114, WAVAX, USDC_AVAX),
   pair(43114, WAVAX, USDT_AVAX),
+
+  pair(10, WETH_OP, USDC_OP),
+  pair(10, WETH_OP, USDT_OP),
+  pair(137, WPOL, USDC_POL),
+  pair(137, WPOL, USDT_POL),
+  pair(59144, WETH_LINEA, USDC_LINEA),
 ];
 
 export const SOL_SEEDS = [

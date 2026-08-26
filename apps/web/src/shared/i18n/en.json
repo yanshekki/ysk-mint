@@ -57,6 +57,7 @@
     "noOnchainTrades": "This chain has no EVM Swap logs. No synthetic tape.",
     "noVenues": "No pool on the supported factories for this pair.",
     "emptyMarkets": "No supported public pairs.",
+    "ttCoverage": "Token Terminal public roster {{asOf}}. DEX wired {{dexWired}}/{{dexTotal}}, lending wired {{lendWired}}/{{lendTotal}}. Unwired names are not filled with fake TVL.",
     "depth": "Depth",
     "productLocks": "App locks",
     "pairMissing": "Need chainId and two token addresses.",

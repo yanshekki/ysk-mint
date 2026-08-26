@@ -13,6 +13,7 @@ import { useCardanoHoldings } from "../../lib/useHoldings.ts";
 import { ChipBusy } from "../../shared/ui/LiveDock.tsx";
 import { useLiveStatus } from "../../lib/liveStatus.ts";
 import { SortHead, useSort } from "../../shared/ui/SortTable.tsx";
+import { ttCoverageLine } from "../../lib/defi/coverage.ts";
 
 function fmtUnlock(ts: number) {
   if (!ts) return "—";
@@ -77,6 +78,7 @@ export function LpPage() {
     return Number(r.liquidity);
   }, []);
   const lockSort = useSort(locks.rows, "amount", lockGet);
+  const tt = ttCoverageLine();
 
   return (
     <section className="workspace">
@@ -85,6 +87,15 @@ export function LpPage() {
           <p className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-text-muted">{t("lp.kicker")}</p>
           <h1>{t("nav.lp")}</h1>
           <p className="mt-1 text-[15px] text-text-sub">{t("lp.hint")}</p>
+          <p className="mt-1 text-[13px] text-text-muted">
+            {t("lp.ttCoverage", {
+              asOf: tt.dex.asOf,
+              dexWired: tt.dex.wired,
+              dexTotal: tt.dex.total,
+              lendWired: tt.lending.wired,
+              lendTotal: tt.lending.total,
+            })}
+          </p>
         </div>
       </div>
       <div className="workspace-scroll">

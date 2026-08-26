@@ -15,6 +15,13 @@ const RPC_FALLBACK: Record<number, string> = {
   42161: "https://arbitrum-one-rpc.publicnode.com",
   56: "https://bsc-rpc.publicnode.com",
   43114: "https://avalanche-c-chain-rpc.publicnode.com",
+  10: "https://optimism-rpc.publicnode.com",
+  137: "https://polygon-bor-rpc.publicnode.com",
+  59144: "https://linea-rpc.publicnode.com",
+  534352: "https://scroll-rpc.publicnode.com",
+  100: "https://gnosis-rpc.publicnode.com",
+  324: "https://zksync-era-rpc.publicnode.com",
+  146: "https://sonic-rpc.publicnode.com",
 };
 
 export type DiscoveredPool = {
