@@ -5,7 +5,7 @@ import { nearView } from "./nearRpc.ts";
 import type { AaveCard, ProtocolLine } from "./defiPositions.ts";
 import { quoteNearToken } from "./nearDex.ts";
 import { quoteAdaToken } from "./adaDex.ts";
-import { stakeFromPayment } from "./cardanoCip30.ts";
+import { addressToHex, hexToBech32, stakeFromPayment } from "./cardanoCip30.ts";
 import { koiosPost } from "./koios.ts";
 
 export type StakeStatus = "liquid" | "active" | "unstaking" | "claimable";
@@ -201,6 +201,48 @@ function withdrawable(row: AdaAccount) {
   return earned > withdrawn ? earned - withdrawn : 0n;
 }
 
+type YoroiAccount = {
+  remainingAmount?: string;
+  remainingNonSpendableAmount?: string;
+  rewards?: string;
+  withdrawals?: string;
+  delegation?: string | null;
+  stakeRegistered?: boolean;
+};
+
+async function yoroiAccounts(stakes: string[]): Promise<{
+  rewards: bigint;
+  pending: bigint;
+  pools: string[];
+} | null> {
+  const hexes = stakes.map((s) => addressToHex(s)).filter(Boolean);
+  if (!hexes.length) return null;
+  try {
+    const res = await fetch("https://iohk-mainnet.yoroiwallet.com/api/account/state", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ addresses: hexes }),
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as Record<string, YoroiAccount | null>;
+    let rewards = 0n;
+    let pending = 0n;
+    const pools: string[] = [];
+    for (const row of Object.values(json)) {
+      if (!row) continue;
+      rewards += lovelace(row.remainingAmount);
+      pending += lovelace(row.remainingNonSpendableAmount);
+      if (row.delegation) {
+        const pool = hexToBech32("pool", row.delegation);
+        if (pool && !pools.includes(pool)) pools.push(pool);
+      }
+    }
+    return { rewards, pending, pools };
+  } catch {
+    return null;
+  }
+}
+
 async function koiosAccounts(stakes: string[]): Promise<AdaAccount[]> {
   if (!stakes.length) return [];
   const body = { _stake_addresses: stakes };
@@ -221,14 +263,16 @@ export async function readAdaStake(stakeAddr: string, payments: string[] = []): 
   const stakes = adaStakes(stakeAddr, payments);
   if (!stakes.length) return [];
   try {
-    const info = await koiosAccounts(stakes);
-    if (!info.length) return [];
+    const yoroi = await yoroiAccounts(stakes);
+    const info = yoroi ? [] : await koiosAccounts(stakes);
+    if (!yoroi && !info.length) return [];
     let ada = 0n;
-    let rewards = 0n;
-    const pools: string[] = [];
+    let rewards = yoroi?.rewards ?? 0n;
+    let pending = yoroi?.pending ?? 0n;
+    const pools: string[] = yoroi?.pools ? [...yoroi.pools] : [];
     for (const row of info) {
       ada += lovelace(row.utxo ?? row.total_balance);
-      rewards += withdrawable(row);
+      if (!yoroi) rewards += withdrawable(row);
       if (row.delegated_pool && !pools.includes(row.delegated_pool)) pools.push(row.delegated_pool);
     }
     const pool = pools[0];
@@ -312,6 +356,26 @@ export async function readAdaStake(stakeAddr: string, payments: string[] = []): 
         status: "claimable",
         inWallet: false,
         unstakeNote: "可在連接的 Cardano 錢包領取",
+      });
+    }
+    if (pending > 0n) {
+      const n = Number(formatUnits(pending, 6));
+      lines.push({
+        id: `ada-pending-${stakes[0]}`,
+        chainId: 1815,
+        chain: "ADA",
+        symbol: "ADA",
+        name: "待發放 ADA",
+        icon: "/tokens/ada.png",
+        amount: fmtAmt(pending, 6),
+        raw: pending,
+        side: "stake",
+        extra: ticker ? `${ticker} 已賺取` : "已賺取",
+        quote: q,
+        valueUsdc: q && Number.isFinite(n) ? n * q.usdc : null,
+        status: "unstaking",
+        inWallet: false,
+        unstakeNote: "約 2 個 epoch 後可領",
       });
     }
     return lines;

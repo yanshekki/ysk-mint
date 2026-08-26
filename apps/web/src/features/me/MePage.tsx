@@ -153,6 +153,7 @@ export function MePage() {
   const [uni, setUni] = useState<UniCard[]>([]);
   const [aTokens, setATokens] = useState<Set<string>>(new Set());
   const [stakeExtra, setStakeExtra] = useState<StakeLine[]>([]);
+  const [adaStakeLines, setAdaStakeLines] = useState<StakeLine[]>([]);
 
   const anyWallet = isConnected || Boolean(native.nearAccount || native.cardanoAddress || native.solanaAddress);
 
@@ -275,6 +276,7 @@ export function MePage() {
       setUni([]);
       setATokens(new Set());
       setStakeExtra([]);
+      setAdaStakeLines([]);
       return;
     }
     let cancelled = false;
@@ -337,7 +339,6 @@ export function MePage() {
       const defiIds = [
         ...clients.keys(),
         ...(native.nearAccount ? [397] : []),
-        ...(native.cardanoAddress || adaStake ? [1815] : []),
         ...(native.solanaAddress ? [101] : []),
       ];
       for (const id of defiIds) useLiveStatus.getState().start(`defi:${id}`, id, "defi", "wait");
@@ -348,10 +349,6 @@ export function MePage() {
             if (id === 397) {
               burrowCards = native.nearAccount ? await readBurrow(native.nearAccount).catch(() => null) : null;
               extra.push(...(await readNearStake(native.nearAccount).catch(() => [])));
-              return;
-            }
-            if (id === 1815) {
-              extra.push(...(await readAdaStake(adaStake, native.cardanoAddresses).catch(() => [])));
               return;
             }
             if (id === 101) {
@@ -390,7 +387,26 @@ export function MePage() {
       useLiveStatus.getState().clear("quote:");
       useLiveStatus.getState().clear("defi:");
     };
-  }, [address, anyWallet, holdingsKey, config, native.nearAccount, native.cardanoStake, native.cardanoAddress, native.cardanoAddresses, native.solanaAddress, unstakeLiquid, adaStake]);
+  }, [address, anyWallet, holdingsKey, config, native.nearAccount, native.solanaAddress, unstakeLiquid]);
+
+  const adaPays = (native.cardanoAddresses ?? []).join("|");
+  useEffect(() => {
+    if (!native.cardanoAddress && !adaStake) {
+      setAdaStakeLines([]);
+      return;
+    }
+    let cancelled = false;
+    void trackLive("defi:1815", 1815, "defi", async () => {
+      const lines = await readAdaStake(adaStake, adaPays ? adaPays.split("|") : []);
+      if (!cancelled) setAdaStakeLines(lines);
+    }).catch(() => {
+      if (!cancelled) setAdaStakeLines([]);
+    });
+    return () => {
+      cancelled = true;
+      useLiveStatus.getState().finish("defi:1815", true);
+    };
+  }, [adaStake, adaPays, native.cardanoAddress]);
 
   const walletRows = useMemo(() => {
     const rows = buckets.flatMap((g) =>
@@ -407,15 +423,19 @@ export function MePage() {
   const stakeAll = useMemo(() => {
     const lst = buckets.flatMap((g) => lstStakeLines(g.id, g.rows, quotes, t("me.unstakeLiquid")));
     const merged = new Map<string, StakeLine>();
-    for (const l of [...lst, ...stakeExtra]) {
+    for (const l of [...lst, ...stakeExtra, ...adaStakeLines]) {
       const k =
-        l.id.includes("unlock") || l.id.includes("unstk") || l.id.includes("lido-q") || l.id.includes("rew")
+        l.id.includes("unlock") ||
+        l.id.includes("unstk") ||
+        l.id.includes("lido-q") ||
+        l.id.includes("rew") ||
+        l.id.includes("pending")
           ? l.id
           : `${l.chainId}:${(l.contract || l.id).toLowerCase()}:${l.status}`;
       if (!merged.has(k)) merged.set(k, l);
     }
     return [...merged.values()];
-  }, [buckets, quotes, stakeExtra, t]);
+  }, [buckets, quotes, stakeExtra, adaStakeLines, t]);
   const stake = filter === "all" ? stakeAll : stakeAll.filter((l) => l.chainId === filter);
 
   const aaveCards = filter === "all" ? aave : aave.filter((c) => c.chainId === filter);

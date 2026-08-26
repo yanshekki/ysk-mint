@@ -138,6 +138,12 @@ export function addressToHex(addr: string): string {
   return [...decoded.bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+export function hexToBech32(hrp: string, hex: string) {
+  const clean = hex.replace(/^0x/, "");
+  if (!clean || clean.length % 2) return "";
+  return encodeBech32(hrp, hexToBytes(clean));
+}
+
 /** Shelley base address (types 0–3) embeds the stake credential. */
 export function stakeFromPayment(addr: string): string {
   const decoded = decodeBech32(addr);
