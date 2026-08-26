@@ -1163,10 +1163,38 @@ button.oft-chain:disabled {
   font-size: 12px;
   color: var(--text-muted);
 }
+.me-chips-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
 .me-chips {
   display: flex;
   flex-wrap: wrap;
+  flex: 1 1 auto;
   gap: 8px;
+}
+.me-hide-zero {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  margin-left: auto;
+  padding: 0 2px;
+  color: var(--text-sub);
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+.me-hide-zero input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: #3b82f6;
+  cursor: pointer;
 }
 .me-chip {
   display: inline-flex;

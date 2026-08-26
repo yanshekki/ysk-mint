@@ -383,6 +383,7 @@
     "about": "≈ {{n}} USD",
     "unquoted": "{{n}} unquoted",
     "dexNote": "DEX spot, not a centralized feed.",
+    "hideZero": "Hide 0 / empty",
     "noFactory": "Factory address is still zero on this chain."
   },
   "token": {

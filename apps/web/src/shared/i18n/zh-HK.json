@@ -383,6 +383,7 @@
     "about": "約 {{n}} USD",
     "unquoted": "{{n}} 項未能報價",
     "dexNote": "DEX 現價，不是中心化報價。",
+    "hideZero": "隱藏 0／無",
     "noFactory": "這條鏈 Factory 地址仍為零。"
   },
   "token": {

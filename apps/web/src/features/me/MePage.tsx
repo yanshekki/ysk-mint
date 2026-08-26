@@ -209,6 +209,7 @@ export function MePage() {
   const adaName = useAdaHandle(native.cardanoAddress, native.cardanoStake);
   const solName = useSolName(native.solanaAddress);
   const [filter, setFilter] = useState<number | "all">("all");
+  const [hideZero, setHideZero] = useState(true);
   const [launched, setLaunched] = useState<LaunchRow[]>([]);
   const [quotes, setQuotes] = useState<Map<string, Quote>>(new Map());
   const [aave, setAave] = useState<AaveCard[]>([]);
@@ -591,8 +592,10 @@ export function MePage() {
         return true;
       }),
     );
-    return filter === "all" ? rows : rows.filter((r) => r.chainId === filter);
-  }, [aTokens, benqi, buckets, filter]);
+    const scoped = filter === "all" ? rows : rows.filter((r) => r.chainId === filter);
+    if (!hideZero) return scoped;
+    return scoped.filter((r) => r.raw > 0n && r.amount !== "—");
+  }, [aTokens, benqi, buckets, filter, hideZero]);
 
   const stakeAll = useMemo(() => {
     const lst = buckets.flatMap((g) => lstStakeLines(g.id, g.rows, quotes, t("me.unstakeLiquid")));
@@ -801,19 +804,35 @@ export function MePage() {
                 ) : null}
               </div>
 
-              <div className="me-chips">
-                <button type="button" className={`me-chip ${filter === "all" ? "me-chip-on" : ""}`} onClick={() => setFilter("all")}>
-                  {t("me.all")}
-                  <span className="me-count">{chipCount("all")}</span>
-                </button>
-                {buckets.map((g) => (
-                  <button key={g.id} type="button" className={`me-chip ${filter === g.id ? "me-chip-on" : ""}`} onClick={() => setFilter(g.id)}>
-                    <img src={g.icon} alt="" width={20} height={20} />
-                    {g.label}
-                    <ChipBusy chainId={g.id} />
-                    <span className="me-count">{chipCount(g.id)}</span>
+              <div className="me-chips-bar">
+                <div className="me-chips">
+                  <button type="button" className={`me-chip ${filter === "all" ? "me-chip-on" : ""}`} onClick={() => setFilter("all")}>
+                    {t("me.all")}
+                    <span className="me-count">{chipCount("all")}</span>
                   </button>
-                ))}
+                  {buckets
+                    .filter((g) => !hideZero || chipCount(g.id) > 0)
+                    .map((g) => (
+                      <button key={g.id} type="button" className={`me-chip ${filter === g.id ? "me-chip-on" : ""}`} onClick={() => setFilter(g.id)}>
+                        <img src={g.icon} alt="" width={20} height={20} />
+                        {g.label}
+                        <ChipBusy chainId={g.id} />
+                        <span className="me-count">{chipCount(g.id)}</span>
+                      </button>
+                    ))}
+                </div>
+                <label className="me-hide-zero">
+                  <input
+                    type="checkbox"
+                    checked={hideZero}
+                    onChange={(e) => {
+                      const on = e.target.checked;
+                      setHideZero(on);
+                      if (on && filter !== "all" && chipCount(filter) === 0) setFilter("all");
+                    }}
+                  />
+                  {t("me.hideZero")}
+                </label>
               </div>
 
               <section className="me-card">
