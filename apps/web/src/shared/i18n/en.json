@@ -14,7 +14,7 @@
     "search": "Search ticker, CA, wallet"
   },
   "lp": {
-    "hint": "Public DEX factory pairs and LP on the connected wallet. Quotes are pool spots in USDC. App locks are a separate section. No synthetic tape.",
+    "hint": "Public DEX factory pairs and LP on the connected wallet. Quotes are pool spots in USD. USDC and USDT count as $1. App locks are a separate section. No synthetic tape.",
     "all": "All",
     "testnets": "Testnets",
     "loading": "Reading on-chain data…",
@@ -294,12 +294,12 @@
   },
   "me": {
     "title": "Holdings",
-    "body": "Tokens and supported protocol positions on connected wallets. Quotes are DEX pool spots in USDC.",
+    "body": "Tokens and supported protocol positions on connected wallets. Quotes are DEX pool spots in USD. USDC and USDT count as $1.",
     "needWallet": "Connect an existing wallet.",
     "all": "All",
     "token": "Token",
     "amount": "Amount",
-    "quote": "Quote (USDC)",
+    "quote": "Quote (USD)",
     "value": "Value",
     "funded": "{{n}} with balance",
     "chainCount": "{{n}} chains",
@@ -312,7 +312,7 @@
     "borrowed": "Borrowed",
     "health": "Health",
     "inRange": "In range",
-    "about": "≈ {{n}} USDC",
+    "about": "≈ {{n}} USD",
     "unquoted": "{{n}} unquoted",
     "dexNote": "DEX spot, not a centralized feed.",
     "noFactory": "Factory address is still zero on this chain."

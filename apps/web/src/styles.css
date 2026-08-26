@@ -1234,18 +1234,30 @@ button.oft-chain:disabled {
   font-weight: 700;
   color: var(--text-muted);
 }
-.me-cols-5 {
+.me-cols-5,
+.me-token.me-token-5 {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 88px 100px 100px;
+  grid-template-columns: 36px minmax(0, 1fr) 108px 108px 108px;
   gap: 12px;
-  padding: 8px 16px 8px 64px;
+  align-items: center;
+  box-sizing: border-box;
+}
+.me-cols-5 {
+  padding: 8px 16px;
   text-align: right;
 }
-.me-cols-5 span:first-child {
+.me-cols-5 span:nth-child(1) {
+  grid-column: 2;
   text-align: left;
 }
-.me-token.me-token-5 {
-  grid-template-columns: 36px minmax(0, 1fr) minmax(72px, 0.7fr) minmax(72px, 0.7fr) minmax(72px, 0.7fr);
+.me-cols-5 span:nth-child(2) {
+  grid-column: 3;
+}
+.me-cols-5 span:nth-child(3) {
+  grid-column: 4;
+}
+.me-cols-5 span:nth-child(4) {
+  grid-column: 5;
 }
 .me-price,
 .me-value,
@@ -1314,9 +1326,6 @@ button.oft-chain:disabled {
   font-size: 15px;
   font-weight: 800;
   letter-spacing: -0.02em;
-}
-.me-token.me-token-5 {
-  grid-template-columns: 36px minmax(0, 1fr) minmax(72px, 0.7fr) minmax(72px, 0.7fr) minmax(72px, 0.7fr);
 }
 .me-token-zero {
   opacity: 0.55;
@@ -1706,15 +1715,11 @@ button.oft-chain:disabled {
     text-align: left;
     width: 100%;
   }
+  .me-cols-5,
   .me-token.me-token-5 {
-    grid-template-columns: 36px minmax(0, 1fr) minmax(56px, 0.8fr) minmax(56px, 0.8fr);
+    grid-template-columns: 36px minmax(0, 1fr) 88px 88px;
   }
-  .me-value {
-    display: none;
-  }
-  .me-cols-5 {
-    grid-template-columns: minmax(0, 1fr) 72px 80px;
-  }
+  .me-value,
   .me-cols-5 span:nth-child(4) {
     display: none;
   }

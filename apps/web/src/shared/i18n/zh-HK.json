@@ -14,7 +14,7 @@
     "search": "搜尋代號、合約、錢包"
   },
   "lp": {
-    "hint": "公開 DEX 工廠的主流交易對，以及已連接錢包的 LP。報價為池現價（USDC）。本站鎖定另欄。無假盤。",
+    "hint": "公開 DEX 工廠的主流交易對，以及已連接錢包的 LP。報價為池現價（USD）。USDC、USDT 均按 1 USD。本站鎖定另欄。無假盤。",
     "all": "全部",
     "testnets": "測試網",
     "loading": "正在讀取鏈上資料…",
@@ -294,12 +294,12 @@
   },
   "me": {
     "title": "持倉",
-    "body": "已連接錢包的代幣與已支援協議倉位。報價取自 DEX 池現價（USDC）。",
+    "body": "已連接錢包的代幣與已支援協議倉位。報價取自 DEX 池現價。USDC、USDT 均按 1 USD 計算。",
     "needWallet": "請連接現有錢包。",
     "all": "全部",
     "token": "代幣",
     "amount": "數量",
-    "quote": "報價（USDC）",
+    "quote": "報價（USD）",
     "value": "價值",
     "funded": "{{n}} 項有餘額",
     "chainCount": "{{n}} 條鏈",
@@ -312,7 +312,7 @@
     "borrowed": "借款",
     "health": "健康度",
     "inRange": "在區間",
-    "about": "約 {{n}} USDC",
+    "about": "約 {{n}} USD",
     "unquoted": "{{n}} 項未能報價",
     "dexNote": "DEX 現價，不是中心化報價。",
     "noFactory": "這條鏈 Factory 地址仍為零。"

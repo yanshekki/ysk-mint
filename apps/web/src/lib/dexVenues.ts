@@ -36,6 +36,7 @@ const DAI_ETH: SeedToken = { address: "0x6B175474E89094C44Da98b954EedeAC495271d0
 
 const WETH_BASE: SeedToken = { address: "0x4200000000000000000000000000000000000006", symbol: "WETH", decimals: 18, icon: I("eth") };
 const USDC_BASE: SeedToken = { address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", symbol: "USDC", decimals: 6, icon: I("usdc") };
+const USDT_BASE: SeedToken = { address: "0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2", symbol: "USDT", decimals: 6, icon: I("usdt") };
 const AERO: SeedToken = { address: "0x940181a94A35A4569E4529A3CDfB74e38FD98631", symbol: "AERO", decimals: 18, icon: I("aero") };
 const CBBTC: SeedToken = { address: "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf", symbol: "cbBTC", decimals: 8, icon: I("cbbtc") };
 
@@ -92,6 +93,7 @@ export const SEED_PAIRS: SeedPair[] = [
   pair(1, USDC_ETH, USDT_ETH),
 
   pair(8453, WETH_BASE, USDC_BASE),
+  pair(8453, WETH_BASE, USDT_BASE),
   pair(8453, AERO, WETH_BASE),
   pair(8453, CBBTC, WETH_BASE),
   pair(8453, AERO, USDC_BASE),

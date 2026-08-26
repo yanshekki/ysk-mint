@@ -1,9 +1,9 @@
 import { formatUnits, type PublicClient } from "viem";
 import { venuesOn, type Venue } from "./dexVenues.ts";
 import { canonAddr, pairId, type Addr } from "./pairKey.ts";
+import { priceFromSqrtPriceX96 } from "./defiQuotes.ts";
 
 const ZERO = "0x0000000000000000000000000000000000000000";
-const Q192 = 2n ** 192n;
 
 export const v2FactoryAbi = [
   {
@@ -85,14 +85,7 @@ export type VenuePool = {
 };
 
 function v3Price(sqrt: bigint, token0IsA: boolean, decA: number, decB: number) {
-  if (sqrt === 0n) return null;
-  const raw = sqrt * sqrt;
-  const scale = 10n ** BigInt(18 + decB - decA);
-  const num = token0IsA ? raw * scale : Q192 * scale;
-  const den = token0IsA ? Q192 : raw;
-  if (den === 0n) return null;
-  const n = Number(num) / Number(den) / 1e18;
-  return Number.isFinite(n) && n > 0 ? n : null;
+  return priceFromSqrtPriceX96(sqrt, token0IsA, decA, decB);
 }
 
 async function readV2(

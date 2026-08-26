@@ -1,10 +1,16 @@
 export type Addr = `0x${string}`;
 
+export type UsdStable = { address: Addr; decimals: number; symbol: "USDC" | "USDT" | "DAI" };
+
 export type DexChain = {
   chainId: number;
   short: string;
   usdc: Addr;
   usdcDecimals: number;
+  usdt?: Addr;
+  usdtDecimals?: number;
+  dai?: Addr;
+  daiDecimals?: number;
   wrapped: Addr;
   v3Factory?: Addr;
   v3Npm?: Addr;
@@ -22,6 +28,10 @@ export const DEX: Record<number, DexChain> = {
     short: "ETH",
     usdc: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
     usdcDecimals: 6,
+    usdt: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    usdtDecimals: 6,
+    dai: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+    daiDecimals: 18,
     wrapped: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
     v3Factory: UNI_V3_FACTORY,
     v3Npm: UNI_V3_NPM,
@@ -37,6 +47,10 @@ export const DEX: Record<number, DexChain> = {
     short: "Base",
     usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     usdcDecimals: 6,
+    usdt: "0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2",
+    usdtDecimals: 6,
+    dai: "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb",
+    daiDecimals: 18,
     wrapped: "0x4200000000000000000000000000000000000006",
     v3Factory: "0x33128a8fC17869897dcE68Ed026d694621f6FDfD",
     v3Npm: "0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1",
@@ -52,6 +66,10 @@ export const DEX: Record<number, DexChain> = {
     short: "Arb",
     usdc: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
     usdcDecimals: 6,
+    usdt: "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+    usdtDecimals: 6,
+    dai: "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+    daiDecimals: 18,
     wrapped: "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
     v3Factory: UNI_V3_FACTORY,
     v3Npm: UNI_V3_NPM,
@@ -67,6 +85,10 @@ export const DEX: Record<number, DexChain> = {
     short: "BNB",
     usdc: "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
     usdcDecimals: 18,
+    usdt: "0x55d398326f99059fF775485246999027B3197955",
+    usdtDecimals: 18,
+    dai: "0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3",
+    daiDecimals: 18,
     wrapped: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
     v3Factory: "0xdB1d10011AD0Ff90774D0C6Bb92e5C5c8b4461F7",
     v3Npm: "0x7b8A01B39D58278b5DE7e48c8449c9f4F5170613",
@@ -83,7 +105,13 @@ export const DEX: Record<number, DexChain> = {
     short: "AVAX",
     usdc: "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c6dBe1",
     usdcDecimals: 6,
+    usdt: "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7",
+    usdtDecimals: 6,
+    dai: "0xd586E7F844cEa2F87f50152665BCbc2C279D8d70",
+    daiDecimals: 18,
     wrapped: "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+    v3Factory: "0x740b1c1de25031C31FF4fC9A62f554A55cdC1baD",
+    v3Npm: "0x655C406EBFa14EE2006250925e54ec9AD62C71A3",
     v2Factory: "0x9Ad6C38BE94206cA50bb0d90783181662f0Cfa10",
     aave: {
       pool: "0x794a61358D6845594F94dc1DB02A252b5b4814aD",
@@ -94,6 +122,19 @@ export const DEX: Record<number, DexChain> = {
 };
 
 export const V3_FEES = [500, 3000, 100, 10000] as const;
+
+export function usdStables(d: DexChain): UsdStable[] {
+  const out: UsdStable[] = [{ address: d.usdc, decimals: d.usdcDecimals, symbol: "USDC" }];
+  if (d.usdt) out.push({ address: d.usdt, decimals: d.usdtDecimals ?? 6, symbol: "USDT" });
+  if (d.dai) out.push({ address: d.dai, decimals: d.daiDecimals ?? 18, symbol: "DAI" });
+  return out;
+}
+
+export function isUsdStableAddress(d: DexChain, addr?: string) {
+  if (!addr) return false;
+  const a = addr.toLowerCase();
+  return usdStables(d).some((s) => s.address.toLowerCase() === a);
+}
 
 /** Liquid-staking receipt tokens shown as a staking card, not Wallet. */
 export const LST: Record<number, Record<string, { symbol: string; name: string; decimals: number; icon: string }>> = {

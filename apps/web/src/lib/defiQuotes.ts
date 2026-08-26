@@ -1,8 +1,9 @@
 import { formatUnits, type Address, type PublicClient } from "viem";
-import { DEX, SOL_NATIVE_MINT, V3_FEES, type Addr } from "./defiAddresses.ts";
+import { DEX, SOL_NATIVE_MINT, V3_FEES, isUsdStableAddress, usdStables, type Addr } from "./defiAddresses.ts";
 
 const ZERO = "0x0000000000000000000000000000000000000000";
-const Q192 = 2n ** 192n;
+/** 2^96 is exact in IEEE-754. */
+const Q96 = 2 ** 96;
 
 const v3FactoryAbi = [
   {
@@ -50,15 +51,24 @@ const v2PairAbi = [
 
 export type Quote = { usdc: number; source: "v3" | "v2" | "jup" | "stable" };
 
-function priceFromSqrt(sqrtPriceX96: bigint, token0IsBase: boolean, baseDecimals: number, quoteDecimals: number) {
+type Spot = { price: number; depth: number };
+
+/** Human quote-per-base from Uniswap V3 sqrtPriceX96. Uses float √P/2^96, not bigint √P². */
+export function priceFromSqrtPriceX96(
+  sqrtPriceX96: bigint,
+  token0IsBase: boolean,
+  baseDecimals: number,
+  quoteDecimals: number,
+) {
   if (sqrtPriceX96 === 0n) return null;
-  const raw = sqrtPriceX96 * sqrtPriceX96;
-  const scale = 10n ** BigInt(18 + quoteDecimals - baseDecimals);
-  const num = token0IsBase ? raw * scale : Q192 * scale;
-  const den = token0IsBase ? Q192 : raw;
-  if (den === 0n) return null;
-  const n = Number(num) / Number(den) / 1e18;
-  return Number.isFinite(n) && n > 0 ? n : null;
+  const ratio = Number(sqrtPriceX96) / Q96;
+  if (!Number.isFinite(ratio) || ratio <= 0) return null;
+  const dec0 = token0IsBase ? baseDecimals : quoteDecimals;
+  const dec1 = token0IsBase ? quoteDecimals : baseDecimals;
+  const t1PerT0 = ratio * ratio * 10 ** (dec0 - dec1);
+  if (!Number.isFinite(t1PerT0) || t1PerT0 <= 0) return null;
+  const price = token0IsBase ? t1PerT0 : 1 / t1PerT0;
+  return Number.isFinite(price) && price > 0 ? price : null;
 }
 
 async function v3Spot(client: PublicClient, factory: Addr, token: Addr, other: Addr, otherDecimals: number, tokenDecimals: number) {
@@ -94,11 +104,12 @@ async function v3Spot(client: PublicClient, factory: Addr, token: Addr, other: A
     if (liq === 0n) continue;
     const token0 = (t.result as string).toLowerCase();
     const token0IsBase = token0 === token.toLowerCase();
-    const price = priceFromSqrt(sqrt, token0IsBase, tokenDecimals, otherDecimals);
+    const price = priceFromSqrtPriceX96(sqrt, token0IsBase, tokenDecimals, otherDecimals);
     if (price == null) continue;
     if (!best || liq > best.liq) best = { liq, price };
   }
-  return best?.price ?? null;
+  if (!best) return null;
+  return { price: best.price, depth: Number(best.liq) };
 }
 
 async function v2Spot(client: PublicClient, factory: Addr, token: Addr, other: Addr, otherDecimals: number, tokenDecimals: number) {
@@ -123,27 +134,53 @@ async function v2Spot(client: PublicClient, factory: Addr, token: Addr, other: A
   const b = Number(formatUnits(reserveToken, tokenDecimals));
   if (!b) return null;
   const n = a / b;
-  return Number.isFinite(n) && n > 0 ? n : null;
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return { price: n, depth: a };
 }
 
-const wethUsdcCache = new Map<number, Promise<number | null>>();
+function pickSpot(spots: Array<Spot | null>): Spot | null {
+  let best: Spot | null = null;
+  for (const s of spots) {
+    if (!s) continue;
+    if (!best || s.depth > best.depth) best = s;
+  }
+  return best;
+}
 
-async function wrappedUsdc(client: PublicClient, chainId: number) {
-  const hit = wethUsdcCache.get(chainId);
+async function spotVsStables(
+  client: PublicClient,
+  chainId: number,
+  token: Addr,
+  decimals: number,
+  kind: "v3" | "v2",
+): Promise<Spot | null> {
+  const d = DEX[chainId];
+  if (!d) return null;
+  const factory = kind === "v3" ? d.v3Factory : d.v2Factory;
+  if (!factory) return null;
+  const stables = usdStables(d).filter((s) => s.address.toLowerCase() !== token);
+  const spots = await Promise.all(
+    stables.map((s) =>
+      kind === "v3"
+        ? v3Spot(client, factory, token, s.address, s.decimals, decimals).catch(() => null)
+        : v2Spot(client, factory, token, s.address, s.decimals, decimals).catch(() => null),
+    ),
+  );
+  return pickSpot(spots);
+}
+
+const wrappedUsdCache = new Map<number, Promise<number | null>>();
+
+async function wrappedUsd(client: PublicClient, chainId: number) {
+  const hit = wrappedUsdCache.get(chainId);
   if (hit) return hit;
   const job = (async () => {
-    const d = DEX[chainId];
-    if (!d) return null;
-    if (d.v3Factory) {
-      const v3 = await v3Spot(client, d.v3Factory, d.wrapped, d.usdc, d.usdcDecimals, 18).catch(() => null);
-      if (v3) return v3;
-    }
-    if (d.v2Factory) {
-      return v2Spot(client, d.v2Factory, d.wrapped, d.usdc, d.usdcDecimals, 18).catch(() => null);
-    }
-    return null;
+    const v3 = await spotVsStables(client, chainId, DEX[chainId]!.wrapped, 18, "v3");
+    if (v3) return v3.price;
+    const v2 = await spotVsStables(client, chainId, DEX[chainId]!.wrapped, 18, "v2");
+    return v2?.price ?? null;
   })();
-  wethUsdcCache.set(chainId, job);
+  wrappedUsdCache.set(chainId, job);
   return job;
 }
 
@@ -158,25 +195,24 @@ export async function quoteEvmToken(
   if (!d) return null;
   const addr = (native ? d.wrapped : token)?.toLowerCase() as Addr | undefined;
   if (!addr) return null;
-  if (addr === d.usdc.toLowerCase()) return { usdc: 1, source: "stable" };
+  if (isUsdStableAddress(d, addr)) return { usdc: 1, source: "stable" };
 
-  if (d.v3Factory) {
-    const direct = await v3Spot(client, d.v3Factory, addr, d.usdc, d.usdcDecimals, decimals).catch(() => null);
-    if (direct) return { usdc: direct, source: "v3" };
-    if (addr !== d.wrapped.toLowerCase()) {
-      const vsWeth = await v3Spot(client, d.v3Factory, addr, d.wrapped, 18, decimals).catch(() => null);
-      const weth = await wrappedUsdc(client, chainId);
-      if (vsWeth && weth) return { usdc: vsWeth * weth, source: "v3" };
-    }
+  const v3 = await spotVsStables(client, chainId, addr, decimals, "v3");
+  if (v3) return { usdc: v3.price, source: "v3" };
+
+  if (addr !== d.wrapped.toLowerCase() && d.v3Factory) {
+    const vsWeth = await v3Spot(client, d.v3Factory, addr, d.wrapped, 18, decimals).catch(() => null);
+    const weth = await wrappedUsd(client, chainId);
+    if (vsWeth && weth) return { usdc: vsWeth.price * weth, source: "v3" };
   }
-  if (d.v2Factory) {
-    const direct = await v2Spot(client, d.v2Factory, addr, d.usdc, d.usdcDecimals, decimals).catch(() => null);
-    if (direct) return { usdc: direct, source: "v2" };
-    if (addr !== d.wrapped.toLowerCase()) {
-      const vsWeth = await v2Spot(client, d.v2Factory, addr, d.wrapped, 18, decimals).catch(() => null);
-      const weth = await wrappedUsdc(client, chainId);
-      if (vsWeth && weth) return { usdc: vsWeth * weth, source: "v2" };
-    }
+
+  const v2 = await spotVsStables(client, chainId, addr, decimals, "v2");
+  if (v2) return { usdc: v2.price, source: "v2" };
+
+  if (addr !== d.wrapped.toLowerCase() && d.v2Factory) {
+    const vsWeth = await v2Spot(client, d.v2Factory, addr, d.wrapped, 18, decimals).catch(() => null);
+    const weth = await wrappedUsd(client, chainId);
+    if (vsWeth && weth) return { usdc: vsWeth.price * weth, source: "v2" };
   }
   return null;
 }
