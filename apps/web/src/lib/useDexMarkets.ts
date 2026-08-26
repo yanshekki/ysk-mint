@@ -80,14 +80,23 @@ export function useDexMarkets(chainId: number | "all") {
     const ids =
       chainId === "all"
         ? featuredChains()
-            .filter((c) => !c.testnet)
+            .filter((c) => !c.testnet && protocolsOn(c.chainId).length > 0)
             .map((c) => c.chainId)
-        : [chainId];
+        : protocolsOn(chainId).length
+          ? [chainId]
+          : [];
     const live = useLiveStatus.getState();
     for (const id of ids) live.start(`markets:${id}`, id, "markets", "wait");
     void (async () => {
       try {
-        const evmIds = ids.filter((id) => ![101, 397, 1815, 398, 18151, 103].includes(id));
+        if (!ids.length) {
+          if (!cancelled) {
+            setRows([]);
+            setLoading(false);
+          }
+          return;
+        }
+        const evmIds = ids.filter((id) => ![101, 397, 1815, 398, 18151, 103, 784, 607, 637, 998, 728126428].includes(id));
         const nativeIds = ids.filter((id) => [101, 397, 1815].includes(id));
         const jobs: Array<Promise<void>> = [];
         const acc: MarketRow[] = [];

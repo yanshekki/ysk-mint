@@ -37,7 +37,7 @@ export function StepOmnichain() {
 
       {groups.map((g) => (
         <section key={g.vm} className="chain-group">
-          <p className="chain-group-title">{t(ISSUANCE_GROUP_TITLE[g.vm])}</p>
+          <p className="chain-group-title">{t(ISSUANCE_GROUP_TITLE[g.vm] ?? "wizard.chains.groupEvm")}</p>
           {g.vm === "evm" ? (
             <>
               {g.main.length ? (

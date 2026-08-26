@@ -283,7 +283,7 @@ export function StepExecute() {
 
       {groups.map((g) => (
         <section key={g.vm} className="chain-group">
-          <p className="chain-group-title">{t(ISSUANCE_GROUP_TITLE[g.vm])}</p>
+          <p className="chain-group-title">{t(ISSUANCE_GROUP_TITLE[g.vm] ?? "wizard.chains.groupEvm")}</p>
           <div className="chain-row">
             {[...g.main, ...g.test].map((c) => (
               <article key={c.key} className="oft-chain">

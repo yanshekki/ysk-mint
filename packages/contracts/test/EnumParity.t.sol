@@ -27,6 +27,16 @@ contract EnumParityTest is Test {
         assertEq(uint8(LaunchEnums.ChainKey.NearTestnet), uint8(json.readUint(".ChainKey.NearTestnet")));
         assertEq(uint8(LaunchEnums.ChainKey.Solana), uint8(json.readUint(".ChainKey.Solana")));
         assertEq(uint8(LaunchEnums.ChainKey.SolanaDevnet), uint8(json.readUint(".ChainKey.SolanaDevnet")));
+        assertEq(uint8(LaunchEnums.ChainKey.Polygon), uint8(json.readUint(".ChainKey.Polygon")));
+        assertEq(uint8(LaunchEnums.ChainKey.Fantom), uint8(json.readUint(".ChainKey.Fantom")));
+        assertEq(uint8(LaunchEnums.ChainKey.Mantle), uint8(json.readUint(".ChainKey.Mantle")));
+        assertEq(uint8(LaunchEnums.ChainKey.WorldChain), uint8(json.readUint(".ChainKey.WorldChain")));
+        assertEq(uint8(LaunchEnums.ChainKey.HyperEvm), uint8(json.readUint(".ChainKey.HyperEvm")));
+        assertEq(uint8(LaunchEnums.ChainKey.Tron), uint8(json.readUint(".ChainKey.Tron")));
+        assertEq(uint8(LaunchEnums.ChainKey.Sui), uint8(json.readUint(".ChainKey.Sui")));
+        assertEq(uint8(LaunchEnums.ChainKey.Ton), uint8(json.readUint(".ChainKey.Ton")));
+        assertEq(uint8(LaunchEnums.ChainKey.HyperCore), uint8(json.readUint(".ChainKey.HyperCore")));
+        assertEq(uint8(LaunchEnums.ChainKey.Aptos), uint8(json.readUint(".ChainKey.Aptos")));
 
         assertEq(uint8(LaunchEnums.DexKind.UniswapV2), uint8(json.readUint(".DexKind.UniswapV2")));
         assertEq(uint8(LaunchEnums.DexKind.PancakeV2), uint8(json.readUint(".DexKind.PancakeV2")));

@@ -16,7 +16,17 @@
     "CardanoPreprod": 13,
     "NearTestnet": 14,
     "Solana": 15,
-    "SolanaDevnet": 16
+    "SolanaDevnet": 16,
+    "Polygon": 17,
+    "Fantom": 18,
+    "Mantle": 19,
+    "WorldChain": 20,
+    "HyperEvm": 21,
+    "Tron": 22,
+    "Sui": 23,
+    "Ton": 24,
+    "HyperCore": 25,
+    "Aptos": 26
   },
   "DexKind": {
     "UniswapV2": 0,

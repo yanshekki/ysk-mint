@@ -10,12 +10,28 @@ type NativeState = {
   cardanoSync: number;
   solanaAddress: string;
   solanaWallet: string;
+  tronAddress: string;
+  tronWallet: string;
+  suiAddress: string;
+  suiWallet: string;
+  tonAddress: string;
+  tonWallet: string;
+  aptosAddress: string;
+  aptosWallet: string;
   setNear: (nearAccount: string) => void;
   setCardano: (cardanoAddress: string, cardanoWallet?: string, extras?: { addresses?: string[]; stake?: string }) => void;
   setSolana: (solanaAddress: string, solanaWallet?: string) => void;
+  setTron: (tronAddress: string, tronWallet?: string) => void;
+  setSui: (suiAddress: string, suiWallet?: string) => void;
+  setTon: (tonAddress: string, tonWallet?: string) => void;
+  setAptos: (aptosAddress: string, aptosWallet?: string) => void;
   disconnectNear: () => void;
   disconnectCardano: () => void;
   disconnectSolana: () => void;
+  disconnectTron: () => void;
+  disconnectSui: () => void;
+  disconnectTon: () => void;
+  disconnectAptos: () => void;
 };
 
 export const useNativeWallets = create<NativeState>()(
@@ -29,6 +45,14 @@ export const useNativeWallets = create<NativeState>()(
       cardanoSync: 0,
       solanaAddress: "",
       solanaWallet: "",
+      tronAddress: "",
+      tronWallet: "",
+      suiAddress: "",
+      suiWallet: "",
+      tonAddress: "",
+      tonWallet: "",
+      aptosAddress: "",
+      aptosWallet: "",
       setNear: (nearAccount) => set({ nearAccount }),
       setCardano: (cardanoAddress, cardanoWallet = "", extras = {}) =>
         set((s) => {
@@ -50,9 +74,17 @@ export const useNativeWallets = create<NativeState>()(
           };
         }),
       setSolana: (solanaAddress, solanaWallet = "") => set({ solanaAddress, solanaWallet }),
+      setTron: (tronAddress, tronWallet = "") => set({ tronAddress, tronWallet }),
+      setSui: (suiAddress, suiWallet = "") => set({ suiAddress, suiWallet }),
+      setTon: (tonAddress, tonWallet = "") => set({ tonAddress, tonWallet }),
+      setAptos: (aptosAddress, aptosWallet = "") => set({ aptosAddress, aptosWallet }),
       disconnectNear: () => set({ nearAccount: "" }),
       disconnectCardano: () => set({ cardanoAddress: "", cardanoAddresses: [], cardanoStake: "", cardanoWallet: "" }),
       disconnectSolana: () => set({ solanaAddress: "", solanaWallet: "" }),
+      disconnectTron: () => set({ tronAddress: "", tronWallet: "" }),
+      disconnectSui: () => set({ suiAddress: "", suiWallet: "" }),
+      disconnectTon: () => set({ tonAddress: "", tonWallet: "" }),
+      disconnectAptos: () => set({ aptosAddress: "", aptosWallet: "" }),
     }),
     {
       name: "ysk-mint.native-wallets",

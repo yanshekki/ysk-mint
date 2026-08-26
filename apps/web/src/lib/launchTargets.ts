@@ -8,14 +8,16 @@ import {
 } from "@ysk-mint/config";
 import { canWalletDeploy, resolvedContracts } from "./launchStack.ts";
 
-const ISSUANCE_VMS: ChainVm[] = ["evm", "cardano", "near", "solana"];
+const ISSUANCE_VMS: ChainVm[] = ["evm", "cardano", "near", "solana", "sui", "aptos"];
 
-export const ISSUANCE_GROUP_TITLE = {
+export const ISSUANCE_GROUP_TITLE: Partial<Record<ChainVm, string>> = {
   evm: "wizard.chains.groupEvm",
   cardano: "wizard.chains.adaHint",
   near: "wizard.chains.nearHint",
   solana: "wizard.chains.solHint",
-} as const;
+  sui: "wizard.chains.suiHint",
+  aptos: "wizard.chains.aptHint",
+};
 
 export function issuanceGroups() {
   const main = featuredChains();

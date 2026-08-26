@@ -87,25 +87,39 @@
     "connectEvm": "Connect EVM wallet",
     "disconnect": "Sign out",
     "session": "Existing wallets",
-    "count": "{{n}} / 4 connected",
+    "count": "{{n}} / 8 connected",
     "evm": "EVM",
-    "native": "NEAR / Cardano / Solana",
+    "native": "NEAR / Cardano / Solana / Tron / Sui / TON / Aptos",
     "near": "NEAR mainnet",
     "cardano": "Cardano",
     "solana": "Solana",
-    "evmHint": "MetaMask, Rabby, Rainbow and other EIP-6963 wallets you already have.",
+    "tron": "Tron",
+    "sui": "Sui",
+    "ton": "TON",
+    "aptos": "Aptos",
+    "evmHint": "MetaMask, Rabby, Rainbow and other EIP-6963 wallets. Polygon, OP, Fantom, Mantle, World Chain and HyperEVM share this connection. HyperCore spot uses the same address.",
     "nearHint": "Official Wallet Selector. Meteor, MyNearWallet, HERE.",
     "adaHint": "CIP-30 browser wallets. Lace, Eternl, Vespr.",
     "solHint": "Wallet Standard selector. Phantom, Solflare, Backpack, Brave…",
+    "tronHint": "TronLink. This app does not create a wallet.",
+    "suiHint": "Wallet Standard. Slush, Suiet.",
+    "tonHint": "TonConnect. Tonkeeper and other existing wallets.",
+    "aptosHint": "Aptos Wallet Standard. Petra, Martian.",
     "solInstalled": "Installed",
     "solMore": "More wallets",
     "solInstall": "Install",
     "connectNear": "Connect NEAR",
     "connectCardano": "Connect Cardano",
     "connectSolana": "Connect Solana",
+    "connectTron": "Connect Tron",
+    "connectSui": "Connect Sui",
+    "connectTon": "Connect TON",
+    "connectAptos": "Connect Aptos",
     "pickCip30": "Pick an installed CIP-30 wallet.",
     "noCip30": "No CIP-30 wallet detected",
     "noSolana": "No Solana wallet detected",
+    "noSui": "No Sui wallet detected",
+    "noAptos": "No Aptos wallet detected",
     "installCip30": "Install Lace, Eternl or Vespr, then refresh. This app does not create a wallet.",
     "wrongNetwork": "Switch to a supported EVM chain.",
     "nativeCoin": "Native",
@@ -129,7 +143,7 @@
       "8": "Live"
     },
     "wallet": {
-      "need": "Connect wallets you already have. EVM, NEAR, Cardano and Solana each sign in separately. This app does not create a wallet.",
+      "need": "Connect wallets you already have. EVM, NEAR, Cardano, Solana, Tron, Sui, TON and Aptos each sign in separately. This app does not create a wallet.",
       "ready": "Wallet ready",
       "idle": "Not connected",
       "nativeReady": "Native-chain account connected."
@@ -153,10 +167,14 @@
       "gapWalletNear": "NEAR selected, but no NEAR wallet connected.",
       "gapWalletAda": "Cardano selected, but no CIP-30 wallet connected.",
       "gapWalletSol": "Solana selected, but no Solana wallet connected.",
+      "gapWalletSui": "Sui selected, but no Sui wallet connected.",
+      "gapWalletAptos": "Aptos selected, but no Aptos wallet connected.",
       "gapUndeployedEvm": "EVM factory is still zero ({{names}}).",
       "gapNearFactory": "NEAR NEP-141 factory is undeployed.",
       "gapAdaFactory": "Cardano native-asset factory is undeployed.",
       "gapSolProgram": "Solana SPL program is undeployed.",
+      "gapSuiFactory": "Sui Coin factory is undeployed. Independent issuance, not a LayerZero OFT.",
+      "gapAptosFactory": "Aptos Coin factory is undeployed. Independent issuance, not a LayerZero OFT.",
       "vm": {
         "evm": {
           "title": "EVM · LayerZero OFT",
@@ -173,6 +191,14 @@
         "solana": {
           "title": "Solana · SPL",
           "body": "Independent SPL mint."
+        },
+        "sui": {
+          "title": "Sui · Coin",
+          "body": "Independent Sui Coin. Not a LayerZero OFT. No EVM peers."
+        },
+        "aptos": {
+          "title": "Aptos · Coin",
+          "body": "Independent Aptos Coin / FA. Not a LayerZero OFT. No EVM peers."
         }
       }
     },
@@ -211,6 +237,8 @@
       "nearHint": "NEAR Protocol · NEP-141",
       "adaHint": "Cardano · native asset",
       "solHint": "Solana · SPL",
+      "suiHint": "Sui · Coin. Independent issuance, not OFT.",
+      "aptHint": "Aptos · Coin. Independent issuance, not OFT.",
       "mainnet": "Mainnet",
       "testnets": "Testnets"
     },

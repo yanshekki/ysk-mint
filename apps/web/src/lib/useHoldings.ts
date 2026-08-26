@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import { featuredChains } from "@ysk-mint/config";
 import { syncLiveFlag, useLiveStatus } from "./liveStatus.ts";
 import { erc20Abi, formatUnits, type Address } from "viem";
-import { useBalance, useReadContracts } from "wagmi";
+import { useConfig, useReadContracts } from "wagmi";
+import { getBalance } from "wagmi/actions";
 import { cipEpochNow, readCardanoValue, stakeFromPayment, subscribeCip } from "./cardanoCip30.ts";
 import { koiosPost } from "./koios.ts";
 import { nearRpc } from "./nearRpc.ts";
@@ -26,10 +28,25 @@ const CHAIN_TAG: Record<number, string> = {
   42161: "Arb",
   56: "BNB",
   43114: "AVAX",
+  137: "POL",
+  10: "OP",
+  250: "FTM",
+  5000: "MNT",
+  480: "World",
+  999: "HyperEVM",
   397: "NEAR",
   1815: "ADA",
   101: "SOL",
+  728126428: "TRX",
+  784: "SUI",
+  607: "TON",
+  637: "APT",
+  998: "HyperCore",
 };
+
+const EVM_HOLD_IDS = featuredChains()
+  .filter((c) => c.evm && !c.testnet)
+  .map((c) => c.chainId);
 
 function fmt(raw: bigint, decimals: number) {
   const n = Number(formatUnits(raw, decimals));
@@ -71,6 +88,9 @@ export function useEvmHoldings(address: Address | undefined) {
   const erc20s = useMemo(() => catalog.filter((t) => t.address), [catalog]);
   const natives = useMemo(() => catalog.filter((t) => t.native), [catalog]);
   const connected = Boolean(address);
+  const config = useConfig();
+  const [nativeByChain, setNativeByChain] = useState<Record<number, bigint>>({});
+  const [nativeLoading, setNativeLoading] = useState(false);
   const contracts = useMemo(
     () =>
       erc20s.map((t) => ({
@@ -83,11 +103,43 @@ export function useEvmHoldings(address: Address | undefined) {
     [address, erc20s],
   );
 
-  const eth = useBalance({ address, chainId: 1, query: { enabled: connected, ...BALANCE_QUERY } });
-  const base = useBalance({ address, chainId: 8453, query: { enabled: connected, ...BALANCE_QUERY } });
-  const arb = useBalance({ address, chainId: 42161, query: { enabled: connected, ...BALANCE_QUERY } });
-  const bnb = useBalance({ address, chainId: 56, query: { enabled: connected, ...BALANCE_QUERY } });
-  const avax = useBalance({ address, chainId: 43114, query: { enabled: connected, ...BALANCE_QUERY } });
+  useEffect(() => {
+    if (!address) {
+      setNativeByChain({});
+      setNativeLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setNativeLoading(true);
+    void (async () => {
+      const next: Record<number, bigint> = {};
+      let i = 0;
+      const ids = EVM_HOLD_IDS;
+      const workers = Array.from({ length: Math.min(3, ids.length) }, async () => {
+        while (i < ids.length) {
+          const id = ids[i++];
+          if (id == null) break;
+          useLiveStatus.getState().start(`holdings:${id}`, id, "holdings", "run");
+          try {
+            const b = await getBalance(config, { address, chainId: id });
+            next[id] = b.value;
+            useLiveStatus.getState().finish(`holdings:${id}`, true);
+          } catch {
+            next[id] = 0n;
+            useLiveStatus.getState().finish(`holdings:${id}`, false);
+          }
+        }
+      });
+      await Promise.all(workers);
+      if (!cancelled) {
+        setNativeByChain({ ...next });
+        setNativeLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [address, config]);
 
   const erc = useReadContracts({
     contracts,
@@ -96,13 +148,6 @@ export function useEvmHoldings(address: Address | undefined) {
   });
 
   const rows = useMemo(() => {
-    const nativeByChain: Record<number, bigint | undefined> = {
-      1: eth.data?.value,
-      8453: base.data?.value,
-      42161: arb.data?.value,
-      56: bnb.data?.value,
-      43114: avax.data?.value,
-    };
     const out: HoldingRow[] = [];
     for (const t of natives) {
       const raw = connected ? (nativeByChain[t.chainId] ?? null) : null;
@@ -114,23 +159,17 @@ export function useEvmHoldings(address: Address | undefined) {
       out.push(row(t, raw, connected));
     });
     return sortHoldings(out, connected);
-  }, [connected, erc.data, erc20s, natives, eth.data?.value, base.data?.value, arb.data?.value, bnb.data?.value, avax.data?.value]);
+  }, [connected, erc.data, erc20s, natives, nativeByChain]);
 
   const funded = rows.filter((r) => r.raw > 0n).length;
-  const loading = eth.isLoading || base.isLoading || arb.isLoading || bnb.isLoading || avax.isLoading || erc.isLoading;
+  const loading = nativeLoading || erc.isLoading;
   useEffect(() => {
-    const flags: Array<[number, boolean]> = [
-      [1, connected && (eth.isLoading || erc.isLoading)],
-      [8453, connected && (base.isLoading || erc.isLoading)],
-      [42161, connected && (arb.isLoading || erc.isLoading)],
-      [56, connected && (bnb.isLoading || erc.isLoading)],
-      [43114, connected && (avax.isLoading || erc.isLoading)],
-    ];
-    for (const [id, on] of flags) syncLiveFlag(`holdings:${id}`, id, "holdings", on);
+    if (!connected || !erc.isLoading) return;
+    for (const id of EVM_HOLD_IDS) syncLiveFlag(`holdings:${id}:erc`, id, "holdings", true);
     return () => {
-      for (const [id] of flags) useLiveStatus.getState().finish(`holdings:${id}`, true);
+      for (const id of EVM_HOLD_IDS) useLiveStatus.getState().finish(`holdings:${id}:erc`, true);
     };
-  }, [connected, eth.isLoading, base.isLoading, arb.isLoading, bnb.isLoading, avax.isLoading, erc.isLoading]);
+  }, [connected, erc.isLoading]);
   return { rows, funded, loading, catalogSize: catalog.length };
 }
 
@@ -511,6 +550,226 @@ function hexAscii(hex: string) {
   } catch {
     return "";
   }
+}
+
+async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
+  const r = await fetch(url, init);
+  if (!r.ok) throw new Error(String(r.status));
+  return r.json() as Promise<T>;
+}
+
+function useJsonHoldings(
+  chainId: number,
+  catalog: TokenRecord[],
+  connected: boolean,
+  load: () => Promise<Map<string, { raw: bigint; decimals?: number; symbol?: string; name?: string; icon?: string; contract?: string }>>,
+) {
+  const [rows, setRows] = useState<HoldingRow[]>(() => catalog.map((t) => row(t, null, false)));
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    if (!connected) {
+      setRows(catalog.map((t) => row(t, null, false)));
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    void load()
+      .then((bal) => {
+        if (cancelled) return;
+        const next: HoldingRow[] = [];
+        const seen = new Set<string>();
+        for (const t of catalog) {
+          const hit = t.native ? bal.get("native") : t.address ? bal.get(t.address) ?? bal.get(t.address.toLowerCase()) : undefined;
+          if (t.address) seen.add(t.address);
+          next.push(row(t, hit?.raw ?? 0n, true));
+        }
+        for (const [k, v] of bal) {
+          if (k === "native" || seen.has(k) || seen.has(k.toLowerCase()) || v.raw === 0n) continue;
+          next.push({
+            id: `${chainId}-${k}`,
+            symbol: v.symbol || k.slice(0, 6).toUpperCase(),
+            name: v.name || v.symbol || k,
+            icon: v.icon || catalog[0]?.icon || "/tokens/eth.png",
+            amount: fmt(v.raw, v.decimals ?? 0),
+            raw: v.raw,
+            contract: v.contract ?? k,
+            chainTag: CHAIN_TAG[chainId],
+            chainId,
+          });
+        }
+        setRows(sortHoldings(next, true));
+      })
+      .catch(() => {
+        if (!cancelled) setRows(catalog.map((t) => row(t, null, true)));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [catalog, chainId, connected, load]);
+  useEffect(() => {
+    syncLiveFlag(`holdings:${chainId}`, chainId, "holdings", connected && loading);
+    return () => useLiveStatus.getState().finish(`holdings:${chainId}`, true);
+  }, [chainId, connected, loading]);
+  return { rows, funded: rows.filter((r) => r.raw > 0n).length, loading, catalogSize: catalog.length };
+}
+
+export function useHyperCoreHoldings(address: string | undefined) {
+  const catalog = useMemo(() => tokensFor("hypercore", 998), []);
+  const connected = Boolean(address);
+  const load = useMemo(() => {
+    const user = address;
+    return async () => {
+      const out = new Map<string, { raw: bigint; decimals?: number; symbol?: string; name?: string; icon?: string; contract?: string }>();
+      if (!user) return out;
+      const [state, meta] = await Promise.all([
+        jsonFetch<{ balances?: Array<{ coin: string; total: string; token?: number }> }>("https://api.hyperliquid.xyz/info", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ type: "spotClearinghouseState", user }),
+        }),
+        jsonFetch<{ tokens?: Array<{ name: string; weiDecimals: number; szDecimals: number; tokenId?: string }> }>(
+          "https://api.hyperliquid.xyz/info",
+          {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ type: "spotMeta" }),
+          },
+        ),
+      ]);
+      const dec = new Map((meta.tokens ?? []).map((t) => [t.name, t.weiDecimals ?? t.szDecimals ?? 8]));
+      for (const b of state.balances ?? []) {
+        const decimals = dec.get(b.coin) ?? 8;
+        const n = Number(b.total);
+        if (!Number.isFinite(n) || n <= 0) continue;
+        const raw = BigInt(Math.round(n * 10 ** Math.min(decimals, 8)));
+        const rec = { raw, decimals: Math.min(decimals, 8), symbol: b.coin, name: b.coin, icon: "/tokens/hype.png", contract: b.coin };
+        if (b.coin === "HYPE" || b.coin === "UBTC") out.set(b.coin === "HYPE" ? "native" : b.coin, rec);
+        else out.set(b.coin, rec);
+      }
+      return out;
+    };
+  }, [address]);
+  return useJsonHoldings(998, catalog, connected, load);
+}
+
+export function useTronHoldings(address: string) {
+  const catalog = useMemo(() => tokensFor("tron", 728126428), []);
+  const load = useMemo(() => {
+    const addr = address;
+    return async () => {
+      const out = new Map<string, { raw: bigint; decimals?: number; symbol?: string; name?: string; icon?: string; contract?: string }>();
+      if (!addr) return out;
+      const json = await jsonFetch<{ data?: Array<{ balance?: number; trc20?: Array<Record<string, string>> }> }>(
+        `https://api.trongrid.io/v1/accounts/${addr}`,
+      );
+      const acc = json.data?.[0];
+      out.set("native", { raw: BigInt(acc?.balance ?? 0), decimals: 6, symbol: "TRX" });
+      for (const item of acc?.trc20 ?? []) {
+        for (const [contract, amount] of Object.entries(item)) {
+          out.set(contract, { raw: BigInt(amount || "0"), decimals: 6, symbol: contract.slice(0, 4), contract });
+        }
+      }
+      return out;
+    };
+  }, [address]);
+  return useJsonHoldings(728126428, catalog, Boolean(address), load);
+}
+
+export function useSuiHoldings(address: string) {
+  const catalog = useMemo(() => tokensFor("sui", 784), []);
+  const load = useMemo(() => {
+    const addr = address;
+    return async () => {
+      const out = new Map<string, { raw: bigint; decimals?: number; symbol?: string; name?: string; icon?: string; contract?: string }>();
+      if (!addr) return out;
+      const json = await jsonFetch<{ result?: Array<{ coinType: string; totalBalance: string }> }>("https://fullnode.mainnet.sui.io:443", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "suix_getAllBalances", params: [addr] }),
+      });
+      for (const b of json.result ?? []) {
+        const rec = { raw: BigInt(b.totalBalance || "0"), decimals: b.coinType.includes("::sui::SUI") ? 9 : 9, symbol: b.coinType.split("::").pop(), contract: b.coinType };
+        if (b.coinType.endsWith("::sui::SUI")) out.set("native", rec);
+        else out.set(b.coinType, rec);
+      }
+      return out;
+    };
+  }, [address]);
+  return useJsonHoldings(784, catalog, Boolean(address), load);
+}
+
+export function useTonHoldings(address: string) {
+  const catalog = useMemo(() => tokensFor("ton", 607), []);
+  const load = useMemo(() => {
+    const addr = address;
+    return async () => {
+      const out = new Map<string, { raw: bigint; decimals?: number; symbol?: string; name?: string; icon?: string; contract?: string }>();
+      if (!addr) return out;
+      try {
+        const acc = await jsonFetch<{ balance?: number | string }>(`https://tonapi.io/v2/accounts/${addr}`);
+        out.set("native", { raw: BigInt(String(acc.balance ?? 0)), decimals: 9, symbol: "TON" });
+      } catch {
+        const acc = await jsonFetch<{ result?: string }>(`https://toncenter.com/api/v2/getAddressBalance?address=${encodeURIComponent(addr)}`);
+        out.set("native", { raw: BigInt(acc.result ?? "0"), decimals: 9, symbol: "TON" });
+      }
+      try {
+        const jets = await jsonFetch<{ balances?: Array<{ jetton?: { address?: string; symbol?: string; decimals?: number }; balance?: string }> }>(
+          `https://tonapi.io/v2/accounts/${addr}/jettons`,
+        );
+        for (const j of jets.balances ?? []) {
+          const contract = j.jetton?.address ?? "";
+          if (!contract) continue;
+          out.set(contract, {
+            raw: BigInt(j.balance ?? "0"),
+            decimals: j.jetton?.decimals ?? 9,
+            symbol: j.jetton?.symbol,
+            contract,
+          });
+        }
+      } catch {
+        /* jettons optional */
+      }
+      return out;
+    };
+  }, [address]);
+  return useJsonHoldings(607, catalog, Boolean(address), load);
+}
+
+export function useAptosHoldings(address: string) {
+  const catalog = useMemo(() => tokensFor("aptos", 637), []);
+  const load = useMemo(() => {
+    const addr = address;
+    return async () => {
+      const out = new Map<string, { raw: bigint; decimals?: number; symbol?: string; name?: string; icon?: string; contract?: string }>();
+      if (!addr) return out;
+      try {
+        const apt = await jsonFetch<{ data?: { coin?: { value?: string } } }>(
+          `https://fullnode.mainnet.aptoslabs.com/v1/accounts/${addr}/resource/0x1::coin::CoinStore%3C0x1::aptos_coin::AptosCoin%3E`,
+        );
+        out.set("native", { raw: BigInt(apt.data?.coin?.value ?? "0"), decimals: 8, symbol: "APT" });
+      } catch {
+        out.set("native", { raw: 0n, decimals: 8, symbol: "APT" });
+      }
+      try {
+        const coins = await jsonFetch<Array<{ asset_type?: string; amount?: string; metadata?: { symbol?: string; decimals?: number } }>>(
+          `https://api.mainnet.aptoslabs.com/v1/accounts/${addr}/fungible_asset_balances`,
+        ).catch(() => [] as Array<{ asset_type?: string; amount?: string; metadata?: { symbol?: string; decimals?: number } }>);
+        for (const c of coins) {
+          if (!c.asset_type) continue;
+          const rec = { raw: BigInt(c.amount ?? "0"), decimals: c.metadata?.decimals ?? 8, symbol: c.metadata?.symbol, contract: c.asset_type };
+          if (c.asset_type.includes("aptos_coin")) out.set("native", rec);
+          else out.set(c.asset_type, rec);
+        }
+      } catch {
+        /* fa optional */
+      }
+      return out;
+    };
+  }, [address]);
+  return useJsonHoldings(637, catalog, Boolean(address), load);
 }
 
 

@@ -4,8 +4,10 @@ into this folder so the SPA does not hotlink at runtime.
 
 cmcCatalog.json is CMC top ~500 coins' platform contracts on
 ETH / Base / Arb / BNB / AVAX / Solana / NEAR / Cardano, snapshotted
-2026-08-26. This is not the entire CMC universe. Named files below
-are reused when the CMC id is known; others are cmc-{id}.png.
+2026-08-26. Extra natives and stables for Polygon / OP / Fantom /
+Mantle / World / HyperEVM / Tron / Sui / TON / Aptos live in
+tokenRegistry.ts EXTRA. This is not the entire CMC universe. Named
+files below are reused when the CMC id is known; others are cmc-{id}.png.
 
 EVM decimals are on-chain eth_call. CMC contractDecimals is often wrong.
 

@@ -87,25 +87,39 @@
     "connectEvm": "連接 EVM 錢包",
     "disconnect": "登出",
     "session": "現有錢包",
-    "count": "{{n}} / 4 已連接",
+    "count": "{{n}} / 8 已連接",
     "evm": "EVM",
-    "native": "NEAR／Cardano／Solana",
+    "native": "NEAR／Cardano／Solana／Tron／Sui／TON／Aptos",
     "near": "NEAR 主鏈",
     "cardano": "Cardano",
     "solana": "Solana",
-    "evmHint": "MetaMask、Rabby、Rainbow 等現有 EIP-6963 錢包。",
+    "tron": "Tron",
+    "sui": "Sui",
+    "ton": "TON",
+    "aptos": "Aptos",
+    "evmHint": "MetaMask、Rabby、Rainbow 等現有 EIP-6963 錢包。Polygon、OP、Fantom、Mantle、World Chain、HyperEVM 共用。HyperCore 用同一地址讀現貨。",
     "nearHint": "官方 Wallet Selector。Meteor、MyNearWallet、HERE。",
     "adaHint": "CIP-30 瀏覽器錢包。Lace、Eternl、Vespr。",
     "solHint": "官方 Wallet Standard selector。Phantom、Solflare、Backpack、Brave…",
+    "tronHint": "TronLink。本站不會代為開立錢包。",
+    "suiHint": "Wallet Standard。Slush、Suiet。",
+    "tonHint": "TonConnect。Tonkeeper 等現有錢包。",
+    "aptosHint": "Aptos Wallet Standard。Petra、Martian。",
     "solInstalled": "已安裝",
     "solMore": "其他錢包",
     "solInstall": "安裝",
     "connectNear": "連接 NEAR",
     "connectCardano": "連接 Cardano",
     "connectSolana": "連接 Solana",
+    "connectTron": "連接 Tron",
+    "connectSui": "連接 Sui",
+    "connectTon": "連接 TON",
+    "connectAptos": "連接 Aptos",
     "pickCip30": "請選擇已安裝的 CIP-30 錢包。",
     "noCip30": "未偵測 CIP-30 錢包",
     "noSolana": "未偵測 Solana 錢包",
+    "noSui": "未偵測 Sui 錢包",
+    "noAptos": "未偵測 Aptos 錢包",
     "installCip30": "安裝 Lace、Eternl 或 Vespr 後重新整理。本站不會代為開立錢包。",
     "wrongNetwork": "請切換至支援的 EVM 鏈。",
     "nativeCoin": "原生幣",
@@ -129,7 +143,7 @@
       "8": "上鏈"
     },
     "wallet": {
-      "need": "請連接現有錢包。EVM、NEAR、Cardano、Solana 須分別授權。本站不會代為開立錢包。",
+      "need": "請連接現有錢包。EVM、NEAR、Cardano、Solana、Tron、Sui、TON、Aptos 須分別授權。本站不會代為開立錢包。",
       "ready": "錢包已連接",
       "idle": "未連接",
       "nativeReady": "已連接原生鏈帳戶。"
@@ -153,10 +167,14 @@
       "gapWalletNear": "已選擇 NEAR，尚未連接 NEAR 錢包。",
       "gapWalletAda": "已選擇 Cardano，尚未連接 CIP-30 錢包。",
       "gapWalletSol": "已選擇 Solana，尚未連接 Solana 錢包。",
+      "gapWalletSui": "已選擇 Sui，尚未連接 Sui 錢包。",
+      "gapWalletAptos": "已選擇 Aptos，尚未連接 Aptos 錢包。",
       "gapUndeployedEvm": "EVM Factory 仍為零（{{names}}）。",
       "gapNearFactory": "NEAR NEP-141 factory 尚未部署。",
       "gapAdaFactory": "Cardano native asset factory 尚未部署。",
       "gapSolProgram": "Solana SPL program 尚未部署。",
+      "gapSuiFactory": "Sui Coin factory 尚未部署。獨立發行，不是 LayerZero OFT。",
+      "gapAptosFactory": "Aptos Coin factory 尚未部署。獨立發行，不是 LayerZero OFT。",
       "vm": {
         "evm": {
           "title": "EVM · LayerZero OFT",
@@ -173,6 +191,14 @@
         "solana": {
           "title": "Solana · SPL",
           "body": "獨立 SPL mint。"
+        },
+        "sui": {
+          "title": "Sui · Coin",
+          "body": "獨立 Sui Coin。不是 LayerZero OFT，唔會同 EVM 對 peer。"
+        },
+        "aptos": {
+          "title": "Aptos · Coin",
+          "body": "獨立 Aptos Coin／FA。不是 LayerZero OFT，唔會同 EVM 對 peer。"
         }
       }
     },
@@ -211,6 +237,8 @@
       "nearHint": "NEAR Protocol · NEP-141",
       "adaHint": "Cardano · native asset",
       "solHint": "Solana · SPL",
+      "suiHint": "Sui · Coin。獨立發行，不經 OFT。",
+      "aptHint": "Aptos · Coin。獨立發行，不經 OFT。",
       "mainnet": "主網",
       "testnets": "測試網"
     },

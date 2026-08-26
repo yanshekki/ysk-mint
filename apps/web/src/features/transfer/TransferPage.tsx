@@ -105,7 +105,7 @@ export function TransferPage() {
     return [...launched, ...fromHold];
   }, [evmHold.rows, w.name, w.perChain, w.symbol]);
 
-  const groups = issuanceGroups();
+  const groups = issuanceGroups().filter((g) => g.vm === "evm");
   const canAct = Boolean(address && token && token.toLowerCase() !== zeroAddress && !destBlocked && dst?.eid);
 
   const quoteNow = useCallback(async () => {
@@ -342,7 +342,7 @@ export function TransferPage() {
                   <section key={g.vm} className="chain-group">
                     <p className="chain-group-title">
                       {g.vm === "evm" ? `${t("transfer.dest")} · ` : ""}
-                      {t(ISSUANCE_GROUP_TITLE[g.vm])}
+                      {t(ISSUANCE_GROUP_TITLE[g.vm] ?? "wizard.chains.groupEvm")}
                     </p>
                     {g.vm === "evm" ? (
                       <>

@@ -20,7 +20,17 @@ library LaunchEnums {
         CardanoPreprod,
         NearTestnet,
         Solana,
-        SolanaDevnet
+        SolanaDevnet,
+        Polygon,
+        Fantom,
+        Mantle,
+        WorldChain,
+        HyperEvm,
+        Tron,
+        Sui,
+        Ton,
+        HyperCore,
+        Aptos
     }
 
     enum DexKind {

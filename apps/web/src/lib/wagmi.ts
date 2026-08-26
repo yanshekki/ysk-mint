@@ -1,4 +1,5 @@
 import { getDefaultConfig } from "@rainbow-me/rainbowkit";
+import { defineChain } from "viem";
 import { http } from "wagmi";
 import {
   mainnet,
@@ -11,9 +12,22 @@ import {
   sepolia,
   baseSepolia,
   arbitrumSepolia,
+  polygon,
+  optimism,
+  fantom,
+  mantle,
+  worldchain,
 } from "wagmi/chains";
 
 const projectId = import.meta.env.VITE_WC_PROJECT_ID || "ysk-mint-local";
+
+const hyperEvm = defineChain({
+  id: 999,
+  name: "HyperEVM",
+  nativeCurrency: { name: "HYPE", symbol: "HYPE", decimals: 18 },
+  rpcUrls: { default: { http: ["https://rpc.hyperliquid.xyz/evm"] } },
+  blockExplorers: { default: { name: "HyperEVMScan", url: "https://hyperevmscan.io" } },
+});
 
 export const appChains = [
   mainnet,
@@ -21,6 +35,12 @@ export const appChains = [
   base,
   arbitrum,
   bsc,
+  polygon,
+  optimism,
+  fantom,
+  mantle,
+  worldchain,
+  hyperEvm,
   sepolia,
   avalancheFuji,
   baseSepolia,
@@ -34,6 +54,12 @@ const transports = {
   [base.id]: http("https://mainnet.base.org"),
   [arbitrum.id]: http("https://arb1.arbitrum.io/rpc"),
   [bsc.id]: http("https://bsc-dataseed.binance.org"),
+  [polygon.id]: http("https://polygon-bor-rpc.publicnode.com"),
+  [optimism.id]: http("https://mainnet.optimism.io"),
+  [fantom.id]: http("https://fantom-rpc.publicnode.com"),
+  [mantle.id]: http("https://rpc.mantle.xyz"),
+  [worldchain.id]: http("https://worldchain.drpc.org"),
+  [hyperEvm.id]: http("https://rpc.hyperliquid.xyz/evm"),
   [sepolia.id]: http("https://ethereum-sepolia-rpc.publicnode.com"),
   [avalancheFuji.id]: http("https://api.avax-test.network/ext/bc/C/rpc"),
   [baseSepolia.id]: http("https://sepolia.base.org"),

@@ -5,7 +5,18 @@ import { formatUnits, parseAbiItem, type Address } from "viem";
 import { useAccount, useConfig } from "wagmi";
 import { getPublicClient } from "wagmi/actions";
 import { CHAINS, evmEnabledChains, featuredChains, isConfigured, type ChainDefinition } from "@ysk-mint/sdk";
-import { useCardanoHoldings, useEvmHoldings, useNearHoldings, useSolanaHoldings, type HoldingRow } from "../../lib/useHoldings.ts";
+import {
+  useAptosHoldings,
+  useCardanoHoldings,
+  useEvmHoldings,
+  useHyperCoreHoldings,
+  useNearHoldings,
+  useSolanaHoldings,
+  useSuiHoldings,
+  useTonHoldings,
+  useTronHoldings,
+  type HoldingRow,
+} from "../../lib/useHoldings.ts";
 import { useNativeWallets } from "../../lib/nativeWallets.ts";
 import { stakeFromPayment } from "../../lib/cardanoCip30.ts";
 import { resolvedContracts } from "../../lib/launchStack.ts";
@@ -63,14 +74,20 @@ function explorerFor(chainId: number, contract?: string) {
   }
   if (chain.vm === "near") return `${chain.explorer}/token/${contract}`;
   if (chain.vm === "cardano") return `${chain.explorer}/token/${contract}`;
+  if (chain.vm === "tron") return `${chain.explorer}/#/token20/${contract}`;
+  if (chain.vm === "sui") return `${chain.explorer}/mainnet/object/${contract}`;
+  if (chain.vm === "ton") return `${chain.explorer}/${contract}`;
+  if (chain.vm === "aptos") return `${chain.explorer}/fungible_asset/${contract}`;
+  if (chain.vm === "hypercore") return chain.explorer;
   return `${chain.explorer}/token/${contract}`;
 }
 
 function rowDecimals(r: HoldingRow) {
   if (r.native) {
     if (r.chainId === 397) return 24;
-    if (r.chainId === 1815) return 6;
-    if (r.chainId === 101) return 9;
+    if (r.chainId === 1815 || r.chainId === 728126428) return 6;
+    if (r.chainId === 101 || r.chainId === 784 || r.chainId === 607) return 9;
+    if (r.chainId === 637 || r.chainId === 998) return 8;
     return 18;
   }
   return TOKEN_CATALOG.find((t) => t.id === r.id)?.decimals ?? 18;
@@ -171,6 +188,11 @@ export function MePage() {
     sync: native.cardanoSync,
   });
   const sol = useSolanaHoldings(native.solanaAddress);
+  const tron = useTronHoldings(native.tronAddress);
+  const sui = useSuiHoldings(native.suiAddress);
+  const ton = useTonHoldings(native.tonAddress);
+  const aptos = useAptosHoldings(native.aptosAddress);
+  const hyper = useHyperCoreHoldings(address);
   const evmName = useEvmName(address);
   const adaName = useAdaHandle(native.cardanoAddress, native.cardanoStake);
   const solName = useSolName(native.solanaAddress);
@@ -185,7 +207,9 @@ export function MePage() {
   const [stakeExtra, setStakeExtra] = useState<StakeLine[]>([]);
   const [adaStakeLines, setAdaStakeLines] = useState<StakeLine[]>([]);
 
-  const anyWallet = isConnected || Boolean(native.nearAccount || native.cardanoAddress || native.solanaAddress);
+  const anyWallet =
+    isConnected ||
+    Boolean(native.nearAccount || native.cardanoAddress || native.solanaAddress || native.tronAddress || native.suiAddress || native.tonAddress || native.aptosAddress);
 
   const liveFactories = useMemo(() => evmEnabledChains().filter((c) => isConfigured(resolvedContracts(c))), []);
 
@@ -257,6 +281,11 @@ export function MePage() {
     add(ada.rows, Boolean(native.cardanoAddress));
     add(near.rows, Boolean(native.nearAccount));
     add(sol.rows, Boolean(native.solanaAddress));
+    add(tron.rows, Boolean(native.tronAddress));
+    add(sui.rows, Boolean(native.suiAddress));
+    add(ton.rows, Boolean(native.tonAddress));
+    add(aptos.rows, Boolean(native.aptosAddress));
+    add(hyper.rows, isConnected);
     return GROUPS.map((c) => {
       const connected =
         c.vm === "cardano"
@@ -265,8 +294,34 @@ export function MePage() {
             ? Boolean(native.nearAccount)
             : c.vm === "solana"
               ? Boolean(native.solanaAddress)
-              : isConnected;
+              : c.vm === "tron"
+                ? Boolean(native.tronAddress)
+                : c.vm === "sui"
+                  ? Boolean(native.suiAddress)
+                  : c.vm === "ton"
+                    ? Boolean(native.tonAddress)
+                    : c.vm === "aptos"
+                      ? Boolean(native.aptosAddress)
+                      : isConnected;
       const rows = map.get(c.chainId) ?? [];
+      const loading =
+        c.vm === "cardano"
+          ? ada.loading
+          : c.vm === "near"
+            ? near.loading
+            : c.vm === "solana"
+              ? sol.loading
+              : c.vm === "tron"
+                ? tron.loading
+                : c.vm === "sui"
+                  ? sui.loading
+                  : c.vm === "ton"
+                    ? ton.loading
+                    : c.vm === "aptos"
+                      ? aptos.loading
+                      : c.vm === "hypercore"
+                        ? hyper.loading
+                        : evm.loading;
       return {
         id: c.chainId,
         label: c.short,
@@ -274,12 +329,38 @@ export function MePage() {
         icon: chainIcon(c),
         rows,
         funded: rows.filter((r) => r.raw > 0n).length,
-        loading:
-          c.vm === "cardano" ? ada.loading : c.vm === "near" ? near.loading : c.vm === "solana" ? sol.loading : evm.loading,
+        loading,
         connected,
       };
     }).filter((g) => g.connected);
-  }, [ada.loading, ada.rows, evm.loading, evm.rows, isConnected, native.cardanoAddress, native.nearAccount, native.solanaAddress, near.loading, near.rows, sol.loading, sol.rows]);
+  }, [
+    ada.loading,
+    ada.rows,
+    aptos.loading,
+    aptos.rows,
+    evm.loading,
+    evm.rows,
+    hyper.loading,
+    hyper.rows,
+    isConnected,
+    native.aptosAddress,
+    native.cardanoAddress,
+    native.nearAccount,
+    native.solanaAddress,
+    native.suiAddress,
+    native.tonAddress,
+    native.tronAddress,
+    near.loading,
+    near.rows,
+    sol.loading,
+    sol.rows,
+    sui.loading,
+    sui.rows,
+    ton.loading,
+    ton.rows,
+    tron.loading,
+    tron.rows,
+  ]);
 
   const bucketsRef = useRef(buckets);
   bucketsRef.current = buckets;

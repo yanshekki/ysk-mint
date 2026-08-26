@@ -46,10 +46,14 @@ export function StepBasics() {
   if (vms.includes("near") && !native.nearAccount) gaps.push(t("wizard.basics.gapWalletNear"));
   if (vms.includes("cardano") && !native.cardanoAddress) gaps.push(t("wizard.basics.gapWalletAda"));
   if (vms.includes("solana") && !native.solanaAddress) gaps.push(t("wizard.basics.gapWalletSol"));
+  if (vms.includes("sui") && !native.suiAddress) gaps.push(t("wizard.basics.gapWalletSui"));
+  if (vms.includes("aptos") && !native.aptosAddress) gaps.push(t("wizard.basics.gapWalletAptos"));
   if (missing.length) gaps.push(t("wizard.basics.gapUndeployedEvm", { names: missing.map((c) => c.short).join("、") }));
   if (vms.includes("near")) gaps.push(t("wizard.basics.gapNearFactory"));
   if (vms.includes("cardano")) gaps.push(t("wizard.basics.gapAdaFactory"));
   if (vms.includes("solana")) gaps.push(t("wizard.basics.gapSolProgram"));
+  if (vms.includes("sui")) gaps.push(t("wizard.basics.gapSuiFactory"));
+  if (vms.includes("aptos")) gaps.push(t("wizard.basics.gapAptosFactory"));
 
   const nameHint =
     vms.includes("evm") ? t("wizard.basics.nameHintEvm") : vms.includes("near") ? t("wizard.basics.nameHintNear") : vms.includes("cardano") ? t("wizard.basics.nameHintAda") : vms.includes("solana") ? t("wizard.basics.nameHintSol") : t("wizard.basics.nameHintEvm");
@@ -270,7 +274,7 @@ export function StepChains() {
       <p className="text-[15px] text-text-sub">{t("wizard.chains.hint")}</p>
       {issuanceGroups().map((g) => (
         <section key={g.vm} className="chain-group">
-          <p className="chain-group-title">{t(ISSUANCE_GROUP_TITLE[g.vm])}</p>
+          <p className="chain-group-title">{t(ISSUANCE_GROUP_TITLE[g.vm] ?? "wizard.chains.groupEvm")}</p>
           {g.vm === "evm" ? (
             <>
               <div className="chain-row">

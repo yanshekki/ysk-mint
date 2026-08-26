@@ -21,6 +21,20 @@ import {
 } from "./solanaWallets.ts";
 
 export { useNativeWallets };
+export {
+  connectAptos,
+  connectSui,
+  connectTon,
+  connectTron,
+  disconnectAptosWallet,
+  disconnectSuiWallet,
+  disconnectTonWallet,
+  disconnectTronWallet,
+  listAptosWallets,
+  listSuiWallets,
+  listTronWallets,
+  type ExtraWalletInfo,
+} from "./extraWallets.ts";
 
 export async function restoreNearSession() {
   try {

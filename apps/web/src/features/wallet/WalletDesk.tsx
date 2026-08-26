@@ -5,25 +5,45 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import "@near-wallet-selector/modal-ui/styles.css";
 import "./nearModal.css";
 import {
+  connectAptos,
   connectCardano,
   connectNear,
   connectSolana,
+  connectSui,
+  connectTon,
+  connectTron,
+  disconnectAptosWallet,
   disconnectCardanoWallet,
   disconnectNearWallet,
   disconnectSolanaWallet,
+  disconnectSuiWallet,
+  disconnectTonWallet,
+  disconnectTronWallet,
+  listAptosWallets,
   listCardanoWallets,
   listSolanaWallets,
+  listSuiWallets,
   restoreCardanoSession,
   restoreNearSession,
   restoreSolanaSession,
   useNativeWallets,
   type CardanoWalletInfo,
+  type ExtraWalletInfo,
   type SolanaWalletInfo,
 } from "../../lib/nativeWallets.ts";
 import { useAdaHandle, useEvmName, useSolName } from "../../lib/chainNames.ts";
-import { useCardanoHoldings, useEvmHoldings, useNearHoldings, useSolanaHoldings } from "../../lib/useHoldings.ts";
+import {
+  useAptosHoldings,
+  useCardanoHoldings,
+  useEvmHoldings,
+  useNearHoldings,
+  useSolanaHoldings,
+  useSuiHoldings,
+  useTonHoldings,
+  useTronHoldings,
+} from "../../lib/useHoldings.ts";
 import { HoldingsList } from "./HoldingsList.tsx";
-import { SolanaSelector } from "./SolanaSelector.tsx";
+import { SolanaSelector, WalletPicker } from "./SolanaSelector.tsx";
 
 function short(v: string, head = 8, tail = 6) {
   if (!v || v.length <= head + tail + 1) return v || "—";
@@ -74,14 +94,29 @@ export function WalletDesk() {
   const native = useNativeWallets();
   const [adaWallets, setAdaWallets] = useState<CardanoWalletInfo[]>([]);
   const [solWallets, setSolWallets] = useState<SolanaWalletInfo[]>([]);
+  const [suiWallets, setSuiWallets] = useState<ExtraWalletInfo[]>([]);
+  const [aptosWallets, setAptosWallets] = useState<ExtraWalletInfo[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [nearErr, setNearErr] = useState<string | null>(null);
   const [adaErr, setAdaErr] = useState<string | null>(null);
   const [solErr, setSolErr] = useState<string | null>(null);
+  const [tronErr, setTronErr] = useState<string | null>(null);
+  const [suiErr, setSuiErr] = useState<string | null>(null);
+  const [tonErr, setTonErr] = useState<string | null>(null);
+  const [aptosErr, setAptosErr] = useState<string | null>(null);
   const [solOpen, setSolOpen] = useState(false);
+  const [suiOpen, setSuiOpen] = useState(false);
+  const [aptosOpen, setAptosOpen] = useState(false);
 
   const onCount =
-    Number(isConnected) + Number(!!native.nearAccount) + Number(!!native.cardanoAddress) + Number(!!native.solanaAddress);
+    Number(isConnected) +
+    Number(!!native.nearAccount) +
+    Number(!!native.cardanoAddress) +
+    Number(!!native.solanaAddress) +
+    Number(!!native.tronAddress) +
+    Number(!!native.suiAddress) +
+    Number(!!native.tonAddress) +
+    Number(!!native.aptosAddress);
   const evmHold = useEvmHoldings(address);
   const nearHold = useNearHoldings(native.nearAccount);
   const adaHold = useCardanoHoldings(native.cardanoAddress, {
@@ -90,6 +125,10 @@ export function WalletDesk() {
     sync: native.cardanoSync,
   });
   const solHold = useSolanaHoldings(native.solanaAddress);
+  const tronHold = useTronHoldings(native.tronAddress);
+  const suiHold = useSuiHoldings(native.suiAddress);
+  const tonHold = useTonHoldings(native.tonAddress);
+  const aptosHold = useAptosHoldings(native.aptosAddress);
   const evmName = useEvmName(address);
   const adaName = useAdaHandle(native.cardanoAddress, native.cardanoStake);
   const solName = useSolName(native.solanaAddress);
@@ -348,6 +387,174 @@ export function WalletDesk() {
             )}
           </div>
         </article>
+
+        <article className={`wallet-pane ${native.tronAddress ? "wallet-pane-on" : ""}`}>
+          <div className="wallet-pane-top">
+            <BrandMark src="/tokens/trx.png" className="wallet-mark-evm" />
+            <div className="wallet-pane-copy">
+              <div className="wallet-pane-title">
+                <h3>{t("wallet.tron")}</h3>
+                <span className={`wallet-state ${native.tronAddress ? "on" : ""}`}>
+                  <StatusDot on={!!native.tronAddress} />
+                  {native.tronAddress ? t("wizard.wallet.ready") : t("wizard.wallet.idle")}
+                </span>
+              </div>
+              <p>{t("wallet.tronHint")}</p>
+            </div>
+          </div>
+          <div className="wallet-pane-main">
+            <AddrFace connected={Boolean(native.tronAddress)} address={native.tronAddress} idle={t("wizard.wallet.idle")} />
+            {tronErr ? <p className="wallet-err">{tronErr}</p> : null}
+            <HoldingsList rows={tronHold.rows} funded={tronHold.funded} connected={Boolean(native.tronAddress)} loading={tronHold.loading} />
+          </div>
+          <div className="wallet-pane-foot">
+            {native.tronAddress ? (
+              <button type="button" className="ghost-btn wallet-cta-block" onClick={() => disconnectTronWallet()}>
+                {t("wallet.disconnect")}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="wallet-cta wallet-cta-block"
+                disabled={busy === "tron"}
+                onClick={() => {
+                  setBusy("tron");
+                  setTronErr(null);
+                  void connectTron()
+                    .catch((err: unknown) => setTronErr(err instanceof Error ? err.message : String(err)))
+                    .finally(() => setBusy(null));
+                }}
+              >
+                {t("wallet.connectTron")}
+              </button>
+            )}
+          </div>
+        </article>
+
+        <article className={`wallet-pane ${native.suiAddress ? "wallet-pane-on" : ""}`}>
+          <div className="wallet-pane-top">
+            <BrandMark src="/tokens/sui.png" className="wallet-mark-evm" />
+            <div className="wallet-pane-copy">
+              <div className="wallet-pane-title">
+                <h3>{t("wallet.sui")}</h3>
+                <span className={`wallet-state ${native.suiAddress ? "on" : ""}`}>
+                  <StatusDot on={!!native.suiAddress} />
+                  {native.suiAddress ? t("wizard.wallet.ready") : t("wizard.wallet.idle")}
+                </span>
+              </div>
+              <p>{t("wallet.suiHint")}</p>
+            </div>
+          </div>
+          <div className="wallet-pane-main">
+            <AddrFace connected={Boolean(native.suiAddress)} address={native.suiAddress} idle={t("wizard.wallet.idle")} />
+            {suiErr ? <p className="wallet-err">{suiErr}</p> : null}
+            <HoldingsList rows={suiHold.rows} funded={suiHold.funded} connected={Boolean(native.suiAddress)} loading={suiHold.loading} />
+          </div>
+          <div className="wallet-pane-foot">
+            {native.suiAddress ? (
+              <button type="button" className="ghost-btn wallet-cta-block" onClick={() => disconnectSuiWallet()}>
+                {t("wallet.disconnect")}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="wallet-cta wallet-cta-block"
+                disabled={busy === "sui"}
+                onClick={() => {
+                  setSuiErr(null);
+                  void listSuiWallets().then(setSuiWallets);
+                  setSuiOpen(true);
+                }}
+              >
+                {t("wallet.connectSui")}
+              </button>
+            )}
+          </div>
+        </article>
+
+        <article className={`wallet-pane ${native.tonAddress ? "wallet-pane-on" : ""}`}>
+          <div className="wallet-pane-top">
+            <BrandMark src="/tokens/ton.png" className="wallet-mark-evm" />
+            <div className="wallet-pane-copy">
+              <div className="wallet-pane-title">
+                <h3>{t("wallet.ton")}</h3>
+                <span className={`wallet-state ${native.tonAddress ? "on" : ""}`}>
+                  <StatusDot on={!!native.tonAddress} />
+                  {native.tonAddress ? t("wizard.wallet.ready") : t("wizard.wallet.idle")}
+                </span>
+              </div>
+              <p>{t("wallet.tonHint")}</p>
+            </div>
+          </div>
+          <div className="wallet-pane-main">
+            <AddrFace connected={Boolean(native.tonAddress)} address={native.tonAddress} idle={t("wizard.wallet.idle")} />
+            {tonErr ? <p className="wallet-err">{tonErr}</p> : null}
+            <HoldingsList rows={tonHold.rows} funded={tonHold.funded} connected={Boolean(native.tonAddress)} loading={tonHold.loading} />
+          </div>
+          <div className="wallet-pane-foot">
+            {native.tonAddress ? (
+              <button type="button" className="ghost-btn wallet-cta-block" onClick={() => void disconnectTonWallet()}>
+                {t("wallet.disconnect")}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="wallet-cta wallet-cta-block"
+                disabled={busy === "ton"}
+                onClick={() => {
+                  setBusy("ton");
+                  setTonErr(null);
+                  void connectTon()
+                    .catch((err: unknown) => setTonErr(err instanceof Error ? err.message : String(err)))
+                    .finally(() => setBusy(null));
+                }}
+              >
+                {t("wallet.connectTon")}
+              </button>
+            )}
+          </div>
+        </article>
+
+        <article className={`wallet-pane ${native.aptosAddress ? "wallet-pane-on" : ""}`}>
+          <div className="wallet-pane-top">
+            <BrandMark src="/tokens/apt.png" className="wallet-mark-evm" />
+            <div className="wallet-pane-copy">
+              <div className="wallet-pane-title">
+                <h3>{t("wallet.aptos")}</h3>
+                <span className={`wallet-state ${native.aptosAddress ? "on" : ""}`}>
+                  <StatusDot on={!!native.aptosAddress} />
+                  {native.aptosAddress ? t("wizard.wallet.ready") : t("wizard.wallet.idle")}
+                </span>
+              </div>
+              <p>{t("wallet.aptosHint")}</p>
+            </div>
+          </div>
+          <div className="wallet-pane-main">
+            <AddrFace connected={Boolean(native.aptosAddress)} address={native.aptosAddress} idle={t("wizard.wallet.idle")} />
+            {aptosErr ? <p className="wallet-err">{aptosErr}</p> : null}
+            <HoldingsList rows={aptosHold.rows} funded={aptosHold.funded} connected={Boolean(native.aptosAddress)} loading={aptosHold.loading} />
+          </div>
+          <div className="wallet-pane-foot">
+            {native.aptosAddress ? (
+              <button type="button" className="ghost-btn wallet-cta-block" onClick={() => disconnectAptosWallet()}>
+                {t("wallet.disconnect")}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="wallet-cta wallet-cta-block"
+                disabled={busy === "aptos"}
+                onClick={() => {
+                  setAptosErr(null);
+                  void listAptosWallets().then(setAptosWallets);
+                  setAptosOpen(true);
+                }}
+              >
+                {t("wallet.connectAptos")}
+              </button>
+            )}
+          </div>
+        </article>
       </div>
       <SolanaSelector
         open={solOpen}
@@ -364,6 +571,50 @@ export function WalletDesk() {
           void connectSolana(w.id)
             .then(() => setSolOpen(false))
             .catch((err: unknown) => setSolErr(err instanceof Error ? err.message : String(err)))
+            .finally(() => setBusy(null));
+        }}
+      />
+      <WalletPicker
+        open={suiOpen}
+        kicker="Sui"
+        title={t("wallet.connectSui")}
+        empty={t("wallet.noSui")}
+        mark="SUI"
+        wallets={suiWallets}
+        busy={busy === "sui"}
+        onClose={() => setSuiOpen(false)}
+        onPick={(w) => {
+          if (!w.installed) {
+            if (w.url) window.open(w.url, "_blank", "noopener,noreferrer");
+            return;
+          }
+          setBusy("sui");
+          setSuiErr(null);
+          void connectSui(w.id)
+            .then(() => setSuiOpen(false))
+            .catch((err: unknown) => setSuiErr(err instanceof Error ? err.message : String(err)))
+            .finally(() => setBusy(null));
+        }}
+      />
+      <WalletPicker
+        open={aptosOpen}
+        kicker="Aptos"
+        title={t("wallet.connectAptos")}
+        empty={t("wallet.noAptos")}
+        mark="APT"
+        wallets={aptosWallets}
+        busy={busy === "aptos"}
+        onClose={() => setAptosOpen(false)}
+        onPick={(w) => {
+          if (!w.installed) {
+            if (w.url) window.open(w.url, "_blank", "noopener,noreferrer");
+            return;
+          }
+          setBusy("aptos");
+          setAptosErr(null);
+          void connectAptos(w.id)
+            .then(() => setAptosOpen(false))
+            .catch((err: unknown) => setAptosErr(err instanceof Error ? err.message : String(err)))
             .finally(() => setBusy(null));
         }}
       />

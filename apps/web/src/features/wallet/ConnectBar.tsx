@@ -6,25 +6,36 @@ import { useAccount, useChainId, useDisconnect } from "wagmi";
 import { evmEnabledChains } from "@ysk-mint/config";
 import { LOCALES } from "../../lib/i18n.ts";
 import {
+  connectAptos,
   connectCardano,
   connectNear,
   connectSolana,
+  connectSui,
+  connectTon,
+  connectTron,
+  disconnectAptosWallet,
   disconnectCardanoWallet,
   disconnectNearWallet,
   disconnectSolanaWallet,
+  disconnectSuiWallet,
+  disconnectTonWallet,
+  disconnectTronWallet,
+  listAptosWallets,
   listCardanoWallets,
   listSolanaWallets,
+  listSuiWallets,
   restoreCardanoSession,
   restoreNearSession,
   restoreSolanaSession,
   useNativeWallets,
   type CardanoWalletInfo,
+  type ExtraWalletInfo,
   type SolanaWalletInfo,
 } from "../../lib/nativeWallets.ts";
 import "@near-wallet-selector/modal-ui/styles.css";
 import "./nearModal.css";
 import { useAdaHandle, useEvmName, useSolName } from "../../lib/chainNames.ts";
-import { SolanaSelector } from "./SolanaSelector.tsx";
+import { SolanaSelector, WalletPicker } from "./SolanaSelector.tsx";
 
 function short(v: string, head = 6, tail = 4) {
   if (!v || v.length <= head + tail + 1) return v || "—";
@@ -43,6 +54,10 @@ export function ConnectBar() {
   const [adaWallets, setAdaWallets] = useState<CardanoWalletInfo[]>([]);
   const [solWallets, setSolWallets] = useState<SolanaWalletInfo[]>([]);
   const [solOpen, setSolOpen] = useState(false);
+  const [suiWallets, setSuiWallets] = useState<ExtraWalletInfo[]>([]);
+  const [suiOpen, setSuiOpen] = useState(false);
+  const [aptosWallets, setAptosWallets] = useState<ExtraWalletInfo[]>([]);
+  const [aptosOpen, setAptosOpen] = useState(false);
   const [pos, setPos] = useState({ top: 72, right: 24 });
   const barRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -51,7 +66,11 @@ export function ConnectBar() {
   const hasNear = Boolean(native.nearAccount);
   const hasAda = Boolean(native.cardanoAddress);
   const hasSol = Boolean(native.solanaAddress);
-  const any = isConnected || hasNear || hasAda || hasSol;
+  const hasTron = Boolean(native.tronAddress);
+  const hasSui = Boolean(native.suiAddress);
+  const hasTon = Boolean(native.tonAddress);
+  const hasAptos = Boolean(native.aptosAddress);
+  const any = isConnected || hasNear || hasAda || hasSol || hasTron || hasSui || hasTon || hasAptos;
   const evmName = useEvmName(address);
   const adaName = useAdaHandle(native.cardanoAddress, native.cardanoStake);
   const solName = useSolName(native.solanaAddress);
@@ -96,6 +115,10 @@ export function ConnectBar() {
   if (hasNear) parts.push("NEAR");
   if (hasAda) parts.push("ADA");
   if (hasSol) parts.push("SOL");
+  if (hasTron) parts.push("TRX");
+  if (hasSui) parts.push("SUI");
+  if (hasTon) parts.push("TON");
+  if (hasAptos) parts.push("APT");
   const trigger =
     parts.length === 0
       ? t("wallet.connect")
@@ -243,6 +266,104 @@ export function ConnectBar() {
                   </button>
                 )}
               </div>
+
+              <div className="session-row">
+                <div className="session-row-copy">
+                  <b>Tron</b>
+                  <span className="num">{hasTron ? short(native.tronAddress, 8, 8) : t("wizard.wallet.idle")}</span>
+                </div>
+                {hasTron ? (
+                  <button type="button" className="ghost-btn" onClick={() => disconnectTronWallet()}>
+                    {t("wallet.disconnect")}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="wallet-cta"
+                    disabled={busy === "tron"}
+                    onClick={() => {
+                      setBusy("tron");
+                      void connectTron().finally(() => setBusy(null));
+                    }}
+                  >
+                    {t("wallet.connectTron")}
+                  </button>
+                )}
+              </div>
+
+              <div className="session-row">
+                <div className="session-row-copy">
+                  <b>Sui</b>
+                  <span className="num">{hasSui ? short(native.suiAddress, 8, 8) : t("wizard.wallet.idle")}</span>
+                </div>
+                {hasSui ? (
+                  <button type="button" className="ghost-btn" onClick={() => disconnectSuiWallet()}>
+                    {t("wallet.disconnect")}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="wallet-cta"
+                    disabled={busy === "sui"}
+                    onClick={() => {
+                      setOpen(false);
+                      void listSuiWallets().then(setSuiWallets);
+                      setSuiOpen(true);
+                    }}
+                  >
+                    {t("wallet.connectSui")}
+                  </button>
+                )}
+              </div>
+
+              <div className="session-row">
+                <div className="session-row-copy">
+                  <b>TON</b>
+                  <span className="num">{hasTon ? short(native.tonAddress, 8, 8) : t("wizard.wallet.idle")}</span>
+                </div>
+                {hasTon ? (
+                  <button type="button" className="ghost-btn" onClick={() => void disconnectTonWallet()}>
+                    {t("wallet.disconnect")}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="wallet-cta"
+                    disabled={busy === "ton"}
+                    onClick={() => {
+                      setBusy("ton");
+                      void connectTon().finally(() => setBusy(null));
+                    }}
+                  >
+                    {t("wallet.connectTon")}
+                  </button>
+                )}
+              </div>
+
+              <div className="session-row">
+                <div className="session-row-copy">
+                  <b>Aptos</b>
+                  <span className="num">{hasAptos ? short(native.aptosAddress, 8, 8) : t("wizard.wallet.idle")}</span>
+                </div>
+                {hasAptos ? (
+                  <button type="button" className="ghost-btn" onClick={() => disconnectAptosWallet()}>
+                    {t("wallet.disconnect")}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="wallet-cta"
+                    disabled={busy === "aptos"}
+                    onClick={() => {
+                      setOpen(false);
+                      void listAptosWallets().then(setAptosWallets);
+                      setAptosOpen(true);
+                    }}
+                  >
+                    {t("wallet.connectAptos")}
+                  </button>
+                )}
+              </div>
             </div>
           );
           return (
@@ -275,6 +396,46 @@ export function ConnectBar() {
           setBusy("sol");
           void connectSolana(w.id)
             .then(() => setSolOpen(false))
+            .finally(() => setBusy(null));
+        }}
+      />
+      <WalletPicker
+        open={suiOpen}
+        kicker="Sui"
+        title={t("wallet.connectSui")}
+        empty={t("wallet.noSui")}
+        mark="SUI"
+        wallets={suiWallets}
+        busy={busy === "sui"}
+        onClose={() => setSuiOpen(false)}
+        onPick={(w) => {
+          if (!w.installed) {
+            if (w.url) window.open(w.url, "_blank", "noopener,noreferrer");
+            return;
+          }
+          setBusy("sui");
+          void connectSui(w.id)
+            .then(() => setSuiOpen(false))
+            .finally(() => setBusy(null));
+        }}
+      />
+      <WalletPicker
+        open={aptosOpen}
+        kicker="Aptos"
+        title={t("wallet.connectAptos")}
+        empty={t("wallet.noAptos")}
+        mark="APT"
+        wallets={aptosWallets}
+        busy={busy === "aptos"}
+        onClose={() => setAptosOpen(false)}
+        onPick={(w) => {
+          if (!w.installed) {
+            if (w.url) window.open(w.url, "_blank", "noopener,noreferrer");
+            return;
+          }
+          setBusy("aptos");
+          void connectAptos(w.id)
+            .then(() => setAptosOpen(false))
             .finally(() => setBusy(null));
         }}
       />

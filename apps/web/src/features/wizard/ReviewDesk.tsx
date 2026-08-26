@@ -71,6 +71,8 @@ export function StepReview() {
   if (vms.includes("near")) notes.push(t("wizard.basics.gapNearFactory"));
   if (vms.includes("cardano")) notes.push(t("wizard.basics.gapAdaFactory"));
   if (vms.includes("solana")) notes.push(t("wizard.basics.gapSolProgram"));
+  if (vms.includes("sui")) notes.push(t("wizard.basics.gapSuiFactory"));
+  if (vms.includes("aptos")) notes.push(t("wizard.basics.gapAptosFactory"));
   if (!evm) notes.push(t("wizard.review.nativeNoLp"));
 
   const on = t("wizard.review.on");
@@ -137,7 +139,7 @@ export function StepReview() {
         <p className="chain-group-title">{t("wizard.review.issuance")}</p>
         {groups.map((g) => (
           <div key={g.vm} className="review-issuance">
-            <p className="chain-sub">{t(ISSUANCE_GROUP_TITLE[g.vm])}</p>
+            <p className="chain-sub">{t(ISSUANCE_GROUP_TITLE[g.vm] ?? "wizard.chains.groupEvm")}</p>
             {g.vm === "evm" ? (
               <>
                 {g.main.length ? (
