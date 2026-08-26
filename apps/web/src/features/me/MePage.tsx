@@ -453,7 +453,10 @@ export function MePage() {
   for (const c of burrowCards) for (const l of c.lines) allValues.push(l.valueUsdc ?? null);
   for (const c of benqiCards) for (const l of c.lines) allValues.push(l.valueUsdc ?? null);
   for (const c of uniCards) for (const l of c.lines) allValues.push(l.valueUsdc ?? null);
-  for (const l of stake) if (!l.inWallet) allValues.push(l.valueUsdc ?? null);
+  for (const l of stake) {
+    if (l.inWallet && !isLst(l.chainId, l.contract)) continue;
+    allValues.push(l.valueUsdc ?? null);
+  }
   const quoted = allValues.filter((v): v is number => v != null);
   const unquoted = allValues.filter((v) => v == null).length;
   const total = quoted.reduce((a, b) => a + b, 0);
