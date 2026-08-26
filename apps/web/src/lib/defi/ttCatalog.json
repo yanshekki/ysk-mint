@@ -916,22 +916,22 @@
       "name": "Kamino",
       "sector": "lending",
       "family": "sol-lend",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         101
       ],
-      "note": ""
+      "note": "api.kamino.finance klend loans"
     },
     {
       "id": "jupiter-lend",
       "name": "Jupiter Lend",
       "sector": "lending",
       "family": "sol-lend",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         101
       ],
-      "note": ""
+      "note": "lite-api.jup.ag lend earn/borrow positions"
     },
     {
       "id": "compound",
@@ -1043,22 +1043,22 @@
       "name": "Suilend",
       "sector": "lending",
       "family": "sui-lend",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         784
       ],
-      "note": ""
+      "note": "ObligationOwnerCap + obligation object"
     },
     {
       "id": "navi",
       "name": "NAVI Protocol",
       "sector": "lending",
       "family": "sui-lend",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         784
       ],
-      "note": ""
+      "note": "Storage user_info + reserve scaled balances"
     },
     {
       "id": "scallop",
@@ -1076,11 +1076,11 @@
       "name": "JustLend",
       "sector": "lending",
       "family": "tron-lend",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         728126428
       ],
-      "note": ""
+      "note": "openapi.just.network /lend/account + V2 position"
     },
     {
       "id": "seamless",

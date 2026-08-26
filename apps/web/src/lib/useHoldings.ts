@@ -665,11 +665,17 @@ export function useSuiHoldings(address: string) {
     return async () => {
       const out = new Map<string, { raw: bigint; decimals?: number; symbol?: string; name?: string; icon?: string; contract?: string }>();
       if (!addr) return out;
-      const json = await jsonFetch<{ result?: Array<{ coinType: string; totalBalance: string }> }>("https://fullnode.mainnet.sui.io:443", {
+      const json = await jsonFetch<{ result?: Array<{ coinType: string; totalBalance: string }> }>("https://rpc-mainnet.suiscan.xyz", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "suix_getAllBalances", params: [addr] }),
-      });
+      }).catch(() =>
+        jsonFetch<{ result?: Array<{ coinType: string; totalBalance: string }> }>("https://sui-rpc.publicnode.com", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "suix_getAllBalances", params: [addr] }),
+        }),
+      );
       for (const b of json.result ?? []) {
         const rec = { raw: BigInt(b.totalBalance || "0"), decimals: b.coinType.includes("::sui::SUI") ? 9 : 9, symbol: b.coinType.split("::").pop(), contract: b.coinType };
         if (b.coinType.endsWith("::sui::SUI")) out.set("native", rec);

@@ -39,6 +39,7 @@ import { fmtUsdc, quoteKey, quoteSolMints, type Quote } from "../../lib/defiQuot
 import { oracleTokenUsdc } from "../../lib/oracle.ts";
 import { readAave, readUniV3, type AaveCard, type ProtocolLine, type UniCard } from "../../lib/defiPositions.ts";
 import { readExtraLending, type LendCard } from "../../lib/lendingExtra.ts";
+import { readNativeLending } from "../../lib/lendingNative.ts";
 import { SortHead, useSort, type SortDir } from "../../shared/ui/SortTable.tsx";
 import { readBurrow } from "../../lib/nearDex.ts";
 import {
@@ -519,6 +520,8 @@ export function MePage() {
         ...clients.keys(),
         ...(native.nearAccount ? [397] : []),
         ...(native.solanaAddress ? [101] : []),
+        ...(native.suiAddress ? [784] : []),
+        ...(native.tronAddress ? [728126428] : []),
       ];
       for (const id of defiIds) useLiveStatus.getState().start(`defi:${id}`, id, "defi", "wait");
 
@@ -532,6 +535,27 @@ export function MePage() {
             }
             if (id === 101) {
               extra.push(...(await readSolStake(native.solanaAddress, next.get("101:native")?.usdc).catch(() => [])));
+              const more = await readNativeLending({ sol: native.solanaAddress, quotes: next }).catch(() => []);
+              for (const card of more) {
+                lendCards.push(card);
+                for (const x of card.aTokens) tokens.add(x);
+              }
+              return;
+            }
+            if (id === 784) {
+              const more = await readNativeLending({ sui: native.suiAddress, quotes: next }).catch(() => []);
+              for (const card of more) {
+                lendCards.push(card);
+                for (const x of card.aTokens) tokens.add(x);
+              }
+              return;
+            }
+            if (id === 728126428) {
+              const more = await readNativeLending({ tron: native.tronAddress, quotes: next }).catch(() => []);
+              for (const card of more) {
+                lendCards.push(card);
+                for (const x of card.aTokens) tokens.add(x);
+              }
               return;
             }
             const client = clients.get(id);
@@ -572,7 +596,7 @@ export function MePage() {
       useLiveStatus.getState().clear("quote:");
       useLiveStatus.getState().clear("defi:");
     };
-  }, [address, anyWallet, holdingsKey, config, native.nearAccount, native.solanaAddress, unstakeLiquid]);
+  }, [address, anyWallet, holdingsKey, config, native.nearAccount, native.solanaAddress, native.suiAddress, native.tronAddress, unstakeLiquid]);
 
   const adaPays = (native.cardanoAddresses ?? []).join("|");
   useEffect(() => {
