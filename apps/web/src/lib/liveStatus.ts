@@ -23,36 +23,44 @@ type Store = {
 export const useLiveStatus = create<Store>((set, get) => ({
   jobs: [],
   start: (id, chainId, kind, phase = "run") => {
-    const now = Date.now();
-    set((s) => {
-      const rest = s.jobs.filter((j) => j.id !== id);
-      return { jobs: [...rest, { id, chainId, kind, phase, at: now }] };
-    });
+    const cur = get().jobs.find((j) => j.id === id);
+    if (cur && cur.chainId === chainId && cur.kind === kind && cur.phase === phase) return;
+    set((s) => ({
+      jobs: [...s.jobs.filter((j) => j.id !== id), { id, chainId, kind, phase, at: Date.now() }],
+    }));
   },
   run: (id) => {
+    const cur = get().jobs.find((j) => j.id === id);
+    if (!cur || cur.phase === "run") return;
     set((s) => ({
       jobs: s.jobs.map((j) => (j.id === id ? { ...j, phase: "run" as const, at: Date.now() } : j)),
     }));
   },
   finish: (id, ok = true) => {
+    const cur = get().jobs.find((j) => j.id === id);
+    if (!cur) return;
     if (ok) {
       set((s) => ({ jobs: s.jobs.filter((j) => j.id !== id) }));
       return;
     }
-    const now = Date.now();
+    if (cur.phase === "fail") return;
     set((s) => ({
-      jobs: s.jobs.map((j) => (j.id === id ? { ...j, phase: "fail" as const, at: now } : j)),
+      jobs: s.jobs.map((j) => (j.id === id ? { ...j, phase: "fail" as const, at: Date.now() } : j)),
     }));
     window.setTimeout(() => {
-      if (get().jobs.some((j) => j.id === id && j.phase === "fail")) {
-        set((s) => ({ jobs: s.jobs.filter((j) => j.id !== id) }));
-      }
+      set((s) => {
+        const row = s.jobs.find((j) => j.id === id);
+        if (!row || row.phase !== "fail") return s;
+        return { jobs: s.jobs.filter((j) => j.id !== id) };
+      });
     }, 2000);
   },
   clear: (prefix) => {
-    set((s) => ({
-      jobs: prefix ? s.jobs.filter((j) => !j.id.startsWith(prefix)) : [],
-    }));
+    set((s) => {
+      const next = prefix ? s.jobs.filter((j) => !j.id.startsWith(prefix)) : [];
+      if (next.length === s.jobs.length) return s;
+      return { jobs: next };
+    });
   },
 }));
 

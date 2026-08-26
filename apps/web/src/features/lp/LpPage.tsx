@@ -50,8 +50,11 @@ export function LpPage() {
     cardanoUnits: adaUnitsKey ? adaUnitsKey.split("|") : [],
   });
   const locks = useLpFeed(lockFilter);
-  const marketJobs = useLiveStatus((s) => s.jobs.filter((j) => j.kind === "markets" && j.phase !== "fail"));
-  const reading = marketJobs.find((j) => j.phase === "run") ?? marketJobs[0];
+  const jobs = useLiveStatus((s) => s.jobs);
+  const reading = useMemo(() => {
+    const marketJobs = jobs.filter((j) => j.kind === "markets" && j.phase !== "fail");
+    return marketJobs.find((j) => j.phase === "run") ?? marketJobs[0];
+  }, [jobs]);
   const readingShort = featured.find((c) => c.chainId === reading?.chainId)?.short;
 
   return (
