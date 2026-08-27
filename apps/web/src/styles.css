@@ -236,12 +236,7 @@ select {
   font-size: 13px;
   flex-shrink: 0;
 }
-.session-ada-wallets {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 4px;
-}
+
 .sr-only {
   position: absolute;
   width: 1px;

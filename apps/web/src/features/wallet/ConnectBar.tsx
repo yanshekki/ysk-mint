@@ -65,6 +65,7 @@ export function ConnectBar() {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [adaWallets, setAdaWallets] = useState<CardanoWalletInfo[]>([]);
+  const [adaOpen, setAdaOpen] = useState(false);
   const [solWallets, setSolWallets] = useState<SolanaWalletInfo[]>([]);
   const [solOpen, setSolOpen] = useState(false);
   const [suiWallets, setSuiWallets] = useState<ExtraWalletInfo[]>([]);
@@ -244,34 +245,26 @@ export function ConnectBar() {
               <div className="session-row">
                 <div className="session-row-copy">
                   <b>Cardano</b>
-                  <span className="num">
-                    {hasAda ? adaName || short(native.cardanoAddress, 10, 8) : t("wizard.wallet.idle")}
-                  </span>
-                  {!hasAda && adaWallets.length ? (
-                    <div className="session-ada-wallets">
-                      {adaWallets.map((w) => (
-                        <button
-                          key={w.id}
-                          type="button"
-                          className="wallet-chip"
-                          disabled={busy === "ada"}
-                          onClick={() => {
-                            setBusy("ada");
-                            void connectCardano(w.id).finally(() => setBusy(null));
-                          }}
-                        >
-                          {w.name}
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
-                  {!hasAda && !adaWallets.length ? <span>{t("wallet.noCip30")}</span> : null}
+                  <span className="num">{hasAda ? adaName || short(native.cardanoAddress, 10, 8) : t("wizard.wallet.idle")}</span>
                 </div>
                 {hasAda ? (
                   <button type="button" className="ghost-btn" onClick={() => disconnectCardanoWallet()}>
                     {t("wallet.disconnect")}
                   </button>
-                ) : null}
+                ) : (
+                  <button
+                    type="button"
+                    className="wallet-cta"
+                    disabled={busy === "ada"}
+                    onClick={() => {
+                      setOpen(false);
+                      setAdaWallets(listCardanoWallets());
+                      setAdaOpen(true);
+                    }}
+                  >
+                    {t("wallet.connectCardano")}
+                  </button>
+                )}
               </div>
 
               <div className="session-row">
@@ -518,6 +511,26 @@ export function ConnectBar() {
           );
         }}
       </ConnectButton.Custom>
+      <WalletPicker
+        open={adaOpen}
+        kicker="Cardano"
+        title={t("wallet.connectCardano")}
+        empty={t("wallet.noCip30")}
+        mark="ADA"
+        wallets={adaWallets}
+        busy={busy === "ada"}
+        onClose={() => setAdaOpen(false)}
+        onPick={(w) => {
+          if (!w.installed) {
+            if (w.url) window.open(w.url, "_blank", "noopener,noreferrer");
+            return;
+          }
+          setBusy("ada");
+          void connectCardano(w.id)
+            .then(() => setAdaOpen(false))
+            .finally(() => setBusy(null));
+        }}
+      />
       <SolanaSelector
         open={solOpen}
         wallets={solWallets}

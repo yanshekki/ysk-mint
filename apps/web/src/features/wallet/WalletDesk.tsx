@@ -129,6 +129,7 @@ export function WalletDesk() {
   const [xlmErr, setXlmErr] = useState<string | null>(null);
   const [keplrErr, setKeplrErr] = useState<string | null>(null);
   const [strkErr, setStrkErr] = useState<string | null>(null);
+  const [adaOpen, setAdaOpen] = useState(false);
   const [solOpen, setSolOpen] = useState(false);
   const [suiOpen, setSuiOpen] = useState(false);
   const [aptosOpen, setAptosOpen] = useState(false);
@@ -349,30 +350,18 @@ export function WalletDesk() {
               <button type="button" className="ghost-btn wallet-cta-block" onClick={() => disconnectCardanoWallet()}>
                 {t("wallet.disconnect")}
               </button>
-            ) : adaWallets.length ? (
-              <div className="wallet-chips">
-                {adaWallets.map((w) => (
-                  <button
-                    key={w.id}
-                    type="button"
-                    className={`wallet-chip ${native.cardanoWallet === w.id ? "wallet-chip-on" : ""}`}
-                    disabled={busy === "ada"}
-                    onClick={() => {
-                      setBusy("ada");
-                      setAdaErr(null);
-                      void connectCardano(w.id)
-                        .catch((err: unknown) => setAdaErr(err instanceof Error ? err.message : String(err)))
-                        .finally(() => setBusy(null));
-                    }}
-                  >
-                    {w.icon ? <img src={w.icon} alt="" className="wallet-ico" /> : null}
-                    {w.name}
-                  </button>
-                ))}
-              </div>
             ) : (
-              <button type="button" className="ghost-btn wallet-cta-block" disabled>
-                {t("wallet.noCip30")}
+              <button
+                type="button"
+                className="wallet-cta wallet-cta-block"
+                disabled={busy === "ada"}
+                onClick={() => {
+                  setAdaErr(null);
+                  setAdaWallets(listCardanoWallets());
+                  setAdaOpen(true);
+                }}
+              >
+                {t("wallet.connectCardano")}
               </button>
             )}
           </div>
@@ -817,6 +806,28 @@ export function WalletDesk() {
           </div>
         </article>
       </div>
+      <WalletPicker
+        open={adaOpen}
+        kicker="Cardano"
+        title={t("wallet.connectCardano")}
+        empty={t("wallet.noCip30")}
+        mark="ADA"
+        wallets={adaWallets}
+        busy={busy === "ada"}
+        onClose={() => setAdaOpen(false)}
+        onPick={(w) => {
+          if (!w.installed) {
+            if (w.url) window.open(w.url, "_blank", "noopener,noreferrer");
+            return;
+          }
+          setBusy("ada");
+          setAdaErr(null);
+          void connectCardano(w.id)
+            .then(() => setAdaOpen(false))
+            .catch((err: unknown) => setAdaErr(err instanceof Error ? err.message : String(err)))
+            .finally(() => setBusy(null));
+        }}
+      />
       <SolanaSelector
         open={solOpen}
         wallets={solWallets}

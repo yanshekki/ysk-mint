@@ -1,6 +1,25 @@
 import { isCardanoAddress } from "@ysk-mint/sdk";
 
-export type CardanoWalletInfo = { id: string; name: string; icon?: string };
+export type CardanoWalletInfo = { id: string; name: string; icon?: string; installed: boolean; url?: string };
+
+const CARDANO_CATALOG: Array<{ id: string; name: string; url: string; icon?: string }> = [
+  { id: "eternl", name: "Eternl", url: "https://eternl.io" },
+  { id: "lace", name: "Lace", url: "https://www.lace.io" },
+  { id: "vespr", name: "VESPR", url: "https://vespr.xyz" },
+  { id: "nami", name: "Nami", url: "https://namiwallet.io" },
+  { id: "typhoncip30", name: "Typhon", url: "https://typhonwallet.io" },
+  { id: "gerowallet", name: "GeroWallet", url: "https://gerowallet.io" },
+  { id: "yoroi", name: "Yoroi", url: "https://yoroi-wallet.com" },
+  { id: "nufi", name: "NuFi", url: "https://nu.fi" },
+  { id: "brave", name: "Brave Wallet", url: "https://brave.com/wallet/", icon: "/wallets/brave.svg" },
+];
+
+function sameWallet(a: string, b: string) {
+  const norm = (s: string) => s.replace(/\s+/g, "").toLowerCase().replace(/wallet/g, "");
+  const x = norm(a);
+  const y = norm(b);
+  return x === y || x.includes(y) || y.includes(x);
+}
 
 type Cip30Enabled = {
   getChangeAddress(): Promise<string>;
@@ -211,13 +230,22 @@ function cardanoNamespace(): Record<string, Cip30Injected> {
 }
 
 export function listCardanoWallets(): CardanoWalletInfo[] {
-  return Object.entries(cardanoNamespace())
-    .filter(([, wallet]) => wallet && typeof wallet.enable === "function")
-    .map(([id, wallet]) => ({
+  const installed: CardanoWalletInfo[] = [];
+  for (const [id, wallet] of Object.entries(cardanoNamespace())) {
+    if (!wallet || typeof wallet.enable !== "function") continue;
+    const name = wallet.name || id;
+    const cat = CARDANO_CATALOG.find((c) => c.id === id || sameWallet(c.name, name) || sameWallet(c.id, id));
+    installed.push({
       id,
-      name: wallet.name || id,
-      icon: typeof wallet.icon === "string" ? wallet.icon : undefined,
-    }));
+      name: cat?.name || name,
+      icon: (typeof wallet.icon === "string" && wallet.icon) || cat?.icon,
+      installed: true,
+    });
+  }
+  const rest = CARDANO_CATALOG.filter(
+    (c) => !installed.some((w) => w.id === c.id || sameWallet(w.name, c.name) || sameWallet(w.id, c.id)),
+  ).map((c) => ({ id: c.id, name: c.name, icon: c.icon, installed: false, url: c.url }));
+  return [...installed, ...rest];
 }
 
 async function decodeList(raws: string[] | undefined): Promise<string[]> {
