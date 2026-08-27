@@ -3,6 +3,9 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { AddrIdCard } from "../settings/AddrFields.tsx";
 import { PeekDialog } from "./PeekDialog.tsx";
+import { TxDesk } from "./TxDesk.tsx";
+import { useAddressTxs } from "../../lib/useAddressTxs.ts";
+import { txIndexed } from "../../lib/txIndex.ts";
 import { useActiveSnap, useAddressSets } from "../../lib/addressSets.ts";
 import { SHARE_SOFT, applyPeekHash, shareUrl } from "../../lib/shareSet.ts";
 import { formatUnits, parseAbiItem, type Address } from "viem";
@@ -276,6 +279,7 @@ export function MePage() {
   const [shared, setShared] = useState(false);
   const [shareNote, setShareNote] = useState("");
   const [peekOpen, setPeekOpen] = useState(false);
+  const [deskTab, setDeskTab] = useState<"holdings" | "txs">("holdings");
   const peeking = snap.activeId === "peek";
 
   useEffect(() => {
@@ -322,6 +326,7 @@ export function MePage() {
   const hyper = useHyperCoreHoldings(evmAddrs);
   const [filter, setFilter] = useState<number | "all">("all");
   const hideZero = useUserSettings((s) => s.hideZero);
+  const txs = useAddressTxs(deskTab === "txs" ? snap.addrs : []);
   const patchSettings = useUserSettings((s) => s.patch);
   const disabledChains = useUserSettings((s) => s.disabledChains);
   const [launched, setLaunched] = useState<LaunchRow[]>([]);
@@ -825,6 +830,8 @@ export function MePage() {
     const nStake = id === "all" ? stakeAll.length : stakeAll.filter((l) => l.chainId === id).length;
     return nWallet + nAave + nBurrow + nBenqi + nUni + nLend + nStake;
   };
+  const txCount = (id: number | "all") => (id === "all" ? txs.rows.length : txs.rows.filter((r) => r.chainId === id).length);
+  const tabCount = (id: number | "all") => (deskTab === "txs" ? txCount(id) : chipCount(id));
 
   return (
     <section className="workspace">
@@ -942,37 +949,53 @@ export function MePage() {
                 ))}
               </div>
 
+              <div className="me-desk-tabs">
+                <button type="button" className={`me-chip ${deskTab === "holdings" ? "me-chip-on" : ""}`} onClick={() => setDeskTab("holdings")}>
+                  {t("me.title")}
+                </button>
+                <button type="button" className={`me-chip ${deskTab === "txs" ? "me-chip-on" : ""}`} onClick={() => setDeskTab("txs")}>
+                  {t("me.txTitle")}
+                  {deskTab === "txs" ? <span className="me-count">{txs.loading ? "…" : txs.rows.length}</span> : null}
+                </button>
+              </div>
+
               <div className="me-chips-bar">
                 <div className="me-chips">
                   <button type="button" className={`me-chip ${filter === "all" ? "me-chip-on" : ""}`} onClick={() => setFilter("all")}>
                     {t("me.all")}
-                    <span className="me-count">{chipCount("all")}</span>
+                    <span className="me-count">{deskTab === "txs" && txs.loading && !txs.rows.length ? "…" : tabCount("all")}</span>
                   </button>
                   {buckets
-                    .filter((g) => !hideZero || chipCount(g.id) > 0)
+                    .filter((g) => (deskTab === "txs" ? txIndexed(g.id) || txCount(g.id) > 0 : !hideZero || chipCount(g.id) > 0))
                     .map((g) => (
                       <button key={g.id} type="button" className={`me-chip ${filter === g.id ? "me-chip-on" : ""}`} onClick={() => setFilter(g.id)}>
                         <img src={g.icon} alt="" width={20} height={20} />
                         {g.label}
                         <ChipBusy chainId={g.id} />
-                        <span className="me-count">{chipCount(g.id)}</span>
+                        <span className="me-count">{tabCount(g.id)}</span>
                       </button>
                     ))}
                 </div>
-                <label className="me-hide-zero">
-                  <input
-                    type="checkbox"
-                    checked={hideZero}
-                    onChange={(e) => {
-                      const on = e.target.checked;
-                      patchSettings({ hideZero: on });
-                      if (on && filter !== "all" && chipCount(filter) === 0) setFilter("all");
-                    }}
-                  />
-                  {t("me.hideZero")}
-                </label>
+                {deskTab === "holdings" ? (
+                  <label className="me-hide-zero">
+                    <input
+                      type="checkbox"
+                      checked={hideZero}
+                      onChange={(e) => {
+                        const on = e.target.checked;
+                        patchSettings({ hideZero: on });
+                        if (on && filter !== "all" && chipCount(filter) === 0) setFilter("all");
+                      }}
+                    />
+                    {t("me.hideZero")}
+                  </label>
+                ) : null}
               </div>
 
+              {deskTab === "txs" ? (
+                <TxDesk rows={txs.rows} loading={txs.loading} failed={txs.failed} chainFilter={filter} />
+              ) : (
+              <>
               <section className="me-card">
                 <div className="me-card-head">
                   <b>{t("me.wallet")}</b>
@@ -1213,6 +1236,8 @@ export function MePage() {
                   </div>
                 </section>
               ) : null}
+              </>
+              )}
             </>
           )}
         </div>

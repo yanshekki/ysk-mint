@@ -14,7 +14,8 @@
       "quote": "quotes",
       "lp": "liquidity",
       "trades": "trades",
-      "defi": "protocol"
+      "defi": "protocol",
+      "txs": "activity"
     }
   },
   "nav": {
@@ -428,7 +429,39 @@
     "unquoted": "{{n}} unquoted",
     "dexNote": "DEX spot, not a centralized feed.",
     "hideZero": "Hide 0 / empty",
-    "noFactory": "Factory address is still zero on this chain."
+    "noFactory": "Factory address is still zero on this chain.",
+    "txTitle": "Activity",
+    "txSearch": "Search symbol, method, hash, or counterparty",
+    "txLoading": "Reading public explorers / RPC…",
+    "txFail": "Read failed. No fabricated rows.",
+    "txEmpty": "No records on this page (or this chain has no indexer).",
+    "txExplore": "Explorer",
+    "txFollow": "Follow",
+    "txCopy": "Copy hash",
+    "txCopyAddr": "Copy address",
+    "txCopied": "Copied",
+    "txRisk": "Risk",
+    "txHint": "Public indexers, about 40 latest txs per chain. Expand for from/to and internal transfers. Follow changes the URL; it does not save a set.",
+    "txNoIndex": "This chain has no public tx indexer wired. No fabricated rows.",
+    "txTime": "Time",
+    "txAct": "Action",
+    "txFlow": "Flow",
+    "txGas": "Gas",
+    "txFrom": "From",
+    "txTo": "To",
+    "txHash": "Hash",
+    "txOurs": "This address",
+    "txZero": "Zero address",
+    "txToken": "Token",
+    "txDetail": "Filling in this transaction…",
+    "txKind": {
+      "in": "In",
+      "out": "Out",
+      "swap": "Swap",
+      "approve": "Approve",
+      "call": "Call",
+      "fail": "Fail"
+    }
   },
   "token": {
     "missing": "Need chainId and token address.",

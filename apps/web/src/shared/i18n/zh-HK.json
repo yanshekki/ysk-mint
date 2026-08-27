@@ -14,7 +14,8 @@
       "quote": "報價",
       "lp": "流動倉",
       "trades": "成交",
-      "defi": "協議倉"
+      "defi": "協議倉",
+      "txs": "交易記錄"
     }
   },
   "nav": {
@@ -428,7 +429,39 @@
     "unquoted": "{{n}} 項未能報價",
     "dexNote": "DEX 現價，不是中心化報價。",
     "hideZero": "隱藏 0／無",
-    "noFactory": "這條鏈 Factory 地址仍為零。"
+    "noFactory": "這條鏈 Factory 地址仍為零。",
+    "txTitle": "交易記錄",
+    "txSearch": "搜尋代號、方法、hash、對手地址",
+    "txLoading": "正在讀取公開 explorer／RPC…",
+    "txFail": "讀取失敗。無造假資料。",
+    "txEmpty": "呢頁未有記錄（或此鏈未接索引）。",
+    "txExplore": "瀏覽器",
+    "txFollow": "追查去向",
+    "txCopy": "複製 hash",
+    "txCopyAddr": "複製地址",
+    "txCopied": "已複製",
+    "txRisk": "風險",
+    "txHint": "公開索引最近約 40 筆／鏈。展開可睇從／到同內部轉帳。跟對手地址會改 URL，唔會寫入你的組合。",
+    "txNoIndex": "呢條鏈未接公開交易索引。唔顯示假資料。",
+    "txTime": "時間",
+    "txAct": "動作",
+    "txFlow": "流向",
+    "txGas": "Gas",
+    "txFrom": "從",
+    "txTo": "到",
+    "txHash": "Hash",
+    "txOurs": "此地址",
+    "txZero": "零地址",
+    "txToken": "代幣",
+    "txDetail": "正在補齊此筆詳情…",
+    "txKind": {
+      "in": "轉入",
+      "out": "轉出",
+      "swap": "兌換",
+      "approve": "授權",
+      "call": "合約",
+      "fail": "失敗"
+    }
   },
   "token": {
     "missing": "需要 chainId 與代幣地址。",
