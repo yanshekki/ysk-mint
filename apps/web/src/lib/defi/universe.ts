@@ -92,10 +92,13 @@ function pushToken(out: MarketToken[], seen: Set<string>, t: MarketToken) {
   out.push(t);
 }
 
-export function marketTokensOn(chainId: number, limit = 100): MarketToken[] {
+export function chainTokenIcon(chainId: number) {
+  return (WRAP_META[chainId] ?? { icon: "/tokens/eth.png" }).icon;
+}
+
+export function marketTokensOn(chainId: number, extra: MarketToken[] = []): MarketToken[] {
   const d = DEX[chainId];
   if (!d) return [];
-  const rank = new Set(topCmcIds(limit));
   const seen = new Set<string>();
   const out: MarketToken[] = [];
   const wrap = WRAP_META[chainId] ?? { symbol: "WETH", icon: "/tokens/eth.png" };
@@ -118,8 +121,6 @@ export function marketTokensOn(chainId: number, limit = 100): MarketToken[] {
   }
   for (const t of TOKEN_CATALOG) {
     if (t.chainId !== chainId || !t.address) continue;
-    const m = /^cmc-(\d+)/.exec(t.id);
-    if (!m || !rank.has(Number(m[1]))) continue;
     if (!t.address.startsWith("0x") && !t.address.startsWith("0X")) continue;
     const address = SENTINEL.test(t.address) ? d.wrapped : t.address;
     if (SENTINEL.test(address)) continue;
@@ -133,13 +134,26 @@ export function marketTokensOn(chainId: number, limit = 100): MarketToken[] {
       name: t.name,
     });
   }
+  for (const t of extra) pushToken(out, seen, t);
   return out;
 }
 
-export function candidatePairs(chainId: number): Array<{ a: MarketToken; b: MarketToken }> {
+export function tokensFromMarketRows(
+  rows: Array<{ chainId: number; tokenA: string; tokenB: string; symbolA: string; symbolB: string; iconA: string; iconB: string }>,
+): MarketToken[] {
+  const out: MarketToken[] = [];
+  const seen = new Set<string>();
+  for (const r of rows) {
+    pushToken(out, seen, { chainId: r.chainId, address: r.tokenA, decimals: 18, symbol: r.symbolA, icon: r.iconA });
+    pushToken(out, seen, { chainId: r.chainId, address: r.tokenB, decimals: 18, symbol: r.symbolB, icon: r.iconB });
+  }
+  return out;
+}
+
+export function candidatePairs(chainId: number, extra: MarketToken[] = []): Array<{ a: MarketToken; b: MarketToken }> {
   const d = DEX[chainId];
   if (!d) return [];
-  const tokens = marketTokensOn(chainId);
+  const tokens = marketTokensOn(chainId, extra);
   const stable = new Set(usdStables(d).map((s) => s.address.toLowerCase()));
   const wrap = d.wrapped.toLowerCase();
   const quotes = tokens.filter((t) => stable.has(t.address.toLowerCase()) || t.address.toLowerCase() === wrap);

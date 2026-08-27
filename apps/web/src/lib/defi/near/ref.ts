@@ -52,15 +52,13 @@ async function marketsFromIndexer(): Promise<MarketRow[] | null> {
     if (!res.ok) return null;
     const json = (await res.json()) as RefTop[];
     if (!Array.isArray(json) || !json.length) return null;
-    const tokens = catalogTopOn(397);
+    const tokens = catalogTopOn(397, 500);
     const catalog = new Map(tokens.map((t) => [t.address.toLowerCase(), { decimals: t.decimals, symbol: t.symbol ?? t.address, icon: t.icon ?? "/tokens/near.png" }]));
-    const ours = new Set([...catalog.keys(), N_WRAP.address, N_USDT.address.toLowerCase(), N_USDC.address.toLowerCase()]);
     const rows: MarketRow[] = [];
     const seen = new Set<string>();
     for (const p of json) {
       const ids = (p.token_account_ids ?? []).map((x) => x.toLowerCase());
       if (ids.length !== 2) continue;
-      if (!ours.has(ids[0]) || !ours.has(ids[1])) continue;
       const tvl = Number(p.tvl);
       if (!Number.isFinite(tvl) || tvl <= 0) continue;
       const stableIdx = ids.findIndex((id) => isStable(id));

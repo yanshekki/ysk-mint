@@ -124,7 +124,7 @@ export function useDexMarkets(chainId: number | "all") {
           jobs.push(
             one(id, async () => {
               const parts = await Promise.all(
-                protocolsOn(id).map((p) => p.markets?.({}).catch(() => []) ?? Promise.resolve([])),
+                protocolsOn(id).map((p) => (p.markets ? p.markets({}).catch(() => []) : Promise.resolve([]))),
               );
               return parts.flat().map(asRow);
             }),

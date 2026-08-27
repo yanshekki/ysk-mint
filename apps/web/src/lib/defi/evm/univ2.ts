@@ -4,6 +4,7 @@ import type { Venue } from "../../dexVenues.ts";
 import { forChunks } from "../cache.ts";
 import type { DefiProtocol, PoolRef, TokenRef, VenueQuote } from "../types.ts";
 import { v2FactoryAbi, v2PairAbi } from "./abis.ts";
+import { enumVenueMarkets } from "./enumPairs.ts";
 import { ZERO } from "./math.ts";
 
 export function makeV2(venue: Venue): DefiProtocol {
@@ -80,6 +81,9 @@ export function makeV2(venue: Venue): DefiProtocol {
     },
     async readPool(ctx, ref, tokenA, tokenB) {
       return readV2Pool(ctx, venue, ref, tokenA, tokenB, "v2");
+    },
+    async markets(ctx) {
+      return enumVenueMarkets(ctx, venue, "v2");
     },
   };
 }

@@ -3,6 +3,7 @@ import type { Venue } from "../../dexVenues.ts";
 import { forChunks } from "../cache.ts";
 import type { DefiProtocol, PoolRef, TokenRef } from "../types.ts";
 import { aeroFactoryAbi } from "./abis.ts";
+import { enumVenueMarkets } from "./enumPairs.ts";
 import { ZERO } from "./math.ts";
 import { readV2Pool } from "./univ2.ts";
 
@@ -116,6 +117,9 @@ export function makeAero(venue: Venue): DefiProtocol {
     },
     async readPool(ctx, ref, tokenA, tokenB) {
       return readV2Pool(ctx, venue, ref, tokenA, tokenB, "aero");
+    },
+    async markets(ctx) {
+      return enumVenueMarkets(ctx, venue, "aero");
     },
   };
 }

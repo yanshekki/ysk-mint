@@ -1,9 +1,7 @@
 import { pairId } from "../../pairKey.ts";
 import type { DefiProtocol, MarketRow, VenueQuote } from "../types.ts";
 
-const SUI = "0x0000000000000000000000000000000000000000000000000000000000000002::sui::sui";
-const MIN_TVL = 50_000;
-const MAX_ROWS = 24;
+const PAGE_CAP = 300;
 
 type Row = {
   pool: string;
@@ -32,11 +30,6 @@ function num(x: unknown): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-function isSui(mint: string) {
-  const m = mint.toLowerCase();
-  return m === SUI || m.endsWith("::sui::sui");
-}
-
 function isUsd(mint: string, symbol: string) {
   const m = mint.toLowerCase();
   const s = symbol.toUpperCase();
@@ -45,8 +38,8 @@ function isUsd(mint: string, symbol: string) {
 }
 
 function keep(row: Row) {
-  if (!(row.tvl >= MIN_TVL) || !row.mintA || !row.mintB || row.mintA === row.mintB) return false;
-  return isSui(row.mintA) || isSui(row.mintB) || isUsd(row.mintA, row.symbolA) || isUsd(row.mintB, row.symbolB);
+  if (!(row.tvl > 0) || !row.mintA || !row.mintB || row.mintA === row.mintB) return false;
+  return true;
 }
 
 function feeLabel(fee: unknown) {
@@ -76,7 +69,7 @@ function venue(row: Row): VenueQuote {
 }
 
 function toMarkets(rows: Row[]): MarketRow[] {
-  const picked = rows.filter(keep).sort((a, b) => b.tvl - a.tvl).slice(0, MAX_ROWS);
+  const picked = rows.filter(keep).sort((a, b) => b.tvl - a.tvl).slice(0, PAGE_CAP);
   const byPair = new Map<string, MarketRow>();
   for (const r of picked) {
     const id = pairId(784, r.mintA, r.mintB);
@@ -164,14 +157,22 @@ export const cetusProtocol: DefiProtocol = {
   chainId: 784,
   caps: ["markets"],
   async markets() {
-    const json = await getJson<{ data?: { lp_list?: Array<Record<string, unknown>> } }>(
-      "https://api-sui.cetus.zone/v2/sui/stats_pools?limit=80",
-    );
-    const list = json?.data?.lp_list ?? [];
     const rows: Row[] = [];
-    for (const p of list) {
-      const row = asRow(p);
-      if (row) rows.push(row);
+    const seen = new Set<string>();
+    for (let offset = 0; offset < PAGE_CAP; offset += 100) {
+      const json = await getJson<{ data?: { lp_list?: Array<Record<string, unknown>> } }>(
+        `https://api-sui.cetus.zone/v2/sui/stats_pools?limit=100&offset=${offset}&order=tvl&sort=desc`,
+      );
+      const list = json?.data?.lp_list ?? [];
+      let added = 0;
+      for (const p of list) {
+        const row = asRow(p);
+        if (!row || seen.has(row.pool)) continue;
+        seen.add(row.pool);
+        added += 1;
+        rows.push(row);
+      }
+      if (!added || list.length < 100) break;
     }
     return toMarkets(rows);
   },

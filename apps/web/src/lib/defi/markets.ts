@@ -6,8 +6,8 @@ import { cached, forChunks } from "./cache.ts";
 import { ensureProtocols } from "./protocols.ts";
 import { protocolsOn } from "./registry.ts";
 import { rejectOutliers, weightedUsd } from "./quote.ts";
-import type { DefiCtx, MarketRow, PoolRef, TokenRef, VenueQuote } from "./types.ts";
-import { candidatePairs, type MarketToken } from "./universe.ts";
+import type { DefiCtx, DefiProtocol, MarketRow, PoolRef, TokenRef, VenueQuote } from "./types.ts";
+import { candidatePairs, marketTokensOn, tokensFromMarketRows, type MarketToken } from "./universe.ts";
 
 const RPC_FALLBACK: Record<number, string> = {
   1: "https://ethereum-rpc.publicnode.com",
@@ -53,10 +53,15 @@ function evmClient(chainId: number): PublicClient | undefined {
 
 type Hit = { a: MarketToken; b: MarketToken; protocolId: string; refs: PoolRef[] };
 
-async function discoverHits(ctx: DefiCtx, chainId: number, pairs: Array<{ a: MarketToken; b: MarketToken }>): Promise<Hit[]> {
+async function discoverHits(
+  ctx: DefiCtx,
+  chainId: number,
+  pairs: Array<{ a: MarketToken; b: MarketToken }>,
+  protocols: DefiProtocol[] = protocolsOn(chainId),
+): Promise<Hit[]> {
   const hits: Hit[] = [];
   await Promise.all(
-    protocolsOn(chainId).map(async (p) => {
+    protocols.map(async (p) => {
       if (p.discoverMany) {
         const part = await p.discoverMany(ctx, pairs).catch(() => []);
         for (const row of part) {
@@ -129,6 +134,18 @@ function usdForBase(
   return { usdc: weightedUsd(kept), depth: kept.reduce((n, s) => n + s.depth, 0) };
 }
 
+function listedToLive(rows: MarketRow[]): Array<Hit & { venues: VenueQuote[] }> {
+  return rows
+    .filter((r) => r.venues.length)
+    .map((r) => ({
+      a: { chainId: r.chainId, address: r.tokenA, decimals: 18, symbol: r.symbolA, icon: r.iconA },
+      b: { chainId: r.chainId, address: r.tokenB, decimals: 18, symbol: r.symbolB, icon: r.iconB },
+      protocolId: r.venues[0].protocolId,
+      refs: [],
+      venues: r.venues,
+    }));
+}
+
 export async function loadEvmMarkets(chainId: number): Promise<MarketRow[]> {
   ensureProtocols();
   const d = DEX[chainId];
@@ -139,9 +156,27 @@ export async function loadEvmMarkets(chainId: number): Promise<MarketRow[]> {
     const client = evmClient(chainId);
     if (!client) return [];
     const ctx: DefiCtx = { evm: client };
-    const pairs = candidatePairs(chainId);
-    const hits = await discoverHits(ctx, chainId, pairs);
-    const live = await readHits(ctx, hits);
+    const protocols = protocolsOn(chainId);
+    const listed: MarketRow[] = [];
+    const skip = new Set<string>();
+    await Promise.all(
+      protocols.map(async (p) => {
+        if (!p.markets) return;
+        const rows = await p.markets(ctx).catch(() => []);
+        if (!rows.length) return;
+        skip.add(p.id);
+        listed.push(...rows);
+      }),
+    );
+    const extras = marketTokensOn(chainId).length < 40 ? tokensFromMarketRows(listed) : [];
+    const pairs = candidatePairs(chainId, extras);
+    const hits = await discoverHits(
+      ctx,
+      chainId,
+      pairs,
+      protocols.filter((p) => !skip.has(p.id)),
+    );
+    const live = [...listedToLive(listed), ...(await readHits(ctx, hits))];
     discovered.set(
       chainId,
       live.flatMap((h) =>
@@ -170,7 +205,14 @@ export async function loadEvmMarkets(chainId: number): Promise<MarketRow[]> {
     for (const h of live) {
       const id = pairId(chainId, h.a.address, h.b.address);
       const prev = byPair.get(id);
-      const venues = [...(prev?.venues ?? []), ...h.venues];
+      const venues = [...(prev?.venues ?? [])];
+      const seenPool = new Set(venues.map((v) => `${v.protocolId}:${v.pool.toLowerCase()}`));
+      for (const v of h.venues) {
+        const k = `${v.protocolId}:${v.pool.toLowerCase()}`;
+        if (seenPool.has(k)) continue;
+        seenPool.add(k);
+        venues.push(v);
+      }
       const names = [...new Set(venues.map((v) => v.protocolName))];
       const usd = usdByBase.get(h.a.address.toLowerCase());
       byPair.set(id, {

@@ -1241,6 +1241,7 @@ button.oft-chain:disabled {
 }
 .me-card-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
   padding: 14px 16px;
@@ -1259,6 +1260,44 @@ button.oft-chain:disabled {
 }
 .me-card-head .me-count {
   margin-left: auto;
+}
+.me-filter {
+  flex: 1 1 180px;
+  min-width: 160px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-subtle);
+  font-size: 13px;
+  font-weight: 600;
+}
+.me-filter::placeholder {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.me-more-rows {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(100% - 32px);
+  margin: 8px 16px 4px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-subtle);
+  font-weight: 800;
+  cursor: pointer;
+}
+.me-more-rows:hover {
+  background: var(--bg-white);
+}
+.me-shown {
+  margin: 4px 16px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-align: right;
 }
 .me-cols {
   display: flex;

@@ -9,6 +9,20 @@ export const v2FactoryAbi = [
     ],
     outputs: [{ type: "address" }],
   },
+  {
+    type: "function",
+    name: "allPairsLength",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "allPairs",
+    stateMutability: "view",
+    inputs: [{ name: "", type: "uint256" }],
+    outputs: [{ type: "address" }],
+  },
 ] as const;
 
 export const aeroFactoryAbi = [
@@ -32,6 +46,34 @@ export const aeroFactoryAbi = [
       { name: "tokenB", type: "address" },
       { name: "stable", type: "bool" },
     ],
+    outputs: [{ type: "address" }],
+  },
+  {
+    type: "function",
+    name: "allPoolsLength",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "allPools",
+    stateMutability: "view",
+    inputs: [{ name: "", type: "uint256" }],
+    outputs: [{ type: "address" }],
+  },
+  {
+    type: "function",
+    name: "allPairsLength",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "allPairs",
+    stateMutability: "view",
+    inputs: [{ name: "", type: "uint256" }],
     outputs: [{ type: "address" }],
   },
 ] as const;
@@ -74,7 +116,14 @@ export const v2PairAbi = [
     outputs: [{ type: "uint112" }, { type: "uint112" }, { type: "uint32" }],
   },
   { type: "function", name: "token0", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
+  { type: "function", name: "token1", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
   { type: "function", name: "totalSupply", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "stable", stateMutability: "view", inputs: [], outputs: [{ type: "bool" }] },
+] as const;
+
+export const erc20MetaAbi = [
+  { type: "function", name: "decimals", stateMutability: "view", inputs: [], outputs: [{ type: "uint8" }] },
+  { type: "function", name: "symbol", stateMutability: "view", inputs: [], outputs: [{ type: "string" }] },
 ] as const;
 
 export const v3PoolAbi = [

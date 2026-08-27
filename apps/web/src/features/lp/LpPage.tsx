@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAccount } from "wagmi";
@@ -17,6 +17,7 @@ import { ttCoverageLine } from "../../lib/defi/coverage.ts";
 
 /** High-usage chains shown before 「更多」. Order follows featuredChains(). */
 const PRIMARY_MARKET_IDS = new Set([1, 101, 56, 8453, 42161, 43114, 137, 784, 607, 999]);
+const MARKET_PAGE = 50;
 
 function fmtUnlock(ts: number) {
   if (!ts) return "—";
@@ -40,6 +41,8 @@ export function LpPage() {
   const featured = featuredChains();
   const [filter, setFilter] = useState<number | "all">("all");
   const [moreChains, setMoreChains] = useState(false);
+  const [marketQ, setMarketQ] = useState("");
+  const [marketPage, setMarketPage] = useState(1);
   const primaryChains = useMemo(() => featured.filter((c) => PRIMARY_MARKET_IDS.has(c.chainId)), [featured]);
   const extraChains = useMemo(() => featured.filter((c) => !PRIMARY_MARKET_IDS.has(c.chainId)), [featured]);
   const visibleChains = useMemo(() => {
@@ -75,7 +78,28 @@ export function LpPage() {
     if (k === "venues") return r.venues.length || r.venueNames.length;
     return r.depth;
   }, []);
-  const marketSort = useSort(markets.rows, "depth", marketGet);
+  const marketFiltered = useMemo(() => {
+    const q = marketQ.trim().toLowerCase();
+    if (!q) return markets.rows;
+    return markets.rows.filter((r) => {
+      const pair = `${r.symbolA}/${r.symbolB}`.toLowerCase();
+      return (
+        pair.includes(q) ||
+        r.symbolA.toLowerCase().includes(q) ||
+        r.symbolB.toLowerCase().includes(q) ||
+        r.chainShort.toLowerCase().includes(q) ||
+        r.tokenA.toLowerCase().includes(q) ||
+        r.tokenB.toLowerCase().includes(q) ||
+        r.venueNames.some((n) => n.toLowerCase().includes(q))
+      );
+    });
+  }, [marketQ, markets.rows]);
+  const marketSort = useSort(marketFiltered, "depth", marketGet);
+  const marketVisible = useMemo(() => marketSort.sorted.slice(0, marketPage * MARKET_PAGE), [marketPage, marketSort.sorted]);
+  const marketMore = marketVisible.length < marketSort.sorted.length;
+  useEffect(() => {
+    setMarketPage(1);
+  }, [filter, marketQ]);
   const lpGet = useCallback((r: MyLpRow, k: string) => {
     if (k === "name") return `${r.symbolA}/${r.symbolB}`;
     if (k === "venues") return r.venueCount;
@@ -172,7 +196,14 @@ export function LpPage() {
           <section className="me-card">
             <div className="me-card-head">
               <b>{t("lp.markets")}</b>
-              <span className="me-count">{markets.loading && !markets.rows.length ? "…" : markets.rows.length}</span>
+              <input
+                className="me-filter"
+                value={marketQ}
+                onChange={(e) => setMarketQ(e.target.value)}
+                placeholder={t("lp.search")}
+                aria-label={t("lp.search")}
+              />
+              <span className="me-count">{markets.loading && !markets.rows.length ? "…" : marketSort.sorted.length}</span>
             </div>
             {markets.error && !markets.rows.length ? (
               <p className="me-card-empty">{t("lp.rpcError")}</p>
@@ -180,6 +211,8 @@ export function LpPage() {
               <p className="me-card-empty">{readingShort ? t("lp.loadingChain", { chain: readingShort }) : t("lp.loading")}</p>
             ) : !markets.rows.length ? (
               <p className="me-card-empty">{t("lp.emptyMarkets")}</p>
+            ) : !marketSort.sorted.length ? (
+              <p className="me-card-empty">{t("lp.emptyFilter")}</p>
             ) : (
               <div className="me-list">
                 <div className="me-cols me-cols-5">
@@ -189,7 +222,7 @@ export function LpPage() {
                   <SortHead id="depth" label={t("lp.depth")} active={marketSort.key === "depth"} dir={marketSort.dir} onToggle={marketSort.toggle} />
                 </div>
                 {markets.loading && readingShort ? <p className="me-card-empty">{t("lp.loadingChain", { chain: readingShort })}</p> : null}
-                {marketSort.sorted.map((r) => (
+                {marketVisible.map((r) => (
                   <Link key={r.pairId} to={`/pair/${r.chainId}/${encodeURIComponent(r.tokenA)}/${encodeURIComponent(r.tokenB)}`} className="me-token me-token-5">
                     <span className="holding-ico-wrap">
                       <img src={r.iconA} alt="" className="holding-ico" />
@@ -206,6 +239,12 @@ export function LpPage() {
                     <span className="num me-value">{r.depth ? fmtUsdc(r.depth) : "—"}</span>
                   </Link>
                 ))}
+                {marketMore ? (
+                  <button type="button" className="me-more-rows" onClick={() => setMarketPage((n) => n + 1)}>
+                    {t("lp.moreRows")}
+                  </button>
+                ) : null}
+                <p className="me-shown">{t("lp.shown", { shown: marketVisible.length, total: marketSort.sorted.length })}</p>
               </div>
             )}
           </section>

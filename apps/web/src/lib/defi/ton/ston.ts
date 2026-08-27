@@ -1,8 +1,7 @@
 import type { DefiProtocol, MarketRow, VenueQuote } from "../types.ts";
 
 const TON_NATIVE = "EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c";
-const MIN_TVL = 50_000;
-const MAX_ROWS = 24;
+const PAGE_CAP = 300;
 
 type Row = {
   pool: string;
@@ -41,18 +40,14 @@ function num(x: unknown): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-function isTon(mint: string, symbol: string) {
-  return mint === TON_NATIVE || symbol.toUpperCase() === "TON";
-}
-
 function isUsd(symbol: string) {
   const s = symbol.toUpperCase();
   return s === "USDC" || s === "USDT" || s === "USD" || s === "USDE" || s === "USD1" || s === "USD₮";
 }
 
 function keep(row: Row) {
-  if (!(row.tvl >= MIN_TVL) || !row.mintA || !row.mintB || row.mintA === row.mintB) return false;
-  return isTon(row.mintA, row.symbolA) || isTon(row.mintB, row.symbolB) || isUsd(row.symbolA) || isUsd(row.symbolB);
+  if (!(row.tvl > 0) || !row.mintA || !row.mintB || row.mintA === row.mintB) return false;
+  return true;
 }
 
 function iconOf(symbol: string) {
@@ -98,7 +93,7 @@ function venue(row: Row): VenueQuote {
 }
 
 function toMarkets(rows: Row[]): MarketRow[] {
-  const picked = rows.filter(keep).sort((a, b) => b.tvl - a.tvl).slice(0, MAX_ROWS);
+  const picked = rows.filter(keep).sort((a, b) => b.tvl - a.tvl).slice(0, PAGE_CAP);
   const byPair = new Map<string, MarketRow>();
   for (const r of picked) {
     const id = pairKey(r.mintA, r.mintB);
@@ -165,13 +160,18 @@ export const stonProtocol: DefiProtocol = {
     const json = await getJson<{ pool_list?: PoolJson[] }>("https://api.ston.fi/v1/pools/query", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ condition: "asset:popular", limit: 40 }),
+      body: JSON.stringify({ condition: "asset:popular", limit: PAGE_CAP, sort_by: ["lp_total_supply_usd:desc"] }),
     });
     const list = (json?.pool_list ?? []).filter((p) => p.address && !p.deprecated);
     const tokens = [...new Set(list.flatMap((p) => [p.token0_address, p.token1_address].filter(Boolean) as string[]))];
     const assets = new Map<string, AssetJson>();
+    const bulk = await getJson<{ asset_list?: AssetJson[] }>("https://api.ston.fi/v1/assets");
+    for (const a of bulk?.asset_list ?? []) {
+      if (a.contract_address) assets.set(a.contract_address, a);
+    }
+    const missing = tokens.filter((addr) => !assets.has(addr));
     await Promise.all(
-      tokens.map(async (addr) => {
+      missing.slice(0, 80).map(async (addr) => {
         const row = await getJson<{ asset?: AssetJson }>(`https://api.ston.fi/v1/assets/${encodeURIComponent(addr)}`);
         if (row?.asset) assets.set(addr, row.asset);
       }),

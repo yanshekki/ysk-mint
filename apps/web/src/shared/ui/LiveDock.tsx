@@ -37,7 +37,6 @@ export function LiveDock() {
   }, [jobs, now]);
 
   if (!visible.run.length && !visible.waiting) return null;
-  if (!visible.run.length) return null;
 
   return (
     <aside className="live-dock" aria-live="polite" aria-label={t("live.title")}>
@@ -56,8 +55,15 @@ export function LiveDock() {
             </li>
           );
         })}
+        {!visible.run.length && visible.waiting ? (
+          <li>
+            <span className="live-dock-dot" />
+            <span>{t("live.queued", { n: visible.waiting })}</span>
+            <i className="live-spin" />
+          </li>
+        ) : null}
       </ul>
-      {visible.waiting ? <p className="live-dock-more">{t("live.left", { n: visible.waiting })}</p> : null}
+      {visible.run.length && visible.waiting ? <p className="live-dock-more">{t("live.left", { n: visible.waiting })}</p> : null}
     </aside>
   );
 }
