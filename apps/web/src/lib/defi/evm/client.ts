@@ -14,13 +14,17 @@ const RPC_FALLBACK: Record<number, string> = {
   59144: "https://linea-rpc.publicnode.com",
   534352: "https://scroll-rpc.publicnode.com",
   100: "https://gnosis-rpc.publicnode.com",
-  324: "https://zksync-era-rpc.publicnode.com",
+  324: "https://mainnet.era.zksync.io",
   146: "https://sonic-rpc.publicnode.com",
   999: "https://rpc.hyperliquid.xyz/evm",
   80094: "https://rpc.berachain.com",
   50: "https://rpc.xdc.org",
   2020: "https://api.roninchain.com/rpc",
   81457: "https://rpc.blast.io",
+  1868: "https://rpc.soneium.org",
+  42220: "https://forno.celo.org",
+  480: "https://worldchain-mainnet.g.alchemy.com/public",
+  130: "https://mainnet.unichain.org",
 };
 
 const MULTICALL3 = "0xca11bde05977b3631167028862be2a173976ca11" as const;

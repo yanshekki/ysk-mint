@@ -73,7 +73,7 @@ export const DEX: Record<number, DexChain> = {
     wrapped: "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
     v3Factory: UNI_V3_FACTORY,
     v3Npm: UNI_V3_NPM,
-    v2Factory: "0xf1D7CC64Fb4452F05c88c90C016EC5ad76098732",
+    v2Factory: "0xf1D7CC64Fb4452F05c498126312eBE29f30Fbcf9",
     aave: {
       pool: "0x794a61358D6845594F94dc1DB02A252b5b4814aD",
       provider: "0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb",
@@ -328,6 +328,18 @@ export function usdStables(d: DexChain): UsdStable[] {
   }
   if (d.chainId === 42161) {
     out.push({ address: "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8", decimals: 6, symbol: "USDC" });
+  }
+  if (d.chainId === 137) {
+    out.push({ address: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", decimals: 6, symbol: "USDC" });
+  }
+  if (d.chainId === 10) {
+    out.push({ address: "0x7F5c764cBc14f9669B88837ca1490cCa17c31607", decimals: 6, symbol: "USDC" });
+  }
+  if (d.chainId === 324) {
+    out.push({ address: "0x3355df6D4c9C3035724Fd0e3914dE96A5a83aaf4", decimals: 6, symbol: "USDC" });
+  }
+  if (d.chainId === 534352) {
+    out.push({ address: "0xf55BEC9cafDbE3c1369a6CF5303e593DbeD00E27", decimals: 6, symbol: "USDT" });
   }
   return out;
 }

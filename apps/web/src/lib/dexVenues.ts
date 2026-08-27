@@ -95,12 +95,12 @@ export const VENUES: Venue[] = [
   { id: "sushi-v2-1", name: "Sushi V2", chainId: 1, kind: "v2", factory: "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac" },
 
   { id: "aero-v2-8453", name: "Aerodrome", chainId: 8453, kind: "aero", factory: "0x420DD381b31aEf6683db6B902084cB0FFECe40Da" },
-  { id: "aero-cl-8453", name: "Slipstream", chainId: 8453, kind: "v3", factory: "0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A", npm: "0x827922686190790b37229fd06084350E74485b72", fees: V3_FEES },
+  { id: "aero-cl-8453", name: "Slipstream", chainId: 8453, kind: "v3", factory: "0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A", npm: "0x827922686190790b37229fd06084350E74485b72", fees: [1, 50, 100, 200, 2000], poolArg: "tick" },
   { id: "uni-v3-8453", name: "Uniswap V3", chainId: 8453, kind: "v3", factory: "0x33128a8fC17869897dcE68Ed026d694621f6FDfD", npm: "0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1", fees: V3_FEES },
   { id: "cake-v3-8453", name: "Pancake V3", chainId: 8453, kind: "v3", factory: CAKE_V3_FACTORY, npm: CAKE_V3_NPM, fees: V3_FEES },
 
   { id: "uni-v3-42161", name: "Uniswap V3", chainId: 42161, kind: "v3", factory: UNI_V3_FACTORY, npm: UNI_V3_NPM, fees: V3_FEES },
-  { id: "camelot-v2-42161", name: "Camelot V2", chainId: 42161, kind: "v2", factory: "0x6EcCab9c1451EA7fAb3BdC15d17D3A4CE035a8dB" },
+  { id: "camelot-v2-42161", name: "Camelot V2", chainId: 42161, kind: "v2", factory: "0x6EcCab422D763aC031210895C81787E87B43A652" },
   { id: "ramses-v2-42161", name: "Ramses", chainId: 42161, kind: "aero", factory: "0xAAA20D08e59F6561f242b08513D36266C5A29415", poolFn: "getPair" },
   { id: "cake-v3-42161", name: "Pancake V3", chainId: 42161, kind: "v3", factory: CAKE_V3_FACTORY, npm: CAKE_V3_NPM, fees: V3_FEES },
   { id: "sushi-v2-42161", name: "Sushi V2", chainId: 42161, kind: "v2", factory: "0xc35DADB65012eC5796536bD9864eD8773aBc74C4" },
@@ -111,13 +111,13 @@ export const VENUES: Venue[] = [
   { id: "thena-v2-56", name: "Thena", chainId: 56, kind: "aero", factory: "0xAFD89d21BdB66d00817d4153E055830B1c2B3970", poolFn: "getPair" },
 
   { id: "joe-v1-43114", name: "Trader Joe", chainId: 43114, kind: "v2", factory: "0x9Ad6C38BE94206cA50bb0d90783181662f0Cfa10" },
-  { id: "pangolin-43114", name: "Pangolin", chainId: 43114, kind: "v2", factory: "0xefa94DE7a4656D787667C749f7E69713D5aa241B" },
+  { id: "pangolin-43114", name: "Pangolin", chainId: 43114, kind: "v2", factory: "0xefa94DE7a4656D787667C749f7E1223D71E9FD88" },
   { id: "uni-v3-43114", name: "Uniswap V3", chainId: 43114, kind: "v3", factory: "0x740b1c1de25031C31FF4fC9A62f554A55cdC1baD", npm: "0x655C406EBFa14EE2006250925e54ec9AD62C71A3", fees: V3_FEES },
 
   { id: "uni-v3-10", name: "Uniswap V3", chainId: 10, kind: "v3", factory: "0x1F98431c8aD98523631AE4a59f267346ea31F984", npm: "0xC36442b4a4522E871399CD717aBDD847Ab11FE88", fees: V3_FEES },
   { id: "uni-v2-10", name: "Uniswap V2", chainId: 10, kind: "v2", factory: "0x0c3c1c532F1e39EdF36BE9Fe0bE1410313E074Bf" },
-  { id: "velo-v2-10", name: "Velodrome", chainId: 10, kind: "aero", factory: "0xF104d3C995D3275efe009325247ffF80F90C141E" },
-  { id: "velo-cl-10", name: "Velodrome CL", chainId: 10, kind: "v3", factory: "0xCc0bDDB707055e04e497aB22a59c2aF4391cd12F", npm: "0x416b433906b1B72FA758e166e239c43d68dC6F29", fees: V3_FEES },
+  { id: "velo-v2-10", name: "Velodrome", chainId: 10, kind: "aero", factory: "0xF1046053aa5682b4F9a81b5481394DA16BE5FF5a" },
+  { id: "velo-cl-10", name: "Velodrome CL", chainId: 10, kind: "v3", factory: "0xCc0bDDB707055e04e497aB22a59c2aF4391cd12F", npm: "0x416b433906b1B72FA758e166e239c43d68dC6F29", fees: [1, 50, 100, 200, 2000], poolArg: "tick" },
 
   { id: "uni-v3-137", name: "Uniswap V3", chainId: 137, kind: "v3", factory: "0x1F98431c8aD98523631AE4a59f267346ea31F984", npm: "0xC36442b4a4522E871399CD717aBDD847Ab11FE88", fees: V3_FEES },
   { id: "uni-v2-137", name: "Uniswap V2", chainId: 137, kind: "v2", factory: "0x9e5A52f57b3038F1B8EeE45F28b3C1967e22799C" },

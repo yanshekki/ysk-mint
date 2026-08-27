@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { createPublicClient, http, type PublicClient } from "viem";
+import { type PublicClient } from "viem";
 import { useAccount } from "wagmi";
 import { CHAINS } from "@ysk-mint/config";
 import { seedToken, isStable } from "../../lib/dexVenues.ts";
+import { evmPublicClient } from "../../lib/defi/evm/client.ts";
 import { readVenuesForPair, weightedPrice, type VenuePool } from "../../lib/dexPools.ts";
 import { usePairSwaps, type SwapRow } from "../../lib/usePairSwaps.ts";
 import { trackLive, useLiveStatus } from "../../lib/liveStatus.ts";
@@ -46,15 +47,8 @@ export function PairPage() {
         setClient(undefined);
         return adaVenuesForPair(a, b, sa?.decimals ?? 6, sb?.decimals ?? 6);
       }
-      if (!chain?.rpc) return [];
-      const fallback: Record<number, string> = {
-        1: "https://ethereum-rpc.publicnode.com",
-        8453: "https://base.publicnode.com",
-        42161: "https://arbitrum-one-rpc.publicnode.com",
-        56: "https://bsc-rpc.publicnode.com",
-        43114: "https://avalanche-c-chain-rpc.publicnode.com",
-      };
-      const c = createPublicClient({ transport: http(fallback[chainId] ?? chain.rpc) });
+      const c = evmPublicClient(chainId);
+      if (!c) return [];
       setClient(c);
       return readVenuesForPair(c, chainId, canonAddr(a), canonAddr(b), sa?.decimals ?? 18, sb?.decimals ?? 18);
     };
