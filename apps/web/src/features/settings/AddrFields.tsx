@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { KIND_ICON, confirmKind, detectAddrKind, shortAddr, type AddrKind } from "../../lib/addrKind.ts";
 import { type AddrErr, type SavedAddr } from "../../lib/addressSets.ts";
@@ -25,8 +25,14 @@ export function AddrAddBar({
   const [nameBusy, setNameBusy] = useState(false);
   const [nameBad, setNameBad] = useState(false);
 
+  const fieldRef = useRef<HTMLInputElement | null>(null);
   const isName = domainNames.looksLikeName(raw);
   const hit = useMemo(() => (isName ? null : detectAddrKind(raw)), [isName, raw]);
+
+  useEffect(() => {
+    onBind?.(fieldRef.current);
+    return () => onBind?.(null);
+  }, [onBind]);
 
   useEffect(() => {
     if (!isName) {
@@ -117,7 +123,7 @@ export function AddrAddBar({
       {hint ? <p className="addr-add-k">{hint}</p> : null}
       <div className="addr-add-row">
         <input
-          ref={(el) => onBind?.(el)}
+          ref={fieldRef}
           className="me-filter addr-input"
           value={raw}
           disabled={disabled}
