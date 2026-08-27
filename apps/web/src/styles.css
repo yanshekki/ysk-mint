@@ -1455,6 +1455,12 @@ button.oft-chain:disabled {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
 }
+.me-fee {
+  color: var(--text-sub);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
 .me-card-empty {
   margin: 0;
   padding: 16px;

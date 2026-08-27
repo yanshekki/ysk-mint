@@ -203,7 +203,7 @@ export function PairPage() {
             ) : (
               <div className="me-list">
                 <div className="me-cols me-cols-5 me-cols-pool">
-                  <SortHead id="name" label={t("lp.venues")} active={venueSort.key === "name"} dir={venueSort.dir} onToggle={venueSort.toggle} align="left" />
+                  <SortHead id="name" label={t("lp.protocol")} active={venueSort.key === "name"} dir={venueSort.dir} onToggle={venueSort.toggle} align="left" />
                   <SortHead id="quote" label={t("me.quote")} active={venueSort.key === "quote"} dir={venueSort.dir} onToggle={venueSort.toggle} />
                   <SortHead id="amount" label={metaA.symbol} active={venueSort.key === "amount"} dir={venueSort.dir} onToggle={venueSort.toggle} />
                   <SortHead id="depth" label={t("lp.depth")} active={venueSort.key === "depth"} dir={venueSort.dir} onToggle={venueSort.toggle} />
@@ -226,9 +226,12 @@ export function PairPage() {
                         <img src={metaA.icon} alt="" className="holding-ico" />
                       </span>
                       <div className="holding-meta">
-                        <b>
-                          {v.venue.name} · {v.feeLabel}
-                        </b>
+                        <b>{v.venue.name}</b>
+                        {v.feeLabel ? (
+                          <span className="me-fee">
+                            {t("lp.fee")} {v.feeLabel}
+                          </span>
+                        ) : null}
                         <span className="num">{short(v.pool)}</span>
                       </div>
                       <span className="num me-price">{fmtCompact(v.priceAinB)}</span>
@@ -265,7 +268,7 @@ export function PairPage() {
             ) : (
               <div className="me-list">
                 <div className="me-cols me-cols-5">
-                  <SortHead id="time" label={t("lp.time")} active={tradeSort.key === "time"} dir={tradeSort.dir} onToggle={tradeSort.toggle} align="left" />
+                  <SortHead id="time" label={t("lp.tradeHead")} active={tradeSort.key === "time"} dir={tradeSort.dir} onToggle={tradeSort.toggle} align="left" />
                   <SortHead id="a" label={metaA.symbol} active={tradeSort.key === "a"} dir={tradeSort.dir} onToggle={tradeSort.toggle} />
                   <SortHead id="b" label={metaB.symbol} active={tradeSort.key === "b"} dir={tradeSort.dir} onToggle={tradeSort.toggle} />
                   <SortHead id="price" label={t("lp.price")} active={tradeSort.key === "price"} dir={tradeSort.dir} onToggle={tradeSort.toggle} />
@@ -284,7 +287,12 @@ export function PairPage() {
                         </span>
                       </span>
                       <div className="holding-meta">
-                        <b>{s.venue}</b>
+                        <b>{s.venueName || s.venue}</b>
+                        {s.feeLabel ? (
+                          <span className="me-fee">
+                            {t("lp.fee")} {s.feeLabel}
+                          </span>
+                        ) : null}
                         <span
                           className="num"
                           title={s.ts ? `${new Date(s.ts * 1000).toISOString().replace("T", " ").slice(0, 19)} UTC` : undefined}

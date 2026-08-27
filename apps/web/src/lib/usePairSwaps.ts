@@ -21,6 +21,8 @@ const token0Abi = [{ type: "function", name: "token0", stateMutability: "view", 
 export type SwapRow = {
   id: string;
   venue: string;
+  venueName: string;
+  feeLabel: string;
   pool: string;
   tx?: string;
   to?: string;
@@ -49,9 +51,17 @@ function asNum(v: unknown) {
   return Number.isFinite(n) ? n : 0;
 }
 
+function splitVenue(venue: string): { venueName: string; feeLabel: string } {
+  const m = venue.match(/^(.*?)(?:\s+| · )(\d+(?:\.\d+)?%|stable|dyn)$/i);
+  if (m?.[1] && m[2]) return { venueName: m[1].trim(), feeLabel: m[2] };
+  return { venueName: venue, feeLabel: "" };
+}
+
 function reviveRow(r: SwapRow): SwapRow {
+  const split = r.venueName ? { venueName: r.venueName, feeLabel: r.feeLabel ?? "" } : splitVenue(r.venue);
   return {
     ...r,
+    ...split,
     block: asBlock(r.block),
     ts: r.ts ? asNum(r.ts) : undefined,
     amountA: asNum(r.amountA),
@@ -105,6 +115,8 @@ function pushLog(
   rows.push({
     id: `${l.transactionHash}-${l.logIndex}`,
     venue: `${v.venue.name} ${v.feeLabel}`,
+    venueName: v.venue.name,
+    feeLabel: v.feeLabel,
     pool: v.pool,
     tx: l.transactionHash,
     to,
