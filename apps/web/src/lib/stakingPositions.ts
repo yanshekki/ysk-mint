@@ -1,4 +1,5 @@
 import { formatUnits, type Address, type PublicClient } from "viem";
+import { accountCache } from "./defi/cache.ts";
 import { LST } from "./defiAddresses.ts";
 import { type Quote } from "./defiQuotes.ts";
 import { nearView } from "./nearRpc.ts";
@@ -113,6 +114,10 @@ export function lstStakeLines(
 }
 
 export async function readLidoQueue(client: PublicClient, user: Address, ethUsd?: number | null): Promise<StakeLine[]> {
+  return accountCache("pos.stake", 1, user, "lido-wq", () => readLidoQueueWork(client, user, ethUsd));
+}
+
+async function readLidoQueueWork(client: PublicClient, user: Address, ethUsd?: number | null): Promise<StakeLine[]> {
   try {
     const ids = await client.readContract({ address: LIDO_WQ, abi: lidoWqAbi, functionName: "getWithdrawalRequests", args: [user] });
     if (!ids.length) return [];
@@ -260,6 +265,10 @@ async function koiosAccounts(stakes: string[]): Promise<AdaAccount[]> {
 }
 
 export async function readAdaStake(stakeAddr: string, payments: string[] = []): Promise<StakeLine[]> {
+  return accountCache("pos.stake", 1815, stakeAddr || "none", "ada", () => readAdaStakeWork(stakeAddr, payments));
+}
+
+async function readAdaStakeWork(stakeAddr: string, payments: string[] = []): Promise<StakeLine[]> {
   const stakes = adaStakes(stakeAddr, payments);
   if (!stakes.length) return [];
   try {
@@ -446,6 +455,10 @@ async function nearFtBalance(contract: string, account: string) {
 
 export async function readNearStake(account: string): Promise<StakeLine[]> {
   if (!account) return [];
+  return accountCache("pos.stake", 397, account, "near", () => readNearStakeWork(account));
+}
+
+async function readNearStakeWork(account: string): Promise<StakeLine[]> {
   const found = new Set(NEAR_POOL_SEEDS);
   try {
     const res = await fetch(`https://api.fastnear.com/v1/account/${account}/staking`);
@@ -560,6 +573,10 @@ async function solRpc(method: string, params: unknown[]) {
 
 export async function readSolStake(pubkey: string, solUsd?: number | null): Promise<StakeLine[]> {
   if (!pubkey) return [];
+  return accountCache("pos.stake", 101, pubkey, "sol", () => readSolStakeWork(pubkey, solUsd));
+}
+
+async function readSolStakeWork(pubkey: string, solUsd?: number | null): Promise<StakeLine[]> {
   const parsed = await solRpc("getProgramAccounts", [
     SOL_STAKE,
     { encoding: "jsonParsed", filters: [{ memcmp: { offset: 12, bytes: pubkey } }] },
@@ -686,6 +703,10 @@ const BENQI_QI: Array<{ token: Address; symbol: string; underlying: string; dec:
 ];
 
 export async function readPinnedLst(client: PublicClient, chainId: number, user: Address, quotes: Map<string, Quote>, liquidNote: string): Promise<StakeLine[]> {
+  return accountCache("pos.stake", chainId, user, "lst", () => readPinnedLstWork(client, chainId, user, quotes, liquidNote));
+}
+
+async function readPinnedLstWork(client: PublicClient, chainId: number, user: Address, quotes: Map<string, Quote>, liquidNote: string): Promise<StakeLine[]> {
   const map = LST[chainId];
   if (!map) return [];
   const short = chainId === 1 ? "ETH" : chainId === 8453 ? "Base" : chainId === 42161 ? "Arb" : chainId === 43114 ? "AVAX" : chainId === 56 ? "BNB" : String(chainId);
@@ -735,6 +756,10 @@ export async function readPinnedLst(client: PublicClient, chainId: number, user:
 }
 
 export async function readSavaxUnlocks(client: PublicClient, user: Address, avaxUsd?: number | null): Promise<StakeLine[]> {
+  return accountCache("pos.stake", 43114, user, "savax", () => readSavaxUnlocksWork(client, user, avaxUsd));
+}
+
+async function readSavaxUnlocksWork(client: PublicClient, user: Address, avaxUsd?: number | null): Promise<StakeLine[]> {
   try {
     const count = await client.readContract({ address: SAVAX, abi: savaxAbi, functionName: "getUnlockRequestCount", args: [user] });
     if (count === 0n) return [];
@@ -792,6 +817,10 @@ export async function readSavaxUnlocks(client: PublicClient, user: Address, avax
 }
 
 export async function readBenqiMarkets(client: PublicClient, user: Address, quotes: Map<string, Quote>): Promise<AaveCard | null> {
+  return accountCache("pos.lend", 43114, user, "benqi", () => readBenqiMarketsWork(client, user, quotes));
+}
+
+async function readBenqiMarketsWork(client: PublicClient, user: Address, quotes: Map<string, Quote>): Promise<AaveCard | null> {
   const avaxUsd = quotes.get("43114:native")?.usdc;
   const savaxQ = quotes.get(`43114:${SAVAX.toLowerCase()}`);
   const lines: ProtocolLine[] = [];

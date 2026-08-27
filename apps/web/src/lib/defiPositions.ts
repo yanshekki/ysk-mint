@@ -1,4 +1,5 @@
 import { erc20Abi, formatUnits, type Address, type PublicClient } from "viem";
+import { accountCache } from "./defi/cache.ts";
 import { DEX, LST, type Addr } from "./defiAddresses.ts";
 import { quoteEvmToken, type Quote } from "./defiQuotes.ts";
 
@@ -325,7 +326,7 @@ export async function readAaveMarket(
 export async function readAave(client: PublicClient, chainId: number, user: Address): Promise<AaveCard | null> {
   const d = DEX[chainId];
   if (!d?.aave) return null;
-  return readAaveMarket(client, chainId, user, d.aave, d.short, "aave");
+  return accountCache("pos.lend", chainId, user, "aave", () => readAaveMarket(client, chainId, user, d.aave!, d.short, "aave"));
 }
 
 async function readNpm(client: PublicClient, chainId: number, user: Address, npm: Addr, factory: Addr, protocol: string): Promise<UniCard | null> {
@@ -416,6 +417,10 @@ async function readNpm(client: PublicClient, chainId: number, user: Address, npm
 }
 
 export async function readUniV3(client: PublicClient, chainId: number, user: Address): Promise<UniCard[]> {
+  return accountCache("pos.lp", chainId, user, "npm", () => readUniV3Uncached(client, chainId, user));
+}
+
+async function readUniV3Uncached(client: PublicClient, chainId: number, user: Address): Promise<UniCard[]> {
   const d = DEX[chainId];
   if (!d?.v3Factory) return [];
   const out: UniCard[] = [];

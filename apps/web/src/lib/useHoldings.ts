@@ -4,6 +4,7 @@ import { syncLiveFlag, useLiveStatus } from "./liveStatus.ts";
 import { erc20Abi, formatUnits, type Address } from "viem";
 import { useConfig, useReadContracts } from "wagmi";
 import { getBalance } from "wagmi/actions";
+import { accountCache, cacheGet, cacheHash, cacheKey, POLICIES } from "./defi/cache.ts";
 import { cipEpochNow, readCardanoValue, stakeFromPayment, subscribeCip } from "./cardanoCip30.ts";
 import { koiosPost } from "./koios.ts";
 import { nearRpc } from "./nearRpc.ts";
@@ -101,11 +102,13 @@ export function useEvmHoldings(address: Address | undefined) {
           if (id == null) break;
           useLiveStatus.getState().start(`holdings:${id}`, id, "holdings", "run");
           try {
-            const b = await getBalance(config, { address, chainId: id });
-            next[id] = b.value;
+            const value = await accountCache("hold.native", id, address, "bal", async () => {
+              const b = await getBalance(config, { address, chainId: id });
+              return b.value;
+            });
+            next[id] = value;
             useLiveStatus.getState().finish(`holdings:${id}`, true);
           } catch {
-            next[id] = 0n;
             useLiveStatus.getState().finish(`holdings:${id}`, false);
           }
         }
@@ -399,22 +402,30 @@ async function solMintMeta(mint: string): Promise<{ symbol: string; name: string
 }
 
 async function solanaCall<T>(url: string, body: unknown): Promise<T | null> {
-  const ctrl = new AbortController();
-  const timer = window.setTimeout(() => ctrl.abort(), 10000);
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
-      signal: ctrl.signal,
-    });
-    if (!res.ok) return null;
-    return (await res.json()) as T;
-  } catch {
-    return null;
-  } finally {
-    window.clearTimeout(timer);
-  }
+  return cacheGet(
+    {
+      key: cacheKey("hold.sol", 101, cacheHash(`${url}|${JSON.stringify(body)}`)),
+      policy: POLICIES.account,
+    },
+    async () => {
+      const ctrl = new AbortController();
+      const timer = window.setTimeout(() => ctrl.abort(), 10000);
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(body),
+          signal: ctrl.signal,
+        });
+        if (!res.ok) return null;
+        return (await res.json()) as T;
+      } catch {
+        return null;
+      } finally {
+        window.clearTimeout(timer);
+      }
+    },
+  );
 }
 
 function collectMints(json: SolTokJson | null, into: Map<string, { raw: bigint; decimals: number }>) {
@@ -533,9 +544,17 @@ function hexAscii(hex: string) {
 }
 
 async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
-  const r = await fetch(url, init);
-  if (!r.ok) throw new Error(String(r.status));
-  return r.json() as Promise<T>;
+  return cacheGet(
+    {
+      key: cacheKey("hold.http", 0, cacheHash(`${url}|${typeof init?.body === "string" ? init.body : ""}`)),
+      policy: POLICIES.account,
+    },
+    async () => {
+      const r = await fetch(url, init);
+      if (!r.ok) throw new Error(String(r.status));
+      return r.json() as Promise<T>;
+    },
+  );
 }
 
 function useJsonHoldings(

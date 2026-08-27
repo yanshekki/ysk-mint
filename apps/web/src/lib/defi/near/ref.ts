@@ -1,3 +1,4 @@
+import { cacheGet, cacheKey, POLICIES } from "../cache.ts";
 import { loadNearMarkets, N_USDC, N_USDT, N_WRAP, quoteNearToken } from "../../nearDex.ts";
 import type { VenuePool } from "../../dexPools.ts";
 import { pairId } from "../../pairKey.ts";
@@ -48,9 +49,19 @@ function isStable(id: string) {
 
 async function marketsFromIndexer(): Promise<MarketRow[] | null> {
   try {
-    const res = await fetch("https://api.ref.finance/list-top-pools");
-    if (!res.ok) return null;
-    const json = (await res.json()) as RefTop[];
+    const json = await cacheGet(
+      {
+        key: cacheKey("http.ref", 397, "list-top-pools"),
+        policy: { ...POLICIES.catalog, keep: (rows: RefTop[] | null) => Boolean(rows?.length) },
+      },
+      async () => {
+        const res = await fetch("https://api.ref.finance/list-top-pools");
+        if (!res.ok) return null;
+        const data = (await res.json()) as RefTop[];
+        return Array.isArray(data) && data.length ? data : null;
+      },
+    );
+    if (!json) return null;
     if (!Array.isArray(json) || !json.length) return null;
     const tokens = catalogTopOn(397, 500);
     const catalog = new Map(tokens.map((t) => [t.address.toLowerCase(), { decimals: t.decimals, symbol: t.symbol ?? t.address, icon: t.icon ?? "/tokens/near.png" }]));

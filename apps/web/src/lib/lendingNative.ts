@@ -1,4 +1,5 @@
 import { formatUnits } from "viem";
+import { accountCache } from "./defi/cache.ts";
 import type { Quote } from "./defiQuotes.ts";
 import type { LendCard } from "./lendingExtra.ts";
 import type { ProtocolLine } from "./defiPositions.ts";
@@ -673,6 +674,17 @@ export async function readEchelon(user: string): Promise<LendCard | null> {
 }
 
 export async function readNativeLending(opts: {
+  sol?: string;
+  sui?: string;
+  tron?: string;
+  aptos?: string;
+  quotes: Map<string, Quote>;
+}): Promise<LendCard[]> {
+  const tag = [opts.sol, opts.sui, opts.tron, opts.aptos].filter(Boolean).join("|") || "none";
+  return accountCache("pos.lend", "native", tag, "bundle", () => readNativeLendingUncached(opts));
+}
+
+async function readNativeLendingUncached(opts: {
   sol?: string;
   sui?: string;
   tron?: string;

@@ -1,4 +1,5 @@
 import { decodeAbiParameters, encodeFunctionData, erc20Abi, formatUnits, type Address, type PublicClient } from "viem";
+import { accountCache } from "./defi/cache.ts";
 import { DEX } from "./defiAddresses.ts";
 import { quoteEvmToken, type Quote } from "./defiQuotes.ts";
 import { readAaveMarket, type AaveCard, type ProtocolLine } from "./defiPositions.ts";
@@ -1153,6 +1154,15 @@ async function readLista(client: PublicClient, chainId: number, user: Address, q
 }
 
 export async function readExtraLending(
+  client: PublicClient,
+  chainId: number,
+  user: Address,
+  quotes: Map<string, Quote>,
+): Promise<LendCard[]> {
+  return accountCache("pos.lend", chainId, user, "extra", () => readExtraLendingUncached(client, chainId, user, quotes));
+}
+
+async function readExtraLendingUncached(
   client: PublicClient,
   chainId: number,
   user: Address,

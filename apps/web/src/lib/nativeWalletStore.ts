@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { cacheDropAccountRam } from "./defi/cache.ts";
 
 type NativeState = {
   nearAccount: string;
@@ -123,18 +124,54 @@ export const useNativeWallets = create<NativeState>()(
           keplrWallet,
         }),
       setStarknet: (starknetAddress, starknetWallet = "") => set({ starknetAddress, starknetWallet }),
-      disconnectNear: () => set({ nearAccount: "" }),
-      disconnectCardano: () => set({ cardanoAddress: "", cardanoAddresses: [], cardanoStake: "", cardanoWallet: "" }),
-      disconnectSolana: () => set({ solanaAddress: "", solanaWallet: "" }),
-      disconnectTron: () => set({ tronAddress: "", tronWallet: "" }),
-      disconnectSui: () => set({ suiAddress: "", suiWallet: "" }),
-      disconnectTon: () => set({ tonAddress: "", tonWallet: "" }),
-      disconnectAptos: () => set({ aptosAddress: "", aptosWallet: "" }),
-      disconnectBitcoin: () => set({ bitcoinAddress: "", bitcoinWallet: "" }),
-      disconnectXrpl: () => set({ xrplAddress: "", xrplWallet: "" }),
-      disconnectStellar: () => set({ stellarAddress: "", stellarWallet: "" }),
-      disconnectKeplr: () => set({ cosmosAddress: "", osmosisAddress: "", celestiaAddress: "", keplrWallet: "" }),
-      disconnectStarknet: () => set({ starknetAddress: "", starknetWallet: "" }),
+      disconnectNear: () => {
+        cacheDropAccountRam();
+        set({ nearAccount: "" });
+      },
+      disconnectCardano: () => {
+        cacheDropAccountRam();
+        set({ cardanoAddress: "", cardanoAddresses: [], cardanoStake: "", cardanoWallet: "" });
+      },
+      disconnectSolana: () => {
+        cacheDropAccountRam();
+        set({ solanaAddress: "", solanaWallet: "" });
+      },
+      disconnectTron: () => {
+        cacheDropAccountRam();
+        set({ tronAddress: "", tronWallet: "" });
+      },
+      disconnectSui: () => {
+        cacheDropAccountRam();
+        set({ suiAddress: "", suiWallet: "" });
+      },
+      disconnectTon: () => {
+        cacheDropAccountRam();
+        set({ tonAddress: "", tonWallet: "" });
+      },
+      disconnectAptos: () => {
+        cacheDropAccountRam();
+        set({ aptosAddress: "", aptosWallet: "" });
+      },
+      disconnectBitcoin: () => {
+        cacheDropAccountRam();
+        set({ bitcoinAddress: "", bitcoinWallet: "" });
+      },
+      disconnectXrpl: () => {
+        cacheDropAccountRam();
+        set({ xrplAddress: "", xrplWallet: "" });
+      },
+      disconnectStellar: () => {
+        cacheDropAccountRam();
+        set({ stellarAddress: "", stellarWallet: "" });
+      },
+      disconnectKeplr: () => {
+        cacheDropAccountRam();
+        set({ cosmosAddress: "", osmosisAddress: "", celestiaAddress: "", keplrWallet: "" });
+      },
+      disconnectStarknet: () => {
+        cacheDropAccountRam();
+        set({ starknetAddress: "", starknetWallet: "" });
+      },
     }),
     {
       name: "ysk-mint.native-wallets",

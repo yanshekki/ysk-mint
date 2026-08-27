@@ -28,6 +28,7 @@ import { useNativeWallets } from "../../lib/nativeWallets.ts";
 import { stakeFromPayment } from "../../lib/cardanoCip30.ts";
 import { resolvedContracts } from "../../lib/launchStack.ts";
 import { useWizard } from "../wizard/store.ts";
+import { accountCache } from "../../lib/defi/cache.ts";
 import { useAdaHandle, useEvmName, useSolName } from "../../lib/chainNames.ts";
 import { chainIcon } from "../../lib/chainIcon.ts";
 import { Badge } from "../../shared/ui/TokenRow.tsx";
@@ -267,20 +268,22 @@ export function MePage() {
         const client = getPublicClient(config, { chainId: c.chainId });
         if (!client) return [];
         try {
-          const logs = await client.getLogs({
-            address: contracts.factory,
-            event: launchEvent,
-            args: { deployer: address },
-            fromBlock: 0n,
-            toBlock: "latest",
+          return await accountCache("lpfeed", c.chainId, address, "me-launch", async () => {
+            const logs = await client.getLogs({
+              address: contracts.factory,
+              event: launchEvent,
+              args: { deployer: address },
+              fromBlock: 0n,
+              toBlock: "latest",
+            });
+            return logs.map((l) => ({
+              token: l.args.token as `0x${string}`,
+              name: l.args.name ?? "",
+              symbol: l.args.symbol ?? "",
+              chainId: c.chainId,
+              chain: c.short,
+            }));
           });
-          return logs.map((l) => ({
-            token: l.args.token as `0x${string}`,
-            name: l.args.name ?? "",
-            symbol: l.args.symbol ?? "",
-            chainId: c.chainId,
-            chain: c.short,
-          }));
         } catch {
           return [];
         }

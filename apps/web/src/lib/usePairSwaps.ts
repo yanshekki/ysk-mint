@@ -3,6 +3,7 @@ import { cancelLive, trackLive } from "./liveStatus.ts";
 import { formatUnits, parseAbiItem, type PublicClient } from "viem";
 import type { VenuePool } from "./dexPools.ts";
 import { asAddr } from "./pairKey.ts";
+import { cacheGet, cacheKey, cacheLastGood, cacheReady, onVisibleInterval, POLICIES } from "./defi/cache.ts";
 
 const v2Swap = parseAbiItem(
   "event Swap(address indexed sender, uint256 amount0In, uint256 amount1In, uint256 amount0Out, uint256 amount1Out, address indexed to)",
@@ -28,7 +29,16 @@ export type SwapRow = {
 
 export type SwapFetch = { rows: SwapRow[]; rpcError: boolean };
 
-function pushLog(rows: SwapRow[], v: VenuePool, v3: boolean, l: { transactionHash?: string; logIndex?: number; blockNumber?: bigint; args?: unknown }, dec0: number, dec1: number) {
+type SwapPack = { rows: SwapRow[]; scannedToBlock: string; rpcError: boolean };
+
+function pushLog(
+  rows: SwapRow[],
+  v: VenuePool,
+  v3: boolean,
+  l: { transactionHash?: string; logIndex?: number; blockNumber?: bigint; args?: unknown },
+  dec0: number,
+  dec1: number,
+) {
   const args = (l.args ?? {}) as Record<string, bigint | undefined>;
   let a0 = 0n;
   let a1 = 0n;
@@ -55,53 +65,123 @@ function pushLog(rows: SwapRow[], v: VenuePool, v3: boolean, l: { transactionHas
   });
 }
 
-export async function fetchSwaps(client: PublicClient, venues: VenuePool[], dec0: number, dec1: number): Promise<SwapFetch> {
+function asBlock(v: unknown): bigint {
+  if (typeof v === "bigint") return v;
+  if (typeof v === "number") return BigInt(v);
+  if (typeof v === "string" && v) return BigInt(v);
+  return 0n;
+}
+
+async function fetchPoolSwaps(
+  client: PublicClient,
+  v: VenuePool,
+  dec0: number,
+  dec1: number,
+  chainId: number,
+  latest: bigint,
+): Promise<SwapPack> {
+  const key = cacheKey("swaps", chainId, asAddr(v.pool));
+  const policy = { ...POLICIES.swaps, keep: (p: SwapPack) => p.rows.length > 0 };
+  return cacheGet(
+    { key, policy, cursor: (p) => p.scannedToBlock },
+    async () => {
+      const prev = cacheLastGood<SwapPack>(key);
+      const prevRows = (prev?.rows ?? []).map((r) => ({ ...r, block: asBlock(r.block) }));
+      const floor = latest > MAX_SPAN ? latest - MAX_SPAN + 1n : 0n;
+      const cursor = prev?.scannedToBlock ? asBlock(prev.scannedToBlock) : 0n;
+      let from = cursor > 0n ? cursor + 1n : floor;
+      if (from < floor) from = floor;
+      if (from > latest) {
+        return prev ?? { rows: [], scannedToBlock: String(latest), rpcError: false };
+      }
+      const v3 = v.venue.kind === "v3";
+      const rows: SwapRow[] = [...prevRows];
+      const seen = new Set(rows.map((r) => r.id));
+      let win = WINDOW;
+      let pos = from;
+      let scanned = cursor >= floor ? cursor : from - 1n;
+      let fail = false;
+      let ok = false;
+      while (pos <= latest && rows.length < MAX_ROWS * 2) {
+        const end = pos + win - 1n > latest ? latest : pos + win - 1n;
+        try {
+          const logs = await client.getLogs({
+            address: asAddr(v.pool),
+            event: v3 ? v3Swap : v2Swap,
+            fromBlock: pos,
+            toBlock: end,
+          });
+          ok = true;
+          for (const l of logs) {
+            const id = `${l.transactionHash}-${l.logIndex}`;
+            if (seen.has(id)) continue;
+            seen.add(id);
+            pushLog(rows, v, v3, l, dec0, dec1);
+          }
+          scanned = end;
+          pos = end + 1n;
+          win = WINDOW;
+        } catch {
+          if (win > 200n) {
+            win /= 2n;
+            continue;
+          }
+          fail = true;
+          break;
+        }
+      }
+      const packed: SwapPack = {
+        rows: rows.sort((a, b) => Number(asBlock(b.block) - asBlock(a.block))).slice(0, MAX_ROWS),
+        scannedToBlock: String(scanned > 0n ? scanned : latest),
+        rpcError: !ok && fail,
+      };
+      return packed;
+    },
+  );
+}
+
+export async function fetchSwaps(
+  client: PublicClient,
+  venues: VenuePool[],
+  dec0: number,
+  dec1: number,
+  chainId?: number,
+): Promise<SwapFetch> {
   const latest = await client.getBlockNumber();
+  const cid = chainId ?? 0;
+  const packs = await Promise.all(venues.slice(0, 8).map((v) => fetchPoolSwaps(client, v, dec0, dec1, cid, latest)));
   const rows: SwapRow[] = [];
   const seen = new Set<string>();
   let ok = 0;
   let fail = 0;
-  for (const v of venues.slice(0, 8)) {
-    const v3 = v.venue.kind === "v3";
-    let span = 0n;
-    let win = WINDOW;
-    let poolOk = false;
-    while (span < MAX_SPAN && rows.length < MAX_ROWS) {
-      const to = latest - span;
-      const from = to > win ? to - win + 1n : 0n;
-      try {
-        const logs = await client.getLogs({
-          address: asAddr(v.pool),
-          event: v3 ? v3Swap : v2Swap,
-          fromBlock: from,
-          toBlock: to,
-        });
-        poolOk = true;
-        for (const l of logs) {
-          const id = `${l.transactionHash}-${l.logIndex}`;
-          if (seen.has(id)) continue;
-          seen.add(id);
-          pushLog(rows, v, v3, l, dec0, dec1);
-        }
-        win = WINDOW;
-        span += to >= from ? to - from + 1n : win;
-        if (from === 0n) break;
-      } catch {
-        if (win > 200n) {
-          win /= 2n;
-          continue;
-        }
-        fail += 1;
-        break;
-      }
+  for (const p of packs) {
+    if (p.rpcError) fail += 1;
+    else ok += 1;
+    for (const r of p.rows) {
+      if (seen.has(r.id)) continue;
+      seen.add(r.id);
+      rows.push({ ...r, block: asBlock(r.block) });
     }
-    if (poolOk) ok += 1;
-    else fail += 1;
   }
   return {
-    rows: rows.sort((a, b) => Number(b.block - a.block)).slice(0, MAX_ROWS),
+    rows: rows.sort((a, b) => Number(asBlock(b.block) - asBlock(a.block))).slice(0, MAX_ROWS),
     rpcError: ok === 0 && fail > 0,
   };
+}
+
+function seedSwaps(chainId: number | undefined, venues: VenuePool[]): SwapRow[] {
+  if (!chainId) return [];
+  const rows: SwapRow[] = [];
+  const seen = new Set<string>();
+  for (const v of venues.slice(0, 8)) {
+    const pack = cacheLastGood<SwapPack>(cacheKey("swaps", chainId, asAddr(v.pool)));
+    for (const r of pack?.rows ?? []) {
+      if (seen.has(r.id)) continue;
+      seen.add(r.id);
+      rows.push({ ...r, block: asBlock(r.block) });
+    }
+  }
+  return rows.sort((a, b) => Number(asBlock(b.block) - asBlock(a.block))).slice(0, MAX_ROWS);
 }
 
 export function usePairSwaps(
@@ -120,34 +200,59 @@ export function usePairSwaps(
   useEffect(() => {
     const list = venuesRef.current;
     if (!client || !list.length) {
-      setRows([]);
-      setRpcError(false);
+      if (!list.length) {
+        setRows([]);
+        setRpcError(false);
+      }
       return;
     }
     let cancelled = false;
-    setLoading(true);
-    setRpcError(false);
-    const job = chainId
-      ? trackLive(`trades:${chainId}`, chainId, "trades", () => fetchSwaps(client, list, dec0, dec1))
-      : fetchSwaps(client, list, dec0, dec1);
-    void job
-      .then((r) => {
-        if (!cancelled) {
-          setRows(r.rows);
-          setRpcError(r.rpcError);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
+    const seeded = seedSwaps(chainId, list);
+    if (seeded.length) {
+      setRows(seeded);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
+
+    const run = async () => {
+      await cacheReady();
+      const job = chainId
+        ? trackLive(`trades:${chainId}`, chainId, "trades", () => fetchSwaps(client, list, dec0, dec1, chainId))
+        : fetchSwaps(client, list, dec0, dec1, chainId);
+      try {
+        const r = await job;
+        if (cancelled) return;
+        if (r.rows.length) setRows(r.rows);
+        setRpcError(r.rpcError);
+      } catch {
+        if (!cancelled && !seeded.length) {
           setRows([]);
           setRpcError(true);
-        }
-      })
-      .finally(() => {
+        } else if (!cancelled) setRpcError(true);
+      } finally {
         if (!cancelled) setLoading(false);
-      });
+      }
+    };
+    void run();
+    const stop = onVisibleInterval(30_000, () => {
+      if (cancelled || !client) return;
+      void (chainId
+        ? trackLive(`trades:${chainId}`, chainId, "trades", () => fetchSwaps(client, list, dec0, dec1, chainId))
+        : fetchSwaps(client, list, dec0, dec1, chainId)
+      )
+        .then((r) => {
+          if (cancelled) return;
+          if (r.rows.length) setRows(r.rows);
+          setRpcError(r.rpcError);
+        })
+        .catch(() => {
+          if (!cancelled) setRpcError(true);
+        });
+    });
     return () => {
       cancelled = true;
+      stop();
       if (chainId) cancelLive(`trades:${chainId}`);
     };
   }, [client, key, dec0, dec1, chainId]);

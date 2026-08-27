@@ -17,6 +17,10 @@ export type VenuePool = {
   reserveB: number;
 };
 
+export function venueQuotesToPools(quotes: VenueQuote[]): VenuePool[] {
+  return quotes.map(toVenuePool);
+}
+
 function toVenuePool(q: VenueQuote): VenuePool {
   const kind = q.kind === "aero" ? "aero" : q.kind === "v3" ? "v3" : "v2";
   return {
@@ -45,7 +49,7 @@ export async function readVenuesForPair(
   decB: number,
 ): Promise<VenuePool[]> {
   const quotes = await readPairVenues(client, chainId, tokenA, tokenB, decA, decB);
-  return quotes.map(toVenuePool);
+  return venueQuotesToPools(quotes);
 }
 
 export function weightedPrice(venues: VenuePool[]) {

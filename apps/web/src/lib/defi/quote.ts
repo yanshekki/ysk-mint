@@ -1,13 +1,14 @@
 import type { Address, PublicClient } from "viem";
 import { DEX, isUsdStableAddress, usdStables } from "../defiAddresses.ts";
-import { canonAddr } from "../pairKey.ts";
-import { cached } from "./cache.ts";
+import { canonAddr, pairId } from "../pairKey.ts";
+import { cacheGet, cacheKey, POLICIES } from "./cache.ts";
 import { ensureProtocols } from "./protocols.ts";
 import { protocolById, protocolsOn } from "./registry.ts";
 import type { DefiCtx, Quote, QuoteSource, TokenRef, VenueQuote } from "./types.ts";
 
-const QUOTE_TTL = 30_000;
 const OUTLIER = 0.15;
+const quotePolicy = { ...POLICIES.quote, keep: (q: Quote | null) => Boolean(q && q.usdc > 0) };
+const wrapPolicy = { ...POLICIES.quote, keep: (n: number | null) => n != null && n > 0 };
 
 export function rejectOutliers<T extends { usdc: number; depth: number }>(rows: T[]): T[] {
   if (rows.length < 2) return rows;
@@ -89,7 +90,7 @@ async function spotsVsStables(ctx: DefiCtx, chainId: number, token: TokenRef): P
 async function wrappedUsd(ctx: DefiCtx, chainId: number): Promise<number | null> {
   const d = DEX[chainId];
   if (!d) return null;
-  return cached(`wrapusd:${chainId}`, QUOTE_TTL, async () => {
+  return cacheGet({ key: cacheKey("quote.wrap", chainId), policy: wrapPolicy }, async () => {
     const token: TokenRef = { chainId, address: d.wrapped, decimals: 18 };
     const spots = rejectOutliers(await spotsVsStables(ctx, chainId, token));
     return weightedUsd(spots);
@@ -103,7 +104,7 @@ async function evmQuoteUsd(ctx: DefiCtx, chainId: number, token: TokenRef): Prom
   if (!addr) return null;
   if (isUsdStableAddress(d, addr)) return { usdc: 1, source: "stable", depth: 0 };
 
-  return cached(`usd:${chainId}:${addr}`, QUOTE_TTL, async () => {
+  return cacheGet({ key: cacheKey("quote.usd", chainId, addr), policy: quotePolicy }, async () => {
     const base: TokenRef = { ...token, address: addr, native: false };
     let spots = await spotsVsStables(ctx, chainId, base);
     if (!spots.length && addr !== d.wrapped.toLowerCase()) {
@@ -145,8 +146,9 @@ export async function quoteUsd(
   const ref = asToken(chainId, token, decimals, native);
   const nativeQuote = protocolsOn(chainId).find((p) => p.quoteUsd && !p.discover);
   if (nativeQuote?.quoteUsd) {
-    return cached(`usd:${chainId}:${native ? "native" : (token ?? "").toLowerCase()}`, QUOTE_TTL, () =>
-      nativeQuote.quoteUsd!(ctx, ref),
+    return cacheGet(
+      { key: cacheKey("quote.usd", chainId, native ? "native" : (token ?? "").toLowerCase()), policy: quotePolicy },
+      () => nativeQuote.quoteUsd!(ctx, ref),
     );
   }
   return evmQuoteUsd(ctx, chainId, ref);
@@ -161,6 +163,13 @@ export async function readPairVenues(
   decB: number,
 ): Promise<VenueQuote[]> {
   ensureProtocols();
+  const pid = pairId(chainId, String(tokenA), String(tokenB));
+  return cacheGet(
+    {
+      key: cacheKey("venues", pid),
+      policy: { ...POLICIES.venues, keep: (rows: VenueQuote[]) => rows.length > 0 },
+    },
+    async () => {
   const ctx: DefiCtx = { evm: client };
   const a: TokenRef = { chainId, address: tokenA, decimals: decA };
   const b: TokenRef = { chainId, address: tokenB, decimals: decB };
@@ -193,6 +202,8 @@ export async function readPairVenues(
     out.push(row);
   }
   return out;
+    },
+  );
 }
 
 export function consensusPairPrice(venues: VenueQuote[]): number | null {

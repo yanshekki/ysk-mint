@@ -1,4 +1,21 @@
-export { cached, mapChunk } from "./cache.ts";
+export {
+  accountCache,
+  cacheDropAccountRam,
+  cacheFresh,
+  cacheGet,
+  cacheGetSWR,
+  cacheInvalidate,
+  cacheInvalidateAccount,
+  cacheKey,
+  cacheLastGood,
+  cachePeek,
+  cacheReady,
+  cacheWrite,
+  cached,
+  mapChunk,
+  onVisibleInterval,
+  POLICIES,
+} from "./cache.ts";
 export { discoveredPools, loadEvmMarkets } from "./markets.ts";
 export { ensureProtocols } from "./protocols.ts";
 export { allProtocols, protocolsOn, register } from "./registry.ts";

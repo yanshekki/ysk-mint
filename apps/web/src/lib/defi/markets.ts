@@ -1,7 +1,7 @@
 import { CHAINS } from "@ysk-mint/config";
 import { DEX, isUsdStableAddress } from "../defiAddresses.ts";
 import { pairId } from "../pairKey.ts";
-import { cached, forChunks } from "./cache.ts";
+import { cacheGet, cacheKey, cacheLastGood, cacheWrite, forChunks, POLICIES } from "./cache.ts";
 import { evmPublicClient } from "./evm/client.ts";
 import { ensureProtocols } from "./protocols.ts";
 import { protocolsOn } from "./registry.ts";
@@ -21,7 +21,14 @@ export type DiscoveredPool = {
 const discovered = new Map<number, DiscoveredPool[]>();
 
 export function discoveredPools(chainId: number) {
-  return discovered.get(chainId) ?? [];
+  const ram = discovered.get(chainId);
+  if (ram?.length) return ram;
+  const persisted = cacheLastGood<DiscoveredPool[]>(cacheKey("discovered", chainId));
+  if (persisted?.length) {
+    discovered.set(chainId, persisted);
+    return persisted;
+  }
+  return ram ?? [];
 }
 
 function evmClient(chainId: number) {
@@ -129,9 +136,11 @@ export async function loadEvmMarkets(chainId: number): Promise<MarketRow[]> {
   if (!d) return [];
   const chain = Object.values(CHAINS).find((c) => c.chainId === chainId);
   if (!chain) return [];
-  return cached(
-    `markets:${chainId}`,
-    60_000,
+  return cacheGet(
+    {
+      key: cacheKey("markets", chainId),
+      policy: { ...POLICIES.markets, keep: (rows: MarketRow[]) => rows.length > 0 },
+    },
     async () => {
     const client = evmClient(chainId);
     if (!client) return [];
@@ -157,19 +166,18 @@ export async function loadEvmMarkets(chainId: number): Promise<MarketRow[]> {
       protocols.filter((p) => !skip.has(p.id)),
     );
     const live = [...listedToLive(listed), ...(await readHits(ctx, hits))];
-    discovered.set(
-      chainId,
-      live.flatMap((h) =>
-        h.venues.map((v) => ({
-          chainId,
-          tokenA: h.a.address,
-          tokenB: h.b.address,
-          pool: v.pool,
-          protocolId: v.protocolId,
-          protocolName: v.protocolName,
-        })),
-      ),
+    const found: DiscoveredPool[] = live.flatMap((h) =>
+      h.venues.map((v) => ({
+        chainId,
+        tokenA: h.a.address,
+        tokenB: h.b.address,
+        pool: v.pool,
+        protocolId: v.protocolId,
+        protocolName: v.protocolName,
+      })),
     );
+    discovered.set(chainId, found);
+    if (found.length) cacheWrite(cacheKey("discovered", chainId), { ...POLICIES.catalog, keep: (rows: DiscoveredPool[]) => rows.length > 0 }, found);
 
     const wrap = d.wrapped.toLowerCase();
     const wrapRows = live.filter((h) => h.a.address.toLowerCase() === wrap);
@@ -213,6 +221,5 @@ export async function loadEvmMarkets(chainId: number): Promise<MarketRow[]> {
     }
     return [...byPair.values()];
     },
-    (rows) => rows.length > 0,
   );
 }

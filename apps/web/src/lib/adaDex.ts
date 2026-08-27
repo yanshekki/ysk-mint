@@ -1,3 +1,4 @@
+import { cacheGet, cacheHash, cacheKey, POLICIES } from "./defi/cache.ts";
 import type { Quote } from "./defiQuotes.ts";
 import type { VenuePool } from "./dexPools.ts";
 import type { Venue } from "./dexVenues.ts";
@@ -61,19 +62,35 @@ type Estimate = {
 };
 
 async function aggGet<T>(path: string): Promise<T> {
-  const res = await fetch(`${AGG}${path}`);
-  if (!res.ok) throw new Error(`minswap ${path}`);
-  return (await res.json()) as T;
+  return cacheGet(
+    {
+      key: cacheKey("http.minswap", 1815, "get", path.replace(/[^a-z0-9]+/gi, "_").slice(0, 80)),
+      policy: { ...POLICIES.catalog, keep: (v: T) => v != null },
+    },
+    async () => {
+      const res = await fetch(`${AGG}${path}`);
+      if (!res.ok) throw new Error(`minswap ${path}`);
+      return (await res.json()) as T;
+    },
+  );
 }
 
 async function aggPost<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${AGG}${path}`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(`minswap ${path}`);
-  return (await res.json()) as T;
+  return cacheGet(
+    {
+      key: cacheKey("http.minswap", 1815, "post", path.replace(/[^a-z0-9]+/gi, "_").slice(0, 40), cacheHash(body)),
+      policy: { ...POLICIES.quote, keep: (v: T) => v != null },
+    },
+    async () => {
+      const res = await fetch(`${AGG}${path}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(`minswap ${path}`);
+      return (await res.json()) as T;
+    },
+  );
 }
 
 export function isAdaStable(id?: string) {

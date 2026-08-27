@@ -1,4 +1,5 @@
 import { pairId } from "../../pairKey.ts";
+import { cacheGet, cacheHash, cacheKey, POLICIES } from "../cache.ts";
 import type { DefiProtocol, MarketRow, VenueQuote } from "../types.ts";
 
 const USDC = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
@@ -89,17 +90,25 @@ function toMarkets(protocolId: string, name: string, rows: Row[]): MarketRow[] {
 }
 
 async function getJson<T>(url: string, ms = 15000): Promise<T | null> {
-  const ac = new AbortController();
-  const t = setTimeout(() => ac.abort(), ms);
-  try {
-    const res = await fetch(url, { signal: ac.signal });
-    if (!res.ok) return null;
-    return (await res.json()) as T;
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(t);
-  }
+  return cacheGet(
+    {
+      key: cacheKey("http.solamm", 101, cacheHash(url)),
+      policy: { ...POLICIES.catalog, keep: (v: T | null) => v != null },
+    },
+    async () => {
+      const ac = new AbortController();
+      const t = setTimeout(() => ac.abort(), ms);
+      try {
+        const res = await fetch(url, { signal: ac.signal });
+        if (!res.ok) return null;
+        return (await res.json()) as T;
+      } catch {
+        return null;
+      } finally {
+        clearTimeout(t);
+      }
+    },
+  );
 }
 
 function num(x: unknown): number {

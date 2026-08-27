@@ -1,18 +1,33 @@
 import { useEffect, useState } from "react";
 import { stakeFromPayment } from "./cardanoCip30.ts";
+import { cacheGet, cacheKey, POLICIES } from "./defi/cache.ts";
 
 type BioDomain = { identity?: string; platform?: string; isPrimary?: boolean };
 
 async function web3BioName(address: string, platform: "ens" | "sns"): Promise<string> {
+  return cacheGet(
+    {
+      key: cacheKey("ens", 0, platform, address),
+      policy: { ...POLICIES.ens, keep: (s: string) => Boolean(s) },
+    },
+    async () => {
   const res = await fetch(`https://api.web3.bio/domain/${encodeURIComponent(address)}`);
   if (!res.ok) return "";
   const json = (await res.json()) as { domains?: BioDomain[] };
   const hits = (json.domains ?? []).filter((d) => d.platform === platform && d.identity);
   const pick = hits.find((d) => d.isPrimary) ?? hits[0];
   return pick?.identity ?? "";
+    },
+  );
 }
 
 async function ensFromGraph(address: string): Promise<string> {
+  return cacheGet(
+    {
+      key: cacheKey("ens", 1, "graph", address),
+      policy: { ...POLICIES.ens, keep: (s: string) => Boolean(s) },
+    },
+    async () => {
   const id = address.toLowerCase();
   const res = await fetch("https://api.thegraph.com/subgraphs/name/ensdomains/ens", {
     method: "POST",
@@ -25,6 +40,8 @@ async function ensFromGraph(address: string): Promise<string> {
   const json = (await res.json()) as { data?: { domains?: Array<{ name?: string }> } };
   const names = (json.data?.domains ?? []).map((d) => d.name).filter((n): n is string => Boolean(n?.endsWith(".eth")));
   return names[0] ?? "";
+    },
+  );
 }
 
 export function useEvmName(address?: string) {
@@ -56,11 +73,20 @@ export function useAdaHandle(address: string, stake: string) {
       return;
     }
     let cancelled = false;
-    void fetch(`https://api.handle.me/holders/${encodeURIComponent(key)}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((json: { default_handle?: string; handles?: string[] } | null) => {
+    void cacheGet(
+      {
+        key: cacheKey("ens", 1815, "handle", key),
+        policy: { ...POLICIES.ens, keep: (s: string) => Boolean(s) },
+      },
+      async () => {
+        const res = await fetch(`https://api.handle.me/holders/${encodeURIComponent(key)}`);
+        const json = res.ok ? ((await res.json()) as { default_handle?: string; handles?: string[] }) : null;
         const handle = json?.default_handle || json?.handles?.[0];
-        if (!cancelled) setName(handle ? `$${handle}` : "");
+        return handle ? `$${handle}` : "";
+      },
+    )
+      .then((name) => {
+        if (!cancelled) setName(name);
       })
       .catch(() => {
         if (!cancelled) setName("");

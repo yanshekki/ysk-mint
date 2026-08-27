@@ -1,3 +1,4 @@
+import { cacheGet, cacheHash, cacheKey, POLICIES } from "../cache.ts";
 import type { DefiProtocol, MarketRow, VenueQuote } from "../types.ts";
 
 const TON_NATIVE = "EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c";
@@ -125,17 +126,25 @@ function toMarkets(rows: Row[]): MarketRow[] {
 }
 
 async function getJson<T>(url: string, init?: RequestInit, ms = 15000): Promise<T | null> {
-  const ac = new AbortController();
-  const t = setTimeout(() => ac.abort(), ms);
-  try {
-    const res = await fetch(url, { ...init, signal: ac.signal });
-    if (!res.ok) return null;
-    return (await res.json()) as T;
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(t);
-  }
+  return cacheGet(
+    {
+      key: cacheKey("http.ston", 607, cacheHash(`${url}|${typeof init?.body === "string" ? init.body : ""}`)),
+      policy: { ...POLICIES.catalog, keep: (v: T | null) => v != null },
+    },
+    async () => {
+      const ac = new AbortController();
+      const t = setTimeout(() => ac.abort(), ms);
+      try {
+        const res = await fetch(url, { ...init, signal: ac.signal });
+        if (!res.ok) return null;
+        return (await res.json()) as T;
+      } catch {
+        return null;
+      } finally {
+        clearTimeout(t);
+      }
+    },
+  );
 }
 
 function human(raw: string | undefined, decimals: number) {

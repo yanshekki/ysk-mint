@@ -7,11 +7,13 @@ import { CHAINS } from "@ysk-mint/config";
 import { seedToken, isStable } from "../../lib/dexVenues.ts";
 import { evmPublicClient } from "../../lib/defi/evm/client.ts";
 import { erc20MetaAbi } from "../../lib/defi/evm/abis.ts";
-import { readVenuesForPair, weightedPrice, type VenuePool } from "../../lib/dexPools.ts";
+import { readVenuesForPair, venueQuotesToPools, weightedPrice, type VenuePool } from "../../lib/dexPools.ts";
+import { cacheGet, cacheKey, cacheLastGood, cacheReady, onVisibleInterval, POLICIES } from "../../lib/defi/cache.ts";
+import type { VenueQuote } from "../../lib/defi/types.ts";
 import { usePairSwaps, type SwapRow } from "../../lib/usePairSwaps.ts";
 import { cancelLive, trackLive } from "../../lib/liveStatus.ts";
 import { fmtCompact, fmtUsdc } from "../../lib/defiQuotes.ts";
-import { asAddr, canonAddr } from "../../lib/pairKey.ts";
+import { asAddr, canonAddr, pairId } from "../../lib/pairKey.ts";
 import { TOKEN_CATALOG } from "../../lib/tokenRegistry.ts";
 import { nearToken, nearVenuesForPair } from "../../lib/nearDex.ts";
 import { adaTokenMeta, adaVenuesForPair } from "../../lib/adaDex.ts";
@@ -29,12 +31,20 @@ async function evmTokenMeta(client: PublicClient, chainId: number, address: stri
     return { symbol: hint?.symbol ?? short(address), decimals: hint?.decimals ?? 18, icon };
   }
   try {
-    const [decimals, symbol] = await Promise.all([
-      client.readContract({ address: asAddr(address), abi: erc20MetaAbi, functionName: "decimals" }),
-      client.readContract({ address: asAddr(address), abi: erc20MetaAbi, functionName: "symbol" }).catch(() => ""),
-    ]);
-    const sym = String(symbol || "").trim();
-    return { symbol: sym || short(address), decimals: Number(decimals) || 18, icon };
+    return await cacheGet(
+      {
+        key: cacheKey("meta.erc20", chainId, canonAddr(address)),
+        policy: { ...POLICIES.meta, keep: (m: TokenMeta) => Boolean(m.symbol) },
+      },
+      async () => {
+        const [decimals, symbol] = await Promise.all([
+          client.readContract({ address: asAddr(address), abi: erc20MetaAbi, functionName: "decimals" }),
+          client.readContract({ address: asAddr(address), abi: erc20MetaAbi, functionName: "symbol" }).catch(() => ""),
+        ]);
+        const sym = String(symbol || "").trim();
+        return { symbol: sym || short(address), decimals: Number(decimals) || 18, icon };
+      },
+    );
   } catch {
     return { symbol: hint?.symbol ?? short(address), decimals: hint?.decimals ?? 18, icon };
   }
@@ -64,8 +74,17 @@ export function PairPage() {
   useEffect(() => {
     if (!a || !b || !Number.isFinite(chainId)) return;
     let cancelled = false;
-    setLoading(true);
+    const venuesKey = cacheKey("venues", pairId(chainId, a, b));
+    const seed = cacheLastGood<VenueQuote[]>(venuesKey);
+    if (seed?.length) {
+      setVenues(venueQuotesToPools(seed));
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     const run = async () => {
+      await cacheReady();
+
       if (chain?.vm === "near") {
         setClient(undefined);
         return nearVenuesForPair(a, b);
@@ -86,16 +105,25 @@ export function PairPage() {
     };
     void trackLive(`pair:${chainId}`, chainId, "markets", run)
       .then((v) => {
-        if (!cancelled) setVenues(v);
+        if (!cancelled && v.length) setVenues(v);
       })
       .catch(() => {
-        if (!cancelled) setVenues([]);
+        if (!cancelled && !seed?.length) setVenues([]);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
+    const stop = onVisibleInterval(60_000, () => {
+      if (cancelled) return;
+      void trackLive(`pair:${chainId}`, chainId, "markets", run)
+        .then((v) => {
+          if (!cancelled && v.length) setVenues(v);
+        })
+        .catch(() => undefined);
+    });
     return () => {
       cancelled = true;
+      stop();
       cancelLive(`pair:${chainId}`);
     };
   }, [a, b, chain, chainId, sa?.decimals, sb?.decimals]);

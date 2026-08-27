@@ -18,6 +18,7 @@ import { useEvmHoldings, type HoldingRow } from "../../lib/useHoldings.ts";
 import { chainIcon } from "../../lib/chainIcon.ts";
 import { ISSUANCE_GROUP_TITLE, issuanceGroups } from "../../lib/launchTargets.ts";
 import { useWizard } from "../wizard/store.ts";
+import { cacheGet, cacheInvalidateAccount, cacheKey, POLICIES } from "../../lib/defi/cache.ts";
 
 const PCT = [10, 25, 50, 75, 100] as const;
 const ZERO_PEER = `0x${"00".repeat(32)}` as const;
@@ -118,12 +119,19 @@ export function TransferPage() {
       }
       const client = getPublicClient(config, { chainId: pick?.chainId ?? srcChainId });
       if (!client) throw new Error("missing client");
-      const peer = await client.readContract({
-        address: token as `0x${string}`,
-        abi: yskOftAbi,
-        functionName: "peers",
-        args: [dst.eid],
-      });
+      const peer = await cacheGet(
+        {
+          key: cacheKey("xfer.peer", pick?.chainId ?? srcChainId, token, dst.eid),
+          policy: POLICIES.meta,
+        },
+        () =>
+          client.readContract({
+            address: token as `0x${string}`,
+            abi: yskOftAbi,
+            functionName: "peers",
+            args: [dst.eid],
+          }),
+      );
       if (peer === ZERO_PEER) {
         setErrors([
           {
@@ -224,6 +232,7 @@ export function TransferPage() {
         value: fee.nativeFee,
       });
       await client.waitForTransactionReceipt({ hash });
+      cacheInvalidateAccount(address);
       setQuote(fee.nativeFee.toString());
     } catch (e) {
       setErrors([errorFromCatch(e, locale, t("transfer.notOft"))]);

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { featuredChains } from "@ysk-mint/config";
 import { type VenuePool } from "./dexPools.ts";
+import { cacheFresh, cacheKey, cacheLastGood, cacheReady, onVisibleInterval, POLICIES, cacheGet } from "./defi/cache.ts";
 import { loadEvmMarkets } from "./defi/markets.ts";
 import { ensureProtocols } from "./defi/protocols.ts";
 import { protocolsOn } from "./defi/registry.ts";
@@ -46,8 +47,24 @@ function asRow(r: DefiMarket): MarketRow {
 }
 
 async function loadEvm(chainId: number): Promise<MarketRow[]> {
-  const rows = await loadEvmMarkets(chainId).catch(() => []);
+  const rows = await loadEvmMarkets(chainId).catch(() => [] as DefiMarket[]);
   return rows.map(asRow);
+}
+
+async function loadNative(chainId: number): Promise<MarketRow[]> {
+  const raw = await cacheGet(
+    {
+      key: cacheKey("markets", chainId),
+      policy: { ...POLICIES.markets, keep: (rows: DefiMarket[]) => rows.length > 0 },
+    },
+    async () => {
+      const parts = await Promise.all(
+        protocolsOn(chainId).map((p) => (p.markets ? p.markets({}).catch(() => []) : Promise.resolve([]))),
+      );
+      return parts.flat();
+    },
+  ).catch(() => [] as DefiMarket[]);
+  return raw.map(asRow);
 }
 
 async function mapLimit<T>(ids: T[], n: number, fn: (id: T) => Promise<void>) {
@@ -66,6 +83,29 @@ function sortMarkets(rows: MarketRow[]) {
   return rows;
 }
 
+const NATIVE = new Set([101, 397, 1815, 784, 607]);
+const SKIP = new Set([101, 397, 1815, 398, 18151, 103, 784, 607, 637, 998, 728126428]);
+
+function marketIds(chainId: number | "all") {
+  ensureProtocols();
+  return chainId === "all"
+    ? featuredChains()
+        .filter((c) => !c.testnet && protocolsOn(c.chainId).length > 0)
+        .map((c) => c.chainId)
+    : protocolsOn(chainId).length
+      ? [chainId]
+      : [];
+}
+
+function seedRows(ids: number[]) {
+  const out: MarketRow[] = [];
+  for (const id of ids) {
+    const raw = cacheLastGood<DefiMarket[]>(cacheKey("markets", id));
+    if (raw?.length) out.push(...raw.map(asRow));
+  }
+  return sortMarkets(out);
+}
+
 export function useDexMarkets(chainId: number | "all") {
   const [rows, setRows] = useState<MarketRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,68 +113,67 @@ export function useDexMarkets(chainId: number | "all") {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
-    setRows([]);
-    ensureProtocols();
-    const ids =
-      chainId === "all"
-        ? featuredChains()
-            .filter((c) => !c.testnet && protocolsOn(c.chainId).length > 0)
-            .map((c) => c.chainId)
-        : protocolsOn(chainId).length
-          ? [chainId]
-          : [];
-    const live = useLiveStatus.getState();
-    for (const id of ids) live.start(`markets:${id}`, id, "markets", "wait");
+    const ids = marketIds(chainId);
+    const byChain = new Map<number, MarketRow[]>();
+
+    const publish = () => {
+      if (cancelled) return;
+      setRows(sortMarkets([...byChain.values()].flat()));
+    };
+
     void (async () => {
+      await cacheReady();
+      if (cancelled) return;
+      const seeded = seedRows(ids);
+      for (const r of seeded) {
+        const list = byChain.get(r.chainId) ?? [];
+        list.push(r);
+        byChain.set(r.chainId, list);
+      }
+      if (seeded.length) {
+        setRows(seeded);
+        setLoading(false);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+
+      const live = useLiveStatus.getState();
+      for (const id of ids) {
+        if (!cacheFresh(cacheKey("markets", id))) live.start(`markets:${id}`, id, "markets", "wait");
+      }
+
       try {
         if (!ids.length) {
           if (!cancelled) {
-            setRows([]);
+            if (!seeded.length) setRows([]);
             setLoading(false);
           }
           return;
         }
-        const evmIds = ids.filter((id) => ![101, 397, 1815, 398, 18151, 103, 784, 607, 637, 998, 728126428].includes(id));
-        const nativeIds = ids.filter((id) => [101, 397, 1815, 784, 607].includes(id));
-        const jobs: Array<Promise<void>> = [];
-        const acc: MarketRow[] = [];
-        const push = (part: MarketRow[]) => {
-          if (cancelled || !part.length) return;
-          acc.push(...part);
-          setRows(sortMarkets([...acc]));
-        };
+        const evmIds = ids.filter((id) => !SKIP.has(id));
+        const nativeIds = ids.filter((id) => NATIVE.has(id));
         const one = async (id: number, fn: () => Promise<MarketRow[]>) => {
-          useLiveStatus.getState().run(`markets:${id}`);
+          const miss = !cacheFresh(cacheKey("markets", id));
+          if (miss) useLiveStatus.getState().run(`markets:${id}`);
           try {
             const part = await fn();
-            if (!cancelled) push(part);
-            useLiveStatus.getState().finish(`markets:${id}`, true);
+            if (cancelled) return;
+            if (part.length) byChain.set(id, part);
+            publish();
+            if (miss) useLiveStatus.getState().finish(`markets:${id}`, true);
           } catch {
-            useLiveStatus.getState().finish(`markets:${id}`, false);
+            if (miss) useLiveStatus.getState().finish(`markets:${id}`, false);
           }
         };
-        jobs.push(
+        await Promise.all([
           mapLimit(evmIds, 2, async (id) => {
             await one(id, () => loadEvm(id));
           }),
-        );
-        for (const id of nativeIds) {
-          jobs.push(
-            one(id, async () => {
-              const parts = await Promise.all(
-                protocolsOn(id).map((p) => (p.markets ? p.markets({}).catch(() => []) : Promise.resolve([]))),
-              );
-              return parts.flat().map(asRow);
-            }),
-          );
-        }
-        await Promise.all(jobs);
-        if (!cancelled && !acc.length) setRows([]);
+          ...nativeIds.map((id) => one(id, () => loadNative(id))),
+        ]);
       } catch (e) {
-        if (!cancelled) {
-          setRows([]);
+        if (!cancelled && !byChain.size) {
           setError(e instanceof Error ? e.message : "rpc");
         }
       } finally {
@@ -142,8 +181,35 @@ export function useDexMarkets(chainId: number | "all") {
         useLiveStatus.getState().clear("markets:");
       }
     })();
+
+    const stopPoll = onVisibleInterval(60_000, () => {
+      if (cancelled) return;
+      const evmIds = ids.filter((id) => !SKIP.has(id));
+      const nativeIds = ids.filter((id) => NATIVE.has(id));
+      const one = async (id: number, fn: () => Promise<MarketRow[]>) => {
+        const miss = !cacheFresh(cacheKey("markets", id));
+        if (miss) useLiveStatus.getState().start(`markets:${id}`, id, "markets", "run");
+        try {
+          const part = await fn();
+          if (cancelled) return;
+          if (part.length) byChain.set(id, part);
+          publish();
+          if (miss) useLiveStatus.getState().finish(`markets:${id}`, true);
+        } catch {
+          if (miss) useLiveStatus.getState().finish(`markets:${id}`, false);
+        }
+      };
+      void Promise.all([
+        mapLimit(evmIds, 2, async (id) => {
+          await one(id, () => loadEvm(id));
+        }),
+        ...nativeIds.map((id) => one(id, () => loadNative(id))),
+      ]);
+    });
+
     return () => {
       cancelled = true;
+      stopPoll();
       useLiveStatus.getState().clear("markets:");
     };
   }, [chainId]);

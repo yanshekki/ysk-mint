@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { createPublicClient, formatUnits, http, parseAbiItem } from "viem";
+import { formatUnits, parseAbiItem } from "viem";
 import { CHAINS, featuredChains, isConfigured, launchContracts, type ChainDefinition } from "@ysk-mint/config";
+import { cacheGet, cacheKey, POLICIES } from "./defi/cache.ts";
+import { evmPublicClient } from "./defi/evm/client.ts";
 
 const lpEvent = parseAbiItem(
   "event LiquidityLaunched(address indexed token, address indexed lpToken, address indexed user, uint256 liquidity, uint256 lockId)",
@@ -36,8 +38,23 @@ function shortAddr(a: string) {
 
 async function fetchChain(chain: ChainDefinition): Promise<LpRow[]> {
   const contracts = launchContracts(chain.key);
-  if (!chain.evm || !chain.rpc || !isConfigured(contracts)) return [];
-  const client = createPublicClient({ transport: http(chain.rpc) });
+  if (!chain.evm || !contracts || !isConfigured(contracts)) return [];
+  const live = contracts;
+  return cacheGet(
+    {
+      key: cacheKey("lpfeed", chain.chainId),
+      policy: { ...POLICIES.lpfeed, keep: (rows: LpRow[]) => rows.length > 0 },
+    },
+    () => fetchChainWork(chain, live),
+  );
+}
+
+async function fetchChainWork(
+  chain: ChainDefinition,
+  contracts: NonNullable<ReturnType<typeof launchContracts>>,
+): Promise<LpRow[]> {
+  const client = evmPublicClient(chain.chainId);
+  if (!client) return [];
   const [lpLogs, lockLogs, launchLogs] = await Promise.all([
     client.getLogs({ address: contracts.manager, event: lpEvent, fromBlock: 0n, toBlock: "latest" }),
     client.getLogs({ address: contracts.locker, event: lockEvent, fromBlock: 0n, toBlock: "latest" }),

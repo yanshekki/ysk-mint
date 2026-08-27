@@ -6,7 +6,7 @@ import { venuesOn, SEED_PAIRS } from "./dexVenues.ts";
 import { v2FactoryAbi, aeroFactoryAbi, erc20BalAbi, readVenuesForPair, weightedPrice } from "./dexPools.ts";
 import { discoveredPools, loadEvmMarkets } from "./defi/markets.ts";
 import { marketTokensOn } from "./defi/universe.ts";
-import { mapChunk } from "./defi/cache.ts";
+import { accountCache, mapChunk } from "./defi/cache.ts";
 import { trackLive, useLiveStatus } from "./liveStatus.ts";
 import { pairId, canonAddr, type Addr } from "./pairKey.ts";
 import { nearMyLp } from "./nearDex.ts";
@@ -178,7 +178,10 @@ export function useDexLp(
           await trackLive(`lp:${chainId}`, chainId, "lp", async () => {
             const client = getPublicClient(config, { chainId });
             if (!client) return;
-            const hits = [...(await v2Positions(client, chainId, address)), ...(await v3Positions(client, chainId, address))];
+            const hits = await accountCache("pos.lp", chainId, address, "dex", async () => [
+              ...(await v2Positions(client, chainId, address)),
+              ...(await v3Positions(client, chainId, address)),
+            ]);
             for (const h of hits) {
               const id = pairId(chainId, h.a, h.b);
               const ma = seedMeta(chainId, h.a);

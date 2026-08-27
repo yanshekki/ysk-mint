@@ -1,3 +1,5 @@
+import { cacheGet, cacheHash, cacheKey, POLICIES } from "./defi/cache.ts";
+
 const RPCS = [
   "https://free.rpc.fastnear.com",
   "https://near.lava.build",
@@ -5,7 +7,7 @@ const RPCS = [
   "https://rpc.mainnet.near.org",
 ];
 
-export async function nearRpc(method: string, params: unknown) {
+async function nearRpcRaw(method: string, params: unknown) {
   let last: unknown;
   for (const url of RPCS) {
     try {
@@ -26,6 +28,16 @@ export async function nearRpc(method: string, params: unknown) {
     }
   }
   throw new Error(typeof last === "string" ? last : "near rpc");
+}
+
+export async function nearRpc(method: string, params: unknown) {
+  return cacheGet(
+    {
+      key: cacheKey("http.near", 397, method, cacheHash(params)),
+      policy: { ...POLICIES.account, class: "http.near" },
+    },
+    () => nearRpcRaw(method, params),
+  );
 }
 
 export async function nearView<T>(accountId: string, method: string, args: unknown = {}): Promise<T> {
