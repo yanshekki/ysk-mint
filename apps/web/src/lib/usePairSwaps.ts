@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { trackLive, useLiveStatus } from "./liveStatus.ts";
+import { cancelLive, trackLive } from "./liveStatus.ts";
 import { formatUnits, parseAbiItem, type PublicClient } from "viem";
 import type { VenuePool } from "./dexPools.ts";
 import { asAddr } from "./pairKey.ts";
@@ -148,7 +148,7 @@ export function usePairSwaps(
       });
     return () => {
       cancelled = true;
-      if (chainId) useLiveStatus.getState().finish(`trades:${chainId}`, true);
+      if (chainId) cancelLive(`trades:${chainId}`);
     };
   }, [client, key, dec0, dec1, chainId]);
   return { rows, loading, rpcError };

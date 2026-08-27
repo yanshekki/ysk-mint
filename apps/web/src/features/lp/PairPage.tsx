@@ -9,7 +9,7 @@ import { evmPublicClient } from "../../lib/defi/evm/client.ts";
 import { erc20MetaAbi } from "../../lib/defi/evm/abis.ts";
 import { readVenuesForPair, weightedPrice, type VenuePool } from "../../lib/dexPools.ts";
 import { usePairSwaps, type SwapRow } from "../../lib/usePairSwaps.ts";
-import { trackLive, useLiveStatus } from "../../lib/liveStatus.ts";
+import { cancelLive, trackLive } from "../../lib/liveStatus.ts";
 import { fmtCompact, fmtUsdc } from "../../lib/defiQuotes.ts";
 import { asAddr, canonAddr } from "../../lib/pairKey.ts";
 import { TOKEN_CATALOG } from "../../lib/tokenRegistry.ts";
@@ -96,7 +96,7 @@ export function PairPage() {
       });
     return () => {
       cancelled = true;
-      useLiveStatus.getState().finish(`pair:${chainId}`, true);
+      cancelLive(`pair:${chainId}`);
     };
   }, [a, b, chain, chainId, sa?.decimals, sb?.decimals]);
 
@@ -200,7 +200,7 @@ export function PairPage() {
               <b>{t("lp.trades")}</b>
               <span className="me-count">{swaps.loading ? "…" : swaps.rows.length}</span>
             </div>
-            {swaps.loading ? (
+            {swaps.loading || loading ? (
               <p className="me-card-empty">{t("lp.loading")}</p>
             ) : swaps.rows.length === 0 ? (
               <p className="me-card-empty">{swaps.rpcError ? t("lp.tradesRpc") : evm ? t("lp.noTrades") : t("lp.noOnchainTrades")}</p>

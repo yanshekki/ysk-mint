@@ -1,10 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { CHAINS } from "@ysk-mint/config";
 import { chainIcon } from "../../lib/chainIcon.ts";
 import { useLiveStatus, type LiveJob, type LiveKind } from "../../lib/liveStatus.ts";
-
-const SHOW_AFTER = 200;
 
 function chainOf(chainId: number) {
   return Object.values(CHAINS).find((c) => c.chainId === chainId);
@@ -17,24 +15,18 @@ function kindKey(kind: LiveKind) {
 export function LiveDock() {
   const { t } = useTranslation();
   const jobs = useLiveStatus((s) => s.jobs);
-  const [now, setNow] = useState(() => Date.now());
-
-  const needsTick = jobs.some((j) => j.phase === "run" || j.phase === "wait" || j.phase === "fail");
-  useEffect(() => {
-    if (!needsTick) return;
-    const id = window.setInterval(() => setNow(Date.now()), 120);
-    return () => window.clearInterval(id);
-  }, [needsTick]);
 
   const visible = useMemo(() => {
     const run: LiveJob[] = [];
     let waiting = 0;
     for (const j of jobs) {
-      if (j.phase === "wait") waiting += 1;
-      else if (j.phase === "fail" || (j.phase === "run" && now - j.at >= SHOW_AFTER)) run.push(j);
+      if (j.phase === "wait") {
+        waiting += 1;
+        run.push(j);
+      } else if (j.phase === "fail" || j.phase === "run") run.push(j);
     }
     return { run, waiting };
-  }, [jobs, now]);
+  }, [jobs]);
 
   if (!visible.run.length && !visible.waiting) return null;
 

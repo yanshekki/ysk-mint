@@ -23,8 +23,6 @@ type Store = {
 export const useLiveStatus = create<Store>((set, get) => ({
   jobs: [],
   start: (id, chainId, kind, phase = "run") => {
-    const cur = get().jobs.find((j) => j.id === id);
-    if (cur && cur.chainId === chainId && cur.kind === kind && cur.phase === phase) return;
     set((s) => ({
       jobs: [...s.jobs.filter((j) => j.id !== id), { id, chainId, kind, phase, at: Date.now() }],
     }));
@@ -79,15 +77,23 @@ export function syncLiveFlag(id: string, chainId: number, kind: LiveKind, on: bo
   else api.finish(id, true);
 }
 
+const liveGen = new Map<string, number>();
+
+export function cancelLive(id: string) {
+  liveGen.set(id, (liveGen.get(id) ?? 0) + 1);
+  useLiveStatus.getState().finish(id, true);
+}
+
 export async function trackLive<T>(id: string, chainId: number, kind: LiveKind, fn: () => Promise<T>): Promise<T> {
-  const api = useLiveStatus.getState();
-  api.start(id, chainId, kind, "run");
+  const n = (liveGen.get(id) ?? 0) + 1;
+  liveGen.set(id, n);
+  useLiveStatus.getState().start(id, chainId, kind, "run");
   try {
     const value = await fn();
-    useLiveStatus.getState().finish(id, true);
+    if (liveGen.get(id) === n) useLiveStatus.getState().finish(id, true);
     return value;
   } catch (err) {
-    useLiveStatus.getState().finish(id, false);
+    if (liveGen.get(id) === n) useLiveStatus.getState().finish(id, false);
     throw err;
   }
 }
