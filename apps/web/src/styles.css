@@ -1293,14 +1293,6 @@ button.oft-chain:disabled {
 .me-more-rows:hover {
   background: var(--bg-white);
 }
-.me-trade-buy {
-  background: #10b981;
-  color: #fff;
-}
-.me-trade-sell {
-  background: #3b82f6;
-  color: #fff;
-}
 .me-shown {
   margin: 4px 16px 14px;
   font-size: 12px;
@@ -1481,6 +1473,14 @@ button.oft-chain:disabled {
   height: 36px;
   font-size: 11px;
   border-radius: 10px;
+}
+.me-token .holding-ico.me-oft-mark.me-trade-buy {
+  background: #10b981;
+  color: #fff;
+}
+.me-token .holding-ico.me-oft-mark.me-trade-sell {
+  background: #ef4444;
+  color: #fff;
 }
 .chip {
   display: inline-flex;
