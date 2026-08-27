@@ -236,12 +236,12 @@ export function PairPage() {
                       <span className="num me-value">{v.tvlQuote > 0 ? fmtCompact(v.tvlQuote) : "—"}</span>
                       <span className="me-pool-acts">
                         {explore ? (
-                          <a className="ghost-btn me-pool-btn" href={explore} target="_blank" rel="noreferrer">
+                          <a className="me-pool-btn me-pool-btn-explore" href={explore} target="_blank" rel="noreferrer">
                             {t("lp.explorerBtn")}
                           </a>
                         ) : null}
                         {dex ? (
-                          <a className="ghost-btn me-pool-btn" href={dex} target="_blank" rel="noreferrer">
+                          <a className="me-pool-btn me-pool-btn-dex" href={dex} target="_blank" rel="noreferrer">
                             {t("lp.dexBtn")}
                           </a>
                         ) : null}
