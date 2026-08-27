@@ -1,9 +1,10 @@
 import { formatUnits, type Address } from "viem";
-import { canonAddr } from "../../pairKey.ts";
+import { asAddr, canonAddr } from "../../pairKey.ts";
 import type { Venue } from "../../dexVenues.ts";
 import { forChunks } from "../cache.ts";
 import type { DefiProtocol, PoolRef, TokenRef, VenueQuote } from "../types.ts";
 import { v2FactoryAbi, v2PairAbi } from "./abis.ts";
+import { callMany } from "./client.ts";
 import { enumVenueMarkets } from "./enumPairs.ts";
 import { ZERO } from "./math.ts";
 
@@ -18,10 +19,10 @@ export function makeV2(venue: Venue): DefiProtocol {
       if (!client) return [];
       try {
         const pair = await client.readContract({
-          address: venue.factory,
+          address: asAddr(venue.factory),
           abi: v2FactoryAbi,
           functionName: "getPair",
-          args: [tokenA.address as Address, tokenB.address as Address],
+          args: [asAddr(tokenA.address), asAddr(tokenB.address)],
         });
         if (!pair || pair === ZERO) return [];
         return [
@@ -44,15 +45,15 @@ export function makeV2(venue: Venue): DefiProtocol {
       const hits: Array<{ a: TokenRef; b: TokenRef; refs: PoolRef[] }> = [];
       await forChunks(pairs, 80, async (chunk) => {
         try {
-          const res = await client.multicall({
-            contracts: chunk.map((p) => ({
+          const res = await callMany(
+            client,
+            chunk.map((p) => ({
               address: venue.factory,
               abi: v2FactoryAbi,
-              functionName: "getPair" as const,
+              functionName: "getPair",
               args: [p.a.address as Address, p.b.address as Address],
             })),
-            allowFailure: true,
-          });
+          );
           res.forEach((r, i) => {
             if (r.status !== "success") return;
             const pool = r.result as Address;
@@ -99,7 +100,7 @@ export async function readV2Pool(
   const client = ctx.evm;
   if (!client) return null;
   try {
-    const pool = ref.pool as Address;
+    const pool = asAddr(ref.pool);
     const [reserves, token0] = await Promise.all([
       client.readContract({ address: pool, abi: v2PairAbi, functionName: "getReserves" }),
       client.readContract({ address: pool, abi: v2PairAbi, functionName: "token0" }),

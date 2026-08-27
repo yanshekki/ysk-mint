@@ -323,6 +323,12 @@ export function usdStables(d: DexChain): UsdStable[] {
   const out: UsdStable[] = [{ address: d.usdc, decimals: d.usdcDecimals, symbol: "USDC" }];
   if (d.usdt) out.push({ address: d.usdt, decimals: d.usdtDecimals ?? 6, symbol: "USDT" });
   if (d.dai) out.push({ address: d.dai, decimals: d.daiDecimals ?? 18, symbol: "DAI" });
+  if (d.chainId === 43114) {
+    out.push({ address: "0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664", decimals: 6, symbol: "USDC" });
+  }
+  if (d.chainId === 42161) {
+    out.push({ address: "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8", decimals: 6, symbol: "USDC" });
+  }
   return out;
 }
 

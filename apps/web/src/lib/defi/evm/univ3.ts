@@ -1,9 +1,10 @@
 import { formatUnits, type Address } from "viem";
-import { canonAddr } from "../../pairKey.ts";
+import { asAddr, canonAddr } from "../../pairKey.ts";
 import type { Venue } from "../../dexVenues.ts";
 import { forChunks } from "../cache.ts";
 import type { DefiProtocol, PoolRef, TokenRef, VenueQuote } from "../types.ts";
 import { erc20BalAbi, v3FactoryAbi, v3PoolAbi, v3TickFactoryAbi } from "./abis.ts";
+import { callMany } from "./client.ts";
 import { ZERO, priceFromSqrtPriceX96 } from "./math.ts";
 
 function v3Key(venue: Venue) {
@@ -27,15 +28,15 @@ export function makeV3(venue: Venue): DefiProtocol {
       const client = ctx.evm;
       if (!client) return [];
       try {
-        const res = await client.multicall({
-          contracts: fees.map((fee) => ({
+        const res = await callMany(
+          client,
+          fees.map((fee) => ({
             address: venue.factory,
             abi,
-            functionName: "getPool" as const,
+            functionName: "getPool",
             args: [tokenA.address as Address, tokenB.address as Address, fee],
           })),
-          allowFailure: true,
-        });
+        );
         return res.flatMap((r, i) => {
           if (r.status !== "success") return [];
           const pool = r.result as Address;
@@ -64,15 +65,15 @@ export function makeV3(venue: Venue): DefiProtocol {
       const grouped = new Map<string, { a: TokenRef; b: TokenRef; refs: PoolRef[] }>();
       await forChunks(jobs, 80, async (chunk) => {
         try {
-          const res = await client.multicall({
-            contracts: chunk.map((j) => ({
+          const res = await callMany(
+            client,
+            chunk.map((j) => ({
               address: venue.factory,
               abi,
-              functionName: "getPool" as const,
+              functionName: "getPool",
               args: [j.a.address as Address, j.b.address as Address, j.fee],
             })),
-            allowFailure: true,
-          });
+          );
           res.forEach((r, i) => {
             if (r.status !== "success") return;
             const pool = r.result as Address;
@@ -113,14 +114,14 @@ async function readV3Pool(
 ): Promise<VenueQuote | null> {
   const client = ctx.evm;
   if (!client) return null;
-  const pool = poolAddr as Address;
+  const pool = asAddr(poolAddr);
   try {
     const [slot, liq, token0, balA, balB] = await Promise.all([
       client.readContract({ address: pool, abi: v3PoolAbi, functionName: "slot0" }),
       client.readContract({ address: pool, abi: v3PoolAbi, functionName: "liquidity" }),
       client.readContract({ address: pool, abi: v3PoolAbi, functionName: "token0" }),
-      client.readContract({ address: tokenA.address as Address, abi: erc20BalAbi, functionName: "balanceOf", args: [pool] }),
-      client.readContract({ address: tokenB.address as Address, abi: erc20BalAbi, functionName: "balanceOf", args: [pool] }),
+      client.readContract({ address: asAddr(tokenA.address), abi: erc20BalAbi, functionName: "balanceOf", args: [pool] }),
+      client.readContract({ address: asAddr(tokenB.address), abi: erc20BalAbi, functionName: "balanceOf", args: [pool] }),
     ]);
     if (liq === 0n) return null;
     const aIs0 = canonAddr(token0) === canonAddr(tokenA.address);

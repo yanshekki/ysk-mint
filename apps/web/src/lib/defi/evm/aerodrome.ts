@@ -1,8 +1,10 @@
 import type { Address } from "viem";
+import { asAddr } from "../../pairKey.ts";
 import type { Venue } from "../../dexVenues.ts";
 import { forChunks } from "../cache.ts";
 import type { DefiProtocol, PoolRef, TokenRef } from "../types.ts";
 import { aeroFactoryAbi } from "./abis.ts";
+import { callMany } from "./client.ts";
 import { enumVenueMarkets } from "./enumPairs.ts";
 import { ZERO } from "./math.ts";
 import { readV2Pool } from "./univ2.ts";
@@ -20,16 +22,16 @@ export function makeAero(venue: Venue): DefiProtocol {
       try {
         const [vol, st] = await Promise.all([
           client.readContract({
-            address: venue.factory,
+            address: asAddr(venue.factory),
             abi: aeroFactoryAbi,
             functionName: fn,
-            args: [tokenA.address as Address, tokenB.address as Address, false],
+            args: [asAddr(tokenA.address), asAddr(tokenB.address), false],
           }),
           client.readContract({
-            address: venue.factory,
+            address: asAddr(venue.factory),
             abi: aeroFactoryAbi,
             functionName: fn,
-            args: [tokenA.address as Address, tokenB.address as Address, true],
+            args: [asAddr(tokenA.address), asAddr(tokenB.address), true],
           }),
         ]);
         const out = [];
@@ -80,7 +82,7 @@ export function makeAero(venue: Venue): DefiProtocol {
               args: [p.a.address as Address, p.b.address as Address, true] as const,
             },
           ]);
-          const res = await client.multicall({ contracts, allowFailure: true });
+          const res = await callMany(client, contracts);
           chunk.forEach((p, i) => {
             const refs: PoolRef[] = [];
             const vol = res[i * 2];
@@ -89,7 +91,7 @@ export function makeAero(venue: Venue): DefiProtocol {
               refs.push({
                 protocolId: venue.id,
                 chainId: venue.chainId,
-                pool: vol.result,
+                pool: vol.result as Address,
                 tokenA: p.a.address,
                 tokenB: p.b.address,
                 feeLabel: "0.30%",
@@ -100,7 +102,7 @@ export function makeAero(venue: Venue): DefiProtocol {
               refs.push({
                 protocolId: venue.id,
                 chainId: venue.chainId,
-                pool: st.result,
+                pool: st.result as Address,
                 tokenA: p.a.address,
                 tokenB: p.b.address,
                 feeLabel: "0.05%",

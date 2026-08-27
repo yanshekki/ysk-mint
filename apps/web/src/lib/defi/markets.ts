@@ -1,33 +1,13 @@
-import { createPublicClient, http, type PublicClient } from "viem";
 import { CHAINS } from "@ysk-mint/config";
 import { DEX, isUsdStableAddress } from "../defiAddresses.ts";
 import { pairId } from "../pairKey.ts";
 import { cached, forChunks } from "./cache.ts";
+import { evmPublicClient } from "./evm/client.ts";
 import { ensureProtocols } from "./protocols.ts";
 import { protocolsOn } from "./registry.ts";
 import { rejectOutliers, weightedUsd } from "./quote.ts";
 import type { DefiCtx, DefiProtocol, MarketRow, PoolRef, TokenRef, VenueQuote } from "./types.ts";
 import { candidatePairs, marketTokensOn, tokensFromMarketRows, type MarketToken } from "./universe.ts";
-
-const RPC_FALLBACK: Record<number, string> = {
-  1: "https://ethereum-rpc.publicnode.com",
-  8453: "https://base.publicnode.com",
-  42161: "https://arbitrum-one-rpc.publicnode.com",
-  56: "https://bsc-rpc.publicnode.com",
-  43114: "https://avalanche-c-chain-rpc.publicnode.com",
-  10: "https://optimism-rpc.publicnode.com",
-  137: "https://polygon-bor-rpc.publicnode.com",
-  59144: "https://linea-rpc.publicnode.com",
-  534352: "https://scroll-rpc.publicnode.com",
-  100: "https://gnosis-rpc.publicnode.com",
-  324: "https://zksync-era-rpc.publicnode.com",
-  146: "https://sonic-rpc.publicnode.com",
-  999: "https://rpc.hyperliquid.xyz/evm",
-  80094: "https://rpc.berachain.com",
-  50: "https://rpc.xdc.org",
-  2020: "https://api.roninchain.com/rpc",
-  81457: "https://rpc.blast.io",
-};
 
 export type DiscoveredPool = {
   chainId: number;
@@ -44,11 +24,8 @@ export function discoveredPools(chainId: number) {
   return discovered.get(chainId) ?? [];
 }
 
-function evmClient(chainId: number): PublicClient | undefined {
-  const chain = Object.values(CHAINS).find((c) => c.chainId === chainId);
-  const url = RPC_FALLBACK[chainId] ?? chain?.rpc;
-  if (!url) return undefined;
-  return createPublicClient({ transport: http(url) });
+function evmClient(chainId: number) {
+  return evmPublicClient(chainId);
 }
 
 type Hit = { a: MarketToken; b: MarketToken; protocolId: string; refs: PoolRef[] };
@@ -152,7 +129,10 @@ export async function loadEvmMarkets(chainId: number): Promise<MarketRow[]> {
   if (!d) return [];
   const chain = Object.values(CHAINS).find((c) => c.chainId === chainId);
   if (!chain) return [];
-  return cached(`markets:${chainId}`, 60_000, async () => {
+  return cached(
+    `markets:${chainId}`,
+    60_000,
+    async () => {
     const client = evmClient(chainId);
     if (!client) return [];
     const ctx: DefiCtx = { evm: client };
@@ -232,5 +212,7 @@ export async function loadEvmMarkets(chainId: number): Promise<MarketRow[]> {
       });
     }
     return [...byPair.values()];
-  });
+    },
+    (rows) => rows.length > 0,
+  );
 }

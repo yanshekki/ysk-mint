@@ -1,4 +1,15 @@
+import { getAddress } from "viem";
+
 export type Addr = `0x${string}`;
+
+export function asAddr(a: string): Addr {
+  const hex = (a.startsWith("0x") || a.startsWith("0X") ? a : `0x${a}`) as Addr;
+  try {
+    return getAddress(hex);
+  } catch {
+    return getAddress(hex.toLowerCase() as Addr);
+  }
+}
 
 export function canonAddr(a: string) {
   return a.toLowerCase() as Addr;

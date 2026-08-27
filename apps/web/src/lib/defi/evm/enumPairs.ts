@@ -7,6 +7,7 @@ import { forChunks } from "../cache.ts";
 import type { DefiCtx, MarketRow, VenueQuote } from "../types.ts";
 import { chainTokenIcon, marketTokensOn, type MarketToken } from "../universe.ts";
 import { aeroFactoryAbi, erc20MetaAbi, v2FactoryAbi, v2PairAbi } from "./abis.ts";
+import { callMany } from "./client.ts";
 import { ZERO } from "./math.ts";
 
 /** Full factory walks on huge Uni V2 clones would scan junk. Small venues stay complete. */
@@ -43,14 +44,14 @@ async function listPools(client: PublicClient, factory: Address, fn: ListFn, n: 
   const idxs = Array.from({ length: n }, (_, i) => i);
   await forChunks(idxs, 80, async (chunk) => {
     try {
-      const res = await client.multicall({
-        contracts: chunk.map((i) =>
+      const res = await callMany(
+        client,
+        chunk.map((i) =>
           fn === "allPools"
-            ? { address: factory, abi: aeroFactoryAbi, functionName: "allPools" as const, args: [BigInt(i)] }
-            : { address: factory, abi: v2FactoryAbi, functionName: "allPairs" as const, args: [BigInt(i)] },
+            ? { address: factory, abi: aeroFactoryAbi, functionName: "allPools", args: [BigInt(i)] }
+            : { address: factory, abi: v2FactoryAbi, functionName: "allPairs", args: [BigInt(i)] },
         ),
-        allowFailure: true,
-      });
+      );
       res.forEach((r) => {
         if (r.status !== "success") return;
         const pool = r.result as Address;
@@ -76,13 +77,13 @@ async function loadMetas(client: PublicClient, chainId: number, addrs: Address[]
   const icon = chainTokenIcon(chainId);
   await forChunks(missing, 40, async (chunk) => {
     try {
-      const res = await client.multicall({
-        contracts: chunk.flatMap((a) => [
-          { address: a, abi: erc20MetaAbi, functionName: "decimals" as const },
-          { address: a, abi: erc20MetaAbi, functionName: "symbol" as const },
+      const res = await callMany(
+        client,
+        chunk.flatMap((a) => [
+          { address: a, abi: erc20MetaAbi, functionName: "decimals" },
+          { address: a, abi: erc20MetaAbi, functionName: "symbol" },
         ]),
-        allowFailure: true,
-      });
+      );
       chunk.forEach((a, i) => {
         const dec = res[i * 2];
         const sym = res[i * 2 + 1];
@@ -108,15 +109,15 @@ async function readPairs(client: PublicClient, pools: Address[]): Promise<RawPai
   const out: RawPair[] = [];
   await forChunks(pools, 20, async (chunk) => {
     try {
-      const res = await client.multicall({
-        contracts: chunk.flatMap((pool) => [
-          { address: pool, abi: v2PairAbi, functionName: "token0" as const },
-          { address: pool, abi: v2PairAbi, functionName: "token1" as const },
-          { address: pool, abi: v2PairAbi, functionName: "getReserves" as const },
-          { address: pool, abi: v2PairAbi, functionName: "stable" as const },
+      const res = await callMany(
+        client,
+        chunk.flatMap((pool) => [
+          { address: pool, abi: v2PairAbi, functionName: "token0" },
+          { address: pool, abi: v2PairAbi, functionName: "token1" },
+          { address: pool, abi: v2PairAbi, functionName: "getReserves" },
+          { address: pool, abi: v2PairAbi, functionName: "stable" },
         ]),
-        allowFailure: true,
-      });
+      );
       chunk.forEach((pool, i) => {
         const t0 = res[i * 4];
         const t1 = res[i * 4 + 1];

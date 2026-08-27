@@ -2,6 +2,7 @@ import { formatUnits, type Address } from "viem";
 import { canonAddr, type Addr } from "../../pairKey.ts";
 import { forChunks } from "../cache.ts";
 import type { DefiProtocol, PoolRef, TokenRef, VenueQuote } from "../types.ts";
+import { callMany } from "./client.ts";
 import { ZERO } from "./math.ts";
 
 type SyncVenue = {
@@ -72,15 +73,15 @@ export function makeSync(venue: SyncVenue): DefiProtocol {
       const hits: Array<{ a: TokenRef; b: TokenRef; refs: PoolRef[] }> = [];
       await forChunks(pairs, 80, async (chunk) => {
         try {
-          const res = await client.multicall({
-            contracts: chunk.map((p) => ({
+          const res = await callMany(
+            client,
+            chunk.map((p) => ({
               address: venue.factory,
               abi: factoryAbi,
-              functionName: "getPool" as const,
+              functionName: "getPool",
               args: [p.a.address as Address, p.b.address as Address],
             })),
-            allowFailure: true,
-          });
+          );
           res.forEach((r, i) => {
             if (r.status !== "success") return;
             const pool = r.result as Address;

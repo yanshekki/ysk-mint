@@ -1,4 +1,6 @@
 import { DEX, SOL_NATIVE_MINT, usdStables } from "../defiAddresses.ts";
+import { SEED_PAIRS } from "../dexVenues.ts";
+import { asAddr } from "../pairKey.ts";
 import { TOKEN_CATALOG } from "../tokenRegistry.ts";
 import type { TokenRef } from "./types.ts";
 
@@ -86,10 +88,11 @@ export function catalogTopOn(chainId: number, limit = 100): MarketToken[] {
 }
 
 function pushToken(out: MarketToken[], seen: Set<string>, t: MarketToken) {
-  const k = t.address.toLowerCase();
+  const address = t.address.startsWith("0x") || t.address.startsWith("0X") ? asAddr(t.address) : t.address;
+  const k = address.toLowerCase();
   if (!k || seen.has(k)) return;
   seen.add(k);
-  out.push(t);
+  out.push({ ...t, address });
 }
 
 export function chainTokenIcon(chainId: number) {
@@ -160,12 +163,14 @@ export function candidatePairs(chainId: number, extra: MarketToken[] = []): Arra
   const pairs: Array<{ a: MarketToken; b: MarketToken }> = [];
   const seen = new Set<string>();
   const add = (a: MarketToken, b: MarketToken) => {
-    if (a.address.toLowerCase() === b.address.toLowerCase()) return;
-    const key = `${a.address.toLowerCase()}:${b.address.toLowerCase()}`;
-    const rev = `${b.address.toLowerCase()}:${a.address.toLowerCase()}`;
+    const aa = a.address.startsWith("0x") || a.address.startsWith("0X") ? { ...a, address: asAddr(a.address) } : a;
+    const bb = b.address.startsWith("0x") || b.address.startsWith("0X") ? { ...b, address: asAddr(b.address) } : b;
+    if (aa.address.toLowerCase() === bb.address.toLowerCase()) return;
+    const key = `${aa.address.toLowerCase()}:${bb.address.toLowerCase()}`;
+    const rev = `${bb.address.toLowerCase()}:${aa.address.toLowerCase()}`;
     if (seen.has(key) || seen.has(rev)) return;
     seen.add(key);
-    pairs.push({ a, b });
+    pairs.push({ a: aa, b: bb });
   };
 
   for (const t of tokens) {
@@ -184,6 +189,13 @@ export function candidatePairs(chainId: number, extra: MarketToken[] = []): Arra
       continue;
     }
     for (const q of quotes) add(t, q);
+  }
+  for (const s of SEED_PAIRS) {
+    if (s.chainId !== chainId) continue;
+    add(
+      { chainId, address: s.a.address, decimals: s.a.decimals, symbol: s.a.symbol, icon: s.a.icon },
+      { chainId, address: s.b.address, decimals: s.b.decimals, symbol: s.b.symbol, icon: s.b.icon },
+    );
   }
   return pairs;
 }

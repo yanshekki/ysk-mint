@@ -1,6 +1,7 @@
 import { formatUnits, type Address, type PublicClient } from "viem";
 import { forChunks } from "../cache.ts";
 import type { DefiProtocol, PoolRef, TokenRef, VenueQuote } from "../types.ts";
+import { callMany } from "./client.ts";
 import { ZERO } from "./math.ts";
 
 const PROVIDER = "0x5ffe7FB82894076ECB99A30D6A32e969e6e35E98" as Address;
@@ -129,15 +130,15 @@ async function findPools(client: PublicClient, meta: Address, tokenA: Address, t
   } catch {
     /* try indexed */
   }
-  const extra = await client.multicall({
-    contracts: [1n, 2n, 3n].map((i) => ({
+  const extra = await callMany(
+    client,
+    [1n, 2n, 3n].map((i) => ({
       address: meta,
       abi: findIAbi,
-      functionName: "find_pool_for_coins" as const,
-      args: [tokenA, tokenB, i] as const,
+      functionName: "find_pool_for_coins",
+      args: [tokenA, tokenB, i],
     })),
-    allowFailure: true,
-  });
+  );
   for (const r of extra) {
     if (r.status === "success") push(r.result as Address);
   }
