@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
+import { AddrAddBar } from "../settings/AddrFields.tsx";
+import { KIND_ICON, shortAddr } from "../../lib/addrKind.ts";
+import { useActiveSnap, useAddressSets } from "../../lib/addressSets.ts";
 import { formatUnits, parseAbiItem, type Address } from "viem";
-import { useAccount, useConfig } from "wagmi";
+import { useConfig } from "wagmi";
 import { getPublicClient } from "wagmi/actions";
 import { CHAINS, evmEnabledChains, featuredChains, isConfigured, type ChainDefinition } from "@ysk-mint/sdk";
 import {
@@ -30,7 +33,6 @@ import { resolvedContracts } from "../../lib/launchStack.ts";
 import { useWizard } from "../wizard/store.ts";
 import { useUserSettings } from "../../lib/userSettings.ts";
 import { accountCache } from "../../lib/defi/cache.ts";
-import { useAdaHandle, useEvmName, useSolName } from "../../lib/chainNames.ts";
 import { chainIcon } from "../../lib/chainIcon.ts";
 import { Badge } from "../../shared/ui/TokenRow.tsx";
 import { ChipBusy } from "../../shared/ui/LiveDock.tsx";
@@ -106,6 +108,88 @@ function valued(raw: bigint, decimals: number, q?: Quote | null) {
   if (!q) return null;
   const n = Number(formatUnits(raw, decimals));
   return Number.isFinite(n) ? n * q.usdc : null;
+}
+
+function lineKey(l: ProtocolLine) {
+  return `${l.chainId}:${(l.contract ?? l.id).toLowerCase()}:${l.side ?? ""}:${l.symbol}`;
+}
+
+function fmtLineAmt(raw: bigint, contract?: string) {
+  const dec =
+    TOKEN_CATALOG.find((t) => t.address && contract && t.address.toLowerCase() === contract.toLowerCase())?.decimals ?? 18;
+  const n = Number(formatUnits(raw, dec));
+  if (!Number.isFinite(n)) return formatUnits(raw, dec);
+  if (n >= 1000) return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  if (n >= 1) return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
+  return n.toLocaleString(undefined, { maximumFractionDigits: 6 });
+}
+
+function mergeLines(into: ProtocolLine[], extra: ProtocolLine[]): ProtocolLine[] {
+  const map = new Map(into.map((l) => [lineKey(l), { ...l }]));
+  for (const l of extra) {
+    const k = lineKey(l);
+    const prev = map.get(k);
+    if (!prev) {
+      map.set(k, { ...l });
+      continue;
+    }
+    const raw = prev.raw + l.raw;
+    const valueUsdc = prev.valueUsdc == null && l.valueUsdc == null ? null : (prev.valueUsdc ?? 0) + (l.valueUsdc ?? 0);
+    map.set(k, { ...prev, raw, amount: fmtLineAmt(raw, l.contract ?? prev.contract), valueUsdc });
+  }
+  return [...map.values()];
+}
+
+function minHealth(a?: string, b?: string) {
+  const na = Number(a);
+  const nb = Number(b);
+  if (Number.isFinite(na) && Number.isFinite(nb)) return String(Math.min(na, nb));
+  return a || b || "—";
+}
+
+function mergeAave(cards: AaveCard[]): AaveCard[] {
+  const by = new Map<number, AaveCard>();
+  for (const c of cards) {
+    const prev = by.get(c.chainId);
+    if (!prev) {
+      by.set(c.chainId, { ...c, lines: [...c.lines], aTokens: new Set(c.aTokens) });
+      continue;
+    }
+    for (const x of c.aTokens) prev.aTokens.add(x);
+    prev.lines = mergeLines(prev.lines, c.lines);
+    prev.health = minHealth(prev.health, c.health);
+  }
+  return [...by.values()];
+}
+
+function mergeUni(cards: UniCard[]): UniCard[] {
+  const by = new Map<string, UniCard>();
+  for (const c of cards) {
+    const k = `${c.chainId}:${c.protocol}`;
+    const prev = by.get(k);
+    if (!prev) {
+      by.set(k, { ...c, lines: [...c.lines] });
+      continue;
+    }
+    prev.lines = mergeLines(prev.lines, c.lines);
+  }
+  return [...by.values()];
+}
+
+function mergeLend(cards: LendCard[]): LendCard[] {
+  const by = new Map<string, LendCard>();
+  for (const c of cards) {
+    const k = `${c.chainId}:${c.protocol}`;
+    const prev = by.get(k);
+    if (!prev) {
+      by.set(k, { ...c, lines: [...c.lines], aTokens: new Set(c.aTokens) });
+      continue;
+    }
+    for (const x of c.aTokens) prev.aTokens.add(x);
+    prev.lines = mergeLines(prev.lines, c.lines);
+    prev.health = minHealth(prev.health, c.health);
+  }
+  return [...by.values()];
 }
 
 type LineProps = {
@@ -185,33 +269,35 @@ function ProtocolTable({ lines, render }: { lines: ProtocolLine[]; render: (l: P
 
 export function MePage() {
   const { t } = useTranslation();
-  const { address, isConnected } = useAccount();
+  const snap = useActiveSnap();
+  const setActive = useAddressSets((s) => s.setActive);
+  const watchSets = useAddressSets((s) => s.watch);
+  const addMine = useAddressSets((s) => s.addMine);
   const native = useNativeWallets();
   const config = useConfig();
   const w = useWizard();
-  const evm = useEvmHoldings(address);
-  const near = useNearHoldings(native.nearAccount);
-  const ada = useCardanoHoldings(native.cardanoAddress, {
-    addresses: native.cardanoAddresses,
-    stake: native.cardanoStake,
-    sync: native.cardanoSync,
-  });
-  const sol = useSolanaHoldings(native.solanaAddress);
-  const tron = useTronHoldings(native.tronAddress);
-  const sui = useSuiHoldings(native.suiAddress);
-  const ton = useTonHoldings(native.tonAddress);
-  const aptos = useAptosHoldings(native.aptosAddress);
-  const btc = useBitcoinHoldings(native.bitcoinAddress);
-  const xrpl = useXrplHoldings(native.xrplAddress);
-  const xlm = useStellarHoldings(native.stellarAddress);
-  const atom = useCosmosHoldings(native.cosmosAddress);
-  const osmo = useOsmosisHoldings(native.osmosisAddress);
-  const tia = useCelestiaHoldings(native.celestiaAddress);
-  const strk = useStarknetHoldings(native.starknetAddress);
-  const hyper = useHyperCoreHoldings(address);
-  const evmName = useEvmName(address);
-  const adaName = useAdaHandle(native.cardanoAddress, native.cardanoStake);
-  const solName = useSolName(native.solanaAddress);
+  const evmAddrs = snap.byKind.evm as Address[];
+  const evm = useEvmHoldings(evmAddrs);
+  const near = useNearHoldings(snap.byKind.near);
+  const ada = useCardanoHoldings(
+    snap.byKind.cardano,
+    snap.isMine && native.cardanoAddress
+      ? { addresses: native.cardanoAddresses, stake: native.cardanoStake, sync: native.cardanoSync }
+      : undefined,
+  );
+  const sol = useSolanaHoldings(snap.byKind.solana);
+  const tron = useTronHoldings(snap.byKind.tron);
+  const sui = useSuiHoldings(snap.byKind.sui);
+  const ton = useTonHoldings(snap.byKind.ton);
+  const aptos = useAptosHoldings(snap.byKind.aptos);
+  const btc = useBitcoinHoldings(snap.byKind.bitcoin);
+  const xrpl = useXrplHoldings(snap.byKind.xrpl);
+  const xlm = useStellarHoldings(snap.byKind.stellar);
+  const atom = useCosmosHoldings(snap.byKind.cosmos);
+  const osmo = useOsmosisHoldings(snap.byKind.osmosis);
+  const tia = useCelestiaHoldings(snap.byKind.celestia);
+  const strk = useStarknetHoldings(snap.byKind.starknet);
+  const hyper = useHyperCoreHoldings(evmAddrs);
   const [filter, setFilter] = useState<number | "all">("all");
   const hideZero = useUserSettings((s) => s.hideZero);
   const patchSettings = useUserSettings((s) => s.patch);
@@ -227,24 +313,7 @@ export function MePage() {
   const [stakeExtra, setStakeExtra] = useState<StakeLine[]>([]);
   const [adaStakeLines, setAdaStakeLines] = useState<StakeLine[]>([]);
 
-  const anyWallet =
-    isConnected ||
-    Boolean(
-      native.nearAccount ||
-        native.cardanoAddress ||
-        native.solanaAddress ||
-        native.tronAddress ||
-        native.suiAddress ||
-        native.tonAddress ||
-        native.aptosAddress ||
-        native.bitcoinAddress ||
-        native.xrplAddress ||
-        native.stellarAddress ||
-        native.cosmosAddress ||
-        native.osmosisAddress ||
-        native.celestiaAddress ||
-        native.starknetAddress,
-    );
+  const anyWallet = snap.addrs.length > 0;
 
   const liveFactories = useMemo(() => evmEnabledChains().filter((c) => isConfigured(resolvedContracts(c))), []);
 
@@ -260,37 +329,39 @@ export function MePage() {
       }
       return extra;
     };
-    if (!address) {
-      setLaunched(extras());
+    if (!evmAddrs.length) {
+      setLaunched(snap.isMine ? extras() : []);
       return;
     }
     void Promise.all(
-      liveFactories.map(async (c) => {
-        const contracts = resolvedContracts(c);
-        if (!isConfigured(contracts)) return [];
-        const client = getPublicClient(config, { chainId: c.chainId });
-        if (!client) return [];
-        try {
-          return await accountCache("lpfeed", c.chainId, address, "me-launch", async () => {
-            const logs = await client.getLogs({
-              address: contracts.factory,
-              event: launchEvent,
-              args: { deployer: address },
-              fromBlock: 0n,
-              toBlock: "latest",
+      evmAddrs.flatMap((address) =>
+        liveFactories.map(async (c) => {
+          const contracts = resolvedContracts(c);
+          if (!isConfigured(contracts)) return [];
+          const client = getPublicClient(config, { chainId: c.chainId });
+          if (!client) return [];
+          try {
+            return await accountCache("lpfeed", c.chainId, address, "me-launch", async () => {
+              const logs = await client.getLogs({
+                address: contracts.factory,
+                event: launchEvent,
+                args: { deployer: address },
+                fromBlock: 0n,
+                toBlock: "latest",
+              });
+              return logs.map((l) => ({
+                token: l.args.token as `0x${string}`,
+                name: l.args.name ?? "",
+                symbol: l.args.symbol ?? "",
+                chainId: c.chainId,
+                chain: c.short,
+              }));
             });
-            return logs.map((l) => ({
-              token: l.args.token as `0x${string}`,
-              name: l.args.name ?? "",
-              symbol: l.args.symbol ?? "",
-              chainId: c.chainId,
-              chain: c.short,
-            }));
-          });
-        } catch {
-          return [];
-        }
-      }),
+          } catch {
+            return [];
+          }
+        }),
+      ),
     ).then((parts) => {
       if (cancelled) return;
       const fromLogs = parts.flat();
@@ -300,7 +371,7 @@ export function MePage() {
     return () => {
       cancelled = true;
     };
-  }, [address, config, liveFactories, w.name, w.perChain, w.symbol]);
+  }, [evmAddrs, config, liveFactories, snap.isMine, w.name, w.perChain, w.symbol]);
 
   const buckets = useMemo(() => {
     const map = new Map<number, HoldingRow[]>();
@@ -314,41 +385,41 @@ export function MePage() {
         map.set(r.chainId, list);
       }
     };
-    add(evm.rows, isConnected);
-    add(ada.rows, Boolean(native.cardanoAddress));
-    add(near.rows, Boolean(native.nearAccount));
-    add(sol.rows, Boolean(native.solanaAddress));
-    add(tron.rows, Boolean(native.tronAddress));
-    add(sui.rows, Boolean(native.suiAddress));
-    add(ton.rows, Boolean(native.tonAddress));
-    add(aptos.rows, Boolean(native.aptosAddress));
-    add(btc.rows, Boolean(native.bitcoinAddress));
-    add(xrpl.rows, Boolean(native.xrplAddress));
-    add(xlm.rows, Boolean(native.stellarAddress));
-    add(atom.rows, Boolean(native.cosmosAddress));
-    add(osmo.rows, Boolean(native.osmosisAddress));
-    add(tia.rows, Boolean(native.celestiaAddress));
-    add(strk.rows, Boolean(native.starknetAddress));
-    add(hyper.rows, isConnected);
+    add(evm.rows, evmAddrs.length > 0);
+    add(ada.rows, snap.byKind.cardano.length > 0);
+    add(near.rows, snap.byKind.near.length > 0);
+    add(sol.rows, snap.byKind.solana.length > 0);
+    add(tron.rows, snap.byKind.tron.length > 0);
+    add(sui.rows, snap.byKind.sui.length > 0);
+    add(ton.rows, snap.byKind.ton.length > 0);
+    add(aptos.rows, snap.byKind.aptos.length > 0);
+    add(btc.rows, snap.byKind.bitcoin.length > 0);
+    add(xrpl.rows, snap.byKind.xrpl.length > 0);
+    add(xlm.rows, snap.byKind.stellar.length > 0);
+    add(atom.rows, snap.byKind.cosmos.length > 0);
+    add(osmo.rows, snap.byKind.osmosis.length > 0);
+    add(tia.rows, snap.byKind.celestia.length > 0);
+    add(strk.rows, snap.byKind.starknet.length > 0);
+    add(hyper.rows, evmAddrs.length > 0);
     const connectedFor = (c: ChainDefinition) => {
-      if (c.vm === "cardano") return Boolean(native.cardanoAddress);
-      if (c.vm === "near") return Boolean(native.nearAccount);
-      if (c.vm === "solana") return Boolean(native.solanaAddress);
-      if (c.vm === "tron") return Boolean(native.tronAddress);
-      if (c.vm === "sui") return Boolean(native.suiAddress);
-      if (c.vm === "ton") return Boolean(native.tonAddress);
-      if (c.vm === "aptos") return Boolean(native.aptosAddress);
-      if (c.vm === "bitcoin") return Boolean(native.bitcoinAddress);
-      if (c.vm === "xrpl") return Boolean(native.xrplAddress);
-      if (c.vm === "stellar") return Boolean(native.stellarAddress);
+      if (c.vm === "cardano") return snap.byKind.cardano.length > 0;
+      if (c.vm === "near") return snap.byKind.near.length > 0;
+      if (c.vm === "solana") return snap.byKind.solana.length > 0;
+      if (c.vm === "tron") return snap.byKind.tron.length > 0;
+      if (c.vm === "sui") return snap.byKind.sui.length > 0;
+      if (c.vm === "ton") return snap.byKind.ton.length > 0;
+      if (c.vm === "aptos") return snap.byKind.aptos.length > 0;
+      if (c.vm === "bitcoin") return snap.byKind.bitcoin.length > 0;
+      if (c.vm === "xrpl") return snap.byKind.xrpl.length > 0;
+      if (c.vm === "stellar") return snap.byKind.stellar.length > 0;
       if (c.vm === "cosmos") {
-        if (c.chainId === 118) return Boolean(native.cosmosAddress);
-        if (c.chainId === 100001) return Boolean(native.osmosisAddress);
-        if (c.chainId === 100002) return Boolean(native.celestiaAddress);
+        if (c.chainId === 118) return snap.byKind.cosmos.length > 0;
+        if (c.chainId === 100001) return snap.byKind.osmosis.length > 0;
+        if (c.chainId === 100002) return snap.byKind.celestia.length > 0;
         return false;
       }
-      if (c.vm === "starknet") return Boolean(native.starknetAddress);
-      return isConnected;
+      if (c.vm === "starknet") return snap.byKind.starknet.length > 0;
+      return evmAddrs.length > 0;
     };
     const loadingFor = (c: ChainDefinition) => {
       if (c.vm === "cardano") return ada.loading;
@@ -399,21 +470,8 @@ export function MePage() {
     evm.rows,
     hyper.loading,
     hyper.rows,
-    isConnected,
-    native.aptosAddress,
-    native.bitcoinAddress,
-    native.cardanoAddress,
-    native.celestiaAddress,
-    native.cosmosAddress,
-    native.nearAccount,
-    native.osmosisAddress,
-    native.solanaAddress,
-    native.starknetAddress,
-    native.stellarAddress,
-    native.suiAddress,
-    native.tonAddress,
-    native.tronAddress,
-    native.xrplAddress,
+    evmAddrs,
+    snap.byKind,
     near.loading,
     near.rows,
     osmo.loading,
@@ -450,7 +508,16 @@ export function MePage() {
   );
   const unstakeLiquid = t("me.unstakeLiquid");
   const liveJobs = useLiveStatus((s) => s.jobs);
-  const adaStake = native.cardanoStake || (native.cardanoAddress ? stakeFromPayment(native.cardanoAddress) : "");
+  const adaStake = snap.addrs
+    .filter((a) => a.kind === "cardano")
+    .map((a) => a.cardanoStake || stakeFromPayment(a.value))
+    .filter(Boolean)
+    .join("|");
+  const adaPays = snap.addrs
+    .filter((a) => a.kind === "cardano")
+    .flatMap((a) => a.cardanoAddresses?.length ? a.cardanoAddresses : [a.value])
+    .filter(Boolean)
+    .join("|");
 
   useEffect(() => {
     if (!anyWallet) {
@@ -476,7 +543,7 @@ export function MePage() {
         const c = getPublicClient(config, { chainId: id });
         if (c) clients.set(id, c);
       }
-      if (address) {
+      if (evmAddrs.length) {
         for (const id of [1, 8453, 42161, 56, 43114, 10, 137, 324, 59144, 999]) {
           if (clients.has(id)) continue;
           const c = getPublicClient(config, { chainId: id });
@@ -521,77 +588,97 @@ export function MePage() {
       const uniCards: UniCard[] = [];
       const lendCards: LendCard[] = [];
       const tokens = new Set<string>();
-      let burrowCards: AaveCard | null = null;
-      let benqiCard: AaveCard | null = null;
+      const nearAccs = snap.byKind.near;
+      const solAccs = snap.byKind.solana;
+      const suiAccs = snap.byKind.sui;
+      const tronAccs = snap.byKind.tron;
+      const aptosAccs = snap.byKind.aptos;
       const defiIds = [
         ...clients.keys(),
-        ...(native.nearAccount ? [397] : []),
-        ...(native.solanaAddress ? [101] : []),
-        ...(native.suiAddress ? [784] : []),
-        ...(native.tronAddress ? [728126428] : []),
-        ...(native.aptosAddress ? [637] : []),
+        ...(nearAccs.length ? [397] : []),
+        ...(solAccs.length ? [101] : []),
+        ...(suiAccs.length ? [784] : []),
+        ...(tronAccs.length ? [728126428] : []),
+        ...(aptosAccs.length ? [637] : []),
       ];
       for (const id of defiIds) useLiveStatus.getState().start(`defi:${id}`, id, "defi", "wait");
+
+      const burrowAll: AaveCard[] = [];
+      const benqiAll: AaveCard[] = [];
 
       await Promise.all(
         [...new Set(defiIds)].map((id) =>
           trackLive(`defi:${id}`, id, "defi", async () => {
             if (id === 397) {
-              burrowCards = native.nearAccount ? await readBurrow(native.nearAccount).catch(() => null) : null;
-              extra.push(...(await readNearStake(native.nearAccount).catch(() => [])));
+              for (const acc of nearAccs) {
+                const b = await readBurrow(acc).catch(() => null);
+                if (b) burrowAll.push(b);
+                extra.push(...(await readNearStake(acc).catch(() => [])));
+              }
               return;
             }
             if (id === 101) {
-              extra.push(...(await readSolStake(native.solanaAddress, next.get("101:native")?.usdc).catch(() => [])));
-              const more = await readNativeLending({ sol: native.solanaAddress, quotes: next }).catch(() => []);
-              for (const card of more) {
-                lendCards.push(card);
-                for (const x of card.aTokens) tokens.add(x);
+              for (const acc of solAccs) {
+                extra.push(...(await readSolStake(acc, next.get("101:native")?.usdc).catch(() => [])));
+                const more = await readNativeLending({ sol: acc, quotes: next }).catch(() => []);
+                for (const card of more) {
+                  lendCards.push(card);
+                  for (const x of card.aTokens) tokens.add(x);
+                }
               }
               return;
             }
             if (id === 784) {
-              const more = await readNativeLending({ sui: native.suiAddress, quotes: next }).catch(() => []);
-              for (const card of more) {
-                lendCards.push(card);
-                for (const x of card.aTokens) tokens.add(x);
+              for (const acc of suiAccs) {
+                const more = await readNativeLending({ sui: acc, quotes: next }).catch(() => []);
+                for (const card of more) {
+                  lendCards.push(card);
+                  for (const x of card.aTokens) tokens.add(x);
+                }
               }
               return;
             }
             if (id === 728126428) {
-              const more = await readNativeLending({ tron: native.tronAddress, quotes: next }).catch(() => []);
-              for (const card of more) {
-                lendCards.push(card);
-                for (const x of card.aTokens) tokens.add(x);
+              for (const acc of tronAccs) {
+                const more = await readNativeLending({ tron: acc, quotes: next }).catch(() => []);
+                for (const card of more) {
+                  lendCards.push(card);
+                  for (const x of card.aTokens) tokens.add(x);
+                }
               }
               return;
             }
             if (id === 637) {
-              const more = await readNativeLending({ aptos: native.aptosAddress, quotes: next }).catch(() => []);
-              for (const card of more) {
-                lendCards.push(card);
-                for (const x of card.aTokens) tokens.add(x);
+              for (const acc of aptosAccs) {
+                const more = await readNativeLending({ aptos: acc, quotes: next }).catch(() => []);
+                for (const card of more) {
+                  lendCards.push(card);
+                  for (const x of card.aTokens) tokens.add(x);
+                }
               }
               return;
             }
             const client = clients.get(id);
-            if (!client || !address) return;
-            const a = await readAave(client, id, address);
-            if (a) {
-              aaveCards.push(a);
-              for (const x of a.aTokens) tokens.add(x);
-            }
-            uniCards.push(...(await readUniV3(client, id, address)));
-            const more = await readExtraLending(client, id, address, next).catch(() => []);
-            for (const card of more) {
-              lendCards.push(card);
-              for (const x of card.aTokens) tokens.add(x);
-            }
-            extra.push(...(await readPinnedLst(client, id, address, next, unstakeLiquid).catch(() => [])));
-            if (id === 1) extra.push(...(await readLidoQueue(client, address, next.get(quoteKey(1, undefined, true))?.usdc ?? next.get("1:native")?.usdc).catch(() => [])));
-            if (id === 43114) {
-              extra.push(...(await readSavaxUnlocks(client, address, next.get("43114:native")?.usdc).catch(() => [])));
-              benqiCard = await readBenqiMarkets(client, address, next).catch(() => null);
+            if (!client || !evmAddrs.length) return;
+            for (const address of evmAddrs) {
+              const a = await readAave(client, id, address);
+              if (a) {
+                aaveCards.push(a);
+                for (const x of a.aTokens) tokens.add(x);
+              }
+              uniCards.push(...(await readUniV3(client, id, address)));
+              const more = await readExtraLending(client, id, address, next).catch(() => []);
+              for (const card of more) {
+                lendCards.push(card);
+                for (const x of card.aTokens) tokens.add(x);
+              }
+              extra.push(...(await readPinnedLst(client, id, address, next, unstakeLiquid).catch(() => [])));
+              if (id === 1) extra.push(...(await readLidoQueue(client, address, next.get(quoteKey(1, undefined, true))?.usdc ?? next.get("1:native")?.usdc).catch(() => [])));
+              if (id === 43114) {
+                extra.push(...(await readSavaxUnlocks(client, address, next.get("43114:native")?.usdc).catch(() => [])));
+                const b = await readBenqiMarkets(client, address, next).catch(() => null);
+                if (b) benqiAll.push(b);
+              }
             }
           }).catch(() => undefined),
         ),
@@ -599,11 +686,11 @@ export function MePage() {
 
       if (cancelled) return;
       setQuotes(next);
-      setAave(aaveCards);
-      setBurrow(burrowCards ? [burrowCards] : []);
-      setBenqi(benqiCard ? [benqiCard] : []);
-      setLendExtra(lendCards);
-      setUni(uniCards);
+      setAave(mergeAave(aaveCards));
+      setBurrow(mergeAave(burrowAll));
+      setBenqi(mergeAave(benqiAll));
+      setLendExtra(mergeLend(lendCards));
+      setUni(mergeUni(uniCards));
       setATokens(tokens);
       setStakeExtra(extra);
     })();
@@ -612,18 +699,19 @@ export function MePage() {
       useLiveStatus.getState().clear("quote:");
       useLiveStatus.getState().clear("defi:");
     };
-  }, [address, anyWallet, holdingsKey, config, native.nearAccount, native.solanaAddress, native.suiAddress, native.tronAddress, native.aptosAddress, unstakeLiquid]);
+  }, [evmAddrs, anyWallet, holdingsKey, config, snap.byKind, unstakeLiquid]);
 
-  const adaPays = (native.cardanoAddresses ?? []).join("|");
   useEffect(() => {
-    if (!native.cardanoAddress && !adaStake) {
+    if (!adaStake && !adaPays) {
       setAdaStakeLines([]);
       return;
     }
     let cancelled = false;
     void trackLive("defi:1815", 1815, "defi", async () => {
-      const lines = await readAdaStake(adaStake, adaPays ? adaPays.split("|") : []);
-      if (!cancelled) setAdaStakeLines(lines);
+      const stakes = adaStake ? adaStake.split("|") : [];
+      const pays = adaPays ? adaPays.split("|") : [];
+      const parts = await Promise.all(stakes.map((s) => readAdaStake(s, pays)));
+      if (!cancelled) setAdaStakeLines(parts.flat());
     }).catch(() => {
       if (!cancelled) setAdaStakeLines([]);
     });
@@ -631,7 +719,7 @@ export function MePage() {
       cancelled = true;
       useLiveStatus.getState().finish("defi:1815", true);
     };
-  }, [adaStake, adaPays, native.cardanoAddress]);
+  }, [adaStake, adaPays]);
 
   const walletRows = useMemo(() => {
     const rows = buckets.flatMap((g) =>
@@ -722,7 +810,9 @@ export function MePage() {
         <div>
           <p className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-text-muted">Portfolio</p>
           <h1>{t("me.title")}</h1>
-          <p className="mt-1 text-[15px] text-text-sub">{t("me.body")}</p>
+          <p className="mt-1 text-[15px] text-text-sub">
+            {snap.isMine ? t("me.body") : t("me.watching", { name: snap.watchName ?? "" })}
+          </p>
         </div>
         {anyWallet ? (
           <div className="me-summary">
@@ -733,128 +823,66 @@ export function MePage() {
       </div>
       <div className="workspace-scroll">
         <div className="me-desk">
+          <div className="me-sets">
+            <div className="me-chips">
+              <button
+                type="button"
+                className={`me-chip ${snap.isMine ? "me-chip-on" : ""}`}
+                onClick={() => setActive("mine")}
+              >
+                {t("me.setMine")}
+                <span className="me-count">{t("me.addrN", { n: snap.mineCount })}</span>
+              </button>
+              {watchSets.map((set) => (
+                <button
+                  key={set.id}
+                  type="button"
+                  className={`me-chip ${snap.activeId === set.id ? "me-chip-on" : ""}`}
+                  onClick={() => setActive(set.id)}
+                >
+                  {set.name}
+                  <span className="me-count">{t("me.addrN", { n: set.addresses.length })}</span>
+                </button>
+              ))}
+            </div>
+            <Link to="/settings#addresses" className="me-pool-btn me-pool-btn-explore">
+              {t("me.manageAddrs")}
+            </Link>
+          </div>
           {!anyWallet ? (
-            <p className="field-note">{t("me.needWallet")}</p>
+            <section className="me-card">
+              <p className="me-card-empty">{snap.isMine ? t("me.needAddr") : t("me.watchEmpty")}</p>
+              <div className="me-empty-acts">
+                {snap.isMine ? (
+                  <>
+                    <Link to="/create" className="me-pool-btn me-pool-btn-dex">
+                      {t("wallet.connect")}
+                    </Link>
+                    <Link to="/settings#addresses" className="me-pool-btn me-pool-btn-explore">
+                      {t("me.pasteAddr")}
+                    </Link>
+                  </>
+                ) : (
+                  <Link to="/settings#addresses" className="me-pool-btn me-pool-btn-explore">
+                    {t("me.manageAddrs")}
+                  </Link>
+                )}
+              </div>
+              {snap.isMine ? <AddrAddBar onAdd={(kind, value) => addMine(kind, value)} /> : null}
+            </section>
           ) : (
             <>
               <div className="me-ids">
-                {isConnected && address ? (
-                  <div className="me-id">
-                    <img src="/tokens/eth.png" alt="" width={28} height={28} />
+                {snap.addrs.map((a) => (
+                  <div className="me-id" key={a.id}>
+                    <img src={KIND_ICON[a.kind]} alt="" width={28} height={28} />
                     <div>
-                      <b>{evmName || "EVM"}</b>
-                      <span className="num">{short(address)}</span>
+                      <b>{t(`settings.kind.${a.kind}`)}</b>
+                      <span className="num">{shortAddr(a.kind, a.value)}</span>
                     </div>
+                    {a.source === "connected" ? <span className="addr-pill">{t("me.connected")}</span> : null}
                   </div>
-                ) : null}
-                {native.nearAccount ? (
-                  <div className="me-id">
-                    <img src="/tokens/near.png" alt="" width={28} height={28} />
-                    <div>
-                      <b>{native.nearAccount}</b>
-                      <span className="num">NEAR</span>
-                    </div>
-                  </div>
-                ) : null}
-                {native.cardanoAddress ? (
-                  <div className="me-id">
-                    <img src="/tokens/ada.png" alt="" width={28} height={28} />
-                    <div>
-                      <b>{adaName || "ADA"}</b>
-                      <span className="num">{short(native.cardanoAddress, 10, 6)}</span>
-                    </div>
-                  </div>
-                ) : null}
-                {native.solanaAddress ? (
-                  <div className="me-id">
-                    <img src="/tokens/sol.png" alt="" width={28} height={28} />
-                    <div>
-                      <b>{solName || "SOL"}</b>
-                      <span className="num">{short(native.solanaAddress, 4, 4)}</span>
-                    </div>
-                  </div>
-                ) : null}
-                {native.tronAddress ? (
-                  <div className="me-id">
-                    <img src="/tokens/trx.png" alt="" width={28} height={28} />
-                    <div>
-                      <b>TRX</b>
-                      <span className="num">{short(native.tronAddress, 8, 6)}</span>
-                    </div>
-                  </div>
-                ) : null}
-                {native.suiAddress ? (
-                  <div className="me-id">
-                    <img src="/tokens/sui.png" alt="" width={28} height={28} />
-                    <div>
-                      <b>SUI</b>
-                      <span className="num">{short(native.suiAddress, 8, 6)}</span>
-                    </div>
-                  </div>
-                ) : null}
-                {native.tonAddress ? (
-                  <div className="me-id">
-                    <img src="/tokens/ton.png" alt="" width={28} height={28} />
-                    <div>
-                      <b>TON</b>
-                      <span className="num">{short(native.tonAddress, 8, 6)}</span>
-                    </div>
-                  </div>
-                ) : null}
-                {native.aptosAddress ? (
-                  <div className="me-id">
-                    <img src="/tokens/apt.png" alt="" width={28} height={28} />
-                    <div>
-                      <b>APT</b>
-                      <span className="num">{short(native.aptosAddress, 8, 6)}</span>
-                    </div>
-                  </div>
-                ) : null}
-                {native.bitcoinAddress ? (
-                  <div className="me-id">
-                    <img src="/tokens/btc.png" alt="" width={28} height={28} />
-                    <div>
-                      <b>BTC</b>
-                      <span className="num">{short(native.bitcoinAddress, 8, 6)}</span>
-                    </div>
-                  </div>
-                ) : null}
-                {native.xrplAddress ? (
-                  <div className="me-id">
-                    <img src="/tokens/xrp.png" alt="" width={28} height={28} />
-                    <div>
-                      <b>XRP</b>
-                      <span className="num">{short(native.xrplAddress, 8, 6)}</span>
-                    </div>
-                  </div>
-                ) : null}
-                {native.stellarAddress ? (
-                  <div className="me-id">
-                    <img src="/tokens/xlm.png" alt="" width={28} height={28} />
-                    <div>
-                      <b>XLM</b>
-                      <span className="num">{short(native.stellarAddress, 8, 6)}</span>
-                    </div>
-                  </div>
-                ) : null}
-                {native.cosmosAddress || native.osmosisAddress || native.celestiaAddress ? (
-                  <div className="me-id">
-                    <img src="/tokens/atom.png" alt="" width={28} height={28} />
-                    <div>
-                      <b>Keplr</b>
-                      <span className="num">{short(native.cosmosAddress || native.osmosisAddress || native.celestiaAddress, 8, 6)}</span>
-                    </div>
-                  </div>
-                ) : null}
-                {native.starknetAddress ? (
-                  <div className="me-id">
-                    <img src="/tokens/strk.png" alt="" width={28} height={28} />
-                    <div>
-                      <b>STRK</b>
-                      <span className="num">{short(native.starknetAddress, 8, 6)}</span>
-                    </div>
-                  </div>
-                ) : null}
+                ))}
               </div>
 
               <div className="me-chips-bar">

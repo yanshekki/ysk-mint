@@ -1,10 +1,14 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { useAccount } from "wagmi";
 import { featuredChains } from "@ysk-mint/config";
 import { LOCALES } from "../../lib/i18n.ts";
 import { cacheWipe } from "../../lib/defi/cache.ts";
 import { chainIcon } from "../../lib/chainIcon.ts";
+import { listConnected, MAX_ADDRS, MAX_WATCH, useAddressSets } from "../../lib/addressSets.ts";
+import { useNativeWallets } from "../../lib/nativeWallets.ts";
 import { BUY_GREEN, SELL_RED, useUserSettings, type QuotePriority, type QuoteSide } from "../../lib/userSettings.ts";
+import { AddrAddBar, AddrRow } from "./AddrFields.tsx";
 
 const CHAINS = featuredChains().filter((c) => !c.testnet);
 
@@ -48,6 +52,9 @@ function SetToggle({ title, hint, on, onChange }: { title: string; hint: string;
 export function SettingsPage() {
   const { t, i18n } = useTranslation();
   const s = useUserSettings();
+  const { address, isConnected } = useAccount();
+  const native = useNativeWallets();
+  const book = useAddressSets();
   const [wiping, setWiping] = useState(false);
   const [wiped, setWiped] = useState(false);
   const [restored, setRestored] = useState(false);
@@ -82,6 +89,30 @@ export function SettingsPage() {
 
   const greenRed = s.buyColor === BUY_GREEN && s.sellColor === SELL_RED;
   const redGreen = s.buyColor === SELL_RED && s.sellColor === BUY_GREEN;
+  const connected = listConnected({
+    evm: isConnected ? address : undefined,
+    near: native.nearAccount,
+    cardano: native.cardanoAddress,
+    cardanoAddresses: native.cardanoAddresses,
+    cardanoStake: native.cardanoStake,
+    solana: native.solanaAddress,
+    tron: native.tronAddress,
+    sui: native.suiAddress,
+    ton: native.tonAddress,
+    aptos: native.aptosAddress,
+    bitcoin: native.bitcoinAddress,
+    xrpl: native.xrplAddress,
+    stellar: native.stellarAddress,
+    cosmos: native.cosmosAddress,
+    osmosis: native.osmosisAddress,
+    celestia: native.celestiaAddress,
+    starknet: native.starknetAddress,
+  });
+
+  useEffect(() => {
+    if (window.location.hash !== "#addresses") return;
+    document.getElementById("addresses")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
 
   return (
     <section className="workspace">
@@ -114,6 +145,77 @@ export function SettingsPage() {
             </SetItem>
             <SetToggle title={t("settings.liveDock")} hint={t("settings.liveDockHint")} on={s.liveDock} onChange={(on) => s.patch({ liveDock: on })} />
             <SetToggle title={t("settings.hideZero")} hint={t("settings.hideZeroHint")} on={s.hideZero} onChange={(on) => s.patch({ hideZero: on })} />
+          </section>
+
+          <section className="me-card" id="addresses">
+            <div className="me-card-head">
+              <b>{t("settings.addrsMine")}</b>
+              <span className="me-count">{t("settings.addrsCount", { n: connected.length + book.mine.length })}</span>
+            </div>
+            <p className="set-note set-note-pad">{t("settings.addrsMineHint")}</p>
+            {connected.length ? (
+              <div className="me-list">
+                {connected.map((a) => (
+                  <AddrRow key={a.id} addr={a} connected />
+                ))}
+              </div>
+            ) : null}
+            {book.mine.length ? (
+              <div className="me-list">
+                {book.mine.map((a) => (
+                  <AddrRow key={a.id} addr={a} onRemove={() => book.removeMine(a.id)} />
+                ))}
+              </div>
+            ) : null}
+            {!connected.length && !book.mine.length ? <p className="me-card-empty">{t("settings.addrsMineEmpty")}</p> : null}
+            <AddrAddBar disabled={book.mine.length >= MAX_ADDRS} onAdd={(kind, value) => book.addMine(kind, value)} />
+          </section>
+
+          <section className="me-card">
+            <div className="me-card-head">
+              <b>{t("settings.addrsWatch")}</b>
+              <span className="me-count">{t("settings.watchCount", { n: book.watch.length, max: MAX_WATCH })}</span>
+            </div>
+            <p className="set-note set-note-pad">{t("settings.addrsWatchHint")}</p>
+            {book.watch.map((set) => (
+              <div key={set.id} className="set-watch-block">
+                <div className="me-card-head">
+                  <input
+                    className="me-filter addr-name"
+                    defaultValue={set.name}
+                    aria-label={t("settings.watchName")}
+                    onBlur={(e) => book.renameWatch(set.id, e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                    }}
+                  />
+                  <span className="me-count">{t("settings.addrsCount", { n: set.addresses.length })}</span>
+                  <button type="button" className="me-pool-btn me-pool-btn-explore" onClick={() => book.removeWatch(set.id)}>
+                    {t("settings.watchRemove")}
+                  </button>
+                </div>
+                {set.addresses.length ? (
+                  <div className="me-list">
+                    {set.addresses.map((a) => (
+                      <AddrRow key={a.id} addr={a} onRemove={() => book.removeWatchAddr(set.id, a.id)} />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="me-card-empty">{t("settings.watchEmpty")}</p>
+                )}
+                <AddrAddBar disabled={set.addresses.length >= MAX_ADDRS} onAdd={(kind, value) => book.addWatchAddr(set.id, kind, value)} />
+              </div>
+            ))}
+            <div className="set-chain-bar">
+              <button
+                type="button"
+                className="me-pool-btn me-pool-btn-dex"
+                disabled={book.watch.length >= MAX_WATCH}
+                onClick={() => book.addWatch(t("settings.watchDefault", { n: book.watch.length + 1 }))}
+              >
+                {t("settings.watchAdd")}
+              </button>
+            </div>
           </section>
 
           <section className="me-card">

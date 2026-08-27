@@ -3,7 +3,7 @@ import { featuredChains } from "@ysk-mint/config";
 import { syncLiveFlag, useLiveStatus } from "./liveStatus.ts";
 import { erc20Abi, formatUnits, type Address } from "viem";
 import { useConfig, useReadContracts } from "wagmi";
-import { getBalance } from "wagmi/actions";
+import { getBalance, readContract } from "wagmi/actions";
 import { accountCache, cacheGet, cacheHash, cacheKey, POLICIES } from "./defi/cache.ts";
 import { useUserSettings } from "./userSettings.ts";
 import { cipEpochNow, readCardanoValue, stakeFromPayment, subscribeCip } from "./cardanoCip30.ts";
@@ -65,30 +65,65 @@ function sortHoldings(rows: HoldingRow[], connected: boolean) {
 
 const BALANCE_QUERY = { staleTime: 30_000, refetchOnWindowFocus: false as const, retry: 1 };
 
-export function useEvmHoldings(address: Address | undefined) {
+export function addrList(v: string | string[] | undefined | null): string[] {
+  if (!v) return [];
+  const arr = Array.isArray(v) ? v : [v];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of arr) {
+    const s = raw.trim();
+    if (!s) continue;
+    const k = s.toLowerCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(s);
+  }
+  return out;
+}
+
+type BalHit = { raw: bigint; decimals?: number; symbol?: string; name?: string; icon?: string; contract?: string };
+
+function mergeBals(maps: Array<Map<string, BalHit>>): Map<string, BalHit> {
+  const out = new Map<string, BalHit>();
+  for (const m of maps) {
+    for (const [k, v] of m) {
+      const prev = out.get(k);
+      if (!prev) out.set(k, { ...v });
+      else out.set(k, { ...prev, raw: prev.raw + v.raw });
+    }
+  }
+  return out;
+}
+
+export function useEvmHoldings(address: Address | Address[] | undefined) {
+  const addrKey = Array.isArray(address) ? address.filter(Boolean).join("|") : (address ?? "");
+  const addrs = useMemo(() => addrList(address) as Address[], [addrKey]);
   const catalog = useMemo(() => tokensFor("evm"), []);
   const disabledChains = useUserSettings((s) => s.disabledChains);
   const off = useMemo(() => new Set(disabledChains), [disabledChains]);
   const erc20s = useMemo(() => catalog.filter((t) => t.address && !off.has(t.chainId)), [catalog, off]);
   const natives = useMemo(() => catalog.filter((t) => t.native && !off.has(t.chainId)), [catalog, off]);
-  const connected = Boolean(address);
+  const connected = addrs.length > 0;
+  const single = addrs.length === 1 ? addrs[0] : undefined;
   const config = useConfig();
   const [nativeByChain, setNativeByChain] = useState<Record<number, bigint>>({});
+  const [ercById, setErcById] = useState<Record<string, bigint>>({});
   const [nativeLoading, setNativeLoading] = useState(false);
+  const [ercLoading, setErcLoading] = useState(false);
   const contracts = useMemo(
     () =>
       erc20s.map((t) => ({
         address: t.address as Address,
         abi: erc20Abi,
         functionName: "balanceOf" as const,
-        args: [(address ?? "0x0000000000000000000000000000000000000000") as Address] as const,
+        args: [(single ?? "0x0000000000000000000000000000000000000000") as Address] as const,
         chainId: t.chainId,
       })),
-    [address, erc20s],
+    [single, erc20s],
   );
 
   useEffect(() => {
-    if (!address) {
+    if (!addrs.length) {
       setNativeByChain({});
       setNativeLoading(false);
       return;
@@ -105,11 +140,15 @@ export function useEvmHoldings(address: Address | undefined) {
           if (id == null) break;
           useLiveStatus.getState().start(`holdings:${id}`, id, "holdings", "run");
           try {
-            const value = await accountCache("hold.native", id, address, "bal", async () => {
-              const b = await getBalance(config, { address, chainId: id });
-              return b.value;
-            });
-            next[id] = value;
+            let sum = 0n;
+            for (const address of addrs) {
+              const value = await accountCache("hold.native", id, address, "bal", async () => {
+                const b = await getBalance(config, { address, chainId: id });
+                return b.value;
+              });
+              sum += value;
+            }
+            next[id] = sum;
             useLiveStatus.getState().finish(`holdings:${id}`, true);
           } catch {
             useLiveStatus.getState().finish(`holdings:${id}`, false);
@@ -125,13 +164,60 @@ export function useEvmHoldings(address: Address | undefined) {
     return () => {
       cancelled = true;
     };
-  }, [address, config, off]);
+  }, [addrKey, addrs, config, off]);
 
   const erc = useReadContracts({
     contracts,
-    query: { enabled: connected && contracts.length > 0, ...BALANCE_QUERY },
+    query: { enabled: Boolean(single) && contracts.length > 0, ...BALANCE_QUERY },
     allowFailure: true,
   });
+
+  useEffect(() => {
+    if (single || !addrs.length) {
+      setErcById({});
+      setErcLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setErcLoading(true);
+    void (async () => {
+      const next: Record<string, bigint> = {};
+      let i = 0;
+      const jobs = erc20s;
+      const workers = Array.from({ length: Math.min(3, jobs.length || 1) }, async () => {
+        while (i < jobs.length) {
+          const t = jobs[i++];
+          if (!t?.address) continue;
+          let sum = 0n;
+          for (const address of addrs) {
+            try {
+              const value = await accountCache("hold.erc20", t.chainId, address, t.address, async () =>
+                readContract(config, {
+                  address: t.address as Address,
+                  abi: erc20Abi,
+                  functionName: "balanceOf",
+                  args: [address],
+                  chainId: t.chainId,
+                }),
+              );
+              if (typeof value === "bigint") sum += value;
+            } catch {
+              /* skip */
+            }
+          }
+          next[t.id] = sum;
+        }
+      });
+      await Promise.all(workers);
+      if (!cancelled) {
+        setErcById(next);
+        setErcLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [addrKey, addrs, config, erc20s, single]);
 
   const rows = useMemo(() => {
     const out: HoldingRow[] = [];
@@ -140,66 +226,84 @@ export function useEvmHoldings(address: Address | undefined) {
       out.push(row(t, raw, connected));
     }
     erc20s.forEach((t, i) => {
-      const r = erc.data?.[i];
-      const raw = r?.status === "success" && typeof r.result === "bigint" ? r.result : connected ? 0n : null;
+      let raw: bigint | null = null;
+      if (connected) {
+        if (single) {
+          const r = erc.data?.[i];
+          raw = r?.status === "success" && typeof r.result === "bigint" ? r.result : 0n;
+        } else {
+          raw = ercById[t.id] ?? 0n;
+        }
+      }
       out.push(row(t, raw, connected));
     });
     return sortHoldings(out, connected);
-  }, [connected, erc.data, erc20s, natives, nativeByChain]);
+  }, [connected, erc.data, erc20s, ercById, natives, nativeByChain, single]);
 
   const funded = rows.filter((r) => r.raw > 0n).length;
-  const loading = nativeLoading || erc.isLoading;
+  const loading = nativeLoading || (single ? erc.isLoading : ercLoading);
   useEffect(() => {
-    if (!connected || !erc.isLoading) return;
+    if (!connected || !(single ? erc.isLoading : ercLoading)) return;
     for (const id of EVM_HOLD_IDS) syncLiveFlag(`holdings:${id}:erc`, id, "holdings", true);
     return () => {
       for (const id of EVM_HOLD_IDS) useLiveStatus.getState().finish(`holdings:${id}:erc`, true);
     };
-  }, [connected, erc.isLoading]);
+  }, [connected, erc.isLoading, ercLoading, single]);
   return { rows, funded, loading, catalogSize: catalog.length };
 }
 
-export function useNearHoldings(account: string) {
+async function nearBalances(account: string, catalog: TokenRecord[]): Promise<Record<string, bigint>> {
+  const next: Record<string, bigint> = {};
+  try {
+    const acc = await nearRpc("query", {
+      request_type: "view_account",
+      finality: "final",
+      account_id: account,
+    });
+    next["near-native"] = BigInt((acc.result as { amount?: string })?.amount ?? "0");
+  } catch {
+    next["near-native"] = 0n;
+  }
+  for (const t of catalog.filter((x) => x.address)) {
+    try {
+      const args = btoa(JSON.stringify({ account_id: account }));
+      const res = await nearRpc("query", {
+        request_type: "call_function",
+        finality: "final",
+        account_id: t.address,
+        method_name: "ft_balance_of",
+        args_base64: args,
+      });
+      const bytes = new Uint8Array((res.result as { result?: number[] })?.result ?? []);
+      const text = new TextDecoder().decode(bytes).replace(/"/g, "");
+      next[t.id] = BigInt(text || "0");
+    } catch {
+      next[t.id] = 0n;
+    }
+  }
+  return next;
+}
+
+export function useNearHoldings(account: string | string[]) {
   const catalog = useMemo(() => tokensFor("near", 397), []);
   const [balances, setBalances] = useState<Record<string, bigint>>({});
   const [loading, setLoading] = useState(false);
-  const connected = Boolean(account);
+  const accKey = Array.isArray(account) ? account.join("|") : account;
+  const accounts = useMemo(() => addrList(account), [accKey]);
+  const connected = accounts.length > 0;
 
   useEffect(() => {
-    if (!account) {
+    if (!accounts.length) {
       setBalances({});
       return;
     }
     let cancelled = false;
     setLoading(true);
     void (async () => {
+      const parts = await Promise.all(accounts.map((a) => nearBalances(a, catalog)));
       const next: Record<string, bigint> = {};
-      try {
-        const acc = await nearRpc("query", {
-          request_type: "view_account",
-          finality: "final",
-          account_id: account,
-        });
-        next["near-native"] = BigInt((acc.result as { amount?: string })?.amount ?? "0");
-      } catch {
-        next["near-native"] = 0n;
-      }
-      for (const t of catalog.filter((x) => x.address)) {
-        try {
-          const args = btoa(JSON.stringify({ account_id: account }));
-          const res = await nearRpc("query", {
-            request_type: "call_function",
-            finality: "final",
-            account_id: t.address,
-            method_name: "ft_balance_of",
-            args_base64: args,
-          });
-          const bytes = new Uint8Array((res.result as { result?: number[] })?.result ?? []);
-          const text = new TextDecoder().decode(bytes).replace(/"/g, "");
-          next[t.id] = BigInt(text || "0");
-        } catch {
-          next[t.id] = 0n;
-        }
+      for (const p of parts) {
+        for (const [k, v] of Object.entries(p)) next[k] = (next[k] ?? 0n) + v;
       }
       if (!cancelled) {
         setBalances(next);
@@ -209,12 +313,12 @@ export function useNearHoldings(account: string) {
     return () => {
       cancelled = true;
     };
-  }, [account, catalog]);
+  }, [accKey, accounts, catalog]);
 
   useEffect(() => {
-    syncLiveFlag("holdings:397", 397, "holdings", Boolean(account) && loading);
+    syncLiveFlag("holdings:397", 397, "holdings", connected && loading);
     return () => useLiveStatus.getState().finish("holdings:397", true);
-  }, [account, loading]);
+  }, [connected, loading]);
 
   const rows = useMemo(
     () => sortHoldings(catalog.map((t) => row(t, connected ? (balances[t.id] ?? 0n) : null, connected)), connected),
@@ -288,68 +392,91 @@ function rowsFromCardano(
   return sortHoldings(next, true);
 }
 
+async function fetchCardanoKoios(address: string, extras?: { addresses?: string[]; stake?: string }) {
+  const stake = extras?.stake || (address ? stakeFromPayment(address) : "");
+  const payments = (extras?.addresses ?? []).filter(Boolean);
+  let ada = 0n;
+  let assets: CardanoAsset[] = [];
+  if (stake.startsWith("stake")) {
+    const info = (await koiosPost("account_info", { _stake_addresses: [stake] })) as Array<{
+      total_balance?: string;
+      utxo?: string;
+    }>;
+    ada = BigInt(info[0]?.utxo ?? info[0]?.total_balance ?? "0");
+    assets = flattenCardanoAssets(await koiosPost("account_assets", { _stake_addresses: [stake] }));
+  } else {
+    const addrs = Array.from(new Set([address, ...payments].filter(Boolean)));
+    for (const group of chunk(addrs, 50)) {
+      const info = (await koiosPost("address_info", { _addresses: group })) as Array<{ balance?: string }>;
+      for (const rowInfo of info) ada += BigInt(rowInfo.balance ?? "0");
+      assets.push(...flattenCardanoAssets(await koiosPost("address_assets", { _addresses: group })));
+    }
+  }
+  const qty = new Map<string, { raw: bigint; decimals: number }>();
+  for (const a of assets) {
+    const unit = cardanoUnit(a);
+    if (!unit) continue;
+    const raw = BigInt(a.quantity ?? "0");
+    const prev = qty.get(unit);
+    qty.set(unit, { raw: (prev?.raw ?? 0n) + raw, decimals: a.decimals ?? prev?.decimals ?? 0 });
+  }
+  return { ada, qty };
+}
+
 export function useCardanoHoldings(
-  address: string,
+  address: string | string[],
   extras?: { addresses?: string[]; stake?: string; sync?: number },
 ) {
   const catalog = useMemo(() => tokensFor("cardano", 1815), []);
   const [rows, setRows] = useState<HoldingRow[]>(() => catalog.map((t) => row(t, null, false)));
   const [loading, setLoading] = useState(false);
   const [cipTick, setCipTick] = useState(0);
-  const stake = extras?.stake || (address ? stakeFromPayment(address) : "");
+  const listKey = Array.isArray(address) ? address.join("|") : address;
+  const list = useMemo(() => addrList(address), [listKey]);
+  const primary = list[0] ?? "";
+  const stake = extras?.stake || (primary ? stakeFromPayment(primary) : "");
   const payKey = (extras?.addresses ?? []).filter(Boolean).join("|");
-  const addrKey = [address, stake, extras?.sync ?? 0, payKey].join("|");
+  const addrKey = [list.join("|"), stake, extras?.sync ?? 0, payKey].join("|");
+  const connected = list.length > 0;
 
   useEffect(() => subscribeCip(() => setCipTick(cipEpochNow())), []);
 
   useEffect(() => {
-    if (!address) {
+    if (!list.length) {
       setRows(catalog.map((t) => row(t, null, false)));
       return;
     }
     let cancelled = false;
     setLoading(true);
-    const payments = payKey ? payKey.split("|") : [];
     void (async () => {
       try {
-        for (const wait of [0, 500, 1500]) {
-          if (wait) await new Promise((r) => window.setTimeout(r, wait));
-          if (cancelled) return;
-          const cip = await readCardanoValue();
-          if (!cip) continue;
-          const qty = new Map<string, { raw: bigint; decimals: number }>();
-          for (const [unit, raw] of cip.assets) {
-            const known = cardanoByUnit(unit);
-            qty.set(unit, { raw, decimals: known?.decimals ?? 0 });
+        if (list.length === 1) {
+          for (const wait of [0, 500, 1500]) {
+            if (wait) await new Promise((r) => window.setTimeout(r, wait));
+            if (cancelled) return;
+            const cip = await readCardanoValue();
+            if (!cip) continue;
+            const qty = new Map<string, { raw: bigint; decimals: number }>();
+            for (const [unit, raw] of cip.assets) {
+              const known = cardanoByUnit(unit);
+              qty.set(unit, { raw, decimals: known?.decimals ?? 0 });
+            }
+            if (!cancelled) setRows(rowsFromCardano(catalog, cip.ada, qty));
+            return;
           }
-          if (!cancelled) setRows(rowsFromCardano(catalog, cip.ada, qty));
-          return;
         }
 
         let ada = 0n;
-        let assets: CardanoAsset[] = [];
-        if (stake.startsWith("stake")) {
-          const info = (await koiosPost("account_info", { _stake_addresses: [stake] })) as Array<{
-            total_balance?: string;
-            utxo?: string;
-          }>;
-          ada = BigInt(info[0]?.utxo ?? info[0]?.total_balance ?? "0");
-          assets = flattenCardanoAssets(await koiosPost("account_assets", { _stake_addresses: [stake] }));
-        } else {
-          const addrs = Array.from(new Set([address, ...payments].filter(Boolean)));
-          for (const group of chunk(addrs, 50)) {
-            const info = (await koiosPost("address_info", { _addresses: group })) as Array<{ balance?: string }>;
-            for (const rowInfo of info) ada += BigInt(rowInfo.balance ?? "0");
-            assets.push(...flattenCardanoAssets(await koiosPost("address_assets", { _addresses: group })));
-          }
-        }
         const qty = new Map<string, { raw: bigint; decimals: number }>();
-        for (const a of assets) {
-          const unit = cardanoUnit(a);
-          if (!unit) continue;
-          const raw = BigInt(a.quantity ?? "0");
-          const prev = qty.get(unit);
-          qty.set(unit, { raw: (prev?.raw ?? 0n) + raw, decimals: a.decimals ?? prev?.decimals ?? 0 });
+        for (let i = 0; i < list.length; i++) {
+          const addr = list[i]!;
+          const extra = i === 0 ? extras : undefined;
+          const part = await fetchCardanoKoios(addr, extra);
+          ada += part.ada;
+          for (const [unit, bal] of part.qty) {
+            const prev = qty.get(unit);
+            qty.set(unit, { raw: (prev?.raw ?? 0n) + bal.raw, decimals: bal.decimals ?? prev?.decimals ?? 0 });
+          }
         }
         if (!cancelled) setRows(rowsFromCardano(catalog, ada, qty));
       } catch {
@@ -363,13 +490,13 @@ export function useCardanoHoldings(
     return () => {
       cancelled = true;
     };
-  }, [address, addrKey, catalog, stake, payKey, cipTick]);
+  }, [addrKey, catalog, cipTick, list, stake]);
 
   const funded = rows.filter((r) => r.raw > 0n).length;
   useEffect(() => {
-    syncLiveFlag("holdings:1815", 1815, "holdings", Boolean(address) && loading);
+    syncLiveFlag("holdings:1815", 1815, "holdings", connected && loading);
     return () => useLiveStatus.getState().finish("holdings:1815", true);
-  }, [address, loading]);
+  }, [connected, loading]);
   return { rows, funded, loading, catalogSize: catalog.length };
 }
 
@@ -444,13 +571,53 @@ function collectMints(json: SolTokJson | null, into: Map<string, { raw: bigint; 
   }
 }
 
-export function useSolanaHoldings(address: string) {
+async function fetchSolana(address: string) {
+  let lamports: number | null = null;
+  const byMint = new Map<string, { raw: bigint; decimals: number }>();
+  for (const url of SOLANA_RPCS) {
+    const balJson = await solanaCall<{ result?: { value?: number }; error?: unknown }>(url, {
+      jsonrpc: "2.0",
+      id: 1,
+      method: "getBalance",
+      params: [address],
+    });
+    if (lamports == null && balJson && !balJson.error && typeof balJson.result?.value === "number") {
+      lamports = balJson.result.value;
+    }
+    const tokenParams = (programId: string) => [address, { programId }, { encoding: "jsonParsed" as const }];
+    collectMints(
+      await solanaCall<SolTokJson>(url, {
+        jsonrpc: "2.0",
+        id: 2,
+        method: "getTokenAccountsByOwner",
+        params: tokenParams(TOKEN_PROGRAM),
+      }),
+      byMint,
+    );
+    collectMints(
+      await solanaCall<SolTokJson>(url, {
+        jsonrpc: "2.0",
+        id: 3,
+        method: "getTokenAccountsByOwner",
+        params: tokenParams(TOKEN_2022_PROGRAM),
+      }),
+      byMint,
+    );
+    if (lamports != null && byMint.size > 0) break;
+  }
+  return { lamports, byMint };
+}
+
+export function useSolanaHoldings(address: string | string[]) {
   const catalog = useMemo(() => tokensFor("solana", 101), []);
   const [rows, setRows] = useState<HoldingRow[]>(() => catalog.map((t) => row(t, null, false)));
   const [loading, setLoading] = useState(false);
+  const accKey = Array.isArray(address) ? address.join("|") : address;
+  const addrs = useMemo(() => addrList(address), [accKey]);
+  const connected = addrs.length > 0;
 
   useEffect(() => {
-    if (!address) {
+    if (!addrs.length) {
       setRows(catalog.map((t) => row(t, null, false)));
       return;
     }
@@ -458,43 +625,25 @@ export function useSolanaHoldings(address: string) {
     setLoading(true);
     void (async () => {
       try {
-        let lamports: number | null = null;
+        let lamports = 0;
         const byMint = new Map<string, { raw: bigint; decimals: number }>();
-        for (const url of SOLANA_RPCS) {
-          const balJson = await solanaCall<{ result?: { value?: number }; error?: unknown }>(url, {
-            jsonrpc: "2.0",
-            id: 1,
-            method: "getBalance",
-            params: [address],
-          });
-          if (balJson && !balJson.error && typeof balJson.result?.value === "number") {
-            lamports = balJson.result.value;
+        let any = false;
+        for (const addr of addrs) {
+          const part = await fetchSolana(addr);
+          if (part.lamports != null) {
+            lamports += part.lamports;
+            any = true;
           }
-          const tokenParams = (programId: string) => [address, { programId }, { encoding: "jsonParsed" as const }];
-          collectMints(
-            await solanaCall<SolTokJson>(url, {
-              jsonrpc: "2.0",
-              id: 2,
-              method: "getTokenAccountsByOwner",
-              params: tokenParams(TOKEN_PROGRAM),
-            }),
-            byMint,
-          );
-          collectMints(
-            await solanaCall<SolTokJson>(url, {
-              jsonrpc: "2.0",
-              id: 3,
-              method: "getTokenAccountsByOwner",
-              params: tokenParams(TOKEN_2022_PROGRAM),
-            }),
-            byMint,
-          );
-          if (lamports != null && byMint.size > 0) break;
+          for (const [mint, bal] of part.byMint) {
+            const prev = byMint.get(mint);
+            byMint.set(mint, { raw: (prev?.raw ?? 0n) + bal.raw, decimals: bal.decimals ?? prev?.decimals ?? 0 });
+            any = true;
+          }
         }
-        if (lamports == null && byMint.size === 0) throw new Error("solana rpc");
+        if (!any) throw new Error("solana rpc");
         if (cancelled) return;
         const next = catalog.map((t) => {
-          const raw = t.native ? BigInt(lamports ?? 0) : (byMint.get(t.address ?? "")?.raw ?? 0n);
+          const raw = t.native ? BigInt(lamports) : (byMint.get(t.address ?? "")?.raw ?? 0n);
           return row(t, raw, true);
         });
         const known = new Set(catalog.map((t) => t.address).filter(Boolean));
@@ -525,13 +674,13 @@ export function useSolanaHoldings(address: string) {
     return () => {
       cancelled = true;
     };
-  }, [address, catalog]);
+  }, [accKey, addrs, catalog]);
 
   const funded = rows.filter((r) => r.raw > 0n).length;
   useEffect(() => {
-    syncLiveFlag("holdings:101", 101, "holdings", Boolean(address) && loading);
+    syncLiveFlag("holdings:101", 101, "holdings", connected && loading);
     return () => useLiveStatus.getState().finish("holdings:101", true);
-  }, [address, loading]);
+  }, [connected, loading]);
   return { rows, funded, loading, catalogSize: catalog.length };
 }
 
@@ -618,287 +767,307 @@ function useJsonHoldings(
   return { rows, funded: rows.filter((r) => r.raw > 0n).length, loading, catalogSize: catalog.length };
 }
 
-export function useHyperCoreHoldings(address: string | undefined) {
+async function fetchHyperCore(user: string) {
+  const out = new Map<string, BalHit>();
+  const [state, meta] = await Promise.all([
+    jsonFetch<{ balances?: Array<{ coin: string; total: string; token?: number }> }>("https://api.hyperliquid.xyz/info", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ type: "spotClearinghouseState", user }),
+    }),
+    jsonFetch<{ tokens?: Array<{ name: string; weiDecimals: number; szDecimals: number; tokenId?: string }> }>(
+      "https://api.hyperliquid.xyz/info",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ type: "spotMeta" }),
+      },
+    ),
+  ]);
+  const dec = new Map((meta.tokens ?? []).map((t) => [t.name, t.weiDecimals ?? t.szDecimals ?? 8]));
+  for (const b of state.balances ?? []) {
+    const decimals = dec.get(b.coin) ?? 8;
+    const n = Number(b.total);
+    if (!Number.isFinite(n) || n <= 0) continue;
+    const raw = BigInt(Math.round(n * 10 ** Math.min(decimals, 8)));
+    const rec = { raw, decimals: Math.min(decimals, 8), symbol: b.coin, name: b.coin, icon: "/tokens/hype.png", contract: b.coin };
+    if (b.coin === "HYPE" || b.coin === "UBTC") out.set(b.coin === "HYPE" ? "native" : b.coin, rec);
+    else out.set(b.coin, rec);
+  }
+  return out;
+}
+
+export function useHyperCoreHoldings(address: string | string[] | undefined) {
   const catalog = useMemo(() => tokensFor("hypercore", 998), []);
-  const connected = Boolean(address);
-  const load = useMemo(() => {
-    const user = address;
-    return async () => {
-      const out = new Map<string, { raw: bigint; decimals?: number; symbol?: string; name?: string; icon?: string; contract?: string }>();
-      if (!user) return out;
-      const [state, meta] = await Promise.all([
-        jsonFetch<{ balances?: Array<{ coin: string; total: string; token?: number }> }>("https://api.hyperliquid.xyz/info", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ type: "spotClearinghouseState", user }),
-        }),
-        jsonFetch<{ tokens?: Array<{ name: string; weiDecimals: number; szDecimals: number; tokenId?: string }> }>(
-          "https://api.hyperliquid.xyz/info",
-          {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ type: "spotMeta" }),
-          },
-        ),
-      ]);
-      const dec = new Map((meta.tokens ?? []).map((t) => [t.name, t.weiDecimals ?? t.szDecimals ?? 8]));
-      for (const b of state.balances ?? []) {
-        const decimals = dec.get(b.coin) ?? 8;
-        const n = Number(b.total);
-        if (!Number.isFinite(n) || n <= 0) continue;
-        const raw = BigInt(Math.round(n * 10 ** Math.min(decimals, 8)));
-        const rec = { raw, decimals: Math.min(decimals, 8), symbol: b.coin, name: b.coin, icon: "/tokens/hype.png", contract: b.coin };
-        if (b.coin === "HYPE" || b.coin === "UBTC") out.set(b.coin === "HYPE" ? "native" : b.coin, rec);
-        else out.set(b.coin, rec);
-      }
-      return out;
-    };
-  }, [address]);
-  return useJsonHoldings(998, catalog, connected, load);
+  const accKey = Array.isArray(address) ? address.join("|") : (address ?? "");
+  const addrs = useMemo(() => addrList(address), [accKey]);
+  const load = useMemo(
+    () => async () => mergeBals(await Promise.all(addrs.map(fetchHyperCore))),
+    [accKey, addrs],
+  );
+  return useJsonHoldings(998, catalog, addrs.length > 0, load);
 }
 
-export function useTronHoldings(address: string) {
+async function fetchTron(addr: string) {
+  const out = new Map<string, BalHit>();
+  const json = await jsonFetch<{ data?: Array<{ balance?: number; trc20?: Array<Record<string, string>> }> }>(
+    `https://api.trongrid.io/v1/accounts/${addr}`,
+  );
+  const acc = json.data?.[0];
+  out.set("native", { raw: BigInt(acc?.balance ?? 0), decimals: 6, symbol: "TRX" });
+  for (const item of acc?.trc20 ?? []) {
+    for (const [contract, amount] of Object.entries(item)) {
+      out.set(contract, { raw: BigInt(amount || "0"), decimals: 6, symbol: contract.slice(0, 4), contract });
+    }
+  }
+  return out;
+}
+
+export function useTronHoldings(address: string | string[]) {
   const catalog = useMemo(() => tokensFor("tron", 728126428), []);
-  const load = useMemo(() => {
-    const addr = address;
-    return async () => {
-      const out = new Map<string, { raw: bigint; decimals?: number; symbol?: string; name?: string; icon?: string; contract?: string }>();
-      if (!addr) return out;
-      const json = await jsonFetch<{ data?: Array<{ balance?: number; trc20?: Array<Record<string, string>> }> }>(
-        `https://api.trongrid.io/v1/accounts/${addr}`,
-      );
-      const acc = json.data?.[0];
-      out.set("native", { raw: BigInt(acc?.balance ?? 0), decimals: 6, symbol: "TRX" });
-      for (const item of acc?.trc20 ?? []) {
-        for (const [contract, amount] of Object.entries(item)) {
-          out.set(contract, { raw: BigInt(amount || "0"), decimals: 6, symbol: contract.slice(0, 4), contract });
-        }
-      }
-      return out;
-    };
-  }, [address]);
-  return useJsonHoldings(728126428, catalog, Boolean(address), load);
+  const accKey = Array.isArray(address) ? address.join("|") : address;
+  const addrs = useMemo(() => addrList(address), [accKey]);
+  const load = useMemo(
+    () => async () => mergeBals(await Promise.all(addrs.map(fetchTron))),
+    [accKey, addrs],
+  );
+  return useJsonHoldings(728126428, catalog, addrs.length > 0, load);
 }
 
-export function useSuiHoldings(address: string) {
+async function fetchSui(addr: string) {
+  const out = new Map<string, BalHit>();
+  const json = await jsonFetch<{ result?: Array<{ coinType: string; totalBalance: string }> }>("https://rpc-mainnet.suiscan.xyz", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "suix_getAllBalances", params: [addr] }),
+  }).catch(() =>
+    jsonFetch<{ result?: Array<{ coinType: string; totalBalance: string }> }>("https://sui-rpc.publicnode.com", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "suix_getAllBalances", params: [addr] }),
+    }),
+  );
+  for (const b of json.result ?? []) {
+    const rec = { raw: BigInt(b.totalBalance || "0"), decimals: 9, symbol: b.coinType.split("::").pop(), contract: b.coinType };
+    if (b.coinType.endsWith("::sui::SUI")) out.set("native", rec);
+    else out.set(b.coinType, rec);
+  }
+  return out;
+}
+
+export function useSuiHoldings(address: string | string[]) {
   const catalog = useMemo(() => tokensFor("sui", 784), []);
-  const load = useMemo(() => {
-    const addr = address;
-    return async () => {
-      const out = new Map<string, { raw: bigint; decimals?: number; symbol?: string; name?: string; icon?: string; contract?: string }>();
-      if (!addr) return out;
-      const json = await jsonFetch<{ result?: Array<{ coinType: string; totalBalance: string }> }>("https://rpc-mainnet.suiscan.xyz", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "suix_getAllBalances", params: [addr] }),
-      }).catch(() =>
-        jsonFetch<{ result?: Array<{ coinType: string; totalBalance: string }> }>("https://sui-rpc.publicnode.com", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "suix_getAllBalances", params: [addr] }),
+  const accKey = Array.isArray(address) ? address.join("|") : address;
+  const addrs = useMemo(() => addrList(address), [accKey]);
+  const load = useMemo(
+    () => async () => mergeBals(await Promise.all(addrs.map(fetchSui))),
+    [accKey, addrs],
+  );
+  return useJsonHoldings(784, catalog, addrs.length > 0, load);
+}
+
+async function fetchTon(addr: string) {
+  const out = new Map<string, BalHit>();
+  try {
+    const acc = await jsonFetch<{ balance?: number | string }>(`https://tonapi.io/v2/accounts/${addr}`);
+    out.set("native", { raw: BigInt(String(acc.balance ?? 0)), decimals: 9, symbol: "TON" });
+  } catch {
+    const acc = await jsonFetch<{ result?: string }>(`https://toncenter.com/api/v2/getAddressBalance?address=${encodeURIComponent(addr)}`);
+    out.set("native", { raw: BigInt(acc.result ?? "0"), decimals: 9, symbol: "TON" });
+  }
+  try {
+    const jets = await jsonFetch<{ balances?: Array<{ jetton?: { address?: string; symbol?: string; decimals?: number }; balance?: string }> }>(
+      `https://tonapi.io/v2/accounts/${addr}/jettons`,
+    );
+    for (const j of jets.balances ?? []) {
+      const contract = j.jetton?.address ?? "";
+      if (!contract) continue;
+      out.set(contract, {
+        raw: BigInt(j.balance ?? "0"),
+        decimals: j.jetton?.decimals ?? 9,
+        symbol: j.jetton?.symbol,
+        contract,
+      });
+    }
+  } catch {
+    /* jettons optional */
+  }
+  return out;
+}
+
+export function useTonHoldings(address: string | string[]) {
+  const catalog = useMemo(() => tokensFor("ton", 607), []);
+  const accKey = Array.isArray(address) ? address.join("|") : address;
+  const addrs = useMemo(() => addrList(address), [accKey]);
+  const load = useMemo(
+    () => async () => mergeBals(await Promise.all(addrs.map(fetchTon))),
+    [accKey, addrs],
+  );
+  return useJsonHoldings(607, catalog, addrs.length > 0, load);
+}
+
+async function fetchAptos(addr: string) {
+  const out = new Map<string, BalHit>();
+  try {
+    const apt = await jsonFetch<{ data?: { coin?: { value?: string } } }>(
+      `https://fullnode.mainnet.aptoslabs.com/v1/accounts/${addr}/resource/0x1::coin::CoinStore%3C0x1::aptos_coin::AptosCoin%3E`,
+    );
+    out.set("native", { raw: BigInt(apt.data?.coin?.value ?? "0"), decimals: 8, symbol: "APT" });
+  } catch {
+    out.set("native", { raw: 0n, decimals: 8, symbol: "APT" });
+  }
+  try {
+    const coins = await jsonFetch<Array<{ asset_type?: string; amount?: string; metadata?: { symbol?: string; decimals?: number } }>>(
+      `https://api.mainnet.aptoslabs.com/v1/accounts/${addr}/fungible_asset_balances`,
+    ).catch(() => [] as Array<{ asset_type?: string; amount?: string; metadata?: { symbol?: string; decimals?: number } }>);
+    for (const c of coins) {
+      if (!c.asset_type) continue;
+      const rec = { raw: BigInt(c.amount ?? "0"), decimals: c.metadata?.decimals ?? 8, symbol: c.metadata?.symbol, contract: c.asset_type };
+      if (c.asset_type.includes("aptos_coin")) out.set("native", rec);
+      else out.set(c.asset_type, rec);
+    }
+  } catch {
+    /* fa optional */
+  }
+  return out;
+}
+
+export function useAptosHoldings(address: string | string[]) {
+  const catalog = useMemo(() => tokensFor("aptos", 637), []);
+  const accKey = Array.isArray(address) ? address.join("|") : address;
+  const addrs = useMemo(() => addrList(address), [accKey]);
+  const load = useMemo(
+    () => async () => mergeBals(await Promise.all(addrs.map(fetchAptos))),
+    [accKey, addrs],
+  );
+  return useJsonHoldings(637, catalog, addrs.length > 0, load);
+}
+
+async function fetchBitcoin(addr: string) {
+  const out = new Map<string, BalHit>();
+  const json = await jsonFetch<{ chain_stats?: { funded_txo_sum?: number; spent_txo_sum?: number } }>(`https://mempool.space/api/address/${addr}`);
+  const s = json.chain_stats;
+  out.set("native", { raw: BigInt((s?.funded_txo_sum ?? 0) - (s?.spent_txo_sum ?? 0)), decimals: 8, symbol: "BTC" });
+  return out;
+}
+
+export function useBitcoinHoldings(address: string | string[]) {
+  const catalog = useMemo(() => tokensFor("bitcoin", 833), []);
+  const accKey = Array.isArray(address) ? address.join("|") : address;
+  const addrs = useMemo(() => addrList(address), [accKey]);
+  const load = useMemo(
+    () => async () => mergeBals(await Promise.all(addrs.map(fetchBitcoin))),
+    [accKey, addrs],
+  );
+  return useJsonHoldings(833, catalog, addrs.length > 0, load);
+}
+
+async function fetchXrpl(addr: string) {
+  const out = new Map<string, BalHit>();
+  const info = await jsonFetch<{ result?: { account_data?: { Balance?: string } } }>("https://xrplcluster.com", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ method: "account_info", params: [{ account: addr, ledger_index: "validated" }] }),
+  });
+  out.set("native", { raw: BigInt(info.result?.account_data?.Balance ?? "0"), decimals: 6, symbol: "XRP" });
+  try {
+    const lines = await jsonFetch<{ result?: { lines?: Array<{ currency?: string; balance?: string; account?: string }> } }>("https://xrplcluster.com", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ method: "account_lines", params: [{ account: addr, ledger_index: "validated" }] }),
+    });
+    for (const l of lines.result?.lines ?? []) {
+      const n = Number(l.balance);
+      if (!Number.isFinite(n) || n === 0) continue;
+      const raw = BigInt(Math.round(Math.abs(n) * 1e6));
+      const code = l.currency && l.currency.length <= 3 ? l.currency : (l.currency ?? "IOU").slice(0, 4);
+      out.set(`${l.account}:${l.currency}`, { raw, decimals: 6, symbol: code, contract: l.account });
+    }
+  } catch {
+    /* lines optional */
+  }
+  return out;
+}
+
+export function useXrplHoldings(address: string | string[]) {
+  const catalog = useMemo(() => tokensFor("xrpl", 144), []);
+  const accKey = Array.isArray(address) ? address.join("|") : address;
+  const addrs = useMemo(() => addrList(address), [accKey]);
+  const load = useMemo(
+    () => async () => mergeBals(await Promise.all(addrs.map(fetchXrpl))),
+    [accKey, addrs],
+  );
+  return useJsonHoldings(144, catalog, addrs.length > 0, load);
+}
+
+async function fetchStellar(addr: string) {
+  const out = new Map<string, BalHit>();
+  const res = await fetch(`https://horizon.stellar.org/accounts/${addr}`);
+  if (res.status === 404) {
+    out.set("native", { raw: 0n, decimals: 7, symbol: "XLM" });
+    return out;
+  }
+  if (!res.ok) throw new Error(String(res.status));
+  const json = (await res.json()) as { balances?: Array<{ asset_type?: string; asset_code?: string; asset_issuer?: string; balance?: string }> };
+  for (const b of json.balances ?? []) {
+    const n = Number(b.balance);
+    if (!Number.isFinite(n)) continue;
+    if (b.asset_type === "native") {
+      out.set("native", { raw: BigInt(Math.round(n * 1e7)), decimals: 7, symbol: "XLM" });
+    } else if (n > 0) {
+      const code = b.asset_code ?? "TOKEN";
+      out.set(`${code}:${b.asset_issuer}`, { raw: BigInt(Math.round(n * 1e7)), decimals: 7, symbol: code, contract: b.asset_issuer });
+    }
+  }
+  return out;
+}
+
+export function useStellarHoldings(address: string | string[]) {
+  const catalog = useMemo(() => tokensFor("stellar", 148), []);
+  const accKey = Array.isArray(address) ? address.join("|") : address;
+  const addrs = useMemo(() => addrList(address), [accKey]);
+  const load = useMemo(
+    () => async () => mergeBals(await Promise.all(addrs.map(fetchStellar))),
+    [accKey, addrs],
+  );
+  return useJsonHoldings(148, catalog, addrs.length > 0, load);
+}
+
+function useCosmosLcd(chainId: number, lcd: string, denom: string, symbol: string, address: string | string[]) {
+  const catalog = useMemo(() => tokensFor("cosmos", chainId), [chainId]);
+  const accKey = Array.isArray(address) ? address.join("|") : address;
+  const addrs = useMemo(() => addrList(address), [accKey]);
+  const load = useMemo(
+    () => async () => {
+      const maps = await Promise.all(
+        addrs.map(async (addr) => {
+          const out = new Map<string, BalHit>();
+          const json = await jsonFetch<{ balances?: Array<{ denom?: string; amount?: string }> }>(`${lcd}/cosmos/bank/v1beta1/balances/${addr}`);
+          for (const b of json.balances ?? []) {
+            const raw = BigInt(b.amount ?? "0");
+            if (b.denom === denom) out.set("native", { raw, decimals: 6, symbol });
+            else if (raw > 0n)
+              out.set(b.denom ?? "coin", { raw, decimals: 6, symbol: (b.denom ?? "COIN").replace("u", "").toUpperCase().slice(0, 6), contract: b.denom });
+          }
+          return out;
         }),
       );
-      for (const b of json.result ?? []) {
-        const rec = { raw: BigInt(b.totalBalance || "0"), decimals: b.coinType.includes("::sui::SUI") ? 9 : 9, symbol: b.coinType.split("::").pop(), contract: b.coinType };
-        if (b.coinType.endsWith("::sui::SUI")) out.set("native", rec);
-        else out.set(b.coinType, rec);
-      }
-      return out;
-    };
-  }, [address]);
-  return useJsonHoldings(784, catalog, Boolean(address), load);
+      return mergeBals(maps);
+    },
+    [accKey, addrs, denom, lcd, symbol],
+  );
+  return useJsonHoldings(chainId, catalog, addrs.length > 0, load);
 }
 
-export function useTonHoldings(address: string) {
-  const catalog = useMemo(() => tokensFor("ton", 607), []);
-  const load = useMemo(() => {
-    const addr = address;
-    return async () => {
-      const out = new Map<string, { raw: bigint; decimals?: number; symbol?: string; name?: string; icon?: string; contract?: string }>();
-      if (!addr) return out;
-      try {
-        const acc = await jsonFetch<{ balance?: number | string }>(`https://tonapi.io/v2/accounts/${addr}`);
-        out.set("native", { raw: BigInt(String(acc.balance ?? 0)), decimals: 9, symbol: "TON" });
-      } catch {
-        const acc = await jsonFetch<{ result?: string }>(`https://toncenter.com/api/v2/getAddressBalance?address=${encodeURIComponent(addr)}`);
-        out.set("native", { raw: BigInt(acc.result ?? "0"), decimals: 9, symbol: "TON" });
-      }
-      try {
-        const jets = await jsonFetch<{ balances?: Array<{ jetton?: { address?: string; symbol?: string; decimals?: number }; balance?: string }> }>(
-          `https://tonapi.io/v2/accounts/${addr}/jettons`,
-        );
-        for (const j of jets.balances ?? []) {
-          const contract = j.jetton?.address ?? "";
-          if (!contract) continue;
-          out.set(contract, {
-            raw: BigInt(j.balance ?? "0"),
-            decimals: j.jetton?.decimals ?? 9,
-            symbol: j.jetton?.symbol,
-            contract,
-          });
-        }
-      } catch {
-        /* jettons optional */
-      }
-      return out;
-    };
-  }, [address]);
-  return useJsonHoldings(607, catalog, Boolean(address), load);
-}
-
-export function useAptosHoldings(address: string) {
-  const catalog = useMemo(() => tokensFor("aptos", 637), []);
-  const load = useMemo(() => {
-    const addr = address;
-    return async () => {
-      const out = new Map<string, { raw: bigint; decimals?: number; symbol?: string; name?: string; icon?: string; contract?: string }>();
-      if (!addr) return out;
-      try {
-        const apt = await jsonFetch<{ data?: { coin?: { value?: string } } }>(
-          `https://fullnode.mainnet.aptoslabs.com/v1/accounts/${addr}/resource/0x1::coin::CoinStore%3C0x1::aptos_coin::AptosCoin%3E`,
-        );
-        out.set("native", { raw: BigInt(apt.data?.coin?.value ?? "0"), decimals: 8, symbol: "APT" });
-      } catch {
-        out.set("native", { raw: 0n, decimals: 8, symbol: "APT" });
-      }
-      try {
-        const coins = await jsonFetch<Array<{ asset_type?: string; amount?: string; metadata?: { symbol?: string; decimals?: number } }>>(
-          `https://api.mainnet.aptoslabs.com/v1/accounts/${addr}/fungible_asset_balances`,
-        ).catch(() => [] as Array<{ asset_type?: string; amount?: string; metadata?: { symbol?: string; decimals?: number } }>);
-        for (const c of coins) {
-          if (!c.asset_type) continue;
-          const rec = { raw: BigInt(c.amount ?? "0"), decimals: c.metadata?.decimals ?? 8, symbol: c.metadata?.symbol, contract: c.asset_type };
-          if (c.asset_type.includes("aptos_coin")) out.set("native", rec);
-          else out.set(c.asset_type, rec);
-        }
-      } catch {
-        /* fa optional */
-      }
-      return out;
-    };
-  }, [address]);
-  return useJsonHoldings(637, catalog, Boolean(address), load);
-}
-
-export function useBitcoinHoldings(address: string) {
-  const catalog = useMemo(() => tokensFor("bitcoin", 833), []);
-  const load = useMemo(() => {
-    const addr = address;
-    return async () => {
-      const out = new Map<string, { raw: bigint; decimals?: number; symbol?: string; name?: string; icon?: string; contract?: string }>();
-      if (!addr) return out;
-      const w = window as unknown as { unisat?: { getBalance?: () => Promise<{ confirmed?: number; total?: number }> } };
-      if (w.unisat?.getBalance) {
-        try {
-          const b = await w.unisat.getBalance();
-          out.set("native", { raw: BigInt(b.total ?? b.confirmed ?? 0), decimals: 8, symbol: "BTC" });
-          return out;
-        } catch {
-          /* mempool.space */
-        }
-      }
-      const json = await jsonFetch<{ chain_stats?: { funded_txo_sum?: number; spent_txo_sum?: number } }>(`https://mempool.space/api/address/${addr}`);
-      const s = json.chain_stats;
-      out.set("native", { raw: BigInt((s?.funded_txo_sum ?? 0) - (s?.spent_txo_sum ?? 0)), decimals: 8, symbol: "BTC" });
-      return out;
-    };
-  }, [address]);
-  return useJsonHoldings(833, catalog, Boolean(address), load);
-}
-
-export function useXrplHoldings(address: string) {
-  const catalog = useMemo(() => tokensFor("xrpl", 144), []);
-  const load = useMemo(() => {
-    const addr = address;
-    return async () => {
-      const out = new Map<string, { raw: bigint; decimals?: number; symbol?: string; name?: string; icon?: string; contract?: string }>();
-      if (!addr) return out;
-      const info = await jsonFetch<{ result?: { account_data?: { Balance?: string } } }>("https://xrplcluster.com", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ method: "account_info", params: [{ account: addr, ledger_index: "validated" }] }),
-      });
-      out.set("native", { raw: BigInt(info.result?.account_data?.Balance ?? "0"), decimals: 6, symbol: "XRP" });
-      try {
-        const lines = await jsonFetch<{ result?: { lines?: Array<{ currency?: string; balance?: string; account?: string }> } }>("https://xrplcluster.com", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ method: "account_lines", params: [{ account: addr, ledger_index: "validated" }] }),
-        });
-        for (const l of lines.result?.lines ?? []) {
-          const n = Number(l.balance);
-          if (!Number.isFinite(n) || n === 0) continue;
-          const raw = BigInt(Math.round(Math.abs(n) * 1e6));
-          const code = l.currency && l.currency.length <= 3 ? l.currency : (l.currency ?? "IOU").slice(0, 4);
-          out.set(`${l.account}:${l.currency}`, { raw, decimals: 6, symbol: code, contract: l.account });
-        }
-      } catch {
-        /* lines optional */
-      }
-      return out;
-    };
-  }, [address]);
-  return useJsonHoldings(144, catalog, Boolean(address), load);
-}
-
-export function useStellarHoldings(address: string) {
-  const catalog = useMemo(() => tokensFor("stellar", 148), []);
-  const load = useMemo(() => {
-    const addr = address;
-    return async () => {
-      const out = new Map<string, { raw: bigint; decimals?: number; symbol?: string; name?: string; icon?: string; contract?: string }>();
-      if (!addr) return out;
-      const res = await fetch(`https://horizon.stellar.org/accounts/${addr}`);
-      if (res.status === 404) {
-        out.set("native", { raw: 0n, decimals: 7, symbol: "XLM" });
-        return out;
-      }
-      if (!res.ok) throw new Error(String(res.status));
-      const json = (await res.json()) as { balances?: Array<{ asset_type?: string; asset_code?: string; asset_issuer?: string; balance?: string }> };
-      for (const b of json.balances ?? []) {
-        const n = Number(b.balance);
-        if (!Number.isFinite(n)) continue;
-        if (b.asset_type === "native") {
-          out.set("native", { raw: BigInt(Math.round(n * 1e7)), decimals: 7, symbol: "XLM" });
-        } else if (n > 0) {
-          const code = b.asset_code ?? "TOKEN";
-          out.set(`${code}:${b.asset_issuer}`, { raw: BigInt(Math.round(n * 1e7)), decimals: 7, symbol: code, contract: b.asset_issuer });
-        }
-      }
-      return out;
-    };
-  }, [address]);
-  return useJsonHoldings(148, catalog, Boolean(address), load);
-}
-
-function useCosmosLcd(chainId: number, lcd: string, denom: string, symbol: string, address: string) {
-  const catalog = useMemo(() => tokensFor("cosmos", chainId), [chainId]);
-  const load = useMemo(() => {
-    const addr = address;
-    return async () => {
-      const out = new Map<string, { raw: bigint; decimals?: number; symbol?: string; name?: string; icon?: string; contract?: string }>();
-      if (!addr) return out;
-      const json = await jsonFetch<{ balances?: Array<{ denom?: string; amount?: string }> }>(`${lcd}/cosmos/bank/v1beta1/balances/${addr}`);
-      for (const b of json.balances ?? []) {
-        const raw = BigInt(b.amount ?? "0");
-        if (b.denom === denom) out.set("native", { raw, decimals: 6, symbol });
-        else if (raw > 0n) out.set(b.denom ?? "coin", { raw, decimals: 6, symbol: (b.denom ?? "COIN").replace("u", "").toUpperCase().slice(0, 6), contract: b.denom });
-      }
-      return out;
-    };
-  }, [address, denom, lcd, symbol]);
-  return useJsonHoldings(chainId, catalog, Boolean(address), load);
-}
-
-export function useCosmosHoldings(address: string) {
+export function useCosmosHoldings(address: string | string[]) {
   return useCosmosLcd(118, "https://rest.cosmos.directory/cosmoshub", "uatom", "ATOM", address);
 }
 
-export function useOsmosisHoldings(address: string) {
+export function useOsmosisHoldings(address: string | string[]) {
   return useCosmosLcd(100001, "https://rest.cosmos.directory/osmosis", "uosmo", "OSMO", address);
 }
 
-export function useCelestiaHoldings(address: string) {
+export function useCelestiaHoldings(address: string | string[]) {
   return useCosmosLcd(100002, "https://rest.cosmos.directory/celestia", "utia", "TIA", address);
 }
 
@@ -923,20 +1092,26 @@ async function starknetBalance(contract: string, owner: string) {
   return low + (high << 128n);
 }
 
-export function useStarknetHoldings(address: string) {
+export function useStarknetHoldings(address: string | string[]) {
   const catalog = useMemo(() => tokensFor("starknet", 100003), []);
-  const load = useMemo(() => {
-    const addr = address;
-    return async () => {
-      const out = new Map<string, { raw: bigint; decimals?: number; symbol?: string; name?: string; icon?: string; contract?: string }>();
-      if (!addr) return out;
-      const [strk, eth] = await Promise.all([starknetBalance(STRK, addr).catch(() => 0n), starknetBalance(STRK_ETH, addr).catch(() => 0n)]);
-      out.set("native", { raw: strk, decimals: 18, symbol: "STRK" });
-      if (eth > 0n) out.set(STRK_ETH, { raw: eth, decimals: 18, symbol: "ETH", contract: STRK_ETH, icon: "/tokens/eth.png" });
-      return out;
-    };
-  }, [address]);
-  return useJsonHoldings(100003, catalog, Boolean(address), load);
+  const accKey = Array.isArray(address) ? address.join("|") : address;
+  const addrs = useMemo(() => addrList(address), [accKey]);
+  const load = useMemo(
+    () => async () => {
+      const maps = await Promise.all(
+        addrs.map(async (addr) => {
+          const out = new Map<string, BalHit>();
+          const [strk, eth] = await Promise.all([starknetBalance(STRK, addr).catch(() => 0n), starknetBalance(STRK_ETH, addr).catch(() => 0n)]);
+          out.set("native", { raw: strk, decimals: 18, symbol: "STRK" });
+          if (eth > 0n) out.set(STRK_ETH, { raw: eth, decimals: 18, symbol: "ETH", contract: STRK_ETH, icon: "/tokens/eth.png" });
+          return out;
+        }),
+      );
+      return mergeBals(maps);
+    },
+    [accKey, addrs],
+  );
+  return useJsonHoldings(100003, catalog, addrs.length > 0, load);
 }
 
 
