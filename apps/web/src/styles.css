@@ -1222,6 +1222,14 @@ button.oft-chain:disabled {
   color: #fff;
   border-color: transparent;
 }
+.me-chip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.me-chip:disabled:hover {
+  color: var(--text-sub);
+  border-color: var(--border-color);
+}
 .me-chip-on .me-count {
   color: rgba(255, 255, 255, 0.85);
 }
@@ -1375,6 +1383,15 @@ button.oft-chain:disabled {
   background: #2563eb;
   color: #fff;
 }
+.me-pool-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.me-pool-btn:disabled:hover {
+  border-color: var(--border-color);
+  background: var(--bg-white);
+  color: var(--text-main);
+}
 .me-cols-5 span:nth-child(2),
 .me-cols-5 .me-sort:nth-child(2) {
   grid-column: 3;
@@ -1490,6 +1507,20 @@ button.oft-chain:disabled {
 }
 .me-token:hover {
   background: var(--bg-subtle);
+}
+button.me-token {
+  appearance: none;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  border: 0;
+  border-top: 1px solid var(--border-light);
+  border-radius: 0;
+  background: transparent;
+}
+button.me-token:focus-visible {
+  outline: 2px solid var(--brand-blue);
+  outline-offset: -2px;
 }
 .me-token .holding-ico-wrap {
   width: 36px;
@@ -2202,92 +2233,191 @@ button.oft-chain:disabled {
   }
 }
 
-.set-desk {
-  max-width: 720px;
-}
-.set-body {
-  display: flex;
-  flex-direction: column;
-  padding: 4px 0 8px;
-}
-.set-row {
-  display: flex;
+.set-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px 16px;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  min-height: 52px;
-  padding: 10px 16px;
-  font-size: 14px;
-  font-weight: 700;
+  padding: 14px 16px;
+  border-top: 1px solid var(--border-light);
 }
-.set-row > span:first-child {
-  color: var(--text-main);
-}
-.set-row-off {
-  opacity: 0.45;
-}
-.set-row input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  accent-color: #3b82f6;
+button.set-item-btn {
+  appearance: none;
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--border-light);
+  border-radius: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
   cursor: pointer;
 }
-.set-row input[type="color"] {
-  width: 44px;
-  height: 32px;
-  padding: 0;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background: var(--bg-white);
-  cursor: pointer;
+button.set-item-btn:hover {
+  background: var(--bg-subtle);
 }
-.set-pills {
+button.set-item-btn:focus-visible {
+  outline: 2px solid var(--brand-blue);
+  outline-offset: -2px;
+}
+.set-item .holding-meta b {
+  font-size: 15px;
+}
+.set-item .holding-meta span {
+  font-size: 13px;
+  line-height: 1.35;
+  white-space: normal;
+}
+.set-ctrl {
   display: flex;
-  flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 8px;
+  min-width: 0;
 }
-.set-pill {
-  height: 32px;
-  padding: 0 12px;
+.set-ctrl .me-chips {
+  justify-content: flex-end;
+}
+.set-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: #e2e8f0;
+  transition: background 0.16s ease;
+}
+.set-switch.on {
+  background: #3b82f6;
+}
+.set-switch i {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 99px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.16);
+  transition: transform 0.16s ease;
+}
+.set-switch.on i {
+  transform: translateX(18px);
+}
+.me-token.set-live {
+  background: var(--bg-subtle);
+}
+.me-token.set-live:hover {
+  background: var(--bg-subtle);
+}
+.set-leg {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px;
   border-radius: 999px;
   border: 1px solid var(--border-color);
   background: var(--bg-white);
   font-size: 12px;
   font-weight: 800;
-  cursor: pointer;
+  letter-spacing: -0.02em;
+  color: var(--text-sub);
+  white-space: nowrap;
 }
-.set-pill.on {
-  border-color: #3b82f6;
-  background: #3b82f6;
+.set-leg.is-quote {
+  background: var(--brand-gradient);
+  border-color: transparent;
   color: #fff;
 }
-.set-pill:disabled {
-  cursor: default;
+.set-amt-buy {
+  color: var(--trade-buy, #10b981);
 }
-.set-preview {
+.set-amt-sell {
+  color: var(--trade-sell, #ef4444);
+}
+.set-dim {
+  opacity: 0.48;
+}
+.set-dim .me-chip:disabled {
+  opacity: 1;
+}
+.set-swatches {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 10px;
 }
-.set-preview .holding-ico {
-  width: 36px;
-  height: 36px;
-  font-size: 11px;
-  border-radius: 10px;
+.set-swatch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 12px 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-white);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.set-swatch:hover,
+.set-swatch:focus-within {
+  border-color: #3b82f6;
+}
+.set-swatch i {
+  width: 18px;
+  height: 18px;
+  border-radius: 99px;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.12);
+}
+.set-swatch input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
 }
 .set-note {
   margin: 0;
-  padding: 4px 16px 8px;
   font-size: 13px;
   font-weight: 600;
   color: var(--text-sub);
+  line-height: 1.4;
 }
-.set-chains {
-  padding: 4px 16px 16px;
+.set-chain-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-light);
 }
-.set-action {
-  height: 34px;
-  padding: 0 14px;
-  font-size: 13px;
+.set-chain-bar .set-note {
+  flex: 1 1 220px;
+}
+.set-chain-list {
+  max-height: min(520px, 58vh);
+  overflow: auto;
+}
+.set-item .me-pool-btn {
+  flex-shrink: 0;
+}
+@media (max-width: 640px) {
+  .set-item {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+  .set-ctrl,
+  .set-ctrl .me-chips,
+  .set-swatches {
+    justify-content: flex-start;
+  }
+  .me-token.set-live {
+    grid-template-columns: 36px minmax(0, 1fr);
+  }
+  .me-token.set-live .holding-amt,
+  .me-token.set-live .set-leg {
+    grid-column: 2;
+    justify-self: start;
+  }
 }
