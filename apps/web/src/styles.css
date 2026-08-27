@@ -2545,8 +2545,22 @@ button.set-item-btn:focus-visible {
   line-height: 1.45;
   color: var(--text-sub);
 }
-.me-peek .addr-add-k {
-  display: none;
+.me-peek-ta {
+  width: 100%;
+  min-height: 88px;
+  resize: vertical;
+  margin: 0 0 10px;
+  padding: 12px 14px;
+  line-height: 1.45;
+}
+.me-peek .addr-add-row {
+  justify-content: flex-end;
+}
+.me-peek-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
 }
 .me-watching {
   margin: 0 0 4px;

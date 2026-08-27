@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { AddrAddBar, AddrIdCard } from "../settings/AddrFields.tsx";
+import { AddrIdCard } from "../settings/AddrFields.tsx";
+import { PeekDialog } from "./PeekDialog.tsx";
 import { useActiveSnap, useAddressSets } from "../../lib/addressSets.ts";
-import { shortAddr } from "../../lib/addrKind.ts";
-import { SHARE_SOFT, decodeWatch, shareUrl } from "../../lib/shareSet.ts";
+import { SHARE_SOFT, applyPeekHash, shareUrl } from "../../lib/shareSet.ts";
 import { formatUnits, parseAbiItem, type Address } from "viem";
 import { useConfig } from "wagmi";
 import { getPublicClient } from "wagmi/actions";
@@ -273,10 +273,10 @@ export function MePage() {
   const snap = useActiveSnap();
   const setActive = useAddressSets((s) => s.setActive);
   const watchSets = useAddressSets((s) => s.watch);
-  const importShared = useAddressSets((s) => s.importShared);
   const [shared, setShared] = useState(false);
   const [shareNote, setShareNote] = useState("");
   const [peekOpen, setPeekOpen] = useState(false);
+  const peeking = snap.activeId === "peek";
 
   useEffect(() => {
     if (!peekOpen) return;
@@ -287,21 +287,14 @@ export function MePage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [peekOpen]);
 
-  useEffect(() => {
-    const run = () => {
-      const parsed = decodeWatch(window.location.hash);
-      if (!parsed) return;
-      importShared(parsed.name, parsed.addrs);
-      window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
-    };
-    const persist = (useAddressSets as { persist?: { hasHydrated?: () => boolean; onFinishHydration?: (cb: () => void) => () => void } }).persist;
-    if (persist?.hasHydrated?.()) {
-      run();
-      return;
-    }
-    if (persist?.onFinishHydration) return persist.onFinishHydration(run);
-    run();
-  }, [importShared]);
+  function goMine() {
+    applyPeekHash(null);
+    setActive("mine");
+  }
+  function goWatch(id: string) {
+    applyPeekHash(null);
+    setActive(id);
+  }
   const native = useNativeWallets();
   const config = useConfig();
   const w = useWizard();
@@ -856,8 +849,8 @@ export function MePage() {
             <div className="me-chips">
               <button
                 type="button"
-                className={`me-chip ${snap.isMine ? "me-chip-on" : ""}`}
-                onClick={() => setActive("mine")}
+                className={`me-chip ${snap.isMine && !peeking ? "me-chip-on" : ""}`}
+                onClick={goMine}
               >
                 {t("me.setMine")}
                 <span className="me-count">{t("me.addrN", { n: snap.mineCount })}</span>
@@ -866,13 +859,19 @@ export function MePage() {
                 <button
                   key={set.id}
                   type="button"
-                  className={`me-chip ${snap.activeId === set.id ? "me-chip-on" : ""}`}
-                  onClick={() => setActive(set.id)}
+                  className={`me-chip ${!peeking && snap.activeId === set.id ? "me-chip-on" : ""}`}
+                  onClick={() => goWatch(set.id)}
                 >
                   {set.name}
                   <span className="me-count">{t("me.addrN", { n: set.addresses.length })}</span>
                 </button>
               ))}
+              {peeking ? (
+                <button type="button" className="me-chip me-chip-on">
+                  {snap.watchName || t("me.peek")}
+                  <span className="me-count">{t("me.addrN", { n: snap.addrs.length })}</span>
+                </button>
+              ) : null}
             </div>
             <div className="me-sets-acts">
               <button type="button" className="me-pool-btn me-pool-btn-explore" onClick={() => setPeekOpen(true)}>
@@ -1218,36 +1217,14 @@ export function MePage() {
           )}
         </div>
       </div>
-      {peekOpen ? (
-        <div
-          className="me-peek-back"
-          role="presentation"
-          onClick={() => setPeekOpen(false)}
-        >
-          <div
-            className="me-peek"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="me-peek-title"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <p id="me-peek-title" className="session-pop-title">
-              {t("me.peekTitle")}
-            </p>
-            <p className="me-peek-hint">{t("me.peekHint")}</p>
-            <AddrAddBar
-              autoFocus
-              addLabel={t("me.peekGo")}
-              onAdd={(kind, value, label) => {
-                const id = importShared(label || shortAddr(kind, value), [{ kind, value }]);
-                if (!id) return "full";
-                setPeekOpen(false);
-                return null;
-              }}
-            />
-          </div>
-        </div>
-      ) : null}
+      <PeekDialog
+        open={peekOpen}
+        onClose={() => setPeekOpen(false)}
+        onView={(payload) => {
+          applyPeekHash(payload);
+          setPeekOpen(false);
+        }}
+      />
     </section>
   );
 }

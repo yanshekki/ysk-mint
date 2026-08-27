@@ -3,7 +3,7 @@ import { persist } from "zustand/middleware";
 import { useAccount } from "wagmi";
 import { useMemo } from "react";
 import { addrKey, normalizeAddr, type AddrKind } from "./addrKind.ts";
-import { fingerprint } from "./shareSet.ts";
+import { fingerprint, usePeekHash } from "./shareSet.ts";
 import { useNativeWallets } from "./nativeWalletStore.ts";
 
 export const MAX_ADDRS = 8;
@@ -226,6 +226,7 @@ export function useActiveSnap(): AddrSnap {
   const mine = useAddressSets((s) => s.mine);
   const watch = useAddressSets((s) => s.watch);
   const activeId = useAddressSets((s) => s.activeId);
+  const peek = usePeekHash();
 
   return useMemo(() => {
     const connected = listConnected({
@@ -256,6 +257,22 @@ export function useActiveSnap(): AddrSnap {
         .map((m) => ({ ...m, source: "manual" as const })),
     ];
     const addrs: SnapAddr[] = isMine ? mineAddrs : set.addresses.map((a) => ({ ...a, source: "manual" as const }));
+    if (peek?.addrs.length) {
+      const view: SnapAddr[] = peek.addrs.map((a, i) => ({
+        id: `peek:${i}:${a.kind}`,
+        kind: a.kind,
+        value: a.value,
+        source: "manual",
+      }));
+      return {
+        activeId: "peek",
+        isMine: false,
+        watchName: peek.name,
+        mineCount: mineAddrs.length,
+        addrs: view,
+        byKind: group(view),
+      };
+    }
     return {
       activeId: isMine ? "mine" : set.id,
       isMine,
@@ -266,6 +283,7 @@ export function useActiveSnap(): AddrSnap {
     };
   }, [
     activeId,
+    peek,
     address,
     isConnected,
     mine,

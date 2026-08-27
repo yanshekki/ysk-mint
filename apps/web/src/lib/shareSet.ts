@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { AddrKind } from "./addrKind.ts";
 
 export const SHARE_SOFT = 1800;
@@ -85,6 +86,26 @@ export function decodeWatch(raw: string): SharePayload | null {
 
 export function shareUrl(payload: SharePayload, origin = typeof window !== "undefined" ? window.location.origin : ""): string {
   return `${origin}/me#w=${encodeWatch(payload)}`;
+}
+
+export function applyPeekHash(payload: SharePayload | null) {
+  if (typeof window === "undefined") return;
+  const path = `${window.location.pathname}${window.location.search}`;
+  const next = payload?.addrs.length ? `${path}#w=${encodeWatch(payload)}` : path;
+  window.history.replaceState(null, "", next);
+  window.dispatchEvent(new HashChangeEvent("hashchange"));
+}
+
+export function usePeekHash(): SharePayload | null {
+  const [peek, setPeek] = useState<SharePayload | null>(() =>
+    typeof window === "undefined" ? null : decodeWatch(window.location.hash),
+  );
+  useEffect(() => {
+    const sync = () => setPeek(decodeWatch(window.location.hash));
+    window.addEventListener("hashchange", sync);
+    return () => window.removeEventListener("hashchange", sync);
+  }, []);
+  return peek;
 }
 
 export function fingerprint(addrs: Array<{ kind: AddrKind; value: string }>) {
