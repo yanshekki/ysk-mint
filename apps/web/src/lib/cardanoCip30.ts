@@ -32,12 +32,23 @@ type Cip30Enabled = {
 
 export type CardanoValue = { ada: bigint; assets: Map<string, bigint> };
 
+export type CardanoSession = {
+  address: string;
+  addresses: string[];
+  stake: string;
+};
+
 let enabledApi: Cip30Enabled | null = null;
+let enabledSession: CardanoSession | null = null;
 let cipEpoch = 0;
 const cipListeners = new Set<() => void>();
 
 export function cardanoApi() {
   return enabledApi;
+}
+
+export function cardanoSession() {
+  return enabledSession;
 }
 
 export function cipEpochNow() {
@@ -58,14 +69,9 @@ function bumpCip() {
 
 export function clearCardanoApi() {
   enabledApi = null;
+  enabledSession = null;
   bumpCip();
 }
-
-export type CardanoSession = {
-  address: string;
-  addresses: string[];
-  stake: string;
-};
 
 type Cip30Injected = {
   name?: string;
@@ -281,8 +287,9 @@ export async function enableCardano(walletId: string): Promise<CardanoSession> {
   const address = payments[0] ?? "";
   if (!address || !isCardanoAddress(address)) throw new Error("address");
   enabledApi = api;
+  enabledSession = { address, addresses: payments, stake };
   bumpCip();
-  return { address, addresses: payments, stake };
+  return enabledSession;
 }
 
 /** Re-collect payment + stake if CIP-30 already authorized. Does not prompt. */

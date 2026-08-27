@@ -6,7 +6,7 @@ import { useConfig, useReadContracts } from "wagmi";
 import { getBalance, readContract } from "wagmi/actions";
 import { accountCache, cacheGet, cacheHash, cacheKey, POLICIES } from "./defi/cache.ts";
 import { useUserSettings } from "./userSettings.ts";
-import { cipEpochNow, readCardanoValue, stakeFromPayment, subscribeCip } from "./cardanoCip30.ts";
+import { cardanoSession, cipEpochNow, readCardanoValue, stakeFromPayment, subscribeCip, type CardanoSession } from "./cardanoCip30.ts";
 import { koiosPost } from "./koios.ts";
 import { nearRpc } from "./nearRpc.ts";
 import { TOKEN_CATALOG, cardanoByUnit, solByMint, tokensFor, type TokenRecord } from "./tokenRegistry.ts";
@@ -464,6 +464,48 @@ function chunk<T>(items: T[], size: number) {
   return out;
 }
 
+function asKoiosRows<T>(json: unknown): T[] {
+  if (Array.isArray(json)) return json as T[];
+  if (json && typeof json === "object") {
+    const o = json as Record<string, unknown>;
+    if (Array.isArray(o.data)) return o.data as T[];
+    if (Array.isArray(o.result)) return o.result as T[];
+  }
+  return [];
+}
+
+function stakeOf(addr: string) {
+  const s = addr.trim();
+  if (s.startsWith("stake") || s.startsWith("stake_test")) return s;
+  return stakeFromPayment(s);
+}
+
+function cipOwns(session: CardanoSession | null, addr: string) {
+  if (!session) return false;
+  const st = stakeOf(addr);
+  if (session.stake && st && session.stake === st) return true;
+  if (session.address === addr) return true;
+  return (session.addresses ?? []).includes(addr);
+}
+
+function extrasOwns(addr: string, extras?: { addresses?: string[]; stake?: string }) {
+  if (!extras) return false;
+  if (extras.addresses?.includes(addr)) return true;
+  const st = extras.stake || "";
+  if (st && (addr === st || stakeOf(addr) === st)) return true;
+  return false;
+}
+
+function takeMaxQty(qty: Map<string, { raw: bigint; decimals: number }>, part: Map<string, { raw: bigint; decimals: number }>) {
+  for (const [unit, bal] of part) {
+    const prev = qty.get(unit);
+    qty.set(unit, {
+      raw: (prev?.raw ?? 0n) > bal.raw ? (prev?.raw ?? 0n) : bal.raw,
+      decimals: bal.decimals || prev?.decimals || 0,
+    });
+  }
+}
+
 function rowsFromCardano(
   catalog: TokenRecord[],
   ada: bigint,
@@ -501,30 +543,48 @@ function rowsFromCardano(
 }
 
 async function fetchCardanoKoios(address: string, extras?: { addresses?: string[]; stake?: string }) {
-  const stake = extras?.stake || (address ? stakeFromPayment(address) : "");
-  const payments = (extras?.addresses ?? []).filter(Boolean);
+  const stake = extras?.stake || stakeOf(address);
+  const payments = Array.from(new Set([address, ...(extras?.addresses ?? [])].filter(Boolean)));
   let ada = 0n;
   let assets: CardanoAsset[] = [];
   if (stake.startsWith("stake")) {
-    const info = (await koiosPost("account_info", { _stake_addresses: [stake] })) as Array<{
-      total_balance?: string;
-      utxo?: string;
-    }>;
-    ada = BigInt(info[0]?.utxo ?? info[0]?.total_balance ?? "0");
-    assets = flattenCardanoAssets(await koiosPost("account_assets", { _stake_addresses: [stake] }));
-  } else {
-    const addrs = Array.from(new Set([address, ...payments].filter(Boolean)));
-    for (const group of chunk(addrs, 50)) {
-      const info = (await koiosPost("address_info", { _addresses: group })) as Array<{ balance?: string }>;
-      for (const rowInfo of info) ada += BigInt(rowInfo.balance ?? "0");
-      assets.push(...flattenCardanoAssets(await koiosPost("address_assets", { _addresses: group })));
+    const info = asKoiosRows<{ total_balance?: string; utxo?: string }>(
+      await koiosPost("account_info", { _stake_addresses: [stake] }).catch(() => []),
+    );
+    const utxo = info[0]?.utxo;
+    const total = info[0]?.total_balance;
+    try {
+      ada = BigInt(utxo || total || "0");
+    } catch {
+      ada = 0n;
     }
+    assets = flattenCardanoAssets(await koiosPost("account_assets", { _stake_addresses: [stake] }).catch(() => []));
+  }
+  if (ada === 0n || !stake.startsWith("stake")) {
+    let payAda = 0n;
+    for (const group of chunk(payments.filter((a) => a.startsWith("addr")), 50)) {
+      const info = asKoiosRows<{ balance?: string }>(await koiosPost("address_info", { _addresses: group }).catch(() => []));
+      for (const rowInfo of info) {
+        try {
+          payAda += BigInt(rowInfo.balance ?? "0");
+        } catch {
+          /* skip */
+        }
+      }
+      assets.push(...flattenCardanoAssets(await koiosPost("address_assets", { _addresses: group }).catch(() => [])));
+    }
+    if (payAda > ada) ada = payAda;
   }
   const qty = new Map<string, { raw: bigint; decimals: number }>();
   for (const a of assets) {
     const unit = cardanoUnit(a);
     if (!unit) continue;
-    const raw = BigInt(a.quantity ?? "0");
+    let raw = 0n;
+    try {
+      raw = BigInt(a.quantity ?? "0");
+    } catch {
+      continue;
+    }
     const prev = qty.get(unit);
     qty.set(unit, { raw: (prev?.raw ?? 0n) + raw, decimals: a.decimals ?? prev?.decimals ?? 0 });
   }
@@ -558,32 +618,34 @@ export function useCardanoHoldings(
     setLoading(true);
     void (async () => {
       try {
-        if (list.length === 1) {
-          for (const wait of [0, 500, 1500]) {
-            if (wait) await new Promise((r) => window.setTimeout(r, wait));
-            if (cancelled) return;
-            const cip = await readCardanoValue();
-            if (!cip) continue;
-            const qty = new Map<string, { raw: bigint; decimals: number }>();
+        let ada = 0n;
+        const qty = new Map<string, { raw: bigint; decimals: number }>();
+        const session = cardanoSession();
+        const cipHit = list.some((a) => cipOwns(session, a));
+        if (cipHit) {
+          const cip = await readCardanoValue();
+          if (cip && (cip.ada > 0n || cip.assets.size > 0)) {
+            ada = cip.ada;
             for (const [unit, raw] of cip.assets) {
-              const known = cardanoByUnit(unit);
-              qty.set(unit, { raw, decimals: known?.decimals ?? 0 });
+              qty.set(unit, { raw, decimals: cardanoByUnit(unit)?.decimals ?? 0 });
             }
-            if (!cancelled) setRows(rowsFromCardano(catalog, cip.ada, qty));
-            return;
           }
         }
 
-        let ada = 0n;
-        const qty = new Map<string, { raw: bigint; decimals: number }>();
-        for (let i = 0; i < list.length; i++) {
-          const addr = list[i]!;
-          const extra = i === 0 ? extras : undefined;
-          const part = await fetchCardanoKoios(addr, extra);
-          ada += part.ada;
-          for (const [unit, bal] of part.qty) {
-            const prev = qty.get(unit);
-            qty.set(unit, { raw: (prev?.raw ?? 0n) + bal.raw, decimals: bal.decimals ?? prev?.decimals ?? 0 });
+        const seenStake = new Set<string>();
+        for (const addr of list) {
+          const extra = extrasOwns(addr, extras) ? extras : undefined;
+          const st = extra?.stake || stakeOf(addr);
+          if (st.startsWith("stake")) {
+            if (seenStake.has(st)) continue;
+            seenStake.add(st);
+          }
+          try {
+            const part = await fetchCardanoKoios(addr, extra);
+            if (part.ada > ada) ada = part.ada;
+            takeMaxQty(qty, part.qty);
+          } catch {
+            /* one address */
           }
         }
         if (!cancelled) setRows(rowsFromCardano(catalog, ada, qty));
