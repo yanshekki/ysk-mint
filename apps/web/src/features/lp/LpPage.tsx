@@ -15,6 +15,9 @@ import { useLiveStatus } from "../../lib/liveStatus.ts";
 import { SortHead, useSort } from "../../shared/ui/SortTable.tsx";
 import { ttCoverageLine } from "../../lib/defi/coverage.ts";
 
+/** High-usage chains shown before 「更多」. Order follows featuredChains(). */
+const PRIMARY_MARKET_IDS = new Set([1, 101, 56, 8453, 42161, 43114, 137, 784, 607, 999]);
+
 function fmtUnlock(ts: number) {
   if (!ts) return "—";
   return new Date(ts * 1000).toISOString().slice(0, 16).replace("T", " ") + " UTC";
@@ -36,6 +39,14 @@ export function LpPage() {
   });
   const featured = featuredChains();
   const [filter, setFilter] = useState<number | "all">("all");
+  const [moreChains, setMoreChains] = useState(false);
+  const primaryChains = useMemo(() => featured.filter((c) => PRIMARY_MARKET_IDS.has(c.chainId)), [featured]);
+  const extraChains = useMemo(() => featured.filter((c) => !PRIMARY_MARKET_IDS.has(c.chainId)), [featured]);
+  const visibleChains = useMemo(() => {
+    if (moreChains) return featured;
+    const pinned = extraChains.filter((c) => c.chainId === filter);
+    return pinned.length ? [...primaryChains, ...pinned] : primaryChains;
+  }, [featured, moreChains, extraChains, primaryChains, filter]);
   const selected = filter === "all" ? undefined : featured.find((c) => c.chainId === filter);
   const lockFilter: LpFilter = filter === "all" ? "all" : (selected?.key ?? "all");
   const markets = useDexMarkets(filter);
@@ -104,7 +115,7 @@ export function LpPage() {
             <button type="button" className={`me-chip ${filter === "all" ? "me-chip-on" : ""}`} onClick={() => setFilter("all")}>
               {t("lp.all")}
             </button>
-            {featured.map((c) => (
+            {visibleChains.map((c) => (
               <button
                 key={c.key}
                 type="button"
@@ -116,6 +127,12 @@ export function LpPage() {
                 <ChipBusy chainId={c.chainId} />
               </button>
             ))}
+            {extraChains.length ? (
+              <button type="button" className={`me-chip ${moreChains ? "me-chip-on" : ""}`} onClick={() => setMoreChains((v) => !v)}>
+                {moreChains ? t("lp.lessChains") : t("lp.moreChains")}
+                <span className="me-count">{extraChains.length}</span>
+              </button>
+            ) : null}
           </div>
 
           {mine.rows.length ? (

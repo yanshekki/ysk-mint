@@ -30,6 +30,8 @@
     "kicker": "Aggregator quotes",
     "hint": "Aggregated DEX spots. USDC, USDT, USDM and USDA count as $1. Only pools that exist with reserves. Token order follows a CoinMarketCap snapshot, not a live ranking. No synthetic tape.",
     "all": "All",
+    "moreChains": "More",
+    "lessChains": "Less",
     "testnets": "Testnets",
     "loading": "Reading on-chain data…",
     "loadingChain": "Reading {{chain}}…",

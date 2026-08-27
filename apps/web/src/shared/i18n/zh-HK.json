@@ -30,6 +30,8 @@
     "kicker": "聚合報價",
     "hint": "各鏈 DEX 現價聚合。USDC、USDT、USDM、USDA 按 1 美元。只列出已存在且有儲備的池。市值排序取自 CoinMarketCap 目錄快照，不是即時榜。無假盤。",
     "all": "全部",
+    "moreChains": "更多",
+    "lessChains": "收起",
     "testnets": "測試網",
     "loading": "正在讀取鏈上資料…",
     "loadingChain": "正在讀 {{chain}}…",
