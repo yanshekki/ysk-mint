@@ -32,7 +32,7 @@ const WRAP_META: Record<number, { symbol: string; icon: string }> = {
   81457: { symbol: "WETH", icon: "/tokens/eth.png" },
 };
 
-export function topCmcIds(limit = 100) {
+export function topCmcIds(limit = 500) {
   const seen = new Set<number>();
   const ids: number[] = [];
   for (const t of TOKEN_CATALOG) {
@@ -60,7 +60,7 @@ function nativePlaceholder(chainId: number): MarketToken | undefined {
   return undefined;
 }
 
-export function catalogTopOn(chainId: number, limit = 100): MarketToken[] {
+export function catalogTopOn(chainId: number, limit = 500): MarketToken[] {
   const rank = new Set(topCmcIds(limit));
   const seen = new Set<string>();
   const out: MarketToken[] = [];

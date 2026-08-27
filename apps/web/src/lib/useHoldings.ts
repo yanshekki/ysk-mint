@@ -32,6 +32,9 @@ const EVM_HOLD_IDS = featuredChains()
   .filter((c) => c.evm && !c.testnet)
   .map((c) => c.chainId);
 
+const SENTINEL_ERC = /^0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee$/i;
+const SCAN_ALWAYS = new Set(["WBTC", "CBBTC", "WETH", "STETH", "WSTETH", "USDC", "USDT", "DAI", "USDE"]);
+
 function fmt(raw: bigint, decimals: number) {
   const n = Number(formatUnits(raw, decimals));
   if (!Number.isFinite(n)) return formatUnits(raw, decimals);
@@ -104,7 +107,15 @@ export function useEvmHoldings(address: Address | Address[] | undefined) {
   const catalog = useMemo(() => tokensFor("evm"), []);
   const disabledChains = useUserSettings((s) => s.disabledChains);
   const off = useMemo(() => new Set(disabledChains), [disabledChains]);
-  const erc20s = useMemo(() => catalog.filter((t) => t.address && !off.has(t.chainId)), [catalog, off]);
+  const explore = useMemo(() => new Set(explorerChains()), []);
+  const erc20s = useMemo(
+    () => catalog.filter((t) => t.address && !t.native && !SENTINEL_ERC.test(t.address) && !off.has(t.chainId)),
+    [catalog, off],
+  );
+  const scanErc20s = useMemo(
+    () => erc20s.filter((t) => !explore.has(t.chainId) || SCAN_ALWAYS.has(t.symbol.toUpperCase())),
+    [erc20s, explore],
+  );
   const natives = useMemo(() => catalog.filter((t) => t.native && !off.has(t.chainId)), [catalog, off]);
   const connected = addrs.length > 0;
   const single = addrs.length === 1 ? addrs[0] : undefined;
@@ -122,14 +133,14 @@ export function useEvmHoldings(address: Address | Address[] | undefined) {
   );
   const contracts = useMemo(
     () =>
-      erc20s.map((t) => ({
+      scanErc20s.map((t) => ({
         address: t.address as Address,
         abi: erc20Abi,
         functionName: "balanceOf" as const,
         args: [(single ?? "0x0000000000000000000000000000000000000000") as Address] as const,
         chainId: t.chainId,
       })),
-    [single, erc20s],
+    [single, scanErc20s],
   );
 
   useEffect(() => {
@@ -193,7 +204,7 @@ export function useEvmHoldings(address: Address | Address[] | undefined) {
     void (async () => {
       const next: Record<string, bigint> = {};
       let i = 0;
-      const jobs = erc20s;
+      const jobs = scanErc20s;
       const workers = Array.from({ length: Math.min(3, jobs.length || 1) }, async () => {
         while (i < jobs.length) {
           const t = jobs[i++];
@@ -227,7 +238,7 @@ export function useEvmHoldings(address: Address | Address[] | undefined) {
     return () => {
       cancelled = true;
     };
-  }, [addrKey, addrs, config, erc20s, single]);
+  }, [addrKey, addrs, config, scanErc20s, single]);
 
   useEffect(() => {
     if (!addrs.length) {
@@ -302,7 +313,7 @@ export function useEvmHoldings(address: Address | Address[] | undefined) {
       const raw = connected ? (nativeByChain[t.chainId] ?? null) : null;
       out.push(row(t, raw, connected));
     }
-    erc20s.forEach((t, i) => {
+    scanErc20s.forEach((t, i) => {
       let raw: bigint | null = null;
       const ck = `${t.chainId}:${(t.address ?? "").toLowerCase()}`;
       if (connected) {
@@ -335,7 +346,7 @@ export function useEvmHoldings(address: Address | Address[] | undefined) {
       out.push(row(rec, raw, connected));
     }
     return sortHoldings(out, connected);
-  }, [connected, disc, discRaw, erc.data, erc20s, ercById, natives, nativeByChain, single]);
+  }, [connected, disc, discRaw, erc.data, scanErc20s, ercById, natives, nativeByChain, single]);
 
   const funded = rows.filter((r) => r.raw > 0n).length;
   const loading = nativeLoading || discLoading || (single ? erc.isLoading : ercLoading);

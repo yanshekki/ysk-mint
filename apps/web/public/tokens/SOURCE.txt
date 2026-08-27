@@ -2,13 +2,90 @@ Token icons copied from CoinMarketCap public 64×64 CDN
 (https://s2.coinmarketcap.com/static/img/coins/64x64/{id}.png)
 into this folder so the SPA does not hotlink at runtime.
 
-cmcCatalog.json is CMC top ~500 coins' platform contracts on
-ETH / Base / Arb / BNB / AVAX / Solana / NEAR / Cardano, snapshotted
-2026-08-26. Extra natives for Token Terminal EVM L1/L2 holdings live in
-tokenRegistry AUTO_NATIVES. This is not the entire CMC universe. Named
-files below are reused when the CMC id is known; others are cmc-{id}.png.
+cmcCatalog.json is CMC ∪ CoinGecko top-500 platform contracts on
+ysk-mint featured chains, snapshotted 2026-08-27.
+CMC listing 500, CoinGecko markets 500,
+union 669, catalog rows 1709, unique CMC ids 458.
+This is not the entire CMC/CG universe. Extra natives live in
+tokenRegistry AUTO_NATIVES. Named files below are reused when the
+symbol or CMC id is known; others are cmc-{id}.png.
 
-EVM decimals are on-chain eth_call. CMC contractDecimals is often wrong.
+EVM decimals from on-chain eth_call. CMC contractDecimals is often wrong.
+
+Rows by vm: {"evm":1339,"near":21,"cosmos":29,"starknet":13,"solana":194,"ton":20,"aptos":13,"sui":15,"tron":22,"xrpl":3,"stellar":14,"hypercore":16,"cardano":10}
+Featured chain ids with rows: 1, 10, 14, 25, 50, 56, 88, 100, 101, 118, 130, 137, 143, 144, 146, 148, 169, 196, 204, 250, 252, 288, 324, 397, 480, 607, 637, 784, 998, 999, 1088, 1116, 1135, 1329, 1776, 1815, 1868, 2020, 2741, 2818, 4217, 4326, 4663, 4689, 5000, 8217, 8453, 9745, 13371, 33139, 34443, 42161, 42220, 43114, 57073, 59144, 60808, 80094, 81457, 98866, 100001, 100003, 167000, 534352, 747474, 7777777, 728126428
+
+BTC native is chain 833; wrapped BTC is WBTC/cbBTC in the catalog.
+FLR/SEI/XDC/FIL natives are featured AUTO_NATIVES even when CMC lists
+no extra contract.
+
+Coins in the top 500 with no featured-chain contract (native L1 we
+do not wallet, or no bridged token). Holdings cannot show a native
+balance for these unless the user holds a wrapped/bridged variant:
+
+  13 XMR Monero
+  18 CC Canton
+  24 HBAR Hedera
+  57 PI Pi
+  62 ALGO Algorand
+  66 KAS Kaspa
+  71 VET VeChain
+  89 STX Stacks
+  95 BSV Bitcoin SV
+  113 CFX Conflux
+  114 XTZ Tezos
+  118 DCR Decred
+  129 IOTA IOTA
+  134 RUNE THORChain
+  137 THETA Theta Network
+  144 NEO Neo
+  148 AR Arweave
+  150 XEC eCash
+  158 A Vaulta
+  168 EGLD MultiversX
+  183 DGB DigiByte
+  185 QTUM Qtum
+  196 GAS Gas
+  230 ZANO Zano
+  253 MINA Mina
+  259 SN51 lium
+  294 KSM Kusama
+  295 TFUEL Theta Fuel
+  304 SN4 Targon
+  319 QUBIC Qubic
+  335 BABY Babylon
+  338 GCOIN Playnance
+  341 RVN Ravencoin
+  345 XNO Nano
+  363 CKB Nervos Network
+  377 XP Xphere
+  381 CSPR Casper
+  392 POLYX Polymesh
+  399 CCD Concordium
+  408 SN44 Score
+  415 XVG Verge
+  421 VTHO VeThor Token
+  448 ARRR Pirate Chain
+  457 FB Fractal Bitcoin
+  459 SC Siacoin
+  463 FOGO Fogo
+  474 SMART SMART
+  9 FIGR_HELOC Figure Heloc
+  63 BFUSD BFUSD
+  70 PI Pi Network
+  71 KCS KuCoin
+  91 YLDS YLDS
+  113 HASH Provenance Blockchain
+  231 OZO Ozone Chain
+  225 GRX GRX Chain
+  252 SN64 Chutes
+  253 DAI DAI on PulseChain
+  306 MINA Mina Protocol
+  342 PRL Pearl
+  367 QRL Quantum Resistant Ledger
+  435 SN120 affine
+  451 HDX Hydration
+  478 CSPR Casper Network
 
 CMC IDs:
   btc=1 eth=1027 usdt=825 bnb=1839 usdc=3408 ada=2010

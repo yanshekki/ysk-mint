@@ -23,6 +23,11 @@ const EXPLORER: Partial<Record<number, string>> = {
   81457: "https://blast.blockscout.com",
   42220: "https://celo.blockscout.com",
   56: "https://bsc.blockscout.com",
+  59144: "https://explorer.linea.build",
+  130: "https://unichain.blockscout.com",
+  1868: "https://soneium.blockscout.com",
+  5000: "https://explorer.mantle.xyz",
+  480: "https://worldchain-mainnet.explorer.alchemy.com",
 };
 
 type BsTok = {

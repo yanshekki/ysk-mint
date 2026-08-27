@@ -16,6 +16,7 @@
     "typecheck": "pnpm -r --if-present run typecheck",
     "dev:web": "pnpm --filter @ysk-mint/web dev",
     "build:web": "pnpm --filter @ysk-mint/web build",
-    "docs:bilingual": "node scripts/docs-bilingual-check.mjs"
+    "docs:bilingual": "node scripts/docs-bilingual-check.mjs",
+    "snapshot:top500": "node scripts/snapshot-top500.mjs"
   }
 }
