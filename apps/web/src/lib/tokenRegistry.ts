@@ -105,6 +105,9 @@ const AUTO_NATIVES: TokenRecord[] = featuredChains()
   );
 
 const EXTRA: TokenRecord[] = [
+  { id: "eth-weth", vm: "evm", chainId: 1, symbol: "WETH", name: "Wrapped Ether", decimals: 18, address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", icon: I("eth") },
+  { id: "eth-steth", vm: "evm", chainId: 1, symbol: "stETH", name: "Lido Staked ETH", decimals: 18, address: "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84", icon: I("steth") },
+  { id: "eth-wsteth", vm: "evm", chainId: 1, symbol: "wstETH", name: "Wrapped stETH", decimals: 18, address: "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0", icon: I("wsteth") },
   { id: "pol-usdc", vm: "evm", chainId: 137, symbol: "USDC", name: "USD Coin", decimals: 6, address: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", icon: I("usdc") },
   { id: "pol-usdt", vm: "evm", chainId: 137, symbol: "USDT", name: "Tether", decimals: 6, address: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F", icon: I("usdt") },
   { id: "op-usdc", vm: "evm", chainId: 10, symbol: "USDC", name: "USD Coin", decimals: 6, address: "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85", icon: I("usdc") },

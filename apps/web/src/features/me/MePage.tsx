@@ -101,7 +101,7 @@ function explorerFor(chainId: number, contract?: string) {
 }
 
 function rowDecimals(r: HoldingRow) {
-  return TOKEN_CATALOG.find((t) => t.id === r.id)?.decimals ?? (r.native ? 18 : 18);
+  return r.decimals ?? TOKEN_CATALOG.find((t) => t.id === r.id)?.decimals ?? 18;
 }
 
 function valued(raw: bigint, decimals: number, q?: Quote | null) {

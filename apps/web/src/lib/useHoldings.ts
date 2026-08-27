@@ -9,7 +9,8 @@ import { useUserSettings } from "./userSettings.ts";
 import { cipEpochNow, readCardanoValue, stakeFromPayment, subscribeCip } from "./cardanoCip30.ts";
 import { koiosPost } from "./koios.ts";
 import { nearRpc } from "./nearRpc.ts";
-import { cardanoByUnit, solByMint, tokensFor, type TokenRecord } from "./tokenRegistry.ts";
+import { TOKEN_CATALOG, cardanoByUnit, solByMint, tokensFor, type TokenRecord } from "./tokenRegistry.ts";
+import { discoverEvmTokens, explorerChains, type DiscoveredErc20 } from "./evmDiscover.ts";
 
 export type HoldingRow = {
   id: string;
@@ -22,6 +23,7 @@ export type HoldingRow = {
   native?: boolean;
   chainTag?: string;
   chainId?: number;
+  decimals?: number;
 };
 
 const CHAIN_TAG: Record<number, string> = Object.fromEntries(featuredChains().map((c) => [c.chainId, c.short]));
@@ -51,6 +53,7 @@ function row(token: TokenRecord, raw: bigint | null, connected: boolean): Holdin
     native: token.native,
     chainTag: CHAIN_TAG[token.chainId],
     chainId: token.chainId,
+    decimals: token.decimals,
   };
 }
 
@@ -110,6 +113,13 @@ export function useEvmHoldings(address: Address | Address[] | undefined) {
   const [ercById, setErcById] = useState<Record<string, bigint>>({});
   const [nativeLoading, setNativeLoading] = useState(false);
   const [ercLoading, setErcLoading] = useState(false);
+  const [disc, setDisc] = useState<DiscoveredErc20[]>([]);
+  const [discRaw, setDiscRaw] = useState<Record<string, bigint>>({});
+  const [discLoading, setDiscLoading] = useState(false);
+  const catalogKeys = useMemo(
+    () => new Set(erc20s.map((t) => `${t.chainId}:${(t.address ?? "").toLowerCase()}`)),
+    [erc20s],
+  );
   const contracts = useMemo(
     () =>
       erc20s.map((t) => ({
@@ -219,29 +229,116 @@ export function useEvmHoldings(address: Address | Address[] | undefined) {
     };
   }, [addrKey, addrs, config, erc20s, single]);
 
+  useEffect(() => {
+    if (!addrs.length) {
+      setDisc([]);
+      setDiscLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setDiscLoading(true);
+    const chains = EVM_HOLD_IDS.filter((id) => !off.has(id) && explorerChains().includes(id));
+    void discoverEvmTokens(chains, addrs, catalogKeys)
+      .then((list) => {
+        if (!cancelled) setDisc(list);
+      })
+      .finally(() => {
+        if (!cancelled) setDiscLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [addrKey, addrs, catalogKeys, off]);
+
+  useEffect(() => {
+    if (!disc.length || !addrs.length) {
+      setDiscRaw({});
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const next: Record<string, bigint> = {};
+      let i = 0;
+      const workers = Array.from({ length: Math.min(3, disc.length) }, async () => {
+        while (i < disc.length) {
+          const d = disc[i++];
+          if (!d) break;
+          let sum = 0n;
+          let ok = false;
+          for (const address of addrs) {
+            try {
+              const value = await accountCache("hold.erc20", d.chainId, address, d.address, async () =>
+                readContract(config, {
+                  address: d.address,
+                  abi: erc20Abi,
+                  functionName: "balanceOf",
+                  args: [address as Address],
+                  chainId: d.chainId,
+                }),
+              );
+              if (typeof value === "bigint") {
+                sum += value;
+                ok = true;
+              }
+            } catch {
+              /* explorer fallback */
+            }
+          }
+          next[`${d.chainId}:${d.address}`] = ok ? sum : d.raw;
+        }
+      });
+      await Promise.all(workers);
+      if (!cancelled) setDiscRaw(next);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [addrs, config, disc]);
+
   const rows = useMemo(() => {
     const out: HoldingRow[] = [];
+    const seen = new Set<string>();
     for (const t of natives) {
       const raw = connected ? (nativeByChain[t.chainId] ?? null) : null;
       out.push(row(t, raw, connected));
     }
     erc20s.forEach((t, i) => {
       let raw: bigint | null = null;
+      const ck = `${t.chainId}:${(t.address ?? "").toLowerCase()}`;
       if (connected) {
         if (single) {
           const r = erc.data?.[i];
-          raw = r?.status === "success" && typeof r.result === "bigint" ? r.result : 0n;
+          raw = r?.status === "success" && typeof r.result === "bigint" ? r.result : (discRaw[ck] ?? 0n);
         } else {
-          raw = ercById[t.id] ?? 0n;
+          raw = ercById[t.id] ?? discRaw[ck] ?? 0n;
         }
       }
+      seen.add(ck);
       out.push(row(t, raw, connected));
     });
+    for (const d of disc) {
+      const ck = `${d.chainId}:${d.address}`;
+      if (seen.has(ck)) continue;
+      seen.add(ck);
+      const raw = connected ? (discRaw[ck] ?? d.raw) : null;
+      const known = TOKEN_CATALOG.find((t) => t.chainId === d.chainId && (t.address ?? "").toLowerCase() === d.address);
+      const rec: TokenRecord = {
+        id: `disc-${d.chainId}-${d.address}`,
+        vm: "evm",
+        chainId: d.chainId,
+        symbol: known?.symbol || d.symbol,
+        name: known?.name || d.name,
+        decimals: d.decimals,
+        address: d.address,
+        icon: known?.icon || "/tokens/eth.png",
+      };
+      out.push(row(rec, raw, connected));
+    }
     return sortHoldings(out, connected);
-  }, [connected, erc.data, erc20s, ercById, natives, nativeByChain, single]);
+  }, [connected, disc, discRaw, erc.data, erc20s, ercById, natives, nativeByChain, single]);
 
   const funded = rows.filter((r) => r.raw > 0n).length;
-  const loading = nativeLoading || (single ? erc.isLoading : ercLoading);
+  const loading = nativeLoading || discLoading || (single ? erc.isLoading : ercLoading);
   useEffect(() => {
     if (!connected || !(single ? erc.isLoading : ercLoading)) return;
     for (const id of EVM_HOLD_IDS) syncLiveFlag(`holdings:${id}:erc`, id, "holdings", true);
