@@ -5,6 +5,7 @@ import { erc20Abi, formatUnits, type Address } from "viem";
 import { useConfig, useReadContracts } from "wagmi";
 import { getBalance } from "wagmi/actions";
 import { accountCache, cacheGet, cacheHash, cacheKey, POLICIES } from "./defi/cache.ts";
+import { useUserSettings } from "./userSettings.ts";
 import { cipEpochNow, readCardanoValue, stakeFromPayment, subscribeCip } from "./cardanoCip30.ts";
 import { koiosPost } from "./koios.ts";
 import { nearRpc } from "./nearRpc.ts";
@@ -66,8 +67,10 @@ const BALANCE_QUERY = { staleTime: 30_000, refetchOnWindowFocus: false as const,
 
 export function useEvmHoldings(address: Address | undefined) {
   const catalog = useMemo(() => tokensFor("evm"), []);
-  const erc20s = useMemo(() => catalog.filter((t) => t.address), [catalog]);
-  const natives = useMemo(() => catalog.filter((t) => t.native), [catalog]);
+  const disabledChains = useUserSettings((s) => s.disabledChains);
+  const off = useMemo(() => new Set(disabledChains), [disabledChains]);
+  const erc20s = useMemo(() => catalog.filter((t) => t.address && !off.has(t.chainId)), [catalog, off]);
+  const natives = useMemo(() => catalog.filter((t) => t.native && !off.has(t.chainId)), [catalog, off]);
   const connected = Boolean(address);
   const config = useConfig();
   const [nativeByChain, setNativeByChain] = useState<Record<number, bigint>>({});
@@ -95,7 +98,7 @@ export function useEvmHoldings(address: Address | undefined) {
     void (async () => {
       const next: Record<number, bigint> = {};
       let i = 0;
-      const ids = EVM_HOLD_IDS;
+      const ids = EVM_HOLD_IDS.filter((id) => !off.has(id));
       const workers = Array.from({ length: Math.min(3, ids.length) }, async () => {
         while (i < ids.length) {
           const id = ids[i++];
@@ -122,7 +125,7 @@ export function useEvmHoldings(address: Address | undefined) {
     return () => {
       cancelled = true;
     };
-  }, [address, config]);
+  }, [address, config, off]);
 
   const erc = useReadContracts({
     contracts,

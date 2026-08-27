@@ -23,6 +23,7 @@
     "create": "Launch",
     "transfer": "Bridge",
     "me": "Holdings",
+    "settings": "Settings",
     "disclaimer": "Unaudited",
     "lang": "Language",
     "search": "Search ticker, CA, wallet"
@@ -419,5 +420,34 @@
   },
   "lock": {
     "missing": "Need chainId and lock id."
+  },
+  "settings": {
+    "kicker": "Preferences",
+    "hint": "Saved in this browser only. Nothing is uploaded, and on-chain data is not changed.",
+    "display": "Display",
+    "liveDock": "Live data dock",
+    "hideZero": "Hide zero holdings",
+    "markets": "Markets",
+    "autoOrient": "Auto-order pair sides",
+    "quoteSide": "Quote side",
+    "quoteRight": "Right",
+    "quoteLeft": "Left",
+    "quotePriority": "Quote first",
+    "priStable": "Stable → gas",
+    "priGas": "Gas → stable",
+    "trades": "Fill colours",
+    "tradePreview": "Preview",
+    "presets": "Presets",
+    "presetGreenRed": "Buy green / sell red",
+    "presetRedGreen": "Buy red / sell green",
+    "chains": "Chains",
+    "chainsHint": "Disabled chains are omitted from market and holdings scans. Wallet connect and launch are unchanged.",
+    "data": "Data",
+    "cache": "Frontend Web3 cache",
+    "cacheClear": "Clear",
+    "cacheClearing": "Clearing…",
+    "cacheCleared": "Cleared",
+    "reset": "All settings",
+    "resetBtn": "Restore defaults"
   }
 }

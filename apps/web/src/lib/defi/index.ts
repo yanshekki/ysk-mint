@@ -10,6 +10,7 @@ export {
   cacheLastGood,
   cachePeek,
   cacheReady,
+  cacheWipe,
   cacheWrite,
   cached,
   mapChunk,

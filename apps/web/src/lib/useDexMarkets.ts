@@ -8,6 +8,7 @@ import { protocolsOn } from "./defi/registry.ts";
 import type { MarketRow as DefiMarket, VenueQuote } from "./defi/types.ts";
 import { useLiveStatus } from "./liveStatus.ts";
 import { mergeOriented } from "./pairOrient.ts";
+import { useUserSettings } from "./userSettings.ts";
 
 export type MarketRow = {
   pairId: string;
@@ -87,13 +88,14 @@ function sortMarkets(rows: MarketRow[]) {
 const NATIVE = new Set([101, 397, 1815, 784, 607]);
 const SKIP = new Set([101, 397, 1815, 398, 18151, 103, 784, 607, 637, 998, 728126428]);
 
-function marketIds(chainId: number | "all") {
+function marketIds(chainId: number | "all", disabled: number[]) {
   ensureProtocols();
+  const off = new Set(disabled);
   return chainId === "all"
     ? featuredChains()
-        .filter((c) => !c.testnet && protocolsOn(c.chainId).length > 0)
+        .filter((c) => !c.testnet && !off.has(c.chainId) && protocolsOn(c.chainId).length > 0)
         .map((c) => c.chainId)
-    : protocolsOn(chainId).length
+    : !off.has(chainId) && protocolsOn(chainId).length
       ? [chainId]
       : [];
 }
@@ -111,10 +113,11 @@ export function useDexMarkets(chainId: number | "all") {
   const [rows, setRows] = useState<MarketRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const disabledChains = useUserSettings((s) => s.disabledChains);
 
   useEffect(() => {
     let cancelled = false;
-    const ids = marketIds(chainId);
+    const ids = marketIds(chainId, disabledChains);
     const byChain = new Map<number, MarketRow[]>();
 
     const publish = () => {
@@ -213,7 +216,7 @@ export function useDexMarkets(chainId: number | "all") {
       stopPoll();
       useLiveStatus.getState().clear("markets:");
     };
-  }, [chainId]);
+  }, [chainId, disabledChains]);
 
   return { rows, loading, error };
 }

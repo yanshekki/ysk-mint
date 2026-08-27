@@ -28,6 +28,7 @@ import { useNativeWallets } from "../../lib/nativeWallets.ts";
 import { stakeFromPayment } from "../../lib/cardanoCip30.ts";
 import { resolvedContracts } from "../../lib/launchStack.ts";
 import { useWizard } from "../wizard/store.ts";
+import { useUserSettings } from "../../lib/userSettings.ts";
 import { accountCache } from "../../lib/defi/cache.ts";
 import { useAdaHandle, useEvmName, useSolName } from "../../lib/chainNames.ts";
 import { chainIcon } from "../../lib/chainIcon.ts";
@@ -212,7 +213,9 @@ export function MePage() {
   const adaName = useAdaHandle(native.cardanoAddress, native.cardanoStake);
   const solName = useSolName(native.solanaAddress);
   const [filter, setFilter] = useState<number | "all">("all");
-  const [hideZero, setHideZero] = useState(true);
+  const hideZero = useUserSettings((s) => s.hideZero);
+  const patchSettings = useUserSettings((s) => s.patch);
+  const disabledChains = useUserSettings((s) => s.disabledChains);
   const [launched, setLaunched] = useState<LaunchRow[]>([]);
   const [quotes, setQuotes] = useState<Map<string, Quote>>(new Map());
   const [aave, setAave] = useState<AaveCard[]>([]);
@@ -381,8 +384,9 @@ export function MePage() {
         loading: loadingFor(c),
         connected,
       };
-    }).filter((g) => g.connected);
+    }).filter((g) => g.connected && !disabledChains.includes(g.id));
   }, [
+    disabledChains,
     ada.loading,
     ada.rows,
     aptos.loading,
@@ -876,7 +880,7 @@ export function MePage() {
                     checked={hideZero}
                     onChange={(e) => {
                       const on = e.target.checked;
-                      setHideZero(on);
+                      patchSettings({ hideZero: on });
                       if (on && filter !== "all" && chipCount(filter) === 0) setFilter("all");
                     }}
                   />

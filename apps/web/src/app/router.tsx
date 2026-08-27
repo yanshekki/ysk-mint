@@ -52,6 +52,13 @@ export const router = createBrowserRouter([
           return { Component: MePage };
         },
       },
+      {
+        path: "settings",
+        lazy: async () => {
+          const { SettingsPage } = await import("../features/settings/SettingsPage.tsx");
+          return { Component: SettingsPage };
+        },
+      },
     ],
   },
 ]);

@@ -1,6 +1,7 @@
 import { CHAINS } from "@ysk-mint/config";
 import { DEX, isUsdStableAddress, usdStables } from "./defiAddresses.ts";
 import { canonId, sortPair } from "./pairKey.ts";
+import { useUserSettings } from "./userSettings.ts";
 
 const STABLE = new Set(
   ["USDC", "USDT", "DAI", "USDM", "USDA", "IUSD", "DJED", "USDE", "FRAX", "USD1", "USDB", "USDBC", "USDCE", "USDC.E", "USDT.E", "DAI.E"].map(
@@ -79,25 +80,40 @@ export function quoteRank(chainId: number, address: string, symbol?: string): Qu
   return 2;
 }
 
+function preferRank(r: QuoteRank): QuoteRank {
+  const pri = useUserSettings.getState().quotePriority;
+  if (pri !== "gas-stable") return r;
+  if (r === 0) return 1;
+  if (r === 1) return 0;
+  return r;
+}
+
 /** True when `b` is the quote leg (should stay on the right). */
 export function isQuoteOnRight(
   chainId: number,
   a: { address: string; symbol?: string },
   b: { address: string; symbol?: string },
 ): boolean {
-  const ra = quoteRank(chainId, a.address, a.symbol);
-  const rb = quoteRank(chainId, b.address, b.symbol);
-  if (ra !== rb) return rb < ra;
-  if (ra === 1) {
+  const cfg = useUserSettings.getState();
+  if (!cfg.autoOrient) return true;
+  const ra = preferRank(quoteRank(chainId, a.address, a.symbol));
+  const rb = preferRank(quoteRank(chainId, b.address, b.symbol));
+  let keep: boolean;
+  if (ra !== rb) keep = rb < ra;
+  else if (ra === 1) {
     const wrap = DEX[chainId]?.wrapped;
-    if (wrap) {
-      const w = canonId(wrap);
-      if (canonId(b.address) === w) return true;
-      if (canonId(a.address) === w) return false;
+    const w = wrap ? canonId(wrap) : "";
+    if (w && canonId(b.address) === w) keep = true;
+    else if (w && canonId(a.address) === w) keep = false;
+    else {
+      const [, y] = sortPair(a.address, b.address);
+      keep = canonId(b.address) === y;
     }
+  } else {
+    const [, y] = sortPair(a.address, b.address);
+    keep = canonId(b.address) === y;
   }
-  const [, y] = sortPair(a.address, b.address);
-  return canonId(b.address) === y;
+  return cfg.quoteSide === "left" ? !keep : keep;
 }
 
 export function orientPair(

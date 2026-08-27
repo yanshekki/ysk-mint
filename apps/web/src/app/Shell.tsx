@@ -20,6 +20,7 @@ export function Shell() {
     ["/create", "nav.create"],
     ["/transfer", "nav.transfer"],
     ["/me", "nav.me"],
+    ["/settings", "nav.settings"],
   ] as const;
 
   return (

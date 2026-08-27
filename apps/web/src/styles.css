@@ -47,6 +47,8 @@
   --green-2: #059669;
   --red: #f43f5e;
   --amber: #f59e0b;
+  --trade-buy: #10b981;
+  --trade-sell: #ef4444;
 }
 
 * {
@@ -1528,12 +1530,14 @@ button.oft-chain:disabled {
   font-size: 11px;
   border-radius: 10px;
 }
-.me-token .holding-ico.me-oft-mark.me-trade-buy {
-  background: #10b981;
+.me-token .holding-ico.me-oft-mark.me-trade-buy,
+.set-preview .me-trade-buy {
+  background: var(--trade-buy, #10b981);
   color: #fff;
 }
-.me-token .holding-ico.me-oft-mark.me-trade-sell {
-  background: #ef4444;
+.me-token .holding-ico.me-oft-mark.me-trade-sell,
+.set-preview .me-trade-sell {
+  background: var(--trade-sell, #ef4444);
   color: #fff;
 }
 .chip {
@@ -2196,4 +2200,94 @@ button.oft-chain:disabled {
   to {
     transform: rotate(360deg);
   }
+}
+
+.set-desk {
+  max-width: 720px;
+}
+.set-body {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0 8px;
+}
+.set-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 52px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.set-row > span:first-child {
+  color: var(--text-main);
+}
+.set-row-off {
+  opacity: 0.45;
+}
+.set-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #3b82f6;
+  cursor: pointer;
+}
+.set-row input[type="color"] {
+  width: 44px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-white);
+  cursor: pointer;
+}
+.set-pills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.set-pill {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-white);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.set-pill.on {
+  border-color: #3b82f6;
+  background: #3b82f6;
+  color: #fff;
+}
+.set-pill:disabled {
+  cursor: default;
+}
+.set-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.set-preview .holding-ico {
+  width: 36px;
+  height: 36px;
+  font-size: 11px;
+  border-radius: 10px;
+}
+.set-note {
+  margin: 0;
+  padding: 4px 16px 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-sub);
+}
+.set-chains {
+  padding: 4px 16px 16px;
+}
+.set-action {
+  height: 34px;
+  padding: 0 14px;
+  font-size: 13px;
 }

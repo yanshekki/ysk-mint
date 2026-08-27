@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { CHAINS } from "@ysk-mint/config";
 import { chainIcon } from "../../lib/chainIcon.ts";
 import { useLiveStatus, type LiveJob, type LiveKind } from "../../lib/liveStatus.ts";
+import { useUserSettings } from "../../lib/userSettings.ts";
 
 function chainOf(chainId: number) {
   return Object.values(CHAINS).find((c) => c.chainId === chainId);
@@ -14,6 +15,7 @@ function kindKey(kind: LiveKind) {
 
 export function LiveDock() {
   const { t } = useTranslation();
+  const dockOn = useUserSettings((s) => s.liveDock);
   const jobs = useLiveStatus((s) => s.jobs);
 
   const visible = useMemo(() => {
@@ -28,7 +30,7 @@ export function LiveDock() {
     return { run, waiting };
   }, [jobs]);
 
-  if (!visible.run.length && !visible.waiting) return null;
+  if (!dockOn || (!visible.run.length && !visible.waiting)) return null;
 
   return (
     <aside className="live-dock" aria-live="polite" aria-label={t("live.title")}>

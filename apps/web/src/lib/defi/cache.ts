@@ -437,6 +437,27 @@ export function cacheDropAccountRam() {
   dbg("drop-account-ram");
 }
 
+export async function cacheWipe() {
+  const keys = [...good.keys()];
+  good.clear();
+  neg.clear();
+  inflight.clear();
+  const db = await openDb();
+  if (db) {
+    try {
+      await new Promise<void>((resolve) => {
+        const tx = db.transaction(STORE, "readwrite");
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => resolve();
+        tx.objectStore(STORE).clear();
+      });
+    } catch {
+      if (keys.length) await idbDelKeys(keys);
+    }
+  }
+  dbg("wipe");
+}
+
 export function onVisibleInterval(ms: number, fn: () => void): () => void {
   if (typeof document === "undefined") return () => undefined;
   const tick = () => {
