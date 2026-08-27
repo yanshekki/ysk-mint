@@ -10,12 +10,14 @@ export function AddrAddBar({
   onBind,
   addLabel,
   hint,
+  autoFocus,
 }: {
-  onAdd: (kind: AddrKind, value: string) => AddrErr | null;
+  onAdd: (kind: AddrKind, value: string, label?: string) => AddrErr | null;
   disabled?: boolean;
   onBind?: (el: HTMLInputElement | null) => void;
   addLabel?: string;
   hint?: string;
+  autoFocus?: boolean;
 }) {
   const { t } = useTranslation();
   const [raw, setRaw] = useState("");
@@ -67,7 +69,7 @@ export function AddrAddBar({
 
   function submit(nextKind?: AddrKind) {
     if (nameHit) {
-      const fail = onAdd(nameHit.kind, nameHit.address);
+      const fail = onAdd(nameHit.kind, nameHit.address, nameHit.name);
       if (fail) {
         setErr(fail);
         return;
@@ -130,6 +132,7 @@ export function AddrAddBar({
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}
+          autoFocus={autoFocus}
           placeholder={t("settings.addrPaste")}
           aria-label={hint || t("settings.addrPaste")}
           onChange={(e) => {

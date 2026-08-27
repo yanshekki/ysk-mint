@@ -2522,6 +2522,32 @@ button.set-item-btn:focus-visible {
   gap: 8px;
   margin-left: auto;
 }
+.me-peek-back {
+  position: fixed;
+  inset: 0;
+  z-index: 10040;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.28);
+}
+.me-peek {
+  width: min(560px, 100%);
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-white);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+}
+.me-peek-hint {
+  margin: 0 4px 14px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-sub);
+}
+.me-peek .addr-add-k {
+  display: none;
+}
 .me-watching {
   margin: 0 0 4px;
   font-size: 13px;

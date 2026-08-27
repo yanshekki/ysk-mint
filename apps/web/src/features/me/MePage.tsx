@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { AddrAddBar, AddrIdCard } from "../settings/AddrFields.tsx";
-import { MAX_ADDRS, useActiveSnap, useAddressSets } from "../../lib/addressSets.ts";
+import { useActiveSnap, useAddressSets } from "../../lib/addressSets.ts";
+import { shortAddr } from "../../lib/addrKind.ts";
 import { SHARE_SOFT, decodeWatch, shareUrl } from "../../lib/shareSet.ts";
 import { formatUnits, parseAbiItem, type Address } from "viem";
 import { useConfig } from "wagmi";
@@ -272,12 +273,19 @@ export function MePage() {
   const snap = useActiveSnap();
   const setActive = useAddressSets((s) => s.setActive);
   const watchSets = useAddressSets((s) => s.watch);
-  const addMine = useAddressSets((s) => s.addMine);
-  const addWatchAddr = useAddressSets((s) => s.addWatchAddr);
   const importShared = useAddressSets((s) => s.importShared);
-  const mineList = useAddressSets((s) => s.mine);
   const [shared, setShared] = useState(false);
   const [shareNote, setShareNote] = useState("");
+  const [peekOpen, setPeekOpen] = useState(false);
+
+  useEffect(() => {
+    if (!peekOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPeekOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [peekOpen]);
 
   useEffect(() => {
     const run = () => {
@@ -867,6 +875,9 @@ export function MePage() {
               ))}
             </div>
             <div className="me-sets-acts">
+              <button type="button" className="me-pool-btn me-pool-btn-explore" onClick={() => setPeekOpen(true)}>
+                {t("me.peek")}
+              </button>
               <button
                 type="button"
                 className="me-pool-btn me-pool-btn-explore"
@@ -914,26 +925,15 @@ export function MePage() {
               <p className="me-card-empty">{snap.isMine ? t("me.needAddr") : t("me.watchEmpty")}</p>
               <div className="me-empty-acts">
                 {snap.isMine ? (
-                  <>
-                    <Link to="/create" className="me-pool-btn me-pool-btn-dex">
-                      {t("wallet.connect")}
-                    </Link>
-                    <Link to="/settings#addresses" className="me-pool-btn me-pool-btn-explore">
-                      {t("me.pasteAddr")}
-                    </Link>
-                  </>
-                ) : null}
+                  <Link to="/create" className="me-pool-btn me-pool-btn-dex">
+                    {t("wallet.connect")}
+                  </Link>
+                ) : (
+                  <Link to="/settings#addresses" className="me-pool-btn me-pool-btn-explore">
+                    {t("me.manageAddrs")}
+                  </Link>
+                )}
               </div>
-              <AddrAddBar
-                addLabel={t("settings.addrAddToSet")}
-                hint={t("me.addToSet", { name: snap.isMine ? t("me.setMine") : (snap.watchName ?? "") })}
-                disabled={
-                  snap.isMine
-                    ? mineList.length >= MAX_ADDRS
-                    : (watchSets.find((w) => w.id === snap.activeId)?.addresses.length ?? 0) >= MAX_ADDRS
-                }
-                onAdd={(kind, value) => (snap.isMine ? addMine(kind, value) : addWatchAddr(snap.activeId, kind, value))}
-              />
             </section>
           ) : (
             <>
@@ -942,16 +942,6 @@ export function MePage() {
                   <AddrIdCard key={a.id} kind={a.kind} value={a.value} connected={a.source === "connected"} />
                 ))}
               </div>
-              <AddrAddBar
-                addLabel={t("settings.addrAddToSet")}
-                hint={t("me.addToSet", { name: snap.isMine ? t("me.setMine") : (snap.watchName ?? "") })}
-                disabled={
-                  snap.isMine
-                    ? mineList.length >= MAX_ADDRS
-                    : (watchSets.find((w) => w.id === snap.activeId)?.addresses.length ?? 0) >= MAX_ADDRS
-                }
-                onAdd={(kind, value) => (snap.isMine ? addMine(kind, value) : addWatchAddr(snap.activeId, kind, value))}
-              />
 
               <div className="me-chips-bar">
                 <div className="me-chips">
@@ -1228,6 +1218,36 @@ export function MePage() {
           )}
         </div>
       </div>
+      {peekOpen ? (
+        <div
+          className="me-peek-back"
+          role="presentation"
+          onClick={() => setPeekOpen(false)}
+        >
+          <div
+            className="me-peek"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="me-peek-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p id="me-peek-title" className="session-pop-title">
+              {t("me.peekTitle")}
+            </p>
+            <p className="me-peek-hint">{t("me.peekHint")}</p>
+            <AddrAddBar
+              autoFocus
+              addLabel={t("me.peekGo")}
+              onAdd={(kind, value, label) => {
+                const id = importShared(label || shortAddr(kind, value), [{ kind, value }]);
+                if (!id) return "full";
+                setPeekOpen(false);
+                return null;
+              }}
+            />
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
