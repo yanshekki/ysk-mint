@@ -1264,8 +1264,14 @@ button.oft-chain:disabled {
   border: 1px solid var(--border-color);
   border-radius: 10px;
   background: var(--bg-subtle);
+  color: var(--text-main);
   font-size: 13px;
   font-weight: 600;
+  outline: none;
+}
+.me-filter:focus {
+  border-color: #3b82f6;
+  background: var(--bg-white);
 }
 .me-filter::placeholder {
   color: var(--text-muted);

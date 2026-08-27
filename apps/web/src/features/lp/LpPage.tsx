@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAccount } from "wagmi";
@@ -72,7 +72,11 @@ export function LpPage() {
   const featured = featuredChains();
   const [params, setParams] = useSearchParams();
   const filter = parseChain(params.get("chain"));
-  const marketQ = params.get("q") ?? "";
+  const urlQ = params.get("q") ?? "";
+  const [marketQ, setMarketQ] = useState(urlQ);
+  const marketQRef = useRef(marketQ);
+  marketQRef.current = marketQ;
+  const searchFocused = useRef(false);
   const shownCap = Math.max(MARKET_PAGE, Number(params.get("n")) || MARKET_PAGE);
   const [moreChains, setMoreChains] = useState(false);
   const primaryChains = useMemo(() => featured.filter((c) => PRIMARY_MARKET_IDS.has(c.chainId)), [featured]);
@@ -133,8 +137,13 @@ export function LpPage() {
     if (filter !== "all" && !PRIMARY_MARKET_IDS.has(filter)) setMoreChains(true);
   }, [filter]);
   useEffect(() => {
+    if (searchFocused.current) return;
+    if (urlQ !== marketQRef.current) setMarketQ(urlQ);
+  }, [urlQ]);
+  useEffect(() => {
     const here = new URLSearchParams(window.location.search);
     if (here.get("q") || here.get("chain") || here.get("n")) return;
+    if (searchFocused.current || marketQRef.current) return;
     try {
       const raw = sessionStorage.getItem(MARKETS_KEY);
       if (!raw) return;
@@ -143,14 +152,37 @@ export function LpPage() {
       if (saved.q) p.set("q", saved.q);
       if (saved.chain && saved.chain !== "all") p.set("chain", String(saved.chain));
       if (saved.n && saved.n !== MARKET_PAGE) p.set("n", String(saved.n));
-      if ([...p.keys()].length) setParams(p, { replace: true });
+      if (![...p.keys()].length) return;
+      if (saved.q) setMarketQ(saved.q);
+      setParams(p, { replace: true });
     } catch {
       /* ignore */
     }
   }, [setParams]);
+  const writeSearch = useCallback(
+    (q: string) => {
+      const cur = new URLSearchParams(window.location.search).get("q") ?? "";
+      if (cur === q) return;
+      setParams(
+        (prev) => {
+          const p = new URLSearchParams(prev);
+          if (!q) p.delete("q");
+          else p.set("q", q);
+          p.delete("n");
+          return p;
+        },
+        { replace: true },
+      );
+    },
+    [setParams],
+  );
   useEffect(() => {
     persistMarketsQuery(marketQ, filter, shownCap);
   }, [filter, marketQ, shownCap]);
+  useEffect(() => {
+    const handle = window.setTimeout(() => writeSearch(marketQ), 250);
+    return () => window.clearTimeout(handle);
+  }, [marketQ, writeSearch]);
 
   function setChainFilter(next: number | "all") {
     setParams((prev) => {
@@ -259,20 +291,19 @@ export function LpPage() {
               <b>{t("lp.markets")}</b>
               <input
                 className="me-filter"
+                type="text"
                 value={marketQ}
-                onChange={(e) => {
-                  const q = e.target.value;
-                  setParams(
-                    (prev) => {
-                      const p = new URLSearchParams(prev);
-                      if (!q) p.delete("q");
-                      else p.set("q", q);
-                      p.delete("n");
-                      return p;
-                    },
-                    { replace: true },
-                  );
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
+                onFocus={() => {
+                  searchFocused.current = true;
                 }}
+                onBlur={() => {
+                  searchFocused.current = false;
+                  writeSearch(marketQRef.current);
+                }}
+                onChange={(e) => setMarketQ(e.target.value)}
                 placeholder={t("lp.search")}
                 aria-label={t("lp.search")}
               />
