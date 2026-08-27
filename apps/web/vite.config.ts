@@ -19,4 +19,13 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
+  server: {
+    proxy: {
+      "/koios": {
+        target: "https://api.koios.rest",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/koios/, "/api/v1"),
+      },
+    },
+  },
 });

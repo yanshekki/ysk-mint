@@ -613,6 +613,12 @@ async function fetchYoroiUtxos(addresses: string[]) {
   return { ada, qty };
 }
 
+type KoiosUtxo = {
+  address?: string;
+  value?: string;
+  asset_list?: CardanoAsset[];
+};
+
 async function fetchCardanoChain(address: string, extras?: { addresses?: string[]; stake?: string }) {
   const stake = extras?.stake || stakeOf(address);
   let pays = [...new Set([address, ...(extras?.addresses ?? [])].filter((a) => a.startsWith("addr")))];
@@ -620,27 +626,48 @@ async function fetchCardanoChain(address: string, extras?: { addresses?: string[
   let ada = 0n;
 
   if (stake.startsWith("stake")) {
-    const [infoJson, assetJson, addrJson] = await Promise.all([
-      koiosPost("account_info", { _stake_addresses: [stake] }).catch(() => []),
-      koiosPost("account_assets", { _stake_addresses: [stake] }).catch(() => []),
-      koiosPost("account_addresses", { _stake_addresses: [stake] }).catch(() => []),
-    ]);
-    const info = asKoiosRows<{ utxo?: string; total_balance?: string }>(infoJson)[0];
-    try {
-      ada = BigInt(info?.utxo || info?.total_balance || "0");
-    } catch {
-      ada = 0n;
-    }
-    for (const a of flattenCardanoAssets(assetJson)) {
+    const utxos = asKoiosRows<KoiosUtxo>(
+      await koiosPost("account_utxos", { _stake_addresses: [stake], _extended: true }).catch(() => []),
+    );
+    for (const u of utxos) {
+      if (u.address?.startsWith("addr")) pays.push(u.address);
       try {
-        addAsset(qty, cardanoUnit(a), BigInt(a.quantity ?? "0"), a.decimals ?? 0);
+        ada += BigInt(u.value || "0");
       } catch {
         /* skip */
       }
+      for (const a of u.asset_list ?? []) {
+        try {
+          addAsset(qty, cardanoUnit(a), BigInt(a.quantity ?? "0"), a.decimals ?? 0);
+        } catch {
+          /* skip */
+        }
+      }
     }
-    pays = [...new Set([...pays, ...koiosPayList(addrJson)])];
+    if (!utxos.length) {
+      const [infoJson, assetJson, addrJson] = await Promise.all([
+        koiosPost("account_info", { _stake_addresses: [stake] }).catch(() => []),
+        koiosPost("account_assets", { _stake_addresses: [stake] }).catch(() => []),
+        koiosPost("account_addresses", { _stake_addresses: [stake] }).catch(() => []),
+      ]);
+      const info = asKoiosRows<{ utxo?: string; total_balance?: string }>(infoJson)[0];
+      try {
+        ada = BigInt(info?.utxo || info?.total_balance || "0");
+      } catch {
+        ada = 0n;
+      }
+      for (const a of flattenCardanoAssets(assetJson)) {
+        try {
+          addAsset(qty, cardanoUnit(a), BigInt(a.quantity ?? "0"), a.decimals ?? 0);
+        } catch {
+          /* skip */
+        }
+      }
+      pays.push(...koiosPayList(addrJson));
+    }
   }
 
+  pays = [...new Set(pays.filter((a) => a.startsWith("addr")))];
   if (ada === 0n && pays.length) {
     for (const group of chunk(pays, 50)) {
       const info = asKoiosRows<{ balance?: string }>(
