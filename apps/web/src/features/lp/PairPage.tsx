@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { type PublicClient } from "viem";
 import { useAccount } from "wagmi";
@@ -72,6 +72,7 @@ function short(a: string) {
 
 export function PairPage() {
   const { t } = useTranslation();
+  const nav = useNavigate();
   const { chainId: cid, tokenA, tokenB } = useParams();
   const chainId = Number(cid);
   const a = decodeURIComponent(tokenA || "");
@@ -79,27 +80,35 @@ export function PairPage() {
   const chain = Object.values(CHAINS).find((c) => c.chainId === chainId);
   const sa = seedToken(chainId, a) ?? nearToken(a) ?? adaTokenMeta(a);
   const sb = seedToken(chainId, b) ?? nearToken(b) ?? adaTokenMeta(b);
-  const oriented = Number.isFinite(chainId) && a && b ? orientPair(chainId, a, b, sa?.symbol, sb?.symbol) : null;
+  const oriented = Number.isFinite(chainId) && a && b ? orientPair(chainId, a, b, sa?.symbol, sb?.symbol) : { base: a, quote: b, flipped: false };
+  const base = oriented.base;
+  const quote = oriented.quote;
+  const leftSeed = oriented.flipped ? sb : sa;
+  const rightSeed = oriented.flipped ? sa : sb;
   const { address } = useAccount();
   const [venues, setVenues] = useState<VenuePool[]>([]);
   const [loading, setLoading] = useState(true);
   const [client, setClient] = useState<PublicClient | undefined>();
   const [metaA, setMetaA] = useState<TokenMeta>({
-    symbol: displayStableSymbol(chainId, a, sa?.symbol ?? short(a)),
-    decimals: sa?.decimals ?? 18,
-    icon: sa?.icon ?? "/tokens/eth.png",
+    symbol: displayStableSymbol(chainId, base, leftSeed?.symbol ?? short(base)),
+    decimals: leftSeed?.decimals ?? 18,
+    icon: leftSeed?.icon ?? "/tokens/eth.png",
   });
   const [metaB, setMetaB] = useState<TokenMeta>({
-    symbol: displayStableSymbol(chainId, b, sb?.symbol ?? short(b)),
-    decimals: sb?.decimals ?? 18,
-    icon: sb?.icon ?? "/tokens/eth.png",
+    symbol: displayStableSymbol(chainId, quote, rightSeed?.symbol ?? short(quote)),
+    decimals: rightSeed?.decimals ?? 18,
+    icon: rightSeed?.icon ?? "/tokens/eth.png",
   });
 
   useEffect(() => {
-    if (oriented?.flipped) return;
-    if (!a || !b || !Number.isFinite(chainId)) return;
+    if (!oriented.flipped || !base || !quote || !Number.isFinite(chainId)) return;
+    nav(`/pair/${chainId}/${encodeURIComponent(base)}/${encodeURIComponent(quote)}`, { replace: true });
+  }, [base, chainId, nav, oriented.flipped, quote]);
+
+  useEffect(() => {
+    if (!base || !quote || !Number.isFinite(chainId)) return;
     let cancelled = false;
-    const venuesKey = cacheKey("venues", pairId(chainId, a, b));
+    const venuesKey = cacheKey("venues", pairId(chainId, base, quote), "base", base.toLowerCase());
     const seed = cacheLastGood<VenueQuote[]>(venuesKey);
     if (seed?.length) {
       setVenues(venueQuotesToPools(seed));
@@ -112,21 +121,24 @@ export function PairPage() {
 
       if (chain?.vm === "near") {
         setClient(undefined);
-        return nearVenuesForPair(a, b);
+        return nearVenuesForPair(base, quote);
       }
       if (chain?.vm === "cardano") {
         setClient(undefined);
-        return adaVenuesForPair(a, b, sa?.decimals ?? 6, sb?.decimals ?? 6);
+        return adaVenuesForPair(base, quote, leftSeed?.decimals ?? 6, rightSeed?.decimals ?? 6);
       }
       const c = evmPublicClient(chainId);
       if (!c) return [];
       setClient(c);
-      const [ma, mb] = await Promise.all([evmTokenMeta(c, chainId, a, sa), evmTokenMeta(c, chainId, b, sb)]);
+      const [ma, mb] = await Promise.all([
+        evmTokenMeta(c, chainId, base, leftSeed),
+        evmTokenMeta(c, chainId, quote, rightSeed),
+      ]);
       if (!cancelled) {
         setMetaA(ma);
         setMetaB(mb);
       }
-      return readVenuesForPair(c, chainId, canonAddr(a), canonAddr(b), ma.decimals, mb.decimals);
+      return readVenuesForPair(c, chainId, canonAddr(base), canonAddr(quote), ma.decimals, mb.decimals);
     };
     void trackLive(`pair:${chainId}`, chainId, "markets", run)
       .then((v) => {
@@ -151,11 +163,11 @@ export function PairPage() {
       stop();
       cancelLive(`pair:${chainId}`);
     };
-  }, [a, b, chain, chainId, oriented?.flipped, sa?.decimals, sb?.decimals]);
+  }, [base, chain, chainId, quote]);
 
   const price = useMemo(() => weightedPrice(venues), [venues]);
   const evm = chain?.vm === "evm" || chain?.evm;
-  const swaps = usePairSwaps(evm ? client : undefined, evm ? venues : [], a, metaA.decimals, metaB.decimals, chainId);
+  const swaps = usePairSwaps(evm ? client : undefined, evm ? venues : [], base, metaA.decimals, metaB.decimals, chainId);
   const venueGet = useCallback((v: VenuePool, k: string) => {
     if (k === "name") return v.venue.name;
     if (k === "quote") return v.priceAinB;
@@ -183,15 +195,7 @@ export function PairPage() {
     return chain?.explorer ? `${chain.explorer}/address/${pool}` : undefined;
   }
 
-  if (oriented?.flipped) {
-    return (
-      <Navigate
-        to={`/pair/${chainId}/${encodeURIComponent(oriented.base)}/${encodeURIComponent(oriented.quote)}`}
-        replace
-      />
-    );
-  }
-  if (!a || !b || !Number.isFinite(chainId)) return <p className="workspace-scroll">{t("lp.pairMissing")}</p>;
+  if (!base || !quote || !Number.isFinite(chainId)) return <p className="workspace-scroll">{t("lp.pairMissing")}</p>;
 
   const title = `${metaA.symbol} / ${metaB.symbol}`;
 
@@ -239,8 +243,8 @@ export function PairPage() {
                     protocolId: v.venue.id,
                     chainId,
                     pool: v.pool,
-                    tokenA: a,
-                    tokenB: b,
+                    tokenA: base,
+                    tokenB: quote,
                     kind: v.venue.kind,
                   });
                   return (

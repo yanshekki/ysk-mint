@@ -166,7 +166,7 @@ export async function readPairVenues(
   const pid = pairId(chainId, String(tokenA), String(tokenB));
   return cacheGet(
     {
-      key: cacheKey("venues", pid),
+      key: cacheKey("venues", pid, String(tokenA).toLowerCase()),
       policy: { ...POLICIES.venues, keep: (rows: VenueQuote[]) => rows.length > 0 },
     },
     async () => {
