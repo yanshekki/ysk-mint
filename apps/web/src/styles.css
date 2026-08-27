@@ -659,8 +659,15 @@ select {
   flex-direction: column;
 }
 .holding-meta b {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
   font-size: 13px;
   font-weight: 800;
+}
+.holding-meta b .badge {
+  flex-shrink: 0;
 }
 .holding-meta span {
   font-size: 11px;
@@ -1461,7 +1468,9 @@ button.oft-chain:disabled {
 .me-token-5 .holding-meta {
   min-width: 0;
 }
-.me-token-5 .holding-meta b,
+.me-token-5 .holding-meta b {
+  white-space: nowrap;
+}
 .me-token-5 .holding-meta span {
   overflow: hidden;
   text-overflow: ellipsis;
