@@ -117,19 +117,17 @@ export function LpPage() {
   const marketFiltered = useMemo(() => {
     const q = marketQ.trim().toLowerCase();
     if (!q) return markets.rows;
+    const addrQ = q.startsWith("0x") || (q.length >= 8 && /^[0-9a-f]+$/.test(q));
     return markets.rows.filter((r) => {
-      const pair = `${r.symbolA}/${r.symbolB}`.toLowerCase();
-      return (
-        pair.includes(q) ||
-        r.symbolA.toLowerCase().includes(q) ||
-        r.symbolB.toLowerCase().includes(q) ||
-        r.chainShort.toLowerCase().includes(q) ||
-        r.tokenA.toLowerCase().includes(q) ||
-        r.tokenB.toLowerCase().includes(q) ||
-        r.venueNames.some((n) => n.toLowerCase().includes(q))
-      );
+      const a = r.symbolA.toLowerCase();
+      const b = r.symbolB.toLowerCase();
+      if (a.includes(q) || b.includes(q) || `${a}/${b}`.includes(q)) return true;
+      if (r.venueNames.some((n) => n.toLowerCase().includes(q))) return true;
+      if (filter === "all" && r.chainShort.toLowerCase().includes(q)) return true;
+      if (addrQ && (r.tokenA.toLowerCase().includes(q) || r.tokenB.toLowerCase().includes(q))) return true;
+      return false;
     });
-  }, [marketQ, markets.rows]);
+  }, [filter, marketQ, markets.rows]);
   const marketSort = useSort(marketFiltered, "depth", marketGet);
   const marketVisible = useMemo(() => marketSort.sorted.slice(0, shownCap), [shownCap, marketSort.sorted]);
   const marketMore = marketVisible.length < marketSort.sorted.length;
