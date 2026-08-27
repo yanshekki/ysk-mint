@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 import { useAccount } from "wagmi";
 import { useMemo } from "react";
 import { addrKey, normalizeAddr, type AddrKind } from "./addrKind.ts";
+import { fingerprint } from "./shareSet.ts";
 import { useNativeWallets } from "./nativeWalletStore.ts";
 
 export const MAX_ADDRS = 8;
@@ -34,6 +35,7 @@ type State = {
   addWatchAddr: (setId: string, kind: AddrKind, value: string) => AddrErr | null;
   removeWatchAddr: (setId: string, addrId: string) => void;
   setActive: (id: "mine" | string) => void;
+  importShared: (name: string, addrs: Array<{ kind: AddrKind; value: string }>) => string | null;
 };
 
 function nid() {
@@ -100,6 +102,26 @@ export const useAddressSets = create<State>()(
       setActive: (id) => {
         if (id !== "mine" && !get().watch.some((w) => w.id === id)) set({ activeId: "mine" });
         else set({ activeId: id });
+      },
+      importShared: (name, addrs) => {
+        const fp = fingerprint(addrs);
+        if (!fp) return null;
+        const hit = get().watch.find((w) => fingerprint(w.addresses) === fp);
+        if (hit) {
+          set({ activeId: hit.id });
+          return hit.id;
+        }
+        if (get().watch.length >= MAX_WATCH) return null;
+        const id = nid();
+        let addresses: SavedAddr[] = [];
+        for (const a of addrs) {
+          const next = pushAddr(addresses, a.kind, a.value);
+          if (!next.err) addresses = next.list;
+        }
+        if (!addresses.length) return null;
+        const label = name.trim() || `Watch ${get().watch.length + 1}`;
+        set({ watch: [...get().watch, { id, name: label, addresses }], activeId: id });
+        return id;
       },
     }),
     { name: "ysk-mint.addressSets", version: 1 },

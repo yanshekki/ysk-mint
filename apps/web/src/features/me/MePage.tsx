@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { AddrAddBar, AddrIdCard } from "../settings/AddrFields.tsx";
-import { useActiveSnap, useAddressSets } from "../../lib/addressSets.ts";
+import { MAX_ADDRS, useActiveSnap, useAddressSets } from "../../lib/addressSets.ts";
+import { SHARE_SOFT, decodeWatch, shareUrl } from "../../lib/shareSet.ts";
 import { formatUnits, parseAbiItem, type Address } from "viem";
 import { useConfig } from "wagmi";
 import { getPublicClient } from "wagmi/actions";
@@ -272,6 +273,27 @@ export function MePage() {
   const setActive = useAddressSets((s) => s.setActive);
   const watchSets = useAddressSets((s) => s.watch);
   const addMine = useAddressSets((s) => s.addMine);
+  const addWatchAddr = useAddressSets((s) => s.addWatchAddr);
+  const importShared = useAddressSets((s) => s.importShared);
+  const mineList = useAddressSets((s) => s.mine);
+  const [shared, setShared] = useState(false);
+  const [shareNote, setShareNote] = useState("");
+
+  useEffect(() => {
+    const run = () => {
+      const parsed = decodeWatch(window.location.hash);
+      if (!parsed) return;
+      importShared(parsed.name, parsed.addrs);
+      window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+    };
+    const persist = (useAddressSets as { persist?: { hasHydrated?: () => boolean; onFinishHydration?: (cb: () => void) => () => void } }).persist;
+    if (persist?.hasHydrated?.()) {
+      run();
+      return;
+    }
+    if (persist?.onFinishHydration) return persist.onFinishHydration(run);
+    run();
+  }, [importShared]);
   const native = useNativeWallets();
   const config = useConfig();
   const w = useWizard();
@@ -844,10 +866,49 @@ export function MePage() {
                 </button>
               ))}
             </div>
-            <Link to="/settings#addresses" className="me-pool-btn me-pool-btn-explore">
-              {t("me.manageAddrs")}
-            </Link>
+            <div className="me-sets-acts">
+              <button
+                type="button"
+                className="me-pool-btn me-pool-btn-explore"
+                disabled={!snap.addrs.length}
+                onClick={() => {
+                  const url = shareUrl({
+                    name: snap.isMine ? t("me.setMine") : (snap.watchName ?? t("me.setMine")),
+                    addrs: snap.addrs.map((a) => ({ kind: a.kind, value: a.value })),
+                  });
+                  const go = async () => {
+                    try {
+                      if (navigator.share) {
+                        await navigator.share({ title: t("me.title"), url });
+                      } else {
+                        await navigator.clipboard.writeText(url);
+                      }
+                    } catch (e) {
+                      if (e instanceof Error && e.name === "AbortError") return;
+                      try {
+                        await navigator.clipboard.writeText(url);
+                      } catch {
+                        return;
+                      }
+                    }
+                    setShared(true);
+                    setShareNote(url.length > SHARE_SOFT ? t("me.shareLong", { n: url.length }) : "");
+                    window.setTimeout(() => {
+                      setShared(false);
+                      setShareNote("");
+                    }, 2500);
+                  };
+                  void go();
+                }}
+              >
+                {shared ? t("me.copied") : t("me.share")}
+              </button>
+              <Link to="/settings#addresses" className="me-pool-btn me-pool-btn-explore">
+                {t("me.manageAddrs")}
+              </Link>
+            </div>
           </div>
+          {shareNote ? <p className="me-watching">{shareNote}</p> : null}
           {!anyWallet ? (
             <section className="me-card">
               <p className="me-card-empty">{snap.isMine ? t("me.needAddr") : t("me.watchEmpty")}</p>
@@ -861,13 +922,18 @@ export function MePage() {
                       {t("me.pasteAddr")}
                     </Link>
                   </>
-                ) : (
-                  <Link to="/settings#addresses" className="me-pool-btn me-pool-btn-explore">
-                    {t("me.manageAddrs")}
-                  </Link>
-                )}
+                ) : null}
               </div>
-              {snap.isMine ? <AddrAddBar onAdd={(kind, value) => addMine(kind, value)} /> : null}
+              <AddrAddBar
+                addLabel={t("settings.addrAddToSet")}
+                hint={t("me.addToSet", { name: snap.isMine ? t("me.setMine") : (snap.watchName ?? "") })}
+                disabled={
+                  snap.isMine
+                    ? mineList.length >= MAX_ADDRS
+                    : (watchSets.find((w) => w.id === snap.activeId)?.addresses.length ?? 0) >= MAX_ADDRS
+                }
+                onAdd={(kind, value) => (snap.isMine ? addMine(kind, value) : addWatchAddr(snap.activeId, kind, value))}
+              />
             </section>
           ) : (
             <>
@@ -876,6 +942,16 @@ export function MePage() {
                   <AddrIdCard key={a.id} kind={a.kind} value={a.value} connected={a.source === "connected"} />
                 ))}
               </div>
+              <AddrAddBar
+                addLabel={t("settings.addrAddToSet")}
+                hint={t("me.addToSet", { name: snap.isMine ? t("me.setMine") : (snap.watchName ?? "") })}
+                disabled={
+                  snap.isMine
+                    ? mineList.length >= MAX_ADDRS
+                    : (watchSets.find((w) => w.id === snap.activeId)?.addresses.length ?? 0) >= MAX_ADDRS
+                }
+                onAdd={(kind, value) => (snap.isMine ? addMine(kind, value) : addWatchAddr(snap.activeId, kind, value))}
+              />
 
               <div className="me-chips-bar">
                 <div className="me-chips">

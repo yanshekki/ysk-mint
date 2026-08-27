@@ -2506,6 +2506,13 @@ button.set-item-btn:focus-visible {
 .me-sets .me-chips {
   flex: 1 1 auto;
 }
+.me-sets-acts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
 .me-watching {
   margin: 0 0 4px;
   font-size: 13px;
