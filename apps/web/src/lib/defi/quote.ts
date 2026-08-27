@@ -1,8 +1,9 @@
 import type { Address, PublicClient } from "viem";
 import { DEX, isUsdStableAddress, usdStables } from "../defiAddresses.ts";
+import { canonAddr } from "../pairKey.ts";
 import { cached } from "./cache.ts";
 import { ensureProtocols } from "./protocols.ts";
-import { protocolsOn } from "./registry.ts";
+import { protocolById, protocolsOn } from "./registry.ts";
 import type { DefiCtx, Quote, QuoteSource, TokenRef, VenueQuote } from "./types.ts";
 
 const QUOTE_TTL = 30_000;
@@ -160,12 +161,38 @@ export async function readPairVenues(
   decB: number,
 ): Promise<VenueQuote[]> {
   ensureProtocols();
-  return discoverRead(
-    { evm: client },
-    chainId,
-    { chainId, address: tokenA, decimals: decA },
-    { chainId, address: tokenB, decimals: decB },
-  );
+  const ctx: DefiCtx = { evm: client };
+  const a: TokenRef = { chainId, address: tokenA, decimals: decA };
+  const b: TokenRef = { chainId, address: tokenB, decimals: decB };
+  const out = await discoverRead(ctx, chainId, a, b);
+  const seen = new Set(out.map((v) => `${v.protocolId}:${v.pool.toLowerCase()}`));
+  const a0 = canonAddr(String(tokenA));
+  const b0 = canonAddr(String(tokenB));
+  const { discoveredPools } = await import("./markets.ts");
+  for (const hit of discoveredPools(chainId)) {
+    const x = canonAddr(hit.tokenA);
+    const y = canonAddr(hit.tokenB);
+    const same = (x === a0 && y === b0) || (x === b0 && y === a0);
+    if (!same) continue;
+    const key = `${hit.protocolId}:${hit.pool.toLowerCase()}`;
+    if (seen.has(key)) continue;
+    const p = protocolById(hit.protocolId);
+    if (!p?.readPool) continue;
+    const row = await p
+      .readPool(ctx, {
+        protocolId: hit.protocolId,
+        chainId,
+        pool: hit.pool,
+        tokenA: String(tokenA),
+        tokenB: String(tokenB),
+        feeLabel: "0.30%",
+      }, a, b)
+      .catch(() => null);
+    if (!row) continue;
+    seen.add(key);
+    out.push(row);
+  }
+  return out;
 }
 
 export function consensusPairPrice(venues: VenueQuote[]): number | null {

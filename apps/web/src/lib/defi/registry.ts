@@ -13,6 +13,10 @@ export function protocolsOn(chainId: number) {
   return all.filter((p) => p.chainId === chainId);
 }
 
+export function protocolById(id: string) {
+  return byId.get(id);
+}
+
 export function allProtocols() {
   return all;
 }

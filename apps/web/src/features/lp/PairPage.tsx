@@ -6,14 +6,39 @@ import { useAccount } from "wagmi";
 import { CHAINS } from "@ysk-mint/config";
 import { seedToken, isStable } from "../../lib/dexVenues.ts";
 import { evmPublicClient } from "../../lib/defi/evm/client.ts";
+import { erc20MetaAbi } from "../../lib/defi/evm/abis.ts";
 import { readVenuesForPair, weightedPrice, type VenuePool } from "../../lib/dexPools.ts";
 import { usePairSwaps, type SwapRow } from "../../lib/usePairSwaps.ts";
 import { trackLive, useLiveStatus } from "../../lib/liveStatus.ts";
 import { fmtCompact, fmtUsdc } from "../../lib/defiQuotes.ts";
-import { canonAddr } from "../../lib/pairKey.ts";
+import { asAddr, canonAddr } from "../../lib/pairKey.ts";
+import { TOKEN_CATALOG } from "../../lib/tokenRegistry.ts";
 import { nearToken, nearVenuesForPair } from "../../lib/nearDex.ts";
 import { adaTokenMeta, adaVenuesForPair } from "../../lib/adaDex.ts";
 import { SortHead, useSort } from "../../shared/ui/SortTable.tsx";
+import { marketsHref } from "./LpPage.tsx";
+
+type TokenMeta = { symbol: string; decimals: number; icon: string };
+
+async function evmTokenMeta(client: PublicClient, chainId: number, address: string, hint?: { symbol?: string; decimals?: number; icon?: string }): Promise<TokenMeta> {
+  const hit = TOKEN_CATALOG.find((t) => t.chainId === chainId && t.address?.toLowerCase() === address.toLowerCase());
+  const icon = hit?.icon ?? hint?.icon ?? "/tokens/eth.png";
+  if (hit?.symbol && hit.decimals) return { symbol: hit.symbol, decimals: hit.decimals, icon };
+  if (hint?.symbol && hint.decimals) return { symbol: hint.symbol, decimals: hint.decimals, icon };
+  if (!address.startsWith("0x") && !address.startsWith("0X")) {
+    return { symbol: hint?.symbol ?? short(address), decimals: hint?.decimals ?? 18, icon };
+  }
+  try {
+    const [decimals, symbol] = await Promise.all([
+      client.readContract({ address: asAddr(address), abi: erc20MetaAbi, functionName: "decimals" }),
+      client.readContract({ address: asAddr(address), abi: erc20MetaAbi, functionName: "symbol" }).catch(() => ""),
+    ]);
+    const sym = String(symbol || "").trim();
+    return { symbol: sym || short(address), decimals: Number(decimals) || 18, icon };
+  } catch {
+    return { symbol: hint?.symbol ?? short(address), decimals: hint?.decimals ?? 18, icon };
+  }
+}
 
 function short(a: string) {
   if (!a || a.length < 12) return a || "—";
@@ -33,6 +58,8 @@ export function PairPage() {
   const [venues, setVenues] = useState<VenuePool[]>([]);
   const [loading, setLoading] = useState(true);
   const [client, setClient] = useState<PublicClient | undefined>();
+  const [metaA, setMetaA] = useState<TokenMeta>({ symbol: sa?.symbol ?? short(a), decimals: sa?.decimals ?? 18, icon: sa?.icon ?? "/tokens/eth.png" });
+  const [metaB, setMetaB] = useState<TokenMeta>({ symbol: sb?.symbol ?? short(b), decimals: sb?.decimals ?? 18, icon: sb?.icon ?? "/tokens/eth.png" });
 
   useEffect(() => {
     if (!a || !b || !Number.isFinite(chainId)) return;
@@ -50,7 +77,12 @@ export function PairPage() {
       const c = evmPublicClient(chainId);
       if (!c) return [];
       setClient(c);
-      return readVenuesForPair(c, chainId, canonAddr(a), canonAddr(b), sa?.decimals ?? 18, sb?.decimals ?? 18);
+      const [ma, mb] = await Promise.all([evmTokenMeta(c, chainId, a, sa), evmTokenMeta(c, chainId, b, sb)]);
+      if (!cancelled) {
+        setMetaA(ma);
+        setMetaB(mb);
+      }
+      return readVenuesForPair(c, chainId, canonAddr(a), canonAddr(b), ma.decimals, mb.decimals);
     };
     void trackLive(`pair:${chainId}`, chainId, "markets", run)
       .then((v) => {
@@ -70,7 +102,7 @@ export function PairPage() {
 
   const price = useMemo(() => weightedPrice(venues), [venues]);
   const evm = chain?.vm === "evm" || chain?.evm;
-  const swaps = usePairSwaps(evm ? client : undefined, evm ? venues : [], sa?.decimals ?? 18, sb?.decimals ?? 18, chainId);
+  const swaps = usePairSwaps(evm ? client : undefined, evm ? venues : [], metaA.decimals, metaB.decimals, chainId);
   const venueGet = useCallback((v: VenuePool, k: string) => {
     if (k === "name") return v.venue.name;
     if (k === "quote") return v.priceAinB;
@@ -85,7 +117,7 @@ export function PairPage() {
     return Number(s.block);
   }, []);
   const tradeSort = useSort(swaps.rows, "a", tradeGet);
-  const quoteIsStable = sb ? isStable(sb.symbol) : false;
+  const quoteIsStable = isStable(metaB.symbol);
 
   function venueHref(pool: string) {
     if (chain?.vm === "near") return "https://nearblocks.io/address/v2.ref-finance.near";
@@ -99,14 +131,14 @@ export function PairPage() {
 
   if (!a || !b || !Number.isFinite(chainId)) return <p className="workspace-scroll">{t("lp.pairMissing")}</p>;
 
-  const title = `${sa?.symbol ?? short(a)} / ${sb?.symbol ?? short(b)}`;
+  const title = `${metaA.symbol} / ${metaB.symbol}`;
 
   return (
     <section className="workspace">
       <div className="workspace-head">
         <div>
           <p className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-text-muted">
-            <Link to="/">{t("nav.lp")}</Link>
+            <Link to={marketsHref()}>{t("nav.lp")}</Link>
             {" · "}
             {chain?.short ?? chainId}
           </p>
@@ -114,7 +146,7 @@ export function PairPage() {
           <p className="mt-1 text-[15px] text-text-sub">{t("lp.oracleNote")}</p>
         </div>
         <div className="me-summary">
-          <b>{price == null ? "—" : `${fmtUsdc(price)} ${quoteIsStable ? sb?.symbol : ""}`}</b>
+          <b>{price == null ? "—" : `${fmtUsdc(price)} ${quoteIsStable ? metaB.symbol : ""}`}</b>
           <span>{t("lp.oracle", { n: venues.length })}</span>
         </div>
       </div>
@@ -134,7 +166,7 @@ export function PairPage() {
                 <div className="me-cols me-cols-5">
                   <SortHead id="name" label={t("lp.venues")} active={venueSort.key === "name"} dir={venueSort.dir} onToggle={venueSort.toggle} align="left" />
                   <SortHead id="quote" label={t("me.quote")} active={venueSort.key === "quote"} dir={venueSort.dir} onToggle={venueSort.toggle} />
-                  <SortHead id="amount" label={sa?.symbol ?? "A"} active={venueSort.key === "amount"} dir={venueSort.dir} onToggle={venueSort.toggle} />
+                  <SortHead id="amount" label={metaA.symbol} active={venueSort.key === "amount"} dir={venueSort.dir} onToggle={venueSort.toggle} />
                   <SortHead id="depth" label={t("lp.depth")} active={venueSort.key === "depth"} dir={venueSort.dir} onToggle={venueSort.toggle} />
                 </div>
                 {venueSort.sorted.map((v) => (
@@ -146,7 +178,7 @@ export function PairPage() {
                     rel="noreferrer"
                   >
                     <span className="holding-ico-wrap">
-                      <img src={sa?.icon ?? "/tokens/eth.png"} alt="" className="holding-ico" />
+                      <img src={metaA.icon} alt="" className="holding-ico" />
                     </span>
                     <div className="holding-meta">
                       <b>
@@ -155,8 +187,8 @@ export function PairPage() {
                       <span className="num">{short(v.pool)}</span>
                     </div>
                     <span className="num me-price">{fmtCompact(v.priceAinB)}</span>
-                    <span className="num holding-amt">{v.reserveA ? fmtCompact(v.reserveA) : "—"}</span>
-                    <span className="num me-value">{v.tvlQuote ? fmtCompact(v.tvlQuote) : "—"}</span>
+                    <span className="num holding-amt">{v.reserveA > 0 ? fmtCompact(v.reserveA) : "—"}</span>
+                    <span className="num me-value">{v.tvlQuote > 0 ? fmtCompact(v.tvlQuote) : "—"}</span>
                   </a>
                 ))}
               </div>
@@ -171,13 +203,13 @@ export function PairPage() {
             {swaps.loading ? (
               <p className="me-card-empty">{t("lp.loading")}</p>
             ) : swaps.rows.length === 0 ? (
-              <p className="me-card-empty">{evm ? t("lp.noTrades") : t("lp.noOnchainTrades")}</p>
+              <p className="me-card-empty">{swaps.rpcError ? t("lp.tradesRpc") : evm ? t("lp.noTrades") : t("lp.noOnchainTrades")}</p>
             ) : (
               <div className="me-list">
                 <div className="me-cols me-cols-5">
                   <SortHead id="name" label={t("lp.trades")} active={tradeSort.key === "name"} dir={tradeSort.dir} onToggle={tradeSort.toggle} align="left" />
-                  <SortHead id="a" label={sa?.symbol ?? "A"} active={tradeSort.key === "a"} dir={tradeSort.dir} onToggle={tradeSort.toggle} />
-                  <SortHead id="b" label={sb?.symbol ?? "B"} active={tradeSort.key === "b"} dir={tradeSort.dir} onToggle={tradeSort.toggle} />
+                  <SortHead id="a" label={metaA.symbol} active={tradeSort.key === "a"} dir={tradeSort.dir} onToggle={tradeSort.toggle} />
+                  <SortHead id="b" label={metaB.symbol} active={tradeSort.key === "b"} dir={tradeSort.dir} onToggle={tradeSort.toggle} />
                   <SortHead id="block" label={t("lp.block")} active={tradeSort.key === "block"} dir={tradeSort.dir} onToggle={tradeSort.toggle} />
                 </div>
                 {tradeSort.sorted.map((s) => {

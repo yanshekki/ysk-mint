@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAccount } from "wagmi";
 import { featuredChains, isConfigured, launchContracts } from "@ysk-mint/config";
@@ -18,6 +18,37 @@ import { ttCoverageLine } from "../../lib/defi/coverage.ts";
 /** High-usage chains shown before 「更多」. Order follows featuredChains(). */
 const PRIMARY_MARKET_IDS = new Set([1, 101, 56, 8453, 42161, 43114, 137, 784, 607, 999]);
 const MARKET_PAGE = 50;
+const MARKETS_KEY = "ysk-markets";
+
+function parseChain(raw: string | null): number | "all" {
+  if (!raw || raw === "all") return "all";
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : "all";
+}
+
+export function persistMarketsQuery(q: string, chain: number | "all", n: number) {
+  try {
+    sessionStorage.setItem(MARKETS_KEY, JSON.stringify({ q, chain, n }));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function marketsHref() {
+  try {
+    const raw = sessionStorage.getItem(MARKETS_KEY);
+    if (!raw) return "/";
+    const saved = JSON.parse(raw) as { q?: string; chain?: number | "all"; n?: number };
+    const p = new URLSearchParams();
+    if (saved.q) p.set("q", saved.q);
+    if (saved.chain && saved.chain !== "all") p.set("chain", String(saved.chain));
+    if (saved.n && saved.n !== MARKET_PAGE) p.set("n", String(saved.n));
+    const s = p.toString();
+    return s ? `/?${s}` : "/";
+  } catch {
+    return "/";
+  }
+}
 
 function fmtUnlock(ts: number) {
   if (!ts) return "—";
@@ -39,10 +70,11 @@ export function LpPage() {
     sync: native.cardanoSync,
   });
   const featured = featuredChains();
-  const [filter, setFilter] = useState<number | "all">("all");
+  const [params, setParams] = useSearchParams();
+  const filter = parseChain(params.get("chain"));
+  const marketQ = params.get("q") ?? "";
+  const shownCap = Math.max(MARKET_PAGE, Number(params.get("n")) || MARKET_PAGE);
   const [moreChains, setMoreChains] = useState(false);
-  const [marketQ, setMarketQ] = useState("");
-  const [marketPage, setMarketPage] = useState(1);
   const primaryChains = useMemo(() => featured.filter((c) => PRIMARY_MARKET_IDS.has(c.chainId)), [featured]);
   const extraChains = useMemo(() => featured.filter((c) => !PRIMARY_MARKET_IDS.has(c.chainId)), [featured]);
   const visibleChains = useMemo(() => {
@@ -95,11 +127,40 @@ export function LpPage() {
     });
   }, [marketQ, markets.rows]);
   const marketSort = useSort(marketFiltered, "depth", marketGet);
-  const marketVisible = useMemo(() => marketSort.sorted.slice(0, marketPage * MARKET_PAGE), [marketPage, marketSort.sorted]);
+  const marketVisible = useMemo(() => marketSort.sorted.slice(0, shownCap), [shownCap, marketSort.sorted]);
   const marketMore = marketVisible.length < marketSort.sorted.length;
   useEffect(() => {
-    setMarketPage(1);
-  }, [filter, marketQ]);
+    if (filter !== "all" && !PRIMARY_MARKET_IDS.has(filter)) setMoreChains(true);
+  }, [filter]);
+  useEffect(() => {
+    const here = new URLSearchParams(window.location.search);
+    if (here.get("q") || here.get("chain") || here.get("n")) return;
+    try {
+      const raw = sessionStorage.getItem(MARKETS_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as { q?: string; chain?: number | "all"; n?: number };
+      const p = new URLSearchParams();
+      if (saved.q) p.set("q", saved.q);
+      if (saved.chain && saved.chain !== "all") p.set("chain", String(saved.chain));
+      if (saved.n && saved.n !== MARKET_PAGE) p.set("n", String(saved.n));
+      if ([...p.keys()].length) setParams(p, { replace: true });
+    } catch {
+      /* ignore */
+    }
+  }, [setParams]);
+  useEffect(() => {
+    persistMarketsQuery(marketQ, filter, shownCap);
+  }, [filter, marketQ, shownCap]);
+
+  function setChainFilter(next: number | "all") {
+    setParams((prev) => {
+      const p = new URLSearchParams(prev);
+      if (next === "all") p.delete("chain");
+      else p.set("chain", String(next));
+      p.delete("n");
+      return p;
+    });
+  }
   const lpGet = useCallback((r: MyLpRow, k: string) => {
     if (k === "name") return `${r.symbolA}/${r.symbolB}`;
     if (k === "venues") return r.venueCount;
@@ -136,7 +197,7 @@ export function LpPage() {
       <div className="workspace-scroll">
         <div className="me-desk">
           <div className="me-chips">
-            <button type="button" className={`me-chip ${filter === "all" ? "me-chip-on" : ""}`} onClick={() => setFilter("all")}>
+            <button type="button" className={`me-chip ${filter === "all" ? "me-chip-on" : ""}`} onClick={() => setChainFilter("all")}>
               {t("lp.all")}
             </button>
             {visibleChains.map((c) => (
@@ -144,7 +205,7 @@ export function LpPage() {
                 key={c.key}
                 type="button"
                 className={`me-chip ${filter === c.chainId ? "me-chip-on" : ""}`}
-                onClick={() => setFilter(c.chainId)}
+                onClick={() => setChainFilter(c.chainId)}
               >
                 <img src={chainIcon(c)} alt="" width={20} height={20} />
                 {c.short}
@@ -167,7 +228,7 @@ export function LpPage() {
               </div>
               <div className="me-cols me-cols-5">
                 <SortHead id="name" label={t("lp.myLp")} active={lpSort.key === "name"} dir={lpSort.dir} onToggle={lpSort.toggle} align="left" />
-                <SortHead id="venues" label={t("lp.venues")} active={lpSort.key === "venues"} dir={lpSort.dir} onToggle={lpSort.toggle} />
+                <SortHead id="venues" label={t("lp.poolCount")} active={lpSort.key === "venues"} dir={lpSort.dir} onToggle={lpSort.toggle} />
                 <SortHead id="value" label={t("me.value")} active={lpSort.key === "value"} dir={lpSort.dir} onToggle={lpSort.toggle} />
                 <span />
               </div>
@@ -199,7 +260,19 @@ export function LpPage() {
               <input
                 className="me-filter"
                 value={marketQ}
-                onChange={(e) => setMarketQ(e.target.value)}
+                onChange={(e) => {
+                  const q = e.target.value;
+                  setParams(
+                    (prev) => {
+                      const p = new URLSearchParams(prev);
+                      if (!q) p.delete("q");
+                      else p.set("q", q);
+                      p.delete("n");
+                      return p;
+                    },
+                    { replace: true },
+                  );
+                }}
                 placeholder={t("lp.search")}
                 aria-label={t("lp.search")}
               />
@@ -218,7 +291,7 @@ export function LpPage() {
                 <div className="me-cols me-cols-5">
                   <SortHead id="name" label={t("lp.markets")} active={marketSort.key === "name"} dir={marketSort.dir} onToggle={marketSort.toggle} align="left" />
                   <SortHead id="quote" label={t("me.quote")} active={marketSort.key === "quote"} dir={marketSort.dir} onToggle={marketSort.toggle} />
-                  <SortHead id="venues" label={t("lp.venues")} active={marketSort.key === "venues"} dir={marketSort.dir} onToggle={marketSort.toggle} />
+                  <SortHead id="venues" label={t("lp.poolCount")} active={marketSort.key === "venues"} dir={marketSort.dir} onToggle={marketSort.toggle} />
                   <SortHead id="depth" label={t("lp.depth")} active={marketSort.key === "depth"} dir={marketSort.dir} onToggle={marketSort.toggle} />
                 </div>
                 {markets.loading && readingShort ? <p className="me-card-empty">{t("lp.loadingChain", { chain: readingShort })}</p> : null}
@@ -240,7 +313,17 @@ export function LpPage() {
                   </Link>
                 ))}
                 {marketMore ? (
-                  <button type="button" className="me-more-rows" onClick={() => setMarketPage((n) => n + 1)}>
+                  <button
+                    type="button"
+                    className="me-more-rows"
+                    onClick={() =>
+                      setParams((prev) => {
+                        const p = new URLSearchParams(prev);
+                        p.set("n", String(shownCap + MARKET_PAGE));
+                        return p;
+                      })
+                    }
+                  >
                     {t("lp.moreRows")}
                   </button>
                 ) : null}
