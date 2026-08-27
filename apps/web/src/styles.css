@@ -2414,6 +2414,13 @@ button.set-item-btn:focus-visible {
   gap: 8px;
   padding: 12px 16px 16px;
 }
+.addr-add-k {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.02em;
+}
 .addr-add-row {
   display: flex;
   gap: 8px;
@@ -2450,13 +2457,42 @@ button.set-item-btn:focus-visible {
 .addr-name {
   flex: 1 1 160px;
   min-width: 120px;
+  height: 32px;
+  margin: 0;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 15px;
   font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
+}
+.addr-name:focus {
+  outline: 2px solid #3b82f6;
+  background: var(--bg-white);
 }
 .set-watch-block {
-  border-top: 1px solid var(--border-color);
+  margin: 12px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--bg-subtle);
 }
 .set-watch-block .me-card-head {
   border-bottom: 1px solid var(--border-light);
+  background: var(--bg-subtle);
+}
+.set-watch-block .addr-add {
+  background: var(--bg-white);
+  border-top: 0;
+}
+.set-watch-block .me-list,
+.set-watch-block .me-card-empty {
+  background: var(--bg-white);
+}
+.set-watch-block .me-token:first-child {
+  border-top: 1px solid var(--border-light);
 }
 .me-id {
   position: relative;

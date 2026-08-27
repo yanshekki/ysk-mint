@@ -463,6 +463,8 @@
       "near": "NEAR"
     },
     "addrAdd": "加入",
+    "addrAddToSet": "加入地址",
+    "watchAddHint": "加入地址到「{{name}}」",
     "addrRemove": "移除",
     "addrConnected": "已連接",
     "addrHit": "{{kind}} · {{addr}}",
@@ -477,7 +479,7 @@
     "watchName": "組合名稱",
     "watchAdd": "新增查看組合",
     "watchRemove": "刪除",
-    "watchEmpty": "呢個組合未有地址。",
+    "watchEmpty": "未有地址。用上面一欄貼上，再撳「加入地址」。",
     "kind": {
       "evm": "EVM",
       "near": "NEAR",

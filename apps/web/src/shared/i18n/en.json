@@ -463,6 +463,8 @@
       "near": "NEAR"
     },
     "addrAdd": "Add",
+    "addrAddToSet": "Add address",
+    "watchAddHint": "Add an address to “{{name}}”",
     "addrRemove": "Remove",
     "addrConnected": "Connected",
     "addrHit": "{{kind}} · {{addr}}",
@@ -477,7 +479,7 @@
     "watchName": "Set name",
     "watchAdd": "New watch set",
     "watchRemove": "Delete",
-    "watchEmpty": "This set has no addresses yet.",
+    "watchEmpty": "No addresses yet. Paste above, then tap Add address.",
     "kind": {
       "evm": "EVM",
       "near": "NEAR",

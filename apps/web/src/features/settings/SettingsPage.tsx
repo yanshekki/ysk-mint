@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useAccount } from "wagmi";
 import { featuredChains } from "@ysk-mint/config";
@@ -59,6 +59,7 @@ export function SettingsPage() {
   const [wiped, setWiped] = useState(false);
   const [restored, setRestored] = useState(false);
   const [chainQ, setChainQ] = useState("");
+  const watchAddRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const lng = LOCALES.some((l) => l.id === i18n.language) ? i18n.language : "zh-HK";
   const onCount = CHAINS.length - s.disabledChains.filter((id) => CHAINS.some((c) => c.chainId === id)).length;
@@ -181,7 +182,7 @@ export function SettingsPage() {
               <div key={set.id} className="set-watch-block">
                 <div className="me-card-head">
                   <input
-                    className="me-filter addr-name"
+                    className="addr-name"
                     defaultValue={set.name}
                     aria-label={t("settings.watchName")}
                     onBlur={(e) => book.renameWatch(set.id, e.target.value)}
@@ -194,6 +195,15 @@ export function SettingsPage() {
                     {t("settings.watchRemove")}
                   </button>
                 </div>
+                <AddrAddBar
+                  addLabel={t("settings.addrAddToSet")}
+                  hint={t("settings.watchAddHint", { name: set.name })}
+                  disabled={set.addresses.length >= MAX_ADDRS}
+                  onBind={(el) => {
+                    watchAddRefs.current[set.id] = el;
+                  }}
+                  onAdd={(kind, value) => book.addWatchAddr(set.id, kind, value)}
+                />
                 {set.addresses.length ? (
                   <div className="me-list">
                     {set.addresses.map((a) => (
@@ -203,7 +213,6 @@ export function SettingsPage() {
                 ) : (
                   <p className="me-card-empty">{t("settings.watchEmpty")}</p>
                 )}
-                <AddrAddBar disabled={set.addresses.length >= MAX_ADDRS} onAdd={(kind, value) => book.addWatchAddr(set.id, kind, value)} />
               </div>
             ))}
             <div className="set-chain-bar">
@@ -211,7 +220,10 @@ export function SettingsPage() {
                 type="button"
                 className="me-pool-btn me-pool-btn-dex"
                 disabled={book.watch.length >= MAX_WATCH}
-                onClick={() => book.addWatch(t("settings.watchDefault", { n: book.watch.length + 1 }))}
+                onClick={() => {
+                  const id = book.addWatch(t("settings.watchDefault", { n: book.watch.length + 1 }));
+                  if (id) window.setTimeout(() => watchAddRefs.current[id]?.focus(), 0);
+                }}
               >
                 {t("settings.watchAdd")}
               </button>

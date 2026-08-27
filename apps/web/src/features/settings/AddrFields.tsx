@@ -7,9 +7,15 @@ import { domainNames, useDomainName, type DomainHit } from "../../lib/domainName
 export function AddrAddBar({
   onAdd,
   disabled,
+  onBind,
+  addLabel,
+  hint,
 }: {
   onAdd: (kind: AddrKind, value: string) => AddrErr | null;
   disabled?: boolean;
+  onBind?: (el: HTMLInputElement | null) => void;
+  addLabel?: string;
+  hint?: string;
 }) {
   const { t } = useTranslation();
   const [raw, setRaw] = useState("");
@@ -108,8 +114,10 @@ export function AddrAddBar({
 
   return (
     <div className="addr-add">
+      {hint ? <p className="addr-add-k">{hint}</p> : null}
       <div className="addr-add-row">
         <input
+          ref={(el) => onBind?.(el)}
           className="me-filter addr-input"
           value={raw}
           disabled={disabled}
@@ -117,7 +125,7 @@ export function AddrAddBar({
           autoCorrect="off"
           spellCheck={false}
           placeholder={t("settings.addrPaste")}
-          aria-label={t("settings.addrPaste")}
+          aria-label={hint || t("settings.addrPaste")}
           onChange={(e) => {
             setRaw(e.target.value);
             setPicked(null);
@@ -130,13 +138,8 @@ export function AddrAddBar({
             }
           }}
         />
-        <button
-          type="button"
-          className="me-pool-btn me-pool-btn-dex"
-          disabled={disabled || nameBusy || !(nameHit || kind)}
-          onClick={() => submit()}
-        >
-          {t("settings.addrAdd")}
+        <button type="button" className="me-pool-btn me-pool-btn-dex" disabled={disabled || nameBusy} onClick={() => submit()}>
+          {addLabel || t("settings.addrAdd")}
         </button>
       </div>
       {!isName && hit?.ok && hit.candidates ? (
