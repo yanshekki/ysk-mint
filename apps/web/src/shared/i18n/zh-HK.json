@@ -75,6 +75,8 @@
     "timed": "定期鎖",
     "burn": "銷毀 LP",
     "open": "區塊瀏覽器",
+    "explorerBtn": "瀏覽器",
+    "dexBtn": "DEX",
     "block": "區塊",
     "time": "時間",
     "price": "價格",

@@ -75,6 +75,8 @@
     "timed": "Timed",
     "burn": "Burn LP",
     "open": "Explorer",
+    "explorerBtn": "Explorer",
+    "dexBtn": "DEX",
     "block": "Block",
     "time": "Time",
     "price": "Price",

@@ -1325,6 +1325,24 @@ button.oft-chain:disabled {
   grid-column: 2;
   text-align: left;
 }
+.me-cols-pool,
+.me-token.me-token-pool {
+  grid-template-columns: 36px minmax(0, 1fr) 96px 96px 96px minmax(148px, auto);
+}
+.me-pool-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+.me-pool-btn {
+  height: 30px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 800;
+  border-radius: 8px;
+  text-decoration: none;
+}
 .me-cols-5 span:nth-child(2),
 .me-cols-5 .me-sort:nth-child(2) {
   grid-column: 3;

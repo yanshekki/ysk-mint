@@ -19,6 +19,7 @@ import { nearToken, nearVenuesForPair } from "../../lib/nearDex.ts";
 import { adaTokenMeta, adaVenuesForPair } from "../../lib/adaDex.ts";
 import { SortHead, useSort } from "../../shared/ui/SortTable.tsx";
 import { marketsHref } from "./LpPage.tsx";
+import { dexAppHref } from "../../lib/dexApp.ts";
 
 type TokenMeta = { symbol: string; decimals: number; icon: string };
 
@@ -201,34 +202,53 @@ export function PairPage() {
               <p className="me-card-empty">{t("lp.noVenues")}</p>
             ) : (
               <div className="me-list">
-                <div className="me-cols me-cols-5">
+                <div className="me-cols me-cols-5 me-cols-pool">
                   <SortHead id="name" label={t("lp.venues")} active={venueSort.key === "name"} dir={venueSort.dir} onToggle={venueSort.toggle} align="left" />
                   <SortHead id="quote" label={t("me.quote")} active={venueSort.key === "quote"} dir={venueSort.dir} onToggle={venueSort.toggle} />
                   <SortHead id="amount" label={metaA.symbol} active={venueSort.key === "amount"} dir={venueSort.dir} onToggle={venueSort.toggle} />
                   <SortHead id="depth" label={t("lp.depth")} active={venueSort.key === "depth"} dir={venueSort.dir} onToggle={venueSort.toggle} />
+                  <span />
                 </div>
-                {venueSort.sorted.map((v) => (
-                  <a
-                    key={`${v.venue.id}-${v.pool}-${v.feeLabel}`}
-                    className="me-token me-token-5"
-                    href={venueHref(v.pool)}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <span className="holding-ico-wrap">
-                      <img src={metaA.icon} alt="" className="holding-ico" />
-                    </span>
-                    <div className="holding-meta">
-                      <b>
-                        {v.venue.name} · {v.feeLabel}
-                      </b>
-                      <span className="num">{short(v.pool)}</span>
+                {venueSort.sorted.map((v) => {
+                  const explore = venueHref(v.pool);
+                  const dex = dexAppHref({
+                    name: v.venue.name,
+                    protocolId: v.venue.id,
+                    chainId,
+                    pool: v.pool,
+                    tokenA: a,
+                    tokenB: b,
+                    kind: v.venue.kind,
+                  });
+                  return (
+                    <div key={`${v.venue.id}-${v.pool}-${v.feeLabel}`} className="me-token me-token-5 me-token-pool">
+                      <span className="holding-ico-wrap">
+                        <img src={metaA.icon} alt="" className="holding-ico" />
+                      </span>
+                      <div className="holding-meta">
+                        <b>
+                          {v.venue.name} · {v.feeLabel}
+                        </b>
+                        <span className="num">{short(v.pool)}</span>
+                      </div>
+                      <span className="num me-price">{fmtCompact(v.priceAinB)}</span>
+                      <span className="num holding-amt">{v.reserveA > 0 ? fmtCompact(v.reserveA) : "—"}</span>
+                      <span className="num me-value">{v.tvlQuote > 0 ? fmtCompact(v.tvlQuote) : "—"}</span>
+                      <span className="me-pool-acts">
+                        {explore ? (
+                          <a className="ghost-btn me-pool-btn" href={explore} target="_blank" rel="noreferrer">
+                            {t("lp.explorerBtn")}
+                          </a>
+                        ) : null}
+                        {dex ? (
+                          <a className="ghost-btn me-pool-btn" href={dex} target="_blank" rel="noreferrer">
+                            {t("lp.dexBtn")}
+                          </a>
+                        ) : null}
+                      </span>
                     </div>
-                    <span className="num me-price">{fmtCompact(v.priceAinB)}</span>
-                    <span className="num holding-amt">{v.reserveA > 0 ? fmtCompact(v.reserveA) : "—"}</span>
-                    <span className="num me-value">{v.tvlQuote > 0 ? fmtCompact(v.tvlQuote) : "—"}</span>
-                  </a>
-                ))}
+                  );
+                })}
               </div>
             )}
           </section>
