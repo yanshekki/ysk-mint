@@ -50,6 +50,15 @@ async function evmTokenMeta(client: PublicClient, chainId: number, address: stri
   }
 }
 
+function fmtTradeTime(ts: number | undefined, t: (key: string, opts?: { n: number }) => string) {
+  if (!ts) return "";
+  const sec = Math.max(0, Math.floor(Date.now() / 1000 - ts));
+  if (sec < 60) return t("lp.agoSec", { n: sec });
+  if (sec < 3600) return t("lp.agoMin", { n: Math.floor(sec / 60) });
+  if (sec < 86400) return t("lp.agoHour", { n: Math.floor(sec / 3600) });
+  return t("lp.agoDay", { n: Math.floor(sec / 86400) });
+}
+
 function short(a: string) {
   if (!a || a.length < 12) return a || "—";
   return `${a.slice(0, 6)}…${a.slice(-4)}`;
@@ -130,7 +139,7 @@ export function PairPage() {
 
   const price = useMemo(() => weightedPrice(venues), [venues]);
   const evm = chain?.vm === "evm" || chain?.evm;
-  const swaps = usePairSwaps(evm ? client : undefined, evm ? venues : [], metaA.decimals, metaB.decimals, chainId);
+  const swaps = usePairSwaps(evm ? client : undefined, evm ? venues : [], a, metaA.decimals, metaB.decimals, chainId);
   const venueGet = useCallback((v: VenuePool, k: string) => {
     if (k === "name") return v.venue.name;
     if (k === "quote") return v.priceAinB;
@@ -140,11 +149,12 @@ export function PairPage() {
   const venueSort = useSort(venues, "depth", venueGet);
   const tradeGet = useCallback((s: SwapRow, k: string) => {
     if (k === "name") return s.venue;
-    if (k === "a") return s.amount0;
-    if (k === "b") return s.amount1;
-    return Number(s.block);
+    if (k === "a") return s.amountA;
+    if (k === "b") return s.amountB;
+    if (k === "price") return s.price;
+    return s.ts ?? Number(s.block);
   }, []);
-  const tradeSort = useSort(swaps.rows, "a", tradeGet);
+  const tradeSort = useSort(swaps.rows, "time", tradeGet);
   const quoteIsStable = isStable(metaB.symbol);
 
   function venueHref(pool: string) {
@@ -235,25 +245,38 @@ export function PairPage() {
             ) : (
               <div className="me-list">
                 <div className="me-cols me-cols-5">
-                  <SortHead id="name" label={t("lp.trades")} active={tradeSort.key === "name"} dir={tradeSort.dir} onToggle={tradeSort.toggle} align="left" />
+                  <SortHead id="time" label={t("lp.time")} active={tradeSort.key === "time"} dir={tradeSort.dir} onToggle={tradeSort.toggle} align="left" />
                   <SortHead id="a" label={metaA.symbol} active={tradeSort.key === "a"} dir={tradeSort.dir} onToggle={tradeSort.toggle} />
                   <SortHead id="b" label={metaB.symbol} active={tradeSort.key === "b"} dir={tradeSort.dir} onToggle={tradeSort.toggle} />
-                  <SortHead id="block" label={t("lp.block")} active={tradeSort.key === "block"} dir={tradeSort.dir} onToggle={tradeSort.toggle} />
+                  <SortHead id="price" label={t("lp.price")} active={tradeSort.key === "price"} dir={tradeSort.dir} onToggle={tradeSort.toggle} />
                 </div>
                 {tradeSort.sorted.map((s) => {
                   const href = s.tx && chain?.explorer ? `${chain.explorer}/tx/${s.tx}` : undefined;
+                  const when = fmtTradeTime(s.ts, t);
                   const inner = (
                     <>
                       <span className="holding-ico-wrap">
-                        <span className="holding-ico me-oft-mark">{s.side === "buy0" ? "B" : "S"}</span>
+                        <span
+                          className={`holding-ico me-oft-mark ${s.side === "buy" ? "me-trade-buy" : "me-trade-sell"}`}
+                          title={s.side === "buy" ? t("lp.tradeBuy") : t("lp.tradeSell")}
+                        >
+                          {s.side === "buy" ? t("lp.tradeBuyMark") : t("lp.tradeSellMark")}
+                        </span>
                       </span>
                       <div className="holding-meta">
                         <b>{s.venue}</b>
-                        <span className="num">#{s.block.toString()}</span>
+                        <span
+                          className="num"
+                          title={s.ts ? `${new Date(s.ts * 1000).toISOString().replace("T", " ").slice(0, 19)} UTC` : undefined}
+                        >
+                          {when}
+                          {when ? " · " : ""}#{s.block.toString()}
+                          {s.tx ? ` · ${short(s.tx)}` : ""}
+                        </span>
                       </div>
-                      <span className="num me-price">{fmtCompact(s.amount0)}</span>
-                      <span className="num holding-amt">{fmtCompact(s.amount1)}</span>
-                      <span className="num me-value">{s.block.toString()}</span>
+                      <span className="num me-price">{fmtCompact(s.amountA)}</span>
+                      <span className="num holding-amt">{fmtCompact(s.amountB)}</span>
+                      <span className="num me-value">{s.price == null ? "—" : fmtCompact(s.price)}</span>
                     </>
                   );
                   return href ? (
