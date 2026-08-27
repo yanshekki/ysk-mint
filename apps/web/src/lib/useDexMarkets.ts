@@ -7,6 +7,7 @@ import { ensureProtocols } from "./defi/protocols.ts";
 import { protocolsOn } from "./defi/registry.ts";
 import type { MarketRow as DefiMarket, VenueQuote } from "./defi/types.ts";
 import { useLiveStatus } from "./liveStatus.ts";
+import { mergeOriented } from "./pairOrient.ts";
 
 export type MarketRow = {
   pairId: string;
@@ -48,7 +49,7 @@ function asRow(r: DefiMarket): MarketRow {
 
 async function loadEvm(chainId: number): Promise<MarketRow[]> {
   const rows = await loadEvmMarkets(chainId).catch(() => [] as DefiMarket[]);
-  return rows.map(asRow);
+  return mergeOriented(rows.map(asRow)) as MarketRow[];
 }
 
 async function loadNative(chainId: number): Promise<MarketRow[]> {
@@ -64,7 +65,7 @@ async function loadNative(chainId: number): Promise<MarketRow[]> {
       return parts.flat();
     },
   ).catch(() => [] as DefiMarket[]);
-  return raw.map(asRow);
+  return mergeOriented(raw.map(asRow)) as MarketRow[];
 }
 
 async function mapLimit<T>(ids: T[], n: number, fn: (id: T) => Promise<void>) {
@@ -103,7 +104,7 @@ function seedRows(ids: number[]) {
     const raw = cacheLastGood<DefiMarket[]>(cacheKey("markets", id));
     if (raw?.length) out.push(...raw.map(asRow));
   }
-  return sortMarkets(out);
+  return sortMarkets(mergeOriented(out) as MarketRow[]);
 }
 
 export function useDexMarkets(chainId: number | "all") {

@@ -1,6 +1,7 @@
 import { CHAINS } from "@ysk-mint/config";
 import { DEX, isUsdStableAddress } from "../defiAddresses.ts";
 import { pairId } from "../pairKey.ts";
+import { displayStableSymbol, invertVenue, isQuoteOnRight } from "../pairOrient.ts";
 import { cacheGet, cacheKey, cacheLastGood, cacheWrite, forChunks, POLICIES } from "./cache.ts";
 import { evmPublicClient } from "./evm/client.ts";
 import { ensureProtocols } from "./protocols.ts";
@@ -186,35 +187,47 @@ export async function loadEvmMarkets(chainId: number): Promise<MarketRow[]> {
       usdForBase(wrap, live, wrap, null, chainId).usdc;
 
     const byPair = new Map<string, MarketRow>();
-    const bases = new Set(live.map((h) => h.a.address.toLowerCase()));
+    const bases = new Set(live.flatMap((h) => [h.a.address.toLowerCase(), h.b.address.toLowerCase()]));
     const usdByBase = new Map<string, { usdc: number | null; depth: number }>();
     for (const b of bases) usdByBase.set(b, usdForBase(b, live, wrap, wrapUsd, chainId));
 
     for (const h of live) {
-      const id = pairId(chainId, h.a.address, h.b.address);
+      const keep = isQuoteOnRight(
+        chainId,
+        { address: h.a.address, symbol: h.a.symbol },
+        { address: h.b.address, symbol: h.b.symbol },
+      );
+      const a = keep ? h.a : h.b;
+      const b = keep ? h.b : h.a;
+      const hitVenues = keep ? h.venues : h.venues.map(invertVenue);
+      const id = pairId(chainId, a.address, b.address);
       const prev = byPair.get(id);
       const venues = [...(prev?.venues ?? [])];
       const seenPool = new Set(venues.map((v) => `${v.protocolId}:${v.pool.toLowerCase()}`));
-      for (const v of h.venues) {
+      for (const v of hitVenues) {
         const k = `${v.protocolId}:${v.pool.toLowerCase()}`;
         if (seenPool.has(k)) continue;
         seenPool.add(k);
         venues.push(v);
       }
       const names = [...new Set(venues.map((v) => v.protocolName))];
-      const usd = usdByBase.get(h.a.address.toLowerCase());
+      const usd = usdByBase.get(a.address.toLowerCase());
+      let price = usd?.usdc ?? null;
+      if (price == null && isUsdStableAddress(d, b.address)) {
+        price = weightedUsd(venues.map((v) => ({ usdc: v.priceAinB, depth: Math.max(v.tvlQuote, 0) })));
+      }
       byPair.set(id, {
         pairId: id,
         chainId,
         chainShort: chain.short,
-        symbolA: h.a.symbol ?? h.a.address.slice(0, 6),
-        symbolB: h.b.symbol ?? h.b.address.slice(0, 6),
-        iconA: h.a.icon ?? "/tokens/eth.png",
-        iconB: h.b.icon ?? "/tokens/eth.png",
-        tokenA: h.a.address,
-        tokenB: h.b.address,
+        symbolA: displayStableSymbol(chainId, a.address, a.symbol ?? a.address.slice(0, 6)),
+        symbolB: displayStableSymbol(chainId, b.address, b.symbol ?? b.address.slice(0, 6)),
+        iconA: a.icon ?? "/tokens/eth.png",
+        iconB: b.icon ?? "/tokens/eth.png",
+        tokenA: a.address,
+        tokenB: b.address,
         venues,
-        price: usd?.usdc ?? null,
+        price,
         depth: usd?.depth ?? venues.reduce((n, v) => n + v.tvlQuote, 0),
         venueNames: names,
       });

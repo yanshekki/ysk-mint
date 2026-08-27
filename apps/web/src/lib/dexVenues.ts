@@ -66,7 +66,7 @@ const USDT_OP: SeedToken = { address: "0x94b008aA00579c1307B0EF2c499aD98a8ce58e5
 const WPOL: SeedToken = { address: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270", symbol: "WPOL", decimals: 18, icon: I("pol") };
 const WETH_POL: SeedToken = { address: "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619", symbol: "WETH", decimals: 18, icon: I("eth") };
 const USDC_POL: SeedToken = { address: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", symbol: "USDC", decimals: 6, icon: I("usdc") };
-const USDCE_POL: SeedToken = { address: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", symbol: "USDC", decimals: 6, icon: I("usdc") };
+const USDCE_POL: SeedToken = { address: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", symbol: "USDC.e", decimals: 6, icon: I("usdc") };
 const USDT_POL: SeedToken = { address: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F", symbol: "USDT", decimals: 6, icon: I("usdt") };
 
 const WETH_LINEA: SeedToken = { address: "0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f", symbol: "WETH", decimals: 18, icon: I("eth") };
@@ -78,7 +78,7 @@ const WHYPE: SeedToken = { address: "0x5555555555555555555555555555555555555555"
 const USDC_HYPE: SeedToken = { address: "0xb88339CB7199b77E23DB6E890353E22632Ba630f", symbol: "USDC", decimals: 6, icon: I("usdc") };
 const WETH_ZK: SeedToken = { address: "0x5AEa5775959fBC2557Cc8789bC1bf90A239D9a91", symbol: "WETH", decimals: 18, icon: I("eth") };
 const USDC_ZK: SeedToken = { address: "0x1D17CbCF0d6d143135ae90236593E4A2D3ffA0f0", symbol: "USDC", decimals: 6, icon: I("usdc") };
-const USDCE_ZK: SeedToken = { address: "0x3355df6D4c9C3035724Fd0e3914dE96A5a83aaf4", symbol: "USDC", decimals: 6, icon: I("usdc") };
+const USDCE_ZK: SeedToken = { address: "0x3355df6D4c9C3035724Fd0e3914dE96A5a83aaf4", symbol: "USDC.e", decimals: 6, icon: I("usdc") };
 const WBERA: SeedToken = { address: "0x6969696969696969696969696969696969696969", symbol: "WBERA", decimals: 18, icon: I("eth") };
 const USDC_BERA: SeedToken = { address: "0x549943e04f40284185054145c6E4e9568C1D3241", symbol: "USDC", decimals: 6, icon: I("usdc") };
 const WXDC: SeedToken = { address: "0x951857744785E80e2De051c32EE7b25f9c458C42", symbol: "WXDC", decimals: 18, icon: I("eth") };
@@ -250,5 +250,19 @@ export function seedToken(chainId: number, address: string) {
 }
 
 export function isStable(symbol: string) {
-  return symbol === "USDC" || symbol === "USDT" || symbol === "USDt" || symbol === "DAI" || symbol === "USDM" || symbol === "USDA" || symbol === "iUSD" || symbol === "DJED";
+  const s = symbol.replace(/\s+/g, "").toUpperCase();
+  return (
+    s === "USDC" ||
+    s === "USDT" ||
+    s === "DAI" ||
+    s === "USDM" ||
+    s === "USDA" ||
+    s === "IUSD" ||
+    s === "DJED" ||
+    s === "USDE" ||
+    s === "USDC.E" ||
+    s === "USDT.E" ||
+    s === "DAI.E" ||
+    s === "USDCE"
+  );
 }

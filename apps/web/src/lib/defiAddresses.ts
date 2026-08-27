@@ -1,6 +1,6 @@
 export type Addr = `0x${string}`;
 
-export type UsdStable = { address: Addr; decimals: number; symbol: "USDC" | "USDT" | "DAI" };
+export type UsdStable = { address: Addr; decimals: number; symbol: string };
 
 export type DexChain = {
   chainId: number;
@@ -324,19 +324,19 @@ export function usdStables(d: DexChain): UsdStable[] {
   if (d.usdt) out.push({ address: d.usdt, decimals: d.usdtDecimals ?? 6, symbol: "USDT" });
   if (d.dai) out.push({ address: d.dai, decimals: d.daiDecimals ?? 18, symbol: "DAI" });
   if (d.chainId === 43114) {
-    out.push({ address: "0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664", decimals: 6, symbol: "USDC" });
+    out.push({ address: "0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664", decimals: 6, symbol: "USDC.e" });
   }
   if (d.chainId === 42161) {
-    out.push({ address: "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8", decimals: 6, symbol: "USDC" });
+    out.push({ address: "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8", decimals: 6, symbol: "USDC.e" });
   }
   if (d.chainId === 137) {
-    out.push({ address: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", decimals: 6, symbol: "USDC" });
+    out.push({ address: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", decimals: 6, symbol: "USDC.e" });
   }
   if (d.chainId === 10) {
-    out.push({ address: "0x7F5c764cBc14f9669B88837ca1490cCa17c31607", decimals: 6, symbol: "USDC" });
+    out.push({ address: "0x7F5c764cBc14f9669B88837ca1490cCa17c31607", decimals: 6, symbol: "USDC.e" });
   }
   if (d.chainId === 324) {
-    out.push({ address: "0x3355df6D4c9C3035724Fd0e3914dE96A5a83aaf4", decimals: 6, symbol: "USDC" });
+    out.push({ address: "0x3355df6D4c9C3035724Fd0e3914dE96A5a83aaf4", decimals: 6, symbol: "USDC.e" });
   }
   if (d.chainId === 534352) {
     out.push({ address: "0xf55BEC9cafDbE3c1369a6CF5303e593DbeD00E27", decimals: 6, symbol: "USDT" });

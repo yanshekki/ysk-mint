@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, Navigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { type PublicClient } from "viem";
 import { useAccount } from "wagmi";
@@ -14,6 +14,7 @@ import { usePairSwaps, type SwapRow } from "../../lib/usePairSwaps.ts";
 import { cancelLive, trackLive } from "../../lib/liveStatus.ts";
 import { fmtCompact, fmtUsdc } from "../../lib/defiQuotes.ts";
 import { asAddr, canonAddr, pairId } from "../../lib/pairKey.ts";
+import { displayStableSymbol, orientPair } from "../../lib/pairOrient.ts";
 import { TOKEN_CATALOG } from "../../lib/tokenRegistry.ts";
 import { nearToken, nearVenuesForPair } from "../../lib/nearDex.ts";
 import { adaTokenMeta, adaVenuesForPair } from "../../lib/adaDex.ts";
@@ -26,8 +27,12 @@ type TokenMeta = { symbol: string; decimals: number; icon: string };
 async function evmTokenMeta(client: PublicClient, chainId: number, address: string, hint?: { symbol?: string; decimals?: number; icon?: string }): Promise<TokenMeta> {
   const hit = TOKEN_CATALOG.find((t) => t.chainId === chainId && t.address?.toLowerCase() === address.toLowerCase());
   const icon = hit?.icon ?? hint?.icon ?? "/tokens/eth.png";
-  if (hit?.symbol && hit.decimals) return { symbol: hit.symbol, decimals: hit.decimals, icon };
-  if (hint?.symbol && hint.decimals) return { symbol: hint.symbol, decimals: hint.decimals, icon };
+  if (hit?.symbol && hit.decimals) {
+    return { symbol: displayStableSymbol(chainId, address, hit.symbol), decimals: hit.decimals, icon };
+  }
+  if (hint?.symbol && hint.decimals) {
+    return { symbol: displayStableSymbol(chainId, address, hint.symbol), decimals: hint.decimals, icon };
+  }
   if (!address.startsWith("0x") && !address.startsWith("0X")) {
     return { symbol: hint?.symbol ?? short(address), decimals: hint?.decimals ?? 18, icon };
   }
@@ -42,8 +47,8 @@ async function evmTokenMeta(client: PublicClient, chainId: number, address: stri
           client.readContract({ address: asAddr(address), abi: erc20MetaAbi, functionName: "decimals" }),
           client.readContract({ address: asAddr(address), abi: erc20MetaAbi, functionName: "symbol" }).catch(() => ""),
         ]);
-        const sym = String(symbol || "").trim();
-        return { symbol: sym || short(address), decimals: Number(decimals) || 18, icon };
+        const sym = displayStableSymbol(chainId, address, String(symbol || "").trim() || short(address));
+        return { symbol: sym, decimals: Number(decimals) || 18, icon };
       },
     );
   } catch {
@@ -74,14 +79,24 @@ export function PairPage() {
   const chain = Object.values(CHAINS).find((c) => c.chainId === chainId);
   const sa = seedToken(chainId, a) ?? nearToken(a) ?? adaTokenMeta(a);
   const sb = seedToken(chainId, b) ?? nearToken(b) ?? adaTokenMeta(b);
+  const oriented = Number.isFinite(chainId) && a && b ? orientPair(chainId, a, b, sa?.symbol, sb?.symbol) : null;
   const { address } = useAccount();
   const [venues, setVenues] = useState<VenuePool[]>([]);
   const [loading, setLoading] = useState(true);
   const [client, setClient] = useState<PublicClient | undefined>();
-  const [metaA, setMetaA] = useState<TokenMeta>({ symbol: sa?.symbol ?? short(a), decimals: sa?.decimals ?? 18, icon: sa?.icon ?? "/tokens/eth.png" });
-  const [metaB, setMetaB] = useState<TokenMeta>({ symbol: sb?.symbol ?? short(b), decimals: sb?.decimals ?? 18, icon: sb?.icon ?? "/tokens/eth.png" });
+  const [metaA, setMetaA] = useState<TokenMeta>({
+    symbol: displayStableSymbol(chainId, a, sa?.symbol ?? short(a)),
+    decimals: sa?.decimals ?? 18,
+    icon: sa?.icon ?? "/tokens/eth.png",
+  });
+  const [metaB, setMetaB] = useState<TokenMeta>({
+    symbol: displayStableSymbol(chainId, b, sb?.symbol ?? short(b)),
+    decimals: sb?.decimals ?? 18,
+    icon: sb?.icon ?? "/tokens/eth.png",
+  });
 
   useEffect(() => {
+    if (oriented?.flipped) return;
     if (!a || !b || !Number.isFinite(chainId)) return;
     let cancelled = false;
     const venuesKey = cacheKey("venues", pairId(chainId, a, b));
@@ -136,7 +151,7 @@ export function PairPage() {
       stop();
       cancelLive(`pair:${chainId}`);
     };
-  }, [a, b, chain, chainId, sa?.decimals, sb?.decimals]);
+  }, [a, b, chain, chainId, oriented?.flipped, sa?.decimals, sb?.decimals]);
 
   const price = useMemo(() => weightedPrice(venues), [venues]);
   const evm = chain?.vm === "evm" || chain?.evm;
@@ -168,6 +183,14 @@ export function PairPage() {
     return chain?.explorer ? `${chain.explorer}/address/${pool}` : undefined;
   }
 
+  if (oriented?.flipped) {
+    return (
+      <Navigate
+        to={`/pair/${chainId}/${encodeURIComponent(oriented.base)}/${encodeURIComponent(oriented.quote)}`}
+        replace
+      />
+    );
+  }
   if (!a || !b || !Number.isFinite(chainId)) return <p className="workspace-scroll">{t("lp.pairMissing")}</p>;
 
   const title = `${metaA.symbol} / ${metaB.symbol}`;

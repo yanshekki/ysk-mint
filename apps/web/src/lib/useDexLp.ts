@@ -9,6 +9,7 @@ import { marketTokensOn } from "./defi/universe.ts";
 import { accountCache, mapChunk } from "./defi/cache.ts";
 import { trackLive, useLiveStatus } from "./liveStatus.ts";
 import { pairId, canonAddr, type Addr } from "./pairKey.ts";
+import { orientPair } from "./pairOrient.ts";
 import { nearMyLp } from "./nearDex.ts";
 import { adaMyLp } from "./adaDex.ts";
 
@@ -186,18 +187,28 @@ export function useDexLp(
               const id = pairId(chainId, h.a, h.b);
               const ma = seedMeta(chainId, h.a);
               const mb = seedMeta(chainId, h.b);
-              const venues = await readVenuesForPair(client, chainId, h.a, h.b, ma?.decimals ?? 18, mb?.decimals ?? 18).catch(() => []);
+              const o = orientPair(chainId, h.a, h.b, ma?.symbol, mb?.symbol);
+              const left = o.flipped ? mb : ma;
+              const right = o.flipped ? ma : mb;
+              const venues = await readVenuesForPair(
+                client,
+                chainId,
+                o.base as Addr,
+                o.quote as Addr,
+                left?.decimals ?? 18,
+                right?.decimals ?? 18,
+              ).catch(() => []);
               const names = [...new Set(venues.map((v) => v.venue.name))];
               const price = weightedPrice(venues);
               acc.set(id, {
                 pairId: id,
                 chainId,
-                symbolA: ma?.symbol ?? h.a.slice(0, 6),
-                symbolB: mb?.symbol ?? h.b.slice(0, 6),
-                tokenA: h.a,
-                tokenB: h.b,
-                iconA: ma?.icon ?? "/tokens/eth.png",
-                iconB: mb?.icon ?? "/tokens/eth.png",
+                symbolA: left?.symbol ?? o.base.slice(0, 6),
+                symbolB: right?.symbol ?? o.quote.slice(0, 6),
+                tokenA: o.base,
+                tokenB: o.quote,
+                iconA: left?.icon ?? "/tokens/eth.png",
+                iconB: right?.icon ?? "/tokens/eth.png",
                 venueCount: names.length || 1,
                 venueNames: names,
                 valueHint: price != null ? String(price) : "—",
