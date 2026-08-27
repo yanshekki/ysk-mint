@@ -220,7 +220,7 @@ export function makeAlgebra(venue: AlgebraVenue): DefiProtocol {
   };
 }
 
-/** Official Algebra factories: QuickSwap / Camelot / Thena Fusion / Blackhole CL. */
+/** Official Algebra factories: QuickSwap / Camelot / Thena Fusion / Blackhole CL / ZyberSwap. */
 export const ALGEBRA_VENUES: AlgebraVenue[] = [
   {
     id: "quick-v3-137",
@@ -245,5 +245,11 @@ export const ALGEBRA_VENUES: AlgebraVenue[] = [
     name: "Blackhole CL",
     chainId: 43114,
     factory: "0x512eb749541B7cf294be882D636218c84a5e9E5F",
+  },
+  {
+    id: "zyber-v3-42161",
+    name: "ZyberSwap Algebra",
+    chainId: 42161,
+    factory: "0x9C2ABD632771b433E5E7507BcaA41cA3b25D8544",
   },
 ];

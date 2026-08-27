@@ -12,6 +12,7 @@ import { register } from "./registry.ts";
 import { meteoraProtocol, orcaProtocol, raydiumProtocol } from "./sol/amm.ts";
 import { jupiterProtocol } from "./sol/jupiter.ts";
 import { cetusProtocol } from "./sui/cetus.ts";
+import { stonProtocol } from "./ton/ston.ts";
 
 let ready = false;
 
@@ -34,4 +35,5 @@ export function ensureProtocols() {
   register(orcaProtocol);
   register(meteoraProtocol);
   register(cetusProtocol);
+  register(stonProtocol);
 }

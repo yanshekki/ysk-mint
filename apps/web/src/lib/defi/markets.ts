@@ -23,6 +23,10 @@ const RPC_FALLBACK: Record<number, string> = {
   324: "https://zksync-era-rpc.publicnode.com",
   146: "https://sonic-rpc.publicnode.com",
   999: "https://rpc.hyperliquid.xyz/evm",
+  80094: "https://rpc.berachain.com",
+  50: "https://rpc.xdc.org",
+  2020: "https://api.roninchain.com/rpc",
+  81457: "https://rpc.blast.io",
 };
 
 export type DiscoveredPool = {

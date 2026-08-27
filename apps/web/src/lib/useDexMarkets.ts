@@ -97,7 +97,7 @@ export function useDexMarkets(chainId: number | "all") {
           return;
         }
         const evmIds = ids.filter((id) => ![101, 397, 1815, 398, 18151, 103, 784, 607, 637, 998, 728126428].includes(id));
-        const nativeIds = ids.filter((id) => [101, 397, 1815, 784].includes(id));
+        const nativeIds = ids.filter((id) => [101, 397, 1815, 784, 607].includes(id));
         const jobs: Array<Promise<void>> = [];
         const acc: MarketRow[] = [];
         const push = (part: MarketRow[]) => {

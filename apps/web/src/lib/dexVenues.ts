@@ -79,6 +79,14 @@ const USDC_HYPE: SeedToken = { address: "0xb88339CB7199b77E23DB6E890353E22632Ba6
 const WETH_ZK: SeedToken = { address: "0x5AEa5775959fBC2557Cc8789bC1bf90A239D9a91", symbol: "WETH", decimals: 18, icon: I("eth") };
 const USDC_ZK: SeedToken = { address: "0x1D17CbCF0d6d143135ae90236593E4A2D3ffA0f0", symbol: "USDC", decimals: 6, icon: I("usdc") };
 const USDCE_ZK: SeedToken = { address: "0x3355df6D4c9C3035724Fd0e3914dE96A5a83aaf4", symbol: "USDC", decimals: 6, icon: I("usdc") };
+const WBERA: SeedToken = { address: "0x6969696969696969696969696969696969696969", symbol: "WBERA", decimals: 18, icon: I("eth") };
+const USDC_BERA: SeedToken = { address: "0x549943e04f40284185054145c6E4e9568C1D3241", symbol: "USDC", decimals: 6, icon: I("usdc") };
+const WXDC: SeedToken = { address: "0x951857744785E80e2De051c32EE7b25f9c458C42", symbol: "WXDC", decimals: 18, icon: I("eth") };
+const USDC_XDC: SeedToken = { address: "0xfA2958CB79b0491CC627c1557F441eF849Ca8eb1", symbol: "USDC", decimals: 6, icon: I("usdc") };
+const WRON: SeedToken = { address: "0xe514d9DEB7966c8BE0ca922de8a064264eA6bcd4", symbol: "WRON", decimals: 18, icon: I("eth") };
+const USDC_RON: SeedToken = { address: "0x0B7007c13325C48911F73A2daD5FA5dCBf808aDc", symbol: "USDC", decimals: 6, icon: I("usdc") };
+const WETH_BLAST: SeedToken = { address: "0x4300000000000000000000000000000000000004", symbol: "WETH", decimals: 18, icon: I("eth") };
+const USDB: SeedToken = { address: "0x4300000000000000000000000000000000000003", symbol: "USDC", decimals: 18, icon: I("usdc") };
 
 export const VENUES: Venue[] = [
   { id: "uni-v3-1", name: "Uniswap V3", chainId: 1, kind: "v3", factory: UNI_V3_FACTORY, npm: UNI_V3_NPM, fees: V3_FEES },
@@ -150,6 +158,16 @@ export const VENUES: Venue[] = [
   { id: "zkswap-v3-324", name: "zkSwap V3", chainId: 324, kind: "v3", factory: "0x88ADD6a7e3C221e02f978B388a092c9FD8cd7850", npm: "0xe8A9c651C29469F0DE2CE0506002828A7E683860", fees: V3_FEES },
 
   { id: "solidlizard-42161", name: "SolidLizard", chainId: 42161, kind: "aero", factory: "0x734d84631f00dC0d3FCD18b04b6cf42BFd407074", poolFn: "getPair" },
+  { id: "zyber-v2-42161", name: "ZyberSwap", chainId: 42161, kind: "v2", factory: "0xac2ee06a14c52570ef3b9812ed240bce359772e7" },
+  { id: "verse-v2-1", name: "Verse", chainId: 1, kind: "v2", factory: "0xee3E9E46E34a27dC755a63e2849C9913Ee1A06E2" },
+
+  { id: "kodiak-v3-80094", name: "Kodiak V3", chainId: 80094, kind: "v3", factory: "0xD84CBf0B02636E7f53dB9E5e45A616E05d710990", npm: "0xFE5E8C83FFE4d9627A75EaA7Fee864768dB989bD", fees: V3_FEES },
+  { id: "kodiak-v2-80094", name: "Kodiak V2", chainId: 80094, kind: "v2", factory: "0x5e705e184d233ff2a7cb1553793464a9d0c3028f" },
+
+  { id: "xswap-v2-50", name: "XSwap", chainId: 50, kind: "v2", factory: "0x347D14b13a68457186b2450bb2a6c2Fd7B38352f" },
+  { id: "katana-v2-2020", name: "Katana", chainId: 2020, kind: "v2", factory: "0xb255d6a720bb7c39fee173ce22113397119cb930" },
+  { id: "thruster-v2-81457", name: "Thruster V2", chainId: 81457, kind: "v2", factory: "0x37836821a2c03c171fB1a595767f4a16e2b93Fc4" },
+  { id: "thruster-v3-81457", name: "Thruster V3", chainId: 81457, kind: "v3", factory: "0x71b08f13B3c3aF35aAdEb3949afeb1deD1016127", fees: V3_FEES },
 
   { id: "uni-v3-1868", name: "Uniswap V3", chainId: 1868, kind: "v3", factory: "0x42ae7ec7ff020412639d443e245d936429fbe717", npm: "0x56c1205b0244332011c1e866f4ea5384eb6bfa2c", fees: V3_FEES },
 ];
@@ -197,6 +215,10 @@ export const SEED_PAIRS: SeedPair[] = [
   pair(999, WHYPE, USDC_HYPE),
   pair(324, WETH_ZK, USDC_ZK),
   pair(324, WETH_ZK, USDCE_ZK),
+  pair(80094, WBERA, USDC_BERA),
+  pair(50, WXDC, USDC_XDC),
+  pair(2020, WRON, USDC_RON),
+  pair(81457, WETH_BLAST, USDB),
 ];
 
 export const SOL_SEEDS = [

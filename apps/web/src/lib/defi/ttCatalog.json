@@ -188,11 +188,11 @@
       "name": "Lifinity",
       "sector": "dex",
       "family": "sol-amm",
-      "status": "pending",
+      "status": "skip",
       "chains": [
         101
       ],
-      "note": ""
+      "note": "主動做市曲線；官方 pool API 522，唔當標準 AMM"
     },
     {
       "id": "quickswap",
@@ -276,11 +276,11 @@
       "name": "Thruster",
       "sector": "dex",
       "family": "univ3",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         81457
       ],
-      "note": ""
+      "note": "V2 factory getPair + V3 ThrusterPoolFactory getPool"
     },
     {
       "id": "kyberswap",
@@ -344,55 +344,55 @@
       "name": "Maverick Protocol",
       "sector": "dex",
       "family": "maverick",
-      "status": "pending",
+      "status": "skip",
       "chains": [
         "evm"
       ],
-      "note": ""
+      "note": "bin AMM，唔係 getPair／getPool"
     },
     {
       "id": "wombat",
       "name": "Wombat Exchange",
       "sector": "dex",
       "family": "stableswap",
-      "status": "pending",
+      "status": "skip",
       "chains": [
         56
       ],
-      "note": ""
+      "note": "自訂 stableswap，唔係 univ2 儲備"
     },
     {
       "id": "xswap",
       "name": "XSwap",
       "sector": "dex",
       "family": "univ2",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         50
       ],
-      "note": ""
+      "note": "XDC V2 factory getPair；xswap.link 跨鏈聚合器唔當"
     },
     {
       "id": "zyberswap",
       "name": "Zyberswap",
       "sector": "dex",
       "family": "univ2",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         42161
       ],
-      "note": ""
+      "note": "V2 factory getPair + Algebra poolByPair"
     },
     {
       "id": "verse",
       "name": "Verse",
       "sector": "dex",
       "family": "univ2",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         1
       ],
-      "note": ""
+      "note": "univ2 factory getPair"
     },
     {
       "id": "cetus",
@@ -410,22 +410,22 @@
       "name": "STON.fi",
       "sector": "dex",
       "family": "ton-amm",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         607
       ],
-      "note": ""
+      "note": "api.ston.fi/v1/pools/query asset:popular；TVL ≥ $50k"
     },
     {
       "id": "dedust",
       "name": "DeDust",
       "sector": "dex",
       "family": "ton-amm",
-      "status": "pending",
+      "status": "skip",
       "chains": [
         607
       ],
-      "note": ""
+      "note": "官方 /v2/pools 全量 25MB，無分頁，唔喺瀏覽器拉"
     },
     {
       "id": "hyperswap",
@@ -443,18 +443,18 @@
       "name": "Kodiak Finance",
       "sector": "dex",
       "family": "univ3",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         80094
       ],
-      "note": ""
+      "note": "官方 V3 getPool + V2 getPair"
     },
     {
       "id": "fluid-dex",
       "name": "Fluid",
       "sector": "dex",
       "family": "fluid",
-      "status": "pending",
+      "status": "skip",
       "chains": [
         "evm"
       ],
@@ -465,42 +465,42 @@
       "name": "Bancor",
       "sector": "dex",
       "family": "bancor",
-      "status": "pending",
+      "status": "skip",
       "chains": [
         1
       ],
-      "note": ""
+      "note": "自訂 Bancor 曲線，唔係 univ2 儲備"
     },
     {
       "id": "dodo",
       "name": "DODO",
       "sector": "dex",
       "family": "pmm",
-      "status": "pending",
+      "status": "skip",
       "chains": [
         "evm"
       ],
-      "note": ""
+      "note": "PMM，唔當常數乘積 pair"
     },
     {
       "id": "o1-exchange",
       "name": "o1.exchange",
       "sector": "dex",
       "family": "univ3",
-      "status": "pending",
+      "status": "skip",
       "chains": [],
-      "note": ""
+      "note": "Token Terminal 未列鏈同 factory"
     },
     {
       "id": "katana-dex",
       "name": "Katana",
       "sector": "dex",
       "family": "univ2",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         2020
       ],
-      "note": ""
+      "note": "Ronin V2 factory getPair；V3 官方部署檔未列 address"
     },
     {
       "id": "flowx",

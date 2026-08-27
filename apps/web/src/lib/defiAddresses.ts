@@ -280,6 +280,41 @@ export const DEX: Record<number, DexChain> = {
       data: "0xc851e6147dcE6A469CC33BE3121b6B2D4CaD2763",
     },
   },
+  80094: {
+    chainId: 80094,
+    short: "BERA",
+    usdc: "0x549943e04f40284185054145c6E4e9568C1D3241",
+    usdcDecimals: 6,
+    wrapped: "0x6969696969696969696969696969696969696969",
+    v3Factory: "0xD84CBf0B02636E7f53dB9E5e45A616E05d710990",
+    v3Npm: "0xFE5E8C83FFE4d9627A75EaA7Fee864768dB989bD",
+    v2Factory: "0x5e705e184d233ff2a7cb1553793464a9d0c3028f",
+  },
+  50: {
+    chainId: 50,
+    short: "XDC",
+    usdc: "0xfA2958CB79b0491CC627c1557F441eF849Ca8eb1",
+    usdcDecimals: 6,
+    wrapped: "0x951857744785E80e2De051c32EE7b25f9c458C42",
+    v2Factory: "0x347D14b13a68457186b2450bb2a6c2Fd7B38352f",
+  },
+  2020: {
+    chainId: 2020,
+    short: "RON",
+    usdc: "0x0B7007c13325C48911F73A2daD5FA5dCBf808aDc",
+    usdcDecimals: 6,
+    wrapped: "0xe514d9DEB7966c8BE0ca922de8a064264eA6bcd4",
+    v2Factory: "0xb255d6a720bb7c39fee173ce22113397119cb930",
+  },
+  81457: {
+    chainId: 81457,
+    short: "Blast",
+    usdc: "0x4300000000000000000000000000000000000003",
+    usdcDecimals: 18,
+    wrapped: "0x4300000000000000000000000000000000000004",
+    v3Factory: "0x71b08f13B3c3aF35aAdEb3949afeb1deD1016127",
+    v2Factory: "0x37836821a2c03c171fB1a595767f4a16e2b93Fc4",
+  },
 };
 
 export const V3_FEES = [500, 3000, 100, 10000] as const;
