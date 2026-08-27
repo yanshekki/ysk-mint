@@ -47,7 +47,7 @@ import {
 } from "../../lib/nativeWallets.ts";
 import "@near-wallet-selector/modal-ui/styles.css";
 import "./nearModal.css";
-import { useAdaHandle, useEvmName, useSolName } from "../../lib/chainNames.ts";
+import { useDomainName } from "../../lib/domainNames/index.ts";
 import { SolanaSelector, WalletPicker } from "./SolanaSelector.tsx";
 
 function short(v: string, head = 6, tail = 4) {
@@ -97,9 +97,9 @@ export function ConnectBar() {
   const hasStark = Boolean(native.starknetAddress);
   const any =
     isConnected || hasNear || hasAda || hasSol || hasTron || hasSui || hasTon || hasAptos || hasBtc || hasXrpl || hasStellar || hasKeplr || hasStark;
-  const evmName = useEvmName(address);
-  const adaName = useAdaHandle(native.cardanoAddress, native.cardanoStake);
-  const solName = useSolName(native.solanaAddress);
+  const evmName = useDomainName("evm", address);
+  const adaName = useDomainName("cardano", native.cardanoAddress);
+  const solName = useDomainName("solana", native.solanaAddress);
 
   useEffect(() => {
     void restoreNearSession();

@@ -44,7 +44,7 @@ import {
   type ExtraWalletInfo,
   type SolanaWalletInfo,
 } from "../../lib/nativeWallets.ts";
-import { useAdaHandle, useEvmName, useSolName } from "../../lib/chainNames.ts";
+import { useDomainName } from "../../lib/domainNames/index.ts";
 import {
   useAptosHoldings,
   useBitcoinHoldings,
@@ -173,9 +173,9 @@ export function WalletDesk() {
   const osmoHold = useOsmosisHoldings(native.osmosisAddress);
   const tiaHold = useCelestiaHoldings(native.celestiaAddress);
   const strkHold = useStarknetHoldings(native.starknetAddress);
-  const evmName = useEvmName(address);
-  const adaName = useAdaHandle(native.cardanoAddress, native.cardanoStake);
-  const solName = useSolName(native.solanaAddress);
+  const evmName = useDomainName("evm", address);
+  const adaName = useDomainName("cardano", native.cardanoAddress);
+  const solName = useDomainName("solana", native.solanaAddress);
 
   useEffect(() => {
     void restoreNearSession();

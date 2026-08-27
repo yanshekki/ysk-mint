@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { KIND_ICON, confirmKind, detectAddrKind, shortAddr, type AddrKind } from "../../lib/addrKind.ts";
 import { type AddrErr, type SavedAddr } from "../../lib/addressSets.ts";
+import { domainNames, useDomainName, type DomainHit } from "../../lib/domainNames/index.ts";
 
 export function AddrAddBar({
   onAdd,
@@ -14,14 +15,59 @@ export function AddrAddBar({
   const [raw, setRaw] = useState("");
   const [picked, setPicked] = useState<AddrKind | null>(null);
   const [err, setErr] = useState<AddrErr | "invalid" | null>(null);
+  const [nameHit, setNameHit] = useState<DomainHit | null>(null);
+  const [nameBusy, setNameBusy] = useState(false);
+  const [nameBad, setNameBad] = useState(false);
 
-  const hit = useMemo(() => detectAddrKind(raw), [raw]);
+  const isName = domainNames.looksLikeName(raw);
+  const hit = useMemo(() => (isName ? null : detectAddrKind(raw)), [isName, raw]);
 
-  const kind = picked && hit.ok && (hit.kind === picked || hit.candidates?.includes(picked)) ? picked : hit.ok ? hit.kind : undefined;
+  useEffect(() => {
+    if (!isName) {
+      setNameHit(null);
+      setNameBusy(false);
+      setNameBad(false);
+      return;
+    }
+    const q = raw.trim();
+    setNameBusy(true);
+    setNameBad(false);
+    setNameHit(null);
+    const tmr = window.setTimeout(() => {
+      void domainNames
+        .resolve(q)
+        .then((found) => {
+          setNameHit(found);
+          setNameBad(!found);
+        })
+        .catch(() => {
+          setNameHit(null);
+          setNameBad(true);
+        })
+        .finally(() => setNameBusy(false));
+    }, 300);
+    return () => window.clearTimeout(tmr);
+  }, [isName, raw]);
+
+  const kind =
+    nameHit?.kind ??
+    (picked && hit?.ok && (hit.kind === picked || hit.candidates?.includes(picked)) ? picked : hit?.ok ? hit.kind : undefined);
 
   function submit(nextKind?: AddrKind) {
+    if (nameHit) {
+      const fail = onAdd(nameHit.kind, nameHit.address);
+      if (fail) {
+        setErr(fail);
+        return;
+      }
+      setRaw("");
+      setPicked(null);
+      setErr(null);
+      setNameHit(null);
+      return;
+    }
     const k = nextKind ?? kind;
-    if (!k) {
+    if (!k || !hit?.ok) {
       setErr("invalid");
       return;
     }
@@ -42,11 +88,23 @@ export function AddrAddBar({
 
   const preview = !raw.trim()
     ? null
-    : hit.ok && hit.kind
-      ? t("settings.addrHit", { kind: t(`settings.kind.${hit.kind}`), addr: shortAddr(hit.kind, hit.value) })
-      : hit.ok && hit.candidates
-        ? t("settings.addrPick")
-        : t("settings.addrBad");
+    : isName
+      ? nameBusy
+        ? t("settings.addrNameWait")
+        : nameHit
+          ? t("settings.addrNameHit", {
+              service: t(`settings.ns.${nameHit.service}`, { defaultValue: nameHit.service }),
+              kind: t(`settings.kind.${nameHit.kind}`),
+              addr: shortAddr(nameHit.kind, nameHit.address),
+            })
+          : t("settings.addrNameBad")
+      : hit?.ok && hit.kind
+        ? t("settings.addrHit", { kind: t(`settings.kind.${hit.kind}`), addr: shortAddr(hit.kind, hit.value) })
+        : hit?.ok && hit.candidates
+          ? t("settings.addrPick")
+          : t("settings.addrBad");
+
+  const bad = Boolean(err) || nameBad || (!isName && hit && !hit.ok && raw.trim().length > 0);
 
   return (
     <div className="addr-add">
@@ -72,11 +130,16 @@ export function AddrAddBar({
             }
           }}
         />
-        <button type="button" className="me-pool-btn me-pool-btn-dex" disabled={disabled || !kind} onClick={() => submit()}>
+        <button
+          type="button"
+          className="me-pool-btn me-pool-btn-dex"
+          disabled={disabled || nameBusy || !(nameHit || kind)}
+          onClick={() => submit()}
+        >
           {t("settings.addrAdd")}
         </button>
       </div>
-      {hit.ok && hit.candidates ? (
+      {!isName && hit?.ok && hit.candidates ? (
         <div className="me-chips">
           {hit.candidates.map((k) => (
             <button
@@ -94,7 +157,30 @@ export function AddrAddBar({
           ))}
         </div>
       ) : null}
-      {preview ? <p className={`addr-preview ${hit.ok && !err ? "" : "is-bad"}`}>{err ? t(`settings.addrErr.${err}`) : preview}</p> : null}
+      {preview ? <p className={`addr-preview ${bad ? "is-bad" : ""}`}>{err ? t(`settings.addrErr.${err}`) : preview}</p> : null}
+    </div>
+  );
+}
+
+export function AddrIdCard({
+  kind,
+  value,
+  connected,
+}: {
+  kind: AddrKind;
+  value: string;
+  connected?: boolean;
+}) {
+  const { t } = useTranslation();
+  const name = useDomainName(kind, value);
+  return (
+    <div className="me-id">
+      <img src={KIND_ICON[kind]} alt="" width={28} height={28} />
+      <div>
+        <b>{name || t(`settings.kind.${kind}`)}</b>
+        <span className="num">{shortAddr(kind, value)}</span>
+      </div>
+      {connected ? <span className="addr-pill">{t("me.connected")}</span> : null}
     </div>
   );
 }
@@ -109,13 +195,14 @@ export function AddrRow({
   onRemove?: () => void;
 }) {
   const { t } = useTranslation();
+  const name = useDomainName(addr.kind, addr.value);
   return (
     <div className="me-token">
       <span className="holding-ico-wrap">
         <img src={KIND_ICON[addr.kind]} alt="" className="holding-ico" />
       </span>
       <div className="holding-meta">
-        <b>{t(`settings.kind.${addr.kind}`)}</b>
+        <b>{name || t(`settings.kind.${addr.kind}`)}</b>
         <span className="num">{shortAddr(addr.kind, addr.value)}</span>
       </div>
       {connected ? <span className="addr-pill">{t("settings.addrConnected")}</span> : null}

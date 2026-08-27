@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { AddrAddBar } from "../settings/AddrFields.tsx";
-import { KIND_ICON, shortAddr } from "../../lib/addrKind.ts";
+import { AddrAddBar, AddrIdCard } from "../settings/AddrFields.tsx";
 import { useActiveSnap, useAddressSets } from "../../lib/addressSets.ts";
 import { formatUnits, parseAbiItem, type Address } from "viem";
 import { useConfig } from "wagmi";
@@ -874,14 +873,7 @@ export function MePage() {
             <>
               <div className="me-ids">
                 {snap.addrs.map((a) => (
-                  <div className="me-id" key={a.id}>
-                    <img src={KIND_ICON[a.kind]} alt="" width={28} height={28} />
-                    <div>
-                      <b>{t(`settings.kind.${a.kind}`)}</b>
-                      <span className="num">{shortAddr(a.kind, a.value)}</span>
-                    </div>
-                    {a.source === "connected" ? <span className="addr-pill">{t("me.connected")}</span> : null}
-                  </div>
+                  <AddrIdCard key={a.id} kind={a.kind} value={a.value} connected={a.source === "connected"} />
                 ))}
               </div>
 
