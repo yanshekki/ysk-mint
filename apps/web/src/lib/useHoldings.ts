@@ -542,52 +542,130 @@ function rowsFromCardano(
   return sortHoldings(next, true);
 }
 
-async function fetchCardanoKoios(address: string, extras?: { addresses?: string[]; stake?: string }) {
-  const stake = extras?.stake || stakeOf(address);
-  const payments = Array.from(new Set([address, ...(extras?.addresses ?? [])].filter(Boolean)));
+function koiosPayList(json: unknown) {
+  const out: string[] = [];
+  for (const r of asKoiosRows<Record<string, unknown>>(json)) {
+    if (typeof r.address === "string" && r.address.startsWith("addr")) out.push(r.address);
+    if (Array.isArray(r.addresses)) {
+      for (const a of r.addresses) if (typeof a === "string" && a.startsWith("addr")) out.push(a);
+    }
+  }
+  return out;
+}
+
+function asQty() {
+  return new Map<string, { raw: bigint; decimals: number }>();
+}
+
+function addAsset(qty: Map<string, { raw: bigint; decimals: number }>, unit: string, raw: bigint, decimals: number) {
+  if (!unit) return;
+  const prev = qty.get(unit);
+  qty.set(unit, { raw: (prev?.raw ?? 0n) + raw, decimals: decimals || prev?.decimals || 0 });
+}
+
+type YoroiUtxo = {
+  amount?: string;
+  assets?: Array<{ policyId?: string; name?: string; amount?: string }>;
+};
+
+async function fetchYoroiUtxos(addresses: string[]) {
+  const pays = [...new Set(addresses.filter((a) => a.startsWith("addr")))];
+  const qty = asQty();
   let ada = 0n;
-  let assets: CardanoAsset[] = [];
-  if (stake.startsWith("stake")) {
-    const info = asKoiosRows<{ total_balance?: string; utxo?: string }>(
-      await koiosPost("account_info", { _stake_addresses: [stake] }).catch(() => []),
-    );
-    const utxo = info[0]?.utxo;
-    const total = info[0]?.total_balance;
+  if (!pays.length) return { ada, qty };
+  for (const group of chunk(pays, 50)) {
     try {
-      ada = BigInt(utxo || total || "0");
+      const json = await cacheGet(
+        {
+          key: cacheKey("http.yoroi", 1815, "utxo", cacheHash(group)),
+          policy: POLICIES.account,
+        },
+        async () => {
+          const res = await fetch("https://iohk-mainnet.yoroiwallet.com/api/txs/utxoForAddresses", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ addresses: group }),
+          });
+          if (!res.ok) throw new Error(`yoroi ${res.status}`);
+          return res.json();
+        },
+      );
+      const rows = Array.isArray(json) ? (json as YoroiUtxo[]) : [];
+      for (const u of rows) {
+        try {
+          ada += BigInt(u.amount || "0");
+        } catch {
+          /* skip */
+        }
+        for (const a of u.assets ?? []) {
+          const unit = `${a.policyId ?? ""}${a.name ?? ""}`.toLowerCase();
+          try {
+            addAsset(qty, unit, BigInt(a.amount || "0"), 0);
+          } catch {
+            /* skip */
+          }
+        }
+      }
+    } catch {
+      /* yoroi optional */
+    }
+  }
+  return { ada, qty };
+}
+
+async function fetchCardanoChain(address: string, extras?: { addresses?: string[]; stake?: string }) {
+  const stake = extras?.stake || stakeOf(address);
+  let pays = [...new Set([address, ...(extras?.addresses ?? [])].filter((a) => a.startsWith("addr")))];
+  const qty = asQty();
+  let ada = 0n;
+
+  if (stake.startsWith("stake")) {
+    const [infoJson, assetJson, addrJson] = await Promise.all([
+      koiosPost("account_info", { _stake_addresses: [stake] }).catch(() => []),
+      koiosPost("account_assets", { _stake_addresses: [stake] }).catch(() => []),
+      koiosPost("account_addresses", { _stake_addresses: [stake] }).catch(() => []),
+    ]);
+    const info = asKoiosRows<{ utxo?: string; total_balance?: string }>(infoJson)[0];
+    try {
+      ada = BigInt(info?.utxo || info?.total_balance || "0");
     } catch {
       ada = 0n;
     }
-    assets = flattenCardanoAssets(await koiosPost("account_assets", { _stake_addresses: [stake] }).catch(() => []));
+    for (const a of flattenCardanoAssets(assetJson)) {
+      try {
+        addAsset(qty, cardanoUnit(a), BigInt(a.quantity ?? "0"), a.decimals ?? 0);
+      } catch {
+        /* skip */
+      }
+    }
+    pays = [...new Set([...pays, ...koiosPayList(addrJson)])];
   }
-  if (ada === 0n || !stake.startsWith("stake")) {
-    let payAda = 0n;
-    for (const group of chunk(payments.filter((a) => a.startsWith("addr")), 50)) {
-      const info = asKoiosRows<{ balance?: string }>(await koiosPost("address_info", { _addresses: group }).catch(() => []));
+
+  if (ada === 0n && pays.length) {
+    for (const group of chunk(pays, 50)) {
+      const info = asKoiosRows<{ balance?: string }>(
+        await koiosPost("address_info", { _addresses: group }).catch(() => []),
+      );
       for (const rowInfo of info) {
         try {
-          payAda += BigInt(rowInfo.balance ?? "0");
+          ada += BigInt(rowInfo.balance ?? "0");
         } catch {
           /* skip */
         }
       }
-      assets.push(...flattenCardanoAssets(await koiosPost("address_assets", { _addresses: group }).catch(() => [])));
+      for (const a of flattenCardanoAssets(await koiosPost("address_assets", { _addresses: group }).catch(() => []))) {
+        try {
+          addAsset(qty, cardanoUnit(a), BigInt(a.quantity ?? "0"), a.decimals ?? 0);
+        } catch {
+          /* skip */
+        }
+      }
     }
-    if (payAda > ada) ada = payAda;
   }
-  const qty = new Map<string, { raw: bigint; decimals: number }>();
-  for (const a of assets) {
-    const unit = cardanoUnit(a);
-    if (!unit) continue;
-    let raw = 0n;
-    try {
-      raw = BigInt(a.quantity ?? "0");
-    } catch {
-      continue;
-    }
-    const prev = qty.get(unit);
-    qty.set(unit, { raw: (prev?.raw ?? 0n) + raw, decimals: a.decimals ?? prev?.decimals ?? 0 });
-  }
+
+  const yoroi = await fetchYoroiUtxos(pays);
+  if (yoroi.ada > ada) ada = yoroi.ada;
+  takeMaxQty(qty, yoroi.qty);
   return { ada, qty };
 }
 
@@ -641,7 +719,7 @@ export function useCardanoHoldings(
             seenStake.add(st);
           }
           try {
-            const part = await fetchCardanoKoios(addr, extra);
+            const part = await fetchCardanoChain(addr, extra);
             if (part.ada > ada) ada = part.ada;
             takeMaxQty(qty, part.qty);
           } catch {
