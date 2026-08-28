@@ -17,6 +17,7 @@ import {
   SILO_FACTORY,
   SPARK,
 } from "./lendingExtra.ts";
+import { HTTP_LEND_CHAINS, loadHttpLendMarkets, readFraxlendMarkets } from "./lendMarketsHttp.ts";
 import { TOKEN_CATALOG } from "./tokenRegistry.ts";
 import { chainIcon } from "./chainIcon.ts";
 
@@ -136,7 +137,7 @@ const siloConfigAbi = [
   { type: "function", name: "getSilos", stateMutability: "view", inputs: [], outputs: [{ type: "address" }, { type: "address" }] },
 ] as const;
 
-export const LEND_CACHE = "lend3";
+export const LEND_CACHE = "lend4";
 
 const FLUID_NATIVE = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 const ZERO = "0x0000000000000000000000000000000000000000";
@@ -737,6 +738,7 @@ export function lendChainIds(filter: number | "all", disabled: number[]) {
   for (const id of FLUID_CHAINS) ids.add(id);
   for (const id of Object.keys(EULER_VAULTS)) ids.add(Number(id));
   for (const id of Object.keys(SILO_FACTORY)) ids.add(Number(id));
+  for (const id of HTTP_LEND_CHAINS) ids.add(id);
   ids.add(43114);
   const off = new Set(disabled);
   const all = [...ids].filter((id) => !off.has(id));
@@ -879,7 +881,6 @@ export function groupLendByChain(rows: LendMarketRow[]): Array<{ chainId: number
 
 export async function loadLendMarkets(chainId: number, onPart?: (rows: LendMarketRow[]) => void): Promise<LendMarketRow[]> {
   const client = evmPublicClient(chainId);
-  if (!client) return [];
   return cacheGet(
     { key: cacheKey(LEND_CACHE, chainId), policy: { ...POLICIES.markets, keep: (rows: LendMarketRow[]) => rows.length > 0 } },
     async () => {
@@ -893,6 +894,10 @@ export async function loadLendMarkets(chainId: number, onPart?: (rows: LendMarke
         acc.push(...by.values());
         onPart?.(acc.slice());
       };
+      if (!client) {
+        await loadHttpLendMarkets(chainId).then(add).catch(() => {});
+        return acc;
+      }
       const core: Array<Promise<void>> = [];
       const extra: Array<Promise<void>> = [];
       const aave = DEX[chainId]?.aave;
@@ -912,6 +917,8 @@ export async function loadLendMarkets(chainId: number, onPart?: (rows: LendMarke
       extra.push(readFluidMarkets(client, chainId).then(add).catch(() => {}));
       extra.push(readEulerMarkets(client, chainId).then(add).catch(() => {}));
       extra.push(readSiloMarkets(client, chainId).then(add).catch(() => {}));
+      extra.push(readFraxlendMarkets(client, chainId).then(add).catch(() => {}));
+      extra.push(loadHttpLendMarkets(chainId).then(add).catch(() => {}));
       await Promise.all(core);
       await Promise.all(extra);
       return acc;

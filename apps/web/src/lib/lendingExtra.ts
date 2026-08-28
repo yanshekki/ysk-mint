@@ -355,7 +355,7 @@ export const SILO_FACTORY: Record<number, Address[]> = {
   43114: ["0x92cECB67Ed267FF98026F814D813fDF3054C6Ff9"],
 };
 
-const FRAX_REG: Record<number, Address[]> = {
+export const FRAX_REG: Record<number, Address[]> = {
   1: [
     "0xD6E9D27C75Afd88ad24Cd5EdccdC76fd2fc3A751",
     "0x5d6e79Bcf90140585CE88c7119b7E43CAaA67044",

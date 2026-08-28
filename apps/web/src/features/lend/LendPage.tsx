@@ -12,7 +12,7 @@ import { useUserSettings } from "../../lib/userSettings.ts";
 import { ChipBusy } from "../../shared/ui/LiveDock.tsx";
 import { SortHead, useSort } from "../../shared/ui/SortTable.tsx";
 
-const PRIMARY_LEND_IDS = new Set([1, 8453, 42161, 43114, 56, 137, 10, 999]);
+const PRIMARY_LEND_IDS = new Set([1, 8453, 42161, 43114, 56, 137, 10, 999, 101, 397, 784]);
 const PAGE = 50;
 const LEND_KEY = "ysk-lend";
 
