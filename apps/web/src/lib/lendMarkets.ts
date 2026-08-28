@@ -138,7 +138,7 @@ const siloConfigAbi = [
   { type: "function", name: "getSilos", stateMutability: "view", inputs: [], outputs: [{ type: "address" }, { type: "address" }] },
 ] as const;
 
-export const LEND_CACHE = "lend9";
+export const LEND_CACHE = "lend10";
 
 const FLUID_NATIVE = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 const ZERO = "0x0000000000000000000000000000000000000000";

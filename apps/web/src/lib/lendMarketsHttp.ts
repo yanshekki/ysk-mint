@@ -109,6 +109,58 @@ async function getJson<T>(url: string, ms = 15000): Promise<T | null> {
   }
 }
 
+async function saveLend(): Promise<LendMarketRow[]> {
+  const markets = await getJson<
+    Array<{
+      isPrimary?: boolean;
+      hidden?: boolean;
+      reserves?: Array<{ address?: string; liquidityToken?: { symbol?: string; mint?: string; decimals?: number } }>;
+    }>
+  >("https://api.solend.fi/v1/markets/configs?scope=all");
+  const primary = (markets ?? []).find((m) => m.isPrimary && !m.hidden) ?? (markets ?? []).find((m) => !m.hidden);
+  const meta = (primary?.reserves ?? []).filter((r) => r.address).slice(0, 40);
+  if (!meta.length) return [];
+  const ids = meta.map((r) => r.address as string);
+  const byAddr = new Map(meta.map((r) => [r.address as string, r]));
+  const stats = await getJson<{
+    results?: Array<{
+      reserve?: {
+        liquidity?: { availableAmount?: string; borrowedAmountWads?: string; marketPrice?: string; mintDecimals?: number; mintPubkey?: string };
+      };
+      rates?: { supplyInterest?: string; borrowInterest?: string };
+    }>;
+  }>(`https://api.solend.fi/v1/reserves?ids=${ids.join(",")}`);
+  const out: LendMarketRow[] = [];
+  for (const item of stats?.results ?? []) {
+    const liq = item.reserve?.liquidity;
+    const mint = liq?.mintPubkey;
+    if (!liq || !mint) continue;
+    const cfg = [...byAddr.values()].find((r) => r.liquidityToken?.mint === mint || r.address === mint);
+    const symbol = cfg?.liquidityToken?.symbol || "TKN";
+    const dec = Number(liq.mintDecimals ?? cfg?.liquidityToken?.decimals ?? 9) || 9;
+    const cash = Number(liq.availableAmount || 0) / 10 ** dec;
+    const wad = Number(liq.borrowedAmountWads || 0);
+    const borrowed = Number.isFinite(wad) ? wad / 1e18 / 10 ** dec : 0;
+    const px = Number(liq.marketPrice || 0) / 1e18;
+    const price = Number.isFinite(px) && px > 0 && px < 1e7 ? px : /usd|dai/i.test(symbol) ? 1 : null;
+    const market = cfg?.address || mint;
+    out.push(
+      row({
+        protocol: "Save",
+        chainId: 101,
+        symbol,
+        token: mint,
+        market,
+        supplyApy: alreadyPct(item.rates?.supplyInterest),
+        borrowApy: alreadyPct(item.rates?.borrowInterest),
+        supplyUsd: price != null && Number.isFinite(cash + borrowed) ? (cash + borrowed) * price : null,
+        borrowUsd: price != null && Number.isFinite(borrowed) ? borrowed * price : null,
+      }),
+    );
+  }
+  return out;
+}
+
 async function kamino(): Promise<LendMarketRow[]> {
   const markets = await getJson<Array<{ lendingMarket?: string; isPrimary?: boolean; isCurated?: boolean }>>("https://api.kamino.finance/v2/kamino-market");
   const ids = [...(markets ?? [])]
@@ -830,6 +882,7 @@ export async function loadHttpLendMarkets(chainId: number): Promise<LendMarketRo
   if (chainId === 101) {
     jobs.push(kamino().catch(() => []));
     jobs.push(jupiterLend().catch(() => []));
+    jobs.push(saveLend().catch(() => []));
   }
   if (chainId === 397) jobs.push(burrow().catch(() => []));
   if (chainId === 784) {

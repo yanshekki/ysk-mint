@@ -1226,6 +1226,15 @@
       "note": "官方 getLendingVaults LlamaLend；lendApyPcent 已係 %"
     },
     {
+      "id": "solend",
+      "name": "Save",
+      "sector": "lending",
+      "family": "solend",
+      "status": "wired",
+      "chains": [101],
+      "note": "formerly Solend；api.solend.fi v1 reserves availableAmount + borrowedAmountWads"
+    },
+    {
       "id": "maple",
       "name": "Maple Finance",
       "sector": "lending",
