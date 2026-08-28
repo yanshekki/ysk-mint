@@ -1,4 +1,4 @@
-import { fetchRefTopPools, loadNearMarkets, nearDecimals, nearToken, N_USDC, N_USDT, N_WRAP, quoteNearToken, REF_VENUE } from "../../nearDex.ts";
+import { fetchRefTopPools, isRefSauce, loadNearMarkets, nearDecimals, nearToken, N_USDC, N_USDT, N_WRAP, quoteNearToken, REF_VENUE } from "../../nearDex.ts";
 import type { VenuePool } from "../../dexPools.ts";
 import { pairId } from "../../pairKey.ts";
 import { catalogTopOn } from "../universe.ts";
@@ -42,11 +42,12 @@ async function marketsFromIndexer(): Promise<MarketRow[] | null> {
     const tokens = catalogTopOn(397, 500);
     const catalog = new Map(tokens.map((t) => [t.address.toLowerCase(), { decimals: t.decimals, symbol: t.symbol ?? t.address, icon: t.icon ?? "/tokens/near.png" }]));
     const byPair = new Map<string, MarketRow>();
-    for (const p of json) {
+    const ingest = (p: (typeof json)[number], sauce: boolean) => {
+      if (isRefSauce(p.pool_kind) !== sauce) return;
       const ids = (p.token_account_ids ?? []).map((x) => x.toLowerCase());
-      if (ids.length !== 2) continue;
+      if (ids.length !== 2) return;
       const tvl = Number(p.tvl);
-      if (!Number.isFinite(tvl) || tvl < 10) continue;
+      if (!Number.isFinite(tvl) || tvl < 10) return;
       const stableIdx = ids.findIndex((id) => isStable(id));
       const wrapIdx = ids.findIndex((id) => id === N_WRAP.address);
       let iA = 0;
@@ -61,6 +62,7 @@ async function marketsFromIndexer(): Promise<MarketRow[] | null> {
       const a = ids[iA];
       const b = ids[iB];
       const id = pairId(397, a, b);
+      if (sauce && byPair.has(id)) return;
       const decA = decOf(a, catalog);
       const decB = decOf(b, catalog);
       const amtA = Number(p.amounts?.[iA] ?? 0) / 10 ** decA;
@@ -80,12 +82,12 @@ async function marketsFromIndexer(): Promise<MarketRow[] | null> {
       };
       const prev = byPair.get(id);
       if (prev) {
-        if (prev.venues.some((v) => v.pool === venue.pool)) continue;
+        if (prev.venues.some((v) => v.pool === venue.pool)) return;
         prev.venues.push(venue);
         prev.depth = prev.venues.reduce((s, v) => s + (v.tvlQuote || 0), 0);
         const w = prev.venues.reduce((s, v) => s + (v.tvlQuote || 0) * v.priceAinB, 0);
         prev.price = prev.depth > 0 ? w / prev.depth : prev.price;
-        continue;
+        return;
       }
       const ma = metaOf(a, catalog);
       const mb = metaOf(b, catalog);
@@ -105,7 +107,9 @@ async function marketsFromIndexer(): Promise<MarketRow[] | null> {
         depth: tvl,
         venueNames: [REF_VENUE.name],
       });
-    }
+    };
+    for (const p of json) ingest(p, false);
+    for (const p of json) ingest(p, true);
     return [...byPair.values()];
   } catch {
     return null;

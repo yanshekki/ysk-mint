@@ -50,10 +50,14 @@ export type NearPoolSeed = { poolId: number; a: NearTok; b: NearTok };
 
 export const NEAR_POOLS: NearPoolSeed[] = [
   { poolId: 4512, a: N_WRAP, b: N_USDC },
-  { poolId: 5515, a: N_WRAP, b: N_USDC },
   { poolId: 6063, a: N_WRAP, b: N_USDT },
   { poolId: 79, a: N_REF, b: N_WRAP },
 ];
+
+/** Rhea Sauce / Degen pools. Do not mix into classic AMM quotes (e.g. stopped 5515). */
+export function isRefSauce(kind?: string) {
+  return (kind || "").toUpperCase() === "DEGEN_SWAP";
+}
 
 export type RefTopPool = {
   id: string | number;
@@ -177,6 +181,7 @@ export async function nearVenuesForPair(tokenA: string, tokenB: string): Promise
       const tids = (p.token_account_ids ?? []).map((x) => x.toLowerCase());
       if (tids.length !== 2) continue;
       if (!(tids.includes(a) && tids.includes(b))) continue;
+      if (isRefSauce(p.pool_kind)) continue;
       const n = Number(p.id);
       if (Number.isFinite(n)) ids.add(n);
     }
@@ -185,15 +190,20 @@ export async function nearVenuesForPair(tokenA: string, tokenB: string): Promise
   }
   const wantA = nearToken(a) ?? { ...tokenMeta(a), address: a };
   const wantB = nearToken(b) ?? { ...tokenMeta(b), address: b };
-  const out: VenuePool[] = [];
+  const fetched: { poolId: number; pool: RefPool }[] = [];
   await Promise.all(
     [...ids].map(async (poolId) => {
       const pool = await readRefPool(poolId);
-      if (!pool) return;
-      const row = venueFromPool({ poolId, a: wantA, b: wantB }, pool);
-      if (row) out.push(row);
+      if (pool) fetched.push({ poolId, pool });
     }),
   );
+  const live = fetched.filter((x) => !isRefSauce(x.pool.pool_kind));
+  const use = live.length ? live : fetched;
+  const out: VenuePool[] = [];
+  for (const { poolId, pool } of use) {
+    const row = venueFromPool({ poolId, a: wantA, b: wantB }, pool);
+    if (row) out.push(row);
+  }
   return out;
 }
 
@@ -230,7 +240,7 @@ let wrapUsdJob: Promise<number | null> | null = null;
 export async function nearWrapUsd(): Promise<number | null> {
   if (!wrapUsdJob) {
     wrapUsdJob = (async () => {
-      for (const id of [6063, 5515]) {
+      for (const id of [4512, 6063]) {
         const seed = NEAR_POOLS.find((p) => p.poolId === id);
         if (!seed) continue;
         const pool = await readRefPool(id);
