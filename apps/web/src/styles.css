@@ -2568,54 +2568,87 @@ button.set-item-btn:focus-visible {
   gap: 8px;
   margin: 4px 0 10px;
 }
+.me-card:has(.me-tx-tools) .me-card-head {
+  padding: 16px 20px 14px;
+}
+.me-card:has(.me-tx-tools) .me-card-empty {
+  padding: 20px;
+}
+.me-tx-backbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: #eff6ff;
+}
+.me-tx-backbar span {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-sub);
+}
+.me-tx-backbar .me-pool-btn {
+  height: 36px;
+  padding: 0 16px;
+}
 .me-tx-hint {
   margin: 0;
-  padding: 0 16px 10px;
+  padding: 14px 20px 0;
   font-size: 13px;
-  line-height: 1.45;
+  line-height: 1.5;
   font-weight: 600;
   color: var(--text-sub);
 }
 .me-tx-tools {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 0 16px 12px;
+  gap: 12px;
+  padding: 14px 20px 18px;
 }
 .me-tx-tools .me-filter {
   flex: none;
   width: 100%;
-  height: 40px;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 12px;
 }
 .me-tx-list {
   display: flex;
   flex-direction: column;
+  padding: 0 8px 12px;
 }
 .me-tx-cols {
   display: grid;
-  grid-template-columns: 108px minmax(0, 1.1fr) minmax(0, 1.4fr) 120px;
+  grid-template-columns: 108px minmax(0, 1.1fr) minmax(0, 1.4fr) minmax(88px, 120px);
   gap: 12px 16px;
-  padding: 8px 16px;
+  padding: 10px 16px;
+  margin: 0 4px;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
-  border-top: 1px solid var(--border-color);
 }
 .me-tx-cols span:last-child {
   text-align: right;
 }
 .me-tx {
-  border-top: 1px solid var(--border-color);
+  margin: 0 4px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--bg-white);
 }
 .me-tx-main {
   display: grid;
-  grid-template-columns: 108px minmax(0, 1.1fr) minmax(0, 1.4fr) 120px;
+  grid-template-columns: 108px minmax(0, 1.1fr) minmax(0, 1.4fr) minmax(88px, 120px);
   gap: 12px 16px;
   align-items: center;
   width: 100%;
-  padding: 14px 16px;
+  padding: 16px 16px;
   background: transparent;
   border: 0;
   text-align: left;
@@ -2628,7 +2661,7 @@ button.set-item-btn:focus-visible {
 .me-tx-time {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   font-size: 12px;
   font-weight: 700;
   color: var(--text-muted);
@@ -2651,8 +2684,8 @@ button.set-item-btn:focus-visible {
 .me-tx-kind {
   display: inline-flex;
   align-items: center;
-  height: 18px;
-  padding: 0 6px;
+  height: 20px;
+  padding: 0 8px;
   border-radius: 6px;
   font-size: 10px;
   font-weight: 800;
@@ -2675,7 +2708,7 @@ button.set-item-btn:focus-visible {
 }
 .me-tx-act > span {
   display: block;
-  margin-top: 2px;
+  margin-top: 4px;
   font-size: 12px;
   font-style: normal;
   font-weight: 600;
@@ -2690,7 +2723,7 @@ button.set-item-btn:focus-visible {
 .me-tx-flows {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   align-items: flex-start;
 }
 .me-tx-flow {
@@ -2711,25 +2744,33 @@ button.set-item-btn:focus-visible {
   font-size: 12px;
   color: var(--text-muted);
   text-align: right;
+  padding-right: 2px;
 }
 .me-tx-more {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 0 16px 16px 124px;
+  gap: 14px;
+  margin: 0 12px 14px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: var(--bg-subtle);
+}
+.me-tx-more .me-tx-hint {
+  padding: 0;
 }
 .me-tx-kv {
   display: grid;
-  gap: 8px;
+  gap: 12px;
   margin: 0;
 }
 .me-tx-kv > div {
   display: grid;
-  grid-template-columns: 64px minmax(0, 1fr);
-  gap: 10px;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 12px 16px;
   align-items: start;
 }
 .me-tx-kv dt {
+  padding-top: 4px;
   font-size: 12px;
   font-weight: 800;
   color: var(--text-muted);
@@ -2739,9 +2780,10 @@ button.set-item-btn:focus-visible {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 8px 10px;
   font-size: 13px;
   font-weight: 700;
+  line-height: 1.45;
 }
 .me-tx-party {
   display: inline-flex;
@@ -2757,15 +2799,18 @@ button.set-item-btn:focus-visible {
 }
 .me-tx-link {
   border: 0;
-  background: none;
-  padding: 0;
+  background: #fff;
+  padding: 6px 10px;
+  border-radius: 8px;
   color: #2563eb;
   font-size: 12px;
   font-weight: 800;
+  line-height: 1;
   cursor: pointer;
 }
 .me-tx-link:hover {
-  text-decoration: underline;
+  background: #dbeafe;
+  text-decoration: none;
 }
 .me-tx-mini {
   font-size: 12px;
@@ -2775,7 +2820,13 @@ button.set-item-btn:focus-visible {
 .me-tx-acts {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
+  padding-top: 4px;
+}
+.me-tx-acts .me-pool-btn {
+  height: 36px;
+  min-width: 88px;
+  padding: 0 16px;
 }
 .me-tx.is-fail .me-tx-act b {
   color: #b91c1c;
@@ -2786,9 +2837,15 @@ button.set-item-btn:focus-visible {
   }
   .me-tx-main {
     grid-template-columns: 1fr;
+    padding: 14px 14px;
   }
   .me-tx-more {
-    padding-left: 16px;
+    margin: 0 10px 12px;
+    padding: 14px;
+  }
+  .me-tx-kv > div {
+    grid-template-columns: 1fr;
+    gap: 4px;
   }
   .me-tx-gas {
     text-align: left;

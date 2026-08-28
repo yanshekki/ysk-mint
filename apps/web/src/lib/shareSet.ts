@@ -88,12 +88,35 @@ export function shareUrl(payload: SharePayload, origin = typeof window !== "unde
   return `${origin}/me#w=${encodeWatch(payload)}`;
 }
 
-export function applyPeekHash(payload: SharePayload | null) {
+export function applyPeekHash(payload: SharePayload | null, opts?: { push?: boolean }) {
   if (typeof window === "undefined") return;
   const path = `${window.location.pathname}${window.location.search}`;
   const next = payload?.addrs.length ? `${path}#w=${encodeWatch(payload)}` : path;
-  window.history.replaceState(null, "", next);
+  const state = { yskPeek: Boolean(opts?.push && payload?.addrs.length) };
+  if (opts?.push) window.history.pushState(state, "", next);
+  else window.history.replaceState({ yskPeek: false }, "", next);
   window.dispatchEvent(new HashChangeEvent("hashchange"));
+}
+
+export function peekGoBack() {
+  if (typeof window === "undefined") return;
+  window.history.back();
+}
+
+export function usePeekBack() {
+  const [canBack, setCanBack] = useState(() =>
+    typeof window === "undefined" ? false : Boolean((window.history.state as { yskPeek?: boolean } | null)?.yskPeek),
+  );
+  useEffect(() => {
+    const sync = () => setCanBack(Boolean((window.history.state as { yskPeek?: boolean } | null)?.yskPeek));
+    window.addEventListener("popstate", sync);
+    window.addEventListener("hashchange", sync);
+    return () => {
+      window.removeEventListener("popstate", sync);
+      window.removeEventListener("hashchange", sync);
+    };
+  }, []);
+  return canBack;
 }
 
 export function usePeekHash(): SharePayload | null {
@@ -103,7 +126,11 @@ export function usePeekHash(): SharePayload | null {
   useEffect(() => {
     const sync = () => setPeek(decodeWatch(window.location.hash));
     window.addEventListener("hashchange", sync);
-    return () => window.removeEventListener("hashchange", sync);
+    window.addEventListener("popstate", sync);
+    return () => {
+      window.removeEventListener("hashchange", sync);
+      window.removeEventListener("popstate", sync);
+    };
   }, []);
   return peek;
 }

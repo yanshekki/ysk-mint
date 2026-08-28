@@ -7,7 +7,7 @@ import { TxDesk } from "./TxDesk.tsx";
 import { useAddressTxs } from "../../lib/useAddressTxs.ts";
 import { txIndexed } from "../../lib/txIndex.ts";
 import { useActiveSnap, useAddressSets } from "../../lib/addressSets.ts";
-import { SHARE_SOFT, applyPeekHash, shareUrl } from "../../lib/shareSet.ts";
+import { SHARE_SOFT, applyPeekHash, peekGoBack, shareUrl, usePeekBack } from "../../lib/shareSet.ts";
 import { formatUnits, parseAbiItem, type Address } from "viem";
 import { useConfig } from "wagmi";
 import { getPublicClient } from "wagmi/actions";
@@ -281,6 +281,7 @@ export function MePage() {
   const [peekOpen, setPeekOpen] = useState(false);
   const [deskTab, setDeskTab] = useState<"holdings" | "txs">("holdings");
   const peeking = snap.activeId === "peek";
+  const peekCanBack = usePeekBack();
 
   useEffect(() => {
     if (!peekOpen) return;
@@ -948,6 +949,15 @@ export function MePage() {
                   <AddrIdCard key={a.id} kind={a.kind} value={a.value} connected={a.source === "connected"} />
                 ))}
               </div>
+
+              {peekCanBack ? (
+                <div className="me-tx-backbar">
+                  <button type="button" className="me-pool-btn me-pool-btn-dex" onClick={() => peekGoBack()}>
+                    {t("me.txBack")}
+                  </button>
+                  <span>{t("me.txBackHint")}</span>
+                </div>
+              ) : null}
 
               <div className="me-desk-tabs">
                 <button type="button" className={`me-chip ${deskTab === "holdings" ? "me-chip-on" : ""}`} onClick={() => setDeskTab("holdings")}>

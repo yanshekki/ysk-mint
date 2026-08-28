@@ -101,7 +101,7 @@ export function TxDesk({
   function peekAddr(chainId: number, value: string, label?: string) {
     if (!value) return;
     const k = kindOfChain(chainId);
-    applyPeekHash({ name: label || shortAddr(k, value), addrs: [{ kind: k, value }] });
+    applyPeekHash({ name: label || shortAddr(k, value), addrs: [{ kind: k, value }] }, { push: true });
   }
 
   function copy(text: string, id: string) {
