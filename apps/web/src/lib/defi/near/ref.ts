@@ -72,7 +72,7 @@ async function marketsFromIndexer(): Promise<MarketRow[] | null> {
         protocolId: REF_VENUE.id,
         protocolName: REF_VENUE.name,
         chainId: 397,
-        pool: `ref:${p.id}`,
+        pool: `${isRefSauce(p.pool_kind) ? "sauce" : "ref"}:${p.id}`,
         feeLabel: p.total_fee != null ? `${(Number(p.total_fee) / 100).toFixed(2)}%` : "0.30%",
         priceAinB: price,
         reserveA: amtA,

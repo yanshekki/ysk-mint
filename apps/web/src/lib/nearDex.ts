@@ -157,7 +157,7 @@ function venueFromPool(seed: NearPoolSeed, pool: RefPool): VenuePool | null {
   const tvlQuote = isNearStable(seed.b.address) ? reserveB * 2 : isNearStable(seed.a.address) ? reserveA * 2 : 0;
   return {
     venue: REF_VENUE,
-    pool: `ref:${seed.poolId}`,
+    pool: `${isRefSauce(pool.pool_kind) ? "sauce" : "ref"}:${seed.poolId}`,
     feeLabel: pool.total_fee != null ? `${(pool.total_fee / 100).toFixed(2)}%` : "0.30%",
     priceAinB,
     tvlQuote,
@@ -169,24 +169,29 @@ function venueFromPool(seed: NearPoolSeed, pool: RefPool): VenuePool | null {
 export async function nearVenuesForPair(tokenA: string, tokenB: string): Promise<VenuePool[]> {
   const a = tokenA.toLowerCase();
   const b = tokenB.toLowerCase();
-  const ids = new Set<number>();
-  for (const p of NEAR_POOLS) {
-    const x = p.a.address.toLowerCase();
-    const y = p.b.address.toLowerCase();
-    if ((x === a && y === b) || (x === b && y === a)) ids.add(p.poolId);
-  }
+  const classic = new Set<number>();
+  const sauce = new Set<number>();
   try {
     const top = await fetchRefTopPools();
     for (const p of top) {
       const tids = (p.token_account_ids ?? []).map((x) => x.toLowerCase());
       if (tids.length !== 2) continue;
       if (!(tids.includes(a) && tids.includes(b))) continue;
-      if (isRefSauce(p.pool_kind)) continue;
       const n = Number(p.id);
-      if (Number.isFinite(n)) ids.add(n);
+      if (!Number.isFinite(n)) continue;
+      if (isRefSauce(p.pool_kind)) sauce.add(n);
+      else classic.add(n);
     }
   } catch {
-    /* indexer optional; seeds still run */
+    /* indexer optional */
+  }
+  const ids = classic.size ? classic : sauce;
+  if (!ids.size) {
+    for (const p of NEAR_POOLS) {
+      const x = p.a.address.toLowerCase();
+      const y = p.b.address.toLowerCase();
+      if ((x === a && y === b) || (x === b && y === a)) ids.add(p.poolId);
+    }
   }
   const wantA = nearToken(a) ?? { ...tokenMeta(a), address: a };
   const wantB = nearToken(b) ?? { ...tokenMeta(b), address: b };
@@ -336,7 +341,7 @@ export type NearLpHit = {
 export async function nearMyLp(account: string): Promise<NearLpHit[]> {
   const out: NearLpHit[] = [];
   await Promise.all(
-    NEAR_POOLS.map(async (s) => {
+    [...NEAR_POOLS, { poolId: 5515, a: N_WRAP, b: N_USDC }].map(async (s) => {
       const shares = await nearPoolShares(s.poolId, account);
       if (shares === 0n) return;
       const pool = await readRefPool(s.poolId);

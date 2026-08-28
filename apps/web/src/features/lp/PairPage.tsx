@@ -16,8 +16,9 @@ import { fmtCompact, fmtUsdc } from "../../lib/defiQuotes.ts";
 import { asAddr, canonAddr, pairId } from "../../lib/pairKey.ts";
 import { displayStableSymbol, orientPair } from "../../lib/pairOrient.ts";
 import { TOKEN_CATALOG } from "../../lib/tokenRegistry.ts";
-import { nearToken, nearVenuesForPair } from "../../lib/nearDex.ts";
-import { adaTokenMeta, adaVenuesForPair } from "../../lib/adaDex.ts";
+import { nearToken } from "../../lib/nearDex.ts";
+import { adaTokenMeta } from "../../lib/adaDex.ts";
+import { nativePairVenues } from "../../lib/nativePairVenues.ts";
 import { SortHead, useSort } from "../../shared/ui/SortTable.tsx";
 import { marketsHref } from "./LpPage.tsx";
 import { dexAppHref } from "../../lib/dexApp.ts";
@@ -120,13 +121,9 @@ export function PairPage() {
     const run = async () => {
       await cacheReady();
 
-      if (chain?.vm === "near") {
+      if (chain?.vm && chain.vm !== "evm") {
         setClient(undefined);
-        return nearVenuesForPair(base, quote);
-      }
-      if (chain?.vm === "cardano") {
-        setClient(undefined);
-        return adaVenuesForPair(base, quote, leftSeed?.decimals ?? 6, rightSeed?.decimals ?? 6);
+        return nativePairVenues(chainId, chain.vm, base, quote, leftSeed?.decimals ?? 6, rightSeed?.decimals ?? 6);
       }
       const c = evmPublicClient(chainId);
       if (!c) return [];

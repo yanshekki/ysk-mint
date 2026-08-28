@@ -122,8 +122,11 @@ export function dexAppHref(args: DexAppArgs): string | undefined {
   if (h.includes("thruster")) return "https://app.thruster.finance/";
   if (h.includes("algebra")) return undefined;
   if (args.protocolId === "rhea-ref-397" || h.includes("rhea") || h.includes("ref finance")) {
-    const id = String(pool).replace(/^ref:/i, "");
-    return /^\d+$/.test(id) ? `https://app.rhea.finance/pool/${id}` : "https://app.rhea.finance/pools";
+    const raw = String(pool);
+    const sauce = /^sauce:/i.test(raw);
+    const id = raw.replace(/^(ref:|sauce:)/i, "");
+    if (!/^\d+$/.test(id)) return "https://app.rhea.finance/pools";
+    return `https://app.rhea.finance/${sauce ? "sauce" : "pool"}/${id}`;
   }
   if (h.includes("minswap")) return "https://app.minswap.org/liquidity";
   if (h.includes("cetus")) return "https://app.cetus.zone/pools";

@@ -1,3 +1,4 @@
+import { pairId } from "../../pairKey.ts";
 import { cacheGet, cacheHash, cacheKey, POLICIES } from "../cache.ts";
 import type { DefiProtocol, MarketRow, VenueQuote } from "../types.ts";
 
@@ -61,9 +62,7 @@ function iconOf(symbol: string) {
 }
 
 function pairKey(a: string, b: string) {
-  const x = a.toLowerCase();
-  const y = b.toLowerCase();
-  return x < y ? `607:${x}|${y}` : `607:${y}|${x}`;
+  return pairId(607, a, b);
 }
 
 function feeLabel(lp: unknown, proto: unknown) {
