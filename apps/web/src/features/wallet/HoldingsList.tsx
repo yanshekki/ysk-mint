@@ -1,10 +1,21 @@
 import { useTranslation } from "react-i18next";
 import type { HoldingRow } from "../../lib/useHoldings.ts";
+import { fmtCompact } from "../../lib/defiQuotes.ts";
 import { SortHead, useSort } from "../../shared/ui/SortTable.tsx";
 
 function short(v: string) {
   if (v.length < 18) return v;
   return `${v.slice(0, 6)}…${v.slice(-4)}`;
+}
+
+function fmtAmt(amount: string) {
+  const n = Number(String(amount).replace(/,/g, ""));
+  if (!Number.isFinite(n)) {
+    const s = amount.replace(/,/g, "");
+    return s.length > 14 ? `${s.slice(0, 6)}…` : amount;
+  }
+  if (Math.abs(n) >= 1e15) return n.toExponential(2).replace("e+", "e");
+  return fmtCompact(n);
 }
 
 function holdingGet(r: HoldingRow, k: string) {
@@ -46,7 +57,9 @@ export function HoldingsList({
               <b>{r.symbol}</b>
               <span className="num">{r.contract ? short(r.contract) : t("wallet.nativeCoin")}</span>
             </div>
-            <span className="num holding-amt">{loading && connected ? "…" : r.amount}</span>
+            <span className="num holding-amt" title={r.amount}>
+              {loading && connected ? "…" : fmtAmt(r.amount)}
+            </span>
           </li>
         ))}
       </ul>

@@ -100,9 +100,10 @@ function AddrFace({
   if (!connected || !address) {
     return <div className="wallet-addr wallet-addr-idle">{idle}</div>;
   }
+  const ens = name && !/^0x[0-9a-f]{16,}$/i.test(name) && name.toLowerCase() !== address.toLowerCase() ? name : "";
   return (
-    <div className={`wallet-addr ${name ? "wallet-addr-named" : ""}`}>
-      {name ? <div className="wallet-addr-name">{name}</div> : null}
+    <div className={`wallet-addr ${ens ? "wallet-addr-named" : ""}`}>
+      {ens ? <div className="wallet-addr-name">{ens}</div> : null}
       <div className="wallet-addr-hex num">{short(address, head, tail)}</div>
     </div>
   );

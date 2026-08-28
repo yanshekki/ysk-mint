@@ -619,18 +619,19 @@ select {
   list-style: none;
   margin: 0;
   padding: 6px;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   flex: 1;
   min-height: 96px;
-  min-height: 0;
 }
 .holdings-list li {
   display: grid;
-  grid-template-columns: 28px 1fr auto;
+  grid-template-columns: 28px minmax(0, 1fr) minmax(72px, 38%);
   gap: 8px;
   align-items: center;
   padding: 8px;
   border-radius: 8px;
+  min-width: 0;
 }
 .holdings-list li:hover {
   background: var(--bg-white);
@@ -689,8 +690,15 @@ select {
   color: var(--text-muted);
 }
 .holding-amt {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
   font-size: 13px;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 .wallet-addr {
   margin: 0;
