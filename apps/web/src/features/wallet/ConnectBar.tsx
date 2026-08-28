@@ -55,6 +55,13 @@ function short(v: string, head = 6, tail = 4) {
   return `${v.slice(0, head)}…${v.slice(-tail)}`;
 }
 
+function chipLabel(name: string | undefined, address?: string) {
+  const addr = address?.trim() ?? "";
+  const n = name?.trim() ?? "";
+  if (n && n.length <= 16 && !/^0x[0-9a-f]{16,}$/i.test(n) && n.toLowerCase() !== addr.toLowerCase()) return n;
+  return addr ? short(addr, 4, 4) : "—";
+}
+
 export function ConnectBar() {
   const { t, i18n } = useTranslation();
   const { address, isConnected } = useAccount();
@@ -156,13 +163,13 @@ export function ConnectBar() {
     parts.length === 0
       ? t("wallet.connect")
       : parts.length === 1 && isConnected && address
-        ? `${chain?.short ?? "EVM"} ${evmName || short(address, 4, 4)}`
+        ? `${chain?.short ?? "EVM"} ${chipLabel(evmName, address)}`
         : parts.length === 1 && hasNear
-          ? `NEAR ${native.nearAccount}`
+          ? `NEAR ${chipLabel(undefined, native.nearAccount)}`
           : parts.length === 1 && hasAda
-            ? `ADA ${adaName || short(native.cardanoAddress, 6, 4)}`
+            ? `ADA ${chipLabel(adaName, native.cardanoAddress)}`
             : parts.length === 1 && hasSol
-              ? `SOL ${solName || short(native.solanaAddress, 4, 4)}`
+              ? `SOL ${chipLabel(solName, native.solanaAddress)}`
               : parts.join(" · ");
 
   return (
@@ -198,7 +205,7 @@ export function ConnectBar() {
               <div className="session-row">
                 <div className="session-row-copy">
                   <b>EVM · {chain?.short ?? "ETH"}</b>
-                  <span className="num">{account ? evmName || account.displayName : t("wizard.wallet.idle")}</span>
+                  <span className="num">{account ? chipLabel(evmName, address) : t("wizard.wallet.idle")}</span>
                 </div>
                 {account ? (
                   <button type="button" className="ghost-btn" onClick={() => disconnect()}>
@@ -504,7 +511,7 @@ export function ConnectBar() {
                 onClick={() => setOpen((v) => !v)}
               >
                 <span className={`wallet-dot ${any ? "wallet-dot-on" : ""}`} />
-                {trigger}
+                <span className="wallet-session-label">{trigger}</span>
               </button>
               {open ? createPortal(menu, document.body) : null}
             </div>
