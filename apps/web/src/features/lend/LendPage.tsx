@@ -5,7 +5,7 @@ import { CHAINS, featuredChains, type ChainDefinition } from "@ysk-mint/config";
 import { chainIcon } from "../../lib/chainIcon.ts";
 import { ttCoverage } from "../../lib/defi/coverage.ts";
 import { fmtApyRange, fmtUsd, utilOf } from "../../lib/lendFormat.ts";
-import { groupLendAssets, lendChainIds, type LendAssetRow } from "../../lib/lendMarkets.ts";
+import { groupLendAssets, lendChainIds, lendSymbolSlug, type LendAssetRow } from "../../lib/lendMarkets.ts";
 import { useLiveStatus } from "../../lib/liveStatus.ts";
 import { useLendMarkets } from "../../lib/useLendMarkets.ts";
 import { useUserSettings } from "../../lib/userSettings.ts";
@@ -47,20 +47,10 @@ export function lendHref() {
   }
 }
 
-export function LendPage() {
+export function LendChainBar({ filter, onPick }: { filter: number | "all"; onPick: (next: number | "all") => void }) {
   const { t } = useTranslation();
   const disabledChains = useUserSettings((s) => s.disabledChains);
-  const [params, setParams] = useSearchParams();
-  const filter = parseChain(params.get("chain"));
-  const proto = params.get("p") || "all";
-  const urlQ = params.get("q") ?? "";
-  const [marketQ, setMarketQ] = useState(urlQ);
-  const marketQRef = useRef(marketQ);
-  marketQRef.current = marketQ;
-  const searchFocused = useRef(false);
-  const shownCap = Math.max(PAGE, Number(params.get("n")) || PAGE);
   const [moreChains, setMoreChains] = useState(false);
-
   const lendChains = useMemo(() => {
     const ids = new Set(lendChainIds("all", disabledChains));
     const seen = new Set<number>();
@@ -77,7 +67,6 @@ export function LendPage() {
     }
     return out;
   }, [disabledChains]);
-
   const primaryChains = useMemo(() => lendChains.filter((c) => PRIMARY_LEND_IDS.has(c.chainId)), [lendChains]);
   const extraChains = useMemo(() => lendChains.filter((c) => !PRIMARY_LEND_IDS.has(c.chainId)), [lendChains]);
   const visibleChains = useMemo(() => {
@@ -85,6 +74,48 @@ export function LendPage() {
     const pinned = extraChains.filter((c) => c.chainId === filter);
     return pinned.length ? [...primaryChains, ...pinned] : primaryChains;
   }, [extraChains, filter, lendChains, moreChains, primaryChains]);
+  useEffect(() => {
+    if (filter !== "all" && !PRIMARY_LEND_IDS.has(filter)) setMoreChains(true);
+  }, [filter]);
+  return (
+    <div className="me-chips">
+      <button type="button" className={`me-chip ${filter === "all" ? "me-chip-on" : ""}`} onClick={() => onPick("all")}>
+        {t("lend.all")}
+      </button>
+      {visibleChains.map((c) => (
+        <button
+          key={c.key}
+          type="button"
+          className={`me-chip ${filter === c.chainId ? "me-chip-on" : ""}`}
+          onClick={() => onPick(c.chainId)}
+        >
+          <img src={chainIcon(c)} alt="" width={20} height={20} />
+          {c.short}
+          <ChipBusy chainId={c.chainId} />
+        </button>
+      ))}
+      {extraChains.length ? (
+        <button type="button" className={`me-chip ${moreChains ? "me-chip-on" : ""}`} onClick={() => setMoreChains((v) => !v)}>
+          {moreChains ? t("lend.lessChains") : t("lend.moreChains")}
+          <span className="me-count">{extraChains.length}</span>
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+export function LendPage() {
+  const { t } = useTranslation();
+  const [params, setParams] = useSearchParams();
+  const filter = parseChain(params.get("chain"));
+  const proto = params.get("p") || "all";
+  const urlQ = params.get("q") ?? "";
+  const [marketQ, setMarketQ] = useState(urlQ);
+  const marketQRef = useRef(marketQ);
+  marketQRef.current = marketQ;
+  const searchFocused = useRef(false);
+  const shownCap = Math.max(PAGE, Number(params.get("n")) || PAGE);
+  const restored = useRef(false);
 
   const markets = useLendMarkets(filter);
   const jobs = useLiveStatus((s) => s.jobs);
@@ -92,7 +123,7 @@ export function LendPage() {
     const lendJobs = jobs.filter((j) => j.kind === "lend" && j.phase !== "fail");
     return lendJobs.find((j) => j.phase === "run") ?? lendJobs[0];
   }, [jobs]);
-  const readingShort = lendChains.find((c) => c.chainId === reading?.chainId)?.short;
+  const readingShort = reading ? Object.values(CHAINS).find((c) => c.chainId === reading.chainId)?.short : undefined;
   const tt = ttCoverage("lending");
 
   const protocols = useMemo(() => {
@@ -121,11 +152,11 @@ export function LendPage() {
     return grouped.filter((r) => {
       if (r.symbol.toLowerCase().includes(q)) return true;
       if (r.venueNames.some((n) => n.toLowerCase().includes(q))) return true;
-      if (filter === "all" && r.chainShort.toLowerCase().includes(q)) return true;
-      if (addrQ && r.token.toLowerCase().includes(q)) return true;
+      if (r.chainNames.some((n) => n.toLowerCase().includes(q))) return true;
+      if (addrQ && r.venues.some((v) => v.token.toLowerCase().includes(q))) return true;
       return false;
     });
-  }, [filter, grouped, marketQ]);
+  }, [grouped, marketQ]);
 
   const marketSort = useSort(marketFiltered, "tvl", marketGet);
   const marketVisible = useMemo(() => marketSort.sorted.slice(0, shownCap), [marketSort.sorted, shownCap]);
@@ -146,13 +177,12 @@ export function LendPage() {
   }, [marketFiltered]);
 
   useEffect(() => {
-    if (filter !== "all" && !PRIMARY_LEND_IDS.has(filter)) setMoreChains(true);
-  }, [filter]);
-  useEffect(() => {
     if (searchFocused.current) return;
     if (urlQ !== marketQRef.current) setMarketQ(urlQ);
   }, [urlQ]);
   useEffect(() => {
+    if (restored.current) return;
+    restored.current = true;
     const here = new URLSearchParams(window.location.search);
     if (here.get("q") || here.get("chain") || here.get("n") || here.get("p")) return;
     if (searchFocused.current || marketQRef.current) return;
@@ -199,6 +229,7 @@ export function LendPage() {
   }, [marketQ, writeSearch]);
 
   function setChainFilter(next: number | "all") {
+    persistLendQuery(marketQ, next, shownCap, proto);
     setParams((prev) => {
       const p = new URLSearchParams(prev);
       if (next === "all") p.delete("chain");
@@ -244,29 +275,7 @@ export function LendPage() {
               <span>{t("lend.statProtocols")}</span>
             </div>
           </div>
-          <div className="me-chips">
-            <button type="button" className={`me-chip ${filter === "all" ? "me-chip-on" : ""}`} onClick={() => setChainFilter("all")}>
-              {t("lend.all")}
-            </button>
-            {visibleChains.map((c) => (
-              <button
-                key={c.key}
-                type="button"
-                className={`me-chip ${filter === c.chainId ? "me-chip-on" : ""}`}
-                onClick={() => setChainFilter(c.chainId)}
-              >
-                <img src={chainIcon(c)} alt="" width={20} height={20} />
-                {c.short}
-                <ChipBusy chainId={c.chainId} />
-              </button>
-            ))}
-            {extraChains.length ? (
-              <button type="button" className={`me-chip ${moreChains ? "me-chip-on" : ""}`} onClick={() => setMoreChains((v) => !v)}>
-                {moreChains ? t("lend.lessChains") : t("lend.moreChains")}
-                <span className="me-count">{extraChains.length}</span>
-              </button>
-            ) : null}
-          </div>
+          <LendChainBar filter={filter} onPick={setChainFilter} />
 
           {protocols.length > 1 ? (
             <div className="lend-protos">
@@ -327,15 +336,18 @@ export function LendPage() {
                 {marketVisible.map((r) => {
                   const util = utilOf(r);
                   return (
-                    <Link key={r.id} to={`/lend/${r.chainId}/${encodeURIComponent(r.token)}`} className="me-token me-token-5 me-token-lend-range">
+                    <Link
+                      key={r.id}
+                      to={filter === "all" ? `/lend/${lendSymbolSlug(r.symbol)}` : `/lend/${lendSymbolSlug(r.symbol)}?chain=${filter}`}
+                      className="me-token me-token-5 me-token-lend-range"
+                    >
                       <span className="holding-ico-wrap">
                         <img src={r.icon} alt="" className="holding-ico" />
-                        <span className="holding-chain-tag">{r.chainShort}</span>
                       </span>
                       <div className="holding-meta">
                         <b>{r.symbol}</b>
                         <span>
-                          {r.venueNames.join(" · ") || r.chainShort}
+                          {r.venueNames.join(" · ") || r.chainNames.join(" · ")}
                           {util != null && util >= 1 ? ` · ${t("lend.util")} ${util.toFixed(0)}%` : ""}
                         </span>
                       </div>

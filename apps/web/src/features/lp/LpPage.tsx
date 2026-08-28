@@ -79,6 +79,7 @@ export function LpPage() {
   const marketQRef = useRef(marketQ);
   marketQRef.current = marketQ;
   const searchFocused = useRef(false);
+  const restored = useRef(false);
   const shownCap = Math.max(MARKET_PAGE, Number(params.get("n")) || MARKET_PAGE);
   const [moreChains, setMoreChains] = useState(false);
   const primaryChains = useMemo(() => featured.filter((c) => PRIMARY_MARKET_IDS.has(c.chainId)), [featured]);
@@ -141,6 +142,8 @@ export function LpPage() {
     if (urlQ !== marketQRef.current) setMarketQ(urlQ);
   }, [urlQ]);
   useEffect(() => {
+    if (restored.current) return;
+    restored.current = true;
     const here = new URLSearchParams(window.location.search);
     if (here.get("q") || here.get("chain") || here.get("n")) return;
     if (searchFocused.current || marketQRef.current) return;
@@ -185,6 +188,7 @@ export function LpPage() {
   }, [marketQ, writeSearch]);
 
   function setChainFilter(next: number | "all") {
+    persistMarketsQuery(marketQ, next, shownCap);
     setParams((prev) => {
       const p = new URLSearchParams(prev);
       if (next === "all") p.delete("chain");

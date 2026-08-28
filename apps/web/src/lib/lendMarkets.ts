@@ -431,6 +431,7 @@ export type LendAssetRow = {
   id: string;
   chainId: number;
   chainShort: string;
+  chainNames: string[];
   symbol: string;
   icon: string;
   token: string;
@@ -445,6 +446,14 @@ export type LendAssetRow = {
   supplyUsd: number | null;
   borrowUsd: number | null;
 };
+
+export function lendSymbolSlug(symbol: string) {
+  return symbol.trim().toLowerCase().replace(/₮/g, "t").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "x";
+}
+
+export function sameLendSymbol(a: string, b: string) {
+  return lendSymbolSlug(a) === lendSymbolSlug(b);
+}
 
 function wavg(rows: LendMarketRow[], apy: "supplyApy" | "borrowApy", weight: "supplyUsd" | "borrowUsd") {
   let num = 0;
@@ -485,42 +494,65 @@ function sumField(rows: LendMarketRow[], key: "supplyUsd" | "borrowUsd") {
   return any ? n : null;
 }
 
+function assetFromVenues(id: string, venues: LendMarketRow[]): LendAssetRow {
+  const sorted = [...venues].sort((a, b) => (b.supplyUsd ?? 0) - (a.supplyUsd ?? 0));
+  const head = sorted[0];
+  const names: string[] = [];
+  for (const v of sorted) if (!names.includes(v.protocol)) names.push(v.protocol);
+  const chainNames: string[] = [];
+  for (const v of sorted) if (!chainNames.includes(v.chainShort)) chainNames.push(v.chainShort);
+  const supply = apySpan(sorted, "supplyApy");
+  const borrow = apySpan(sorted, "borrowApy");
+  return {
+    id,
+    chainId: head.chainId,
+    chainShort: chainNames.join(" · "),
+    chainNames,
+    symbol: head.symbol,
+    icon: head.icon,
+    token: head.token,
+    venues: sorted,
+    venueNames: names,
+    supplyApy: wavg(sorted, "supplyApy", "supplyUsd"),
+    borrowApy: wavg(sorted, "borrowApy", "borrowUsd"),
+    supplyApyMin: supply.min,
+    supplyApyMax: supply.max,
+    borrowApyMin: borrow.min,
+    borrowApyMax: borrow.max,
+    supplyUsd: sumField(sorted, "supplyUsd"),
+    borrowUsd: sumField(sorted, "borrowUsd"),
+  };
+}
+
 export function groupLendAssets(rows: LendMarketRow[]): LendAssetRow[] {
   const m = new Map<string, LendMarketRow[]>();
   for (const r of rows) {
-    const key = `${r.chainId}:${r.token.toLowerCase()}`;
+    const key = lendSymbolSlug(r.symbol);
     const list = m.get(key);
     if (list) list.push(r);
     else m.set(key, [r]);
   }
-  const out: LendAssetRow[] = [];
-  for (const [id, venues] of m) {
-    const sorted = [...venues].sort((a, b) => (b.supplyUsd ?? 0) - (a.supplyUsd ?? 0));
-    const head = sorted[0];
-    const names: string[] = [];
-    for (const v of sorted) if (!names.includes(v.protocol)) names.push(v.protocol);
-    const supply = apySpan(sorted, "supplyApy");
-    const borrow = apySpan(sorted, "borrowApy");
-    out.push({
-      id,
-      chainId: head.chainId,
-      chainShort: head.chainShort,
-      symbol: head.symbol,
-      icon: head.icon,
-      token: head.token,
-      venues: sorted,
-      venueNames: names,
-      supplyApy: wavg(sorted, "supplyApy", "supplyUsd"),
-      borrowApy: wavg(sorted, "borrowApy", "borrowUsd"),
-      supplyApyMin: supply.min,
-      supplyApyMax: supply.max,
-      borrowApyMin: borrow.min,
-      borrowApyMax: borrow.max,
-      supplyUsd: sumField(sorted, "supplyUsd"),
-      borrowUsd: sumField(sorted, "borrowUsd"),
-    });
+  return [...m.entries()].map(([id, venues]) => assetFromVenues(id, venues)).sort((a, b) => (b.supplyUsd ?? 0) - (a.supplyUsd ?? 0));
+}
+
+export function groupLendByChain(rows: LendMarketRow[]): Array<{ chainId: number; chainShort: string; venues: LendMarketRow[]; supplyUsd: number | null }> {
+  const m = new Map<number, LendMarketRow[]>();
+  for (const r of rows) {
+    const list = m.get(r.chainId);
+    if (list) list.push(r);
+    else m.set(r.chainId, [r]);
   }
-  return out.sort((a, b) => (b.supplyUsd ?? 0) - (a.supplyUsd ?? 0));
+  const out = [...m.entries()].map(([chainId, venues]) => {
+    const sorted = [...venues].sort((a, b) => (b.supplyUsd ?? 0) - (a.supplyUsd ?? 0));
+    return {
+      chainId,
+      chainShort: sorted[0]?.chainShort ?? String(chainId),
+      venues: sorted,
+      supplyUsd: sumField(sorted, "supplyUsd"),
+    };
+  });
+  out.sort((a, b) => (b.supplyUsd ?? 0) - (a.supplyUsd ?? 0));
+  return out;
 }
 
 export async function loadLendMarkets(chainId: number, onPart?: (rows: LendMarketRow[]) => void): Promise<LendMarketRow[]> {

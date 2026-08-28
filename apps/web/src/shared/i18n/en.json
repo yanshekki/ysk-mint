@@ -108,7 +108,7 @@
   },
   "lend": {
     "kicker": "On-chain rates",
-    "hint": "The same token is merged across wired protocols. Open a row for the breakdown. APY is size-weighted from on-chain reserves and rates. This page is read-only — no supply or borrow in-app.",
+    "hint": "The same ticker is merged across chains and wired protocols. Open a row to split by chain and venue. APY is size-weighted from on-chain reserves and rates. This page is read-only — no supply or borrow in-app.",
     "all": "All",
     "allProtocols": "All protocols",
     "moreChains": "More",
@@ -137,9 +137,9 @@
     "health": "Health",
     "sideSupply": "Supply",
     "sideBorrow": "Borrow",
-    "assetHint": "This token across wired protocols. APY is size-weighted. On-chain data only — no supply or borrow in-app.",
+    "assetHint": "This ticker across chains and wired protocols. APY is size-weighted. On-chain data only — no supply or borrow in-app.",
     "venues": "Protocol markets",
-    "assetMissing": "Need chainId and a token address.",
+    "assetMissing": "Need a token ticker.",
     "noVenues": "No wired lending market for this token."
   },
   "home": {

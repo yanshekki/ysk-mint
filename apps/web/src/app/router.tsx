@@ -13,6 +13,13 @@ export const router = createBrowserRouter([
       {
         path: "lend/:chainId/:token",
         lazy: async () => {
+          const { LendAssetRedirect } = await import("../features/lend/LendAssetPage.tsx");
+          return { Component: LendAssetRedirect };
+        },
+      },
+      {
+        path: "lend/:symbol",
+        lazy: async () => {
           const { LendAssetPage } = await import("../features/lend/LendAssetPage.tsx");
           return { Component: LendAssetPage };
         },

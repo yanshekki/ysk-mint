@@ -1567,9 +1567,13 @@ button.oft-chain:disabled {
   margin-left: 8px;
   font-size: 11px;
 }
-.me-token-proto .holding-meta b .me-brand-link {
+.me-token-proto .holding-meta b .me-brand-link,
+.me-token-lend .holding-meta b .me-brand-link {
   margin-left: 0;
   font-size: inherit;
+}
+.me-cols-lend + div > .lend-group-head {
+  border-top: 0;
 }
 .lend-apy-in {
   color: var(--trade-buy);
