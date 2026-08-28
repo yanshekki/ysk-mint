@@ -1463,10 +1463,22 @@ button.oft-chain:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 16px 2px;
+  margin: 0;
+  padding: 8px 16px;
   font-size: 12px;
   font-weight: 800;
-  color: var(--text-sub);
+  color: var(--text-main);
+  background: var(--bg-subtle);
+  border-top: 1px solid var(--border-color);
+}
+.me-card-head + div > .lend-group-head {
+  border-top: 0;
+}
+.lend-group-head + .me-cols {
+  background: var(--bg-subtle);
+  padding-top: 2px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
 }
 .lend-group-link {
   margin-left: 10px;
