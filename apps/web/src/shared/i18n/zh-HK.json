@@ -404,7 +404,8 @@
       "title": "已上鏈",
       "reread": "即時 eth_call — 並非快取回條。",
       "token": "代幣",
-      "lock": "鎖定"
+      "lock": "鎖定",
+      "chains": "各鏈合約"
     }
   },
   "transfer": {
@@ -429,7 +430,11 @@
     "peerMissing": "目的鏈尚未 setPeer。",
     "moreChains": "更多",
     "lessChains": "收起",
-    "explorer": "瀏覽器"
+    "explorer": "瀏覽器",
+    "lzScan": "LayerZero Scan",
+    "destWait": "已在源鏈銷毀。正在等對方鏈 mint…（最長 15 分鐘）",
+    "destOk": "對方鏈已收到 {{token}}",
+    "destTimeout": "對方鏈 15 分鐘內未收到。唔當成功。請用 LayerZero Scan 查 guid。"
   },
   "me": {
     "title": "持倉",

@@ -24,7 +24,7 @@ import { arbitrumSepolia, baseSepolia } from "viem/chains";
 const root = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 const LZ = "0x6EDCE65403992e310A62460808c4b910D972f10f";
 const OPTIONS = "0x00030100110100000000000000000000000000030d40";
-const NEED = parseEther("0.015");
+const NEED = parseEther("0.02");
 
 function bytecode(sol, name) {
   const json = JSON.parse(readFileSync(join(root, "packages/contracts/out", sol, `${name}.json`), "utf8"));
@@ -158,7 +158,7 @@ async function main() {
   }
   if (bals.some((b) => b < NEED)) {
     await faucetHint(account.address);
-    throw new Error("need ≥ 0.015 ETH on Base Sepolia and Arb Sepolia");
+    throw new Error("need ≥ 0.02 ETH on Base Sepolia and Arb Sepolia");
   }
 
   const home = await deploy(account, chains[0]);

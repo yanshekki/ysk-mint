@@ -404,7 +404,8 @@
       "title": "On-chain",
       "reread": "Live eth_call — not a cached receipt.",
       "token": "Token",
-      "lock": "Lock"
+      "lock": "Lock",
+      "chains": "Contracts per chain"
     }
   },
   "transfer": {
@@ -429,7 +430,11 @@
     "peerMissing": "No setPeer for the destination chain.",
     "moreChains": "More",
     "lessChains": "Less",
-    "explorer": "Explorer"
+    "explorer": "Explorer",
+    "lzScan": "LayerZero Scan",
+    "destWait": "Burned on the source chain. Waiting for the destination mint… (up to 15 minutes)",
+    "destOk": "Destination received {{token}}",
+    "destTimeout": "Destination did not mint within 15 minutes. This is not a success. Check the guid on LayerZero Scan."
   },
   "me": {
     "title": "Holdings",

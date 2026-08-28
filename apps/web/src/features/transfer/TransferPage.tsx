@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { formatEther, zeroAddress, type Address } from "viem";
+import { formatEther, getAddress, zeroAddress, type Address } from "viem";
 import { useAccount, useChainId, useConfig, useReadContracts, useSwitchChain } from "wagmi";
 import { getPublicClient, getWalletClient } from "wagmi/actions";
 import {
@@ -37,6 +37,32 @@ function fmtFee(wei: string) {
 
 const PCT = [10, 25, 50, 75, 100] as const;
 const ZERO_PEER = `0x${"00".repeat(32)}` as const;
+const DEST_WAIT_MS = 15 * 60 * 1000;
+const DEST_POLL_MS = 8_000;
+
+function peerToAddr(peer: `0x${string}`): Address | null {
+  if (!peer || peer === ZERO_PEER) return null;
+  try {
+    const addr = getAddress(`0x${peer.slice(-40)}`);
+    return addr === zeroAddress ? null : addr;
+  } catch {
+    return null;
+  }
+}
+
+function lzScanUrl(hash: `0x${string}`, testnet: boolean) {
+  return `${testnet ? "https://testnet.layerzeroscan.com" : "https://layerzeroscan.com"}/tx/${hash}`;
+}
+
+function srcExplorerTx(chainId: number, hash: `0x${string}`) {
+  const explore = (Object.values(CHAINS).find((c) => c.chainId === chainId)?.explorer ?? "").replace(/\/$/, "");
+  return explore ? `${explore}/tx/${hash}` : "";
+}
+
+type DestWait = {
+  status: "waiting" | "ok" | "timeout";
+  destToken: Address;
+};
 
 function errorFromCatch(e: unknown, locale: "en" | "zh-HK", notOft: string): LaunchError {
   const err = e as { data?: `0x${string}`; cause?: { data?: `0x${string}` }; message?: string };
@@ -79,6 +105,8 @@ export function TransferPage() {
   const [pasted, setPasted] = useState("");
   const [moreChains, setMoreChains] = useState(false);
   const [sentHash, setSentHash] = useState<`0x${string}` | null>(null);
+  const [destWait, setDestWait] = useState<DestWait | null>(null);
+  const waitGen = useRef(0);
 
   const srcChainId = pick?.chainId ?? chainId;
   const dst = CHAINS[dstKey as keyof typeof CHAINS];
@@ -153,9 +181,12 @@ export function TransferPage() {
   const destTest = (evmGroup?.test ?? []).filter((c) => c.eid > 0);
   const destPrimary = destMain.filter((c) => PRIMARY_XFER.has(c.chainId));
   const destExtra = [...destMain.filter((c) => !PRIMARY_XFER.has(c.chainId)), ...destTest];
-  const destVisible = moreChains
-    ? [...destPrimary, ...destExtra]
-    : destPrimary.concat(destExtra.filter((c) => c.key === dstKey));
+  const srcIsTest = Object.values(CHAINS).some((c) => c.chainId === srcChainId && c.testnet);
+  const destVisible = srcIsTest
+    ? destTest.concat(moreChains ? destPrimary : destPrimary.filter((c) => c.key === dstKey))
+    : moreChains
+      ? [...destPrimary, ...destExtra]
+      : destPrimary.concat(destExtra.filter((c) => c.key === dstKey));
   const canAct = Boolean(address && token && token.toLowerCase() !== zeroAddress && !destBlocked && dst?.eid);
 
   const quoteNow = useCallback(async () => {
@@ -291,6 +322,45 @@ export function TransferPage() {
       cacheInvalidateAccount(address);
       setQuote(fee.nativeFee.toString());
       setSentHash(hash);
+
+      const peer = await client.readContract({
+        address: token as `0x${string}`,
+        abi: yskOftAbi,
+        functionName: "peers",
+        args: [dst.eid],
+      });
+      const destToken = peerToAddr(peer);
+      const destClient = getPublicClient(config, { chainId: dst.chainId });
+      if (!destToken || !destClient) {
+        setDestWait(destToken ? { status: "timeout", destToken } : null);
+        return;
+      }
+      const gen = ++waitGen.current;
+      const before = await destClient.readContract({
+        address: destToken,
+        abi: yskOftAbi,
+        functionName: "balanceOf",
+        args: [address],
+      });
+      setDestWait({ status: "waiting", destToken });
+      setBusy(false);
+      const deadline = Date.now() + DEST_WAIT_MS;
+      while (Date.now() < deadline) {
+        await new Promise((r) => window.setTimeout(r, DEST_POLL_MS));
+        if (waitGen.current !== gen) return;
+        const now = await destClient.readContract({
+          address: destToken,
+          abi: yskOftAbi,
+          functionName: "balanceOf",
+          args: [address],
+        });
+        if (now >= before + value) {
+          cacheInvalidateAccount(address);
+          setDestWait({ status: "ok", destToken });
+          return;
+        }
+      }
+      if (waitGen.current === gen) setDestWait({ status: "timeout", destToken });
     } catch (e) {
       setErrors([errorFromCatch(e, locale, t("transfer.notOft"))]);
     } finally {
@@ -298,15 +368,24 @@ export function TransferPage() {
     }
   }
 
+  function resetSend() {
+    waitGen.current += 1;
+    setSentHash(null);
+    setDestWait(null);
+  }
+
   function selectPick(p: Pick) {
     setPick(p);
     setPaste(false);
     setQuote("");
-    setSentHash(null);
-    if (dst.chainId === p.chainId) {
-      const other = [...destMain, ...destTest].find((c) => c.chainId !== p.chainId && c.eid > 0);
+    resetSend();
+    const src = Object.values(CHAINS).find((c) => c.chainId === p.chainId);
+    const pool = src?.testnet ? destTest : destMain;
+    if (!dst || dst.chainId === p.chainId || (src?.testnet && !dst.testnet)) {
+      const other = pool.find((c) => c.chainId !== p.chainId && c.eid > 0);
       if (other) setDstKey(other.key);
     }
+    if (src?.testnet) setMoreChains(false);
     void switchChainAsync({ chainId: p.chainId }).catch(() => undefined);
   }
 
@@ -337,7 +416,7 @@ export function TransferPage() {
                   setPasted(e.target.value);
                   setPick(null);
                   setQuote("");
-                  setSentHash(null);
+                  resetSend();
                 }}
               />
             ) : null}
@@ -390,7 +469,7 @@ export function TransferPage() {
                       onClick={() => {
                         setDstKey(c.key);
                         setQuote("");
-                        setSentHash(null);
+                        resetSend();
                       }}
                     >
                       <img src={chainIcon(c)} alt="" width={20} height={20} />
@@ -422,7 +501,7 @@ export function TransferPage() {
                 value={pct}
                 onChange={(v) => {
                   setPct(v);
-                  setSentHash(null);
+                  resetSend();
                 }}
                 options={PCT.map((p) => ({ value: p, label: p === 100 ? "Max" : `${p}%` }))}
               />
@@ -448,15 +527,24 @@ export function TransferPage() {
             ) : null}
             {sentHash && dst ? (
               <div className="xfer-acts">
-                <a
-                  className="me-pool-btn me-pool-btn-explore"
-                  href={`${(Object.values(CHAINS).find((c) => c.chainId === srcChainId)?.explorer ?? "").replace(/\/$/, "")}/tx/${sentHash}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {t("transfer.sent")} {shortAddr(sentHash)}
+                {srcExplorerTx(srcChainId, sentHash) ? (
+                  <a className="me-pool-btn me-pool-btn-explore" href={srcExplorerTx(srcChainId, sentHash)} target="_blank" rel="noreferrer">
+                    {t("transfer.sent")} {shortAddr(sentHash)}
+                  </a>
+                ) : null}
+                <a className="me-pool-btn me-pool-btn-explore" href={lzScanUrl(sentHash, Boolean(dst.testnet))} target="_blank" rel="noreferrer">
+                  {t("transfer.lzScan")}
                 </a>
               </div>
+            ) : null}
+            {destWait ? (
+              <p className={`set-note set-note-pad ${destWait.status === "timeout" ? "xfer-dest-fail" : ""}`}>
+                {destWait.status === "waiting"
+                  ? t("transfer.destWait")
+                  : destWait.status === "ok"
+                    ? t("transfer.destOk", { token: shortAddr(destWait.destToken) })
+                    : t("transfer.destTimeout")}
+              </p>
             ) : null}
           </section>
         </div>
