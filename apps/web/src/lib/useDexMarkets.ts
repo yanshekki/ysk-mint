@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { featuredChains } from "@ysk-mint/config";
 import { type VenuePool } from "./dexPools.ts";
 import { cacheFresh, cacheKey, cacheLastGood, cacheReady, onVisibleInterval, POLICIES, cacheGet } from "./defi/cache.ts";
-import { loadEvmMarkets, marketsCacheKey } from "./defi/markets.ts";
+import { loadEvmMarkets } from "./defi/markets.ts";
 import { ensureProtocols } from "./defi/protocols.ts";
 import { protocolsOn } from "./defi/registry.ts";
 import type { MarketRow as DefiMarket, VenueQuote } from "./defi/types.ts";
@@ -49,8 +49,20 @@ function asRow(r: DefiMarket): MarketRow {
 }
 
 async function loadEvm(chainId: number): Promise<MarketRow[]> {
-  const rows = await loadEvmMarkets(chainId).catch(() => [] as DefiMarket[]);
-  return mergeOriented(rows.map(asRow)) as MarketRow[];
+  const raw = await cacheGet(
+    {
+      key: cacheKey("markets", chainId, "g1"),
+      policy: { ...POLICIES.markets, keep: (rows: DefiMarket[]) => rows.length > 0 },
+    },
+    async () => {
+      const rows = await loadEvmMarkets(chainId).catch(() => [] as DefiMarket[]);
+      const extra = await Promise.all(
+        protocolsOn(chainId).map((p) => (p.markets ? p.markets({}).catch(() => [] as DefiMarket[]) : Promise.resolve([] as DefiMarket[]))),
+      );
+      return [...rows, ...extra.flat()];
+    },
+  ).catch(() => [] as DefiMarket[]);
+  return mergeOriented(raw.map(asRow)) as MarketRow[];
 }
 
 async function loadNative(chainId: number): Promise<MarketRow[]> {
@@ -89,7 +101,7 @@ const NATIVE = new Set([101, 397, 1815, 784, 607, 637]);
 const SKIP = new Set([101, 397, 1815, 398, 18151, 103, 784, 607, 637, 998, 728126428]);
 
 function marketKey(id: number) {
-  return NATIVE.has(id) ? cacheKey("markets", id, "n5") : marketsCacheKey(id);
+  return NATIVE.has(id) ? cacheKey("markets", id, "n5") : cacheKey("markets", id, "g1");
 }
 
 function marketIds(chainId: number | "all", disabled: number[]) {

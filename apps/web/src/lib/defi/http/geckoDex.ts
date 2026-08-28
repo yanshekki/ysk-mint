@@ -55,7 +55,10 @@ function iconOf(symbol: string, chainShort: string) {
   if (s.includes("sui")) return "/tokens/sui.png";
   if (s.includes("apt")) return "/tokens/apt.png";
   if (s.includes("usd") || s === "dai") return "/tokens/usdc.png";
-  return chainShort === "APT" ? "/tokens/apt.png" : "/tokens/sui.png";
+  if (s.includes("hype") || chainShort === "HyperEVM") return "/tokens/hype.png";
+  if (chainShort === "APT") return "/tokens/apt.png";
+  if (chainShort === "SUI") return "/tokens/sui.png";
+  return "/tokens/eth.png";
 }
 
 let geckoQ: Promise<void> = Promise.resolve();

@@ -624,6 +624,78 @@
       "note": "GeckoTerminal ferra-dlmm"
     },
     {
+      "id": "swapx",
+      "name": "SwapX",
+      "sector": "dex",
+      "family": "sonic-amm",
+      "status": "wired",
+      "chains": [146],
+      "note": "GeckoTerminal swapx-v2 + swapx-algebra"
+    },
+    {
+      "id": "equalizer",
+      "name": "Equalizer",
+      "sector": "dex",
+      "family": "solidly",
+      "status": "wired",
+      "chains": [146],
+      "note": "GeckoTerminal equalizer-sonic"
+    },
+    {
+      "id": "wagmi",
+      "name": "Wagmi",
+      "sector": "dex",
+      "family": "univ3",
+      "status": "wired",
+      "chains": [146],
+      "note": "GeckoTerminal wagmi-sonic"
+    },
+    {
+      "id": "kittenswap",
+      "name": "KittenSwap",
+      "sector": "dex",
+      "family": "hyperevm-amm",
+      "status": "wired",
+      "chains": [999],
+      "note": "GeckoTerminal kittenswap + kittenswap-v3"
+    },
+    {
+      "id": "project-x",
+      "name": "Project X",
+      "sector": "dex",
+      "family": "hyperevm-amm",
+      "status": "wired",
+      "chains": [999],
+      "note": "GeckoTerminal project-x"
+    },
+    {
+      "id": "hybra",
+      "name": "Hybra Finance",
+      "sector": "dex",
+      "family": "hyperevm-amm",
+      "status": "wired",
+      "chains": [999],
+      "note": "GeckoTerminal hybra-finance + hybra-finance-v3"
+    },
+    {
+      "id": "bex",
+      "name": "BEX",
+      "sector": "dex",
+      "family": "bera-amm",
+      "status": "wired",
+      "chains": [80094],
+      "note": "GeckoTerminal bex"
+    },
+    {
+      "id": "burrbear",
+      "name": "BurrBear",
+      "sector": "dex",
+      "family": "bera-amm",
+      "status": "wired",
+      "chains": [80094],
+      "note": "GeckoTerminal burrbear"
+    },
+    {
       "id": "pendle",
       "name": "Pendle Yield Tokenization",
       "sector": "dex",

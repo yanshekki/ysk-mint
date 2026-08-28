@@ -143,6 +143,14 @@ export function dexAppHref(args: DexAppArgs): string | undefined {
   if (h.includes("steamm")) return "https://steamm.fi/";
   if (h.includes("full sail") || h.includes("fullsail")) return "https://app.fullsail.finance/";
   if (h.includes("ferra")) return "https://www.ferra.xyz/";
+  if (h.includes("swapx")) return "https://swapx.fi/";
+  if (h.includes("equalizer")) return "https://equalizer.exchange/";
+  if (h.includes("wagmi")) return "https://wagmi.com/";
+  if (h.includes("kitten")) return "https://kittenswap.finance/";
+  if (h.includes("project x") || h.includes("projectx")) return "https://www.prjx.com/";
+  if (h.includes("hybra")) return "https://www.hybra.finance/";
+  if (h === "bex" || h.includes("bex")) return "https://bex.berachain.com/";
+  if (h.includes("burrbear") || h.includes("burr bear")) return "https://www.burrbear.io/";
   if (h.includes("ston")) return "https://app.ston.fi/pools";
   if (h.includes("raydium")) return "https://raydium.io/liquidity-pools/";
   if (h.includes("orca")) return "https://www.orca.so/pools";
@@ -179,6 +187,14 @@ export function dexBrandHref(name: string, _chainId = 1): string | undefined {
   if (h.includes("steamm")) return "https://steamm.fi/";
   if (h.includes("full sail") || h.includes("fullsail")) return "https://app.fullsail.finance/";
   if (h.includes("ferra")) return "https://www.ferra.xyz/";
+  if (h.includes("swapx")) return "https://swapx.fi/";
+  if (h.includes("equalizer")) return "https://equalizer.exchange/";
+  if (h.includes("wagmi")) return "https://wagmi.com/";
+  if (h.includes("kitten")) return "https://kittenswap.finance/";
+  if (h.includes("project x") || h.includes("projectx")) return "https://www.prjx.com/";
+  if (h.includes("hybra")) return "https://www.hybra.finance/";
+  if (h.includes("bex")) return "https://bex.berachain.com/";
+  if (h.includes("burrbear") || h.includes("burr bear")) return "https://www.burrbear.io/";
   if (h.includes("minswap")) return "https://app.minswap.org/liquidity";
   return undefined;
 }

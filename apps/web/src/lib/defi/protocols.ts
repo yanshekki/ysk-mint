@@ -1,6 +1,7 @@
 import { VENUES } from "../dexVenues.ts";
 import { minswapProtocol } from "./ada/minswap.ts";
 import { makeAero } from "./evm/aerodrome.ts";
+import { geckoEvmProtocols } from "./evm/geckoEvm.ts";
 import { ALGEBRA_VENUES, makeAlgebra } from "./evm/algebra.ts";
 import { BALANCER_CHAINS, makeBalancer } from "./evm/balancer.ts";
 import { CURVE_CHAINS, makeCurve } from "./evm/curve.ts";
@@ -43,5 +44,6 @@ export function ensureProtocols() {
   register(hyperionProtocol);
   for (const p of suiGeckoProtocols) register(p);
   for (const p of aptosGeckoProtocols) register(p);
+  for (const p of geckoEvmProtocols) register(p);
   register(stonProtocol);
 }
