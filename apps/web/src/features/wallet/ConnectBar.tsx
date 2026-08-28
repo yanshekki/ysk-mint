@@ -47,7 +47,7 @@ import {
 } from "../../lib/nativeWallets.ts";
 import "@near-wallet-selector/modal-ui/styles.css";
 import "./nearModal.css";
-import { useDomainName } from "../../lib/domainNames/index.ts";
+import { humanDomainName, useDomainName } from "../../lib/domainNames/index.ts";
 import { SolanaSelector, WalletPicker } from "./SolanaSelector.tsx";
 
 function short(v: string, head = 6, tail = 4) {
@@ -56,10 +56,9 @@ function short(v: string, head = 6, tail = 4) {
 }
 
 function chipLabel(name: string | undefined, address?: string) {
-  const addr = address?.trim() ?? "";
-  const n = name?.trim() ?? "";
-  if (n && n.length <= 16 && !/^0x[0-9a-f]{16,}$/i.test(n) && n.toLowerCase() !== addr.toLowerCase()) return n;
-  return addr ? short(addr, 4, 4) : "—";
+  const ens = humanDomainName(name, address);
+  if (ens && ens.length <= 18) return ens;
+  return address ? short(address, 4, 4) : "—";
 }
 
 export function ConnectBar() {

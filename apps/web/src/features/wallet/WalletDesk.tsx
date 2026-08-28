@@ -44,7 +44,7 @@ import {
   type ExtraWalletInfo,
   type SolanaWalletInfo,
 } from "../../lib/nativeWallets.ts";
-import { useDomainName } from "../../lib/domainNames/index.ts";
+import { humanDomainName, useDomainName } from "../../lib/domainNames/index.ts";
 import {
   useAptosHoldings,
   useBitcoinHoldings,
@@ -100,7 +100,7 @@ function AddrFace({
   if (!connected || !address) {
     return <div className="wallet-addr wallet-addr-idle">{idle}</div>;
   }
-  const ens = name && !/^0x[0-9a-f]{16,}$/i.test(name) && name.toLowerCase() !== address.toLowerCase() ? name : "";
+  const ens = humanDomainName(name, address);
   return (
     <div className={`wallet-addr ${ens ? "wallet-addr-named" : ""}`}>
       {ens ? <div className="wallet-addr-name">{ens}</div> : null}
