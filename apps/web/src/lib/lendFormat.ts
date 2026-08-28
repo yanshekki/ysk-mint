@@ -8,6 +8,14 @@ export function fmtApy(n: number | null | undefined) {
   return `${n.toFixed(1)}%`;
 }
 
+export function fmtApyRange(min: number | null | undefined, max: number | null | undefined) {
+  if (min == null && max == null) return "—";
+  if (min == null) return fmtApy(max);
+  if (max == null) return fmtApy(min);
+  if (Math.abs(max - min) < 0.005) return fmtApy(min);
+  return `${fmtApy(min)}–${fmtApy(max)}`;
+}
+
 export function fmtUsd(n: number | null | undefined) {
   if (n == null || !Number.isFinite(n)) return "—";
   const abs = Math.abs(n);

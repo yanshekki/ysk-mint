@@ -1524,6 +1524,15 @@ button.oft-chain:disabled {
 .me-token.me-token-lend {
   grid-template-columns: 36px minmax(0, 1fr) 96px 96px 112px minmax(148px, auto);
 }
+.me-cols-lend-range,
+.me-token.me-token-lend-range {
+  grid-template-columns: 36px minmax(0, 1fr) 128px 128px 108px;
+}
+.lend-apy-range {
+  font-size: 13px;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
 .me-cols-5 span:nth-child(2),
 .me-cols-5 .me-sort:nth-child(2) {
   grid-column: 3;
@@ -2118,6 +2127,13 @@ button.me-token:focus-visible {
     grid-column: 4;
     display: block;
     text-align: right;
+  }
+  .me-cols-lend-range.me-cols-5,
+  .me-token.me-token-5.me-token-lend-range {
+    grid-template-columns: 36px minmax(0, 1fr) 112px 112px;
+  }
+  .lend-apy-range {
+    font-size: 12px;
   }
   .top-nav {
     display: none;

@@ -7,7 +7,7 @@ import { chainIcon } from "../../lib/chainIcon.ts";
 import { fmtUsdc } from "../../lib/defiQuotes.ts";
 import { ttCoverage } from "../../lib/defi/coverage.ts";
 import { lendAppHref, lendExplorerHref } from "../../lib/lendApp.ts";
-import { fmtApy, fmtUsd, utilOf } from "../../lib/lendFormat.ts";
+import { fmtApyRange, fmtUsd, utilOf } from "../../lib/lendFormat.ts";
 import { groupLendAssets, lendChainIds, type LendAssetRow } from "../../lib/lendMarkets.ts";
 import { useLiveStatus } from "../../lib/liveStatus.ts";
 import { useLendMarkets } from "../../lib/useLendMarkets.ts";
@@ -116,8 +116,8 @@ export function LendPage() {
 
   const marketGet = useCallback((r: LendAssetRow, k: string) => {
     if (k === "name") return r.symbol;
-    if (k === "supply") return r.supplyApy;
-    if (k === "borrow") return r.borrowApy;
+    if (k === "supply") return r.supplyApyMax ?? r.supplyApy;
+    if (k === "borrow") return r.borrowApyMin ?? r.borrowApy;
     if (k === "venues") return r.venues.length;
     return r.supplyUsd;
   }, []);
@@ -403,7 +403,7 @@ export function LendPage() {
               <p className="me-card-empty">{t("lend.emptyFilter")}</p>
             ) : (
               <div className="me-list">
-                <div className="me-cols me-cols-5">
+                <div className="me-cols me-cols-5 me-cols-lend-range">
                   <SortHead id="name" label={t("lend.markets")} active={marketSort.key === "name"} dir={marketSort.dir} onToggle={marketSort.toggle} align="left" />
                   <SortHead id="supply" label={t("lend.supplyApy")} active={marketSort.key === "supply"} dir={marketSort.dir} onToggle={marketSort.toggle} />
                   <SortHead id="borrow" label={t("lend.borrowApy")} active={marketSort.key === "borrow"} dir={marketSort.dir} onToggle={marketSort.toggle} />
@@ -415,7 +415,7 @@ export function LendPage() {
                 {marketVisible.map((r) => {
                   const util = utilOf(r);
                   return (
-                    <Link key={r.id} to={`/lend/${r.chainId}/${encodeURIComponent(r.token)}`} className="me-token me-token-5">
+                    <Link key={r.id} to={`/lend/${r.chainId}/${encodeURIComponent(r.token)}`} className="me-token me-token-5 me-token-lend-range">
                       <span className="holding-ico-wrap">
                         <img src={r.icon} alt="" className="holding-ico" />
                         <span className="holding-chain-tag">{r.chainShort}</span>
@@ -427,8 +427,8 @@ export function LendPage() {
                           {util != null && util >= 1 ? ` · ${t("lend.util")} ${util.toFixed(0)}%` : ""}
                         </span>
                       </div>
-                      <span className="num me-price lend-apy-in">{fmtApy(r.supplyApy)}</span>
-                      <span className="num holding-amt lend-apy-out">{fmtApy(r.borrowApy)}</span>
+                      <span className="num me-price lend-apy-in lend-apy-range">{fmtApyRange(r.supplyApyMin, r.supplyApyMax)}</span>
+                      <span className="num holding-amt lend-apy-out lend-apy-range">{fmtApyRange(r.borrowApyMin, r.borrowApyMax)}</span>
                       <span className="num me-value">{fmtUsd(r.supplyUsd)}</span>
                     </Link>
                   );

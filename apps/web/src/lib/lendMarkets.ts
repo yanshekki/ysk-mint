@@ -438,6 +438,10 @@ export type LendAssetRow = {
   venueNames: string[];
   supplyApy: number | null;
   borrowApy: number | null;
+  supplyApyMin: number | null;
+  supplyApyMax: number | null;
+  borrowApyMin: number | null;
+  borrowApyMax: number | null;
   supplyUsd: number | null;
   borrowUsd: number | null;
 };
@@ -455,6 +459,18 @@ function wavg(rows: LendMarketRow[], apy: "supplyApy" | "borrowApy", weight: "su
   if (den > 0) return num / den;
   const hit = rows.find((r) => r[apy] != null && Number.isFinite(r[apy] as number));
   return hit?.[apy] ?? null;
+}
+
+function apySpan(rows: LendMarketRow[], key: "supplyApy" | "borrowApy") {
+  let min: number | null = null;
+  let max: number | null = null;
+  for (const r of rows) {
+    const a = r[key];
+    if (a == null || !Number.isFinite(a)) continue;
+    if (min == null || a < min) min = a;
+    if (max == null || a > max) max = a;
+  }
+  return { min, max };
 }
 
 function sumField(rows: LendMarketRow[], key: "supplyUsd" | "borrowUsd") {
@@ -483,6 +499,8 @@ export function groupLendAssets(rows: LendMarketRow[]): LendAssetRow[] {
     const head = sorted[0];
     const names: string[] = [];
     for (const v of sorted) if (!names.includes(v.protocol)) names.push(v.protocol);
+    const supply = apySpan(sorted, "supplyApy");
+    const borrow = apySpan(sorted, "borrowApy");
     out.push({
       id,
       chainId: head.chainId,
@@ -494,6 +512,10 @@ export function groupLendAssets(rows: LendMarketRow[]): LendAssetRow[] {
       venueNames: names,
       supplyApy: wavg(sorted, "supplyApy", "supplyUsd"),
       borrowApy: wavg(sorted, "borrowApy", "borrowUsd"),
+      supplyApyMin: supply.min,
+      supplyApyMax: supply.max,
+      borrowApyMin: borrow.min,
+      borrowApyMax: borrow.max,
       supplyUsd: sumField(sorted, "supplyUsd"),
       borrowUsd: sumField(sorted, "borrowUsd"),
     });

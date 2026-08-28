@@ -5,7 +5,7 @@ import { useAccount } from "wagmi";
 import { CHAINS } from "@ysk-mint/config";
 import { fmtUsdc } from "../../lib/defiQuotes.ts";
 import { lendAppHref, lendExplorerHref } from "../../lib/lendApp.ts";
-import { fmtApy, fmtUsd, sameLendToken, shortAddr, utilOf } from "../../lib/lendFormat.ts";
+import { fmtApy, fmtApyRange, fmtUsd, sameLendToken, shortAddr, utilOf } from "../../lib/lendFormat.ts";
 import { groupLendAssets, type LendMarketRow } from "../../lib/lendMarkets.ts";
 import { useLendMarkets } from "../../lib/useLendMarkets.ts";
 import { useMyLending } from "../../lib/useMyLending.ts";
@@ -95,11 +95,11 @@ export function LendAssetPage() {
             <span>{t("lend.statTvl")}</span>
           </div>
           <div className="lend-stat">
-            <b className="lend-apy-in">{fmtApy(asset?.supplyApy ?? null)}</b>
+            <b className="lend-apy-in">{fmtApyRange(asset?.supplyApyMin, asset?.supplyApyMax)}</b>
             <span>{t("lend.supplyApy")}</span>
           </div>
           <div className="lend-stat">
-            <b className="lend-apy-out">{fmtApy(asset?.borrowApy ?? null)}</b>
+            <b className="lend-apy-out">{fmtApyRange(asset?.borrowApyMin, asset?.borrowApyMax)}</b>
             <span>{t("lend.borrowApy")}</span>
           </div>
         </div>
