@@ -1,5 +1,5 @@
 import { cacheGet, cacheKey, POLICIES } from "../cache.ts";
-import { loadNearMarkets, N_USDC, N_USDT, N_WRAP, quoteNearToken } from "../../nearDex.ts";
+import { loadNearMarkets, N_USDC, N_USDT, N_WRAP, quoteNearToken, REF_VENUE } from "../../nearDex.ts";
 import type { VenuePool } from "../../dexPools.ts";
 import { pairId } from "../../pairKey.ts";
 import { catalogTopOn } from "../universe.ts";
@@ -108,8 +108,8 @@ async function marketsFromIndexer(): Promise<MarketRow[] | null> {
         tokenB: b,
         venues: [
           {
-            protocolId: "rhea-ref-397",
-            protocolName: "Rhea / Ref",
+            protocolId: REF_VENUE.id,
+            protocolName: REF_VENUE.name,
             chainId: 397,
             pool: `ref:${p.id}`,
             feeLabel: p.total_fee != null ? `${(Number(p.total_fee) / 100).toFixed(2)}%` : "0.30%",
@@ -122,7 +122,7 @@ async function marketsFromIndexer(): Promise<MarketRow[] | null> {
         ],
         price: usd,
         depth: tvl,
-        venueNames: ["Rhea / Ref"],
+        venueNames: [REF_VENUE.name],
       });
     }
     return rows;
@@ -132,8 +132,8 @@ async function marketsFromIndexer(): Promise<MarketRow[] | null> {
 }
 
 export const nearRefProtocol: DefiProtocol = {
-  id: "rhea-ref-397",
-  name: "Rhea / Ref",
+  id: REF_VENUE.id,
+  name: REF_VENUE.name,
   chainId: 397,
   caps: ["markets", "quote"],
   async quoteUsd(_ctx, token) {

@@ -51,7 +51,7 @@
     "nearDetail": "NEAR uses mainnet NEP-141, not Aurora. LayerZero has no NEAR mainnet endpoint yet, so the factory address is empty.",
     "solDetail": "SOL uses classic SPL Token. Independent issuance, not LayerZero OFT. Program address is empty.",
     "adaAmm": "Cardano quotes come from the Minswap aggregator, not a Blockfrost key.",
-    "nearAmm": "NEAR quotes come from Rhea/Ref get_pool reserves.",
+    "nearAmm": "NEAR quotes come from Rhea (Ref Finance) get_pool reserves.",
     "solAmm": "Solana AMM rows come from Raydium, Orca and Meteora pool lists, not Jupiter aggregator quotes.",
     "markets": "Markets",
     "myLp": "My liquidity",

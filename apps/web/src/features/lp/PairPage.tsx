@@ -255,11 +255,10 @@ export function PairPage() {
                       </span>
                       <div className="holding-meta">
                         <b>{v.venue.name}</b>
-                        {v.feeLabel ? (
-                          <span className="me-fee">
-                            {t("lp.fee")} {v.feeLabel}
-                          </span>
-                        ) : null}
+                        <span>
+                          {metaA.symbol}/{metaB.symbol}
+                          {v.feeLabel ? ` · ${t("lp.fee")} ${v.feeLabel}` : ""}
+                        </span>
                         <span className="num">{short(v.pool)}</span>
                       </div>
                       <span className="num me-price">{fmtCompact(v.priceAinB)}</span>

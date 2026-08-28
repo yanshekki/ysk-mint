@@ -51,7 +51,7 @@
     "nearDetail": "NEAR 使用主鏈 NEP-141，並非 Aurora。LayerZero 尚未提供 NEAR 主鏈 Endpoint，factory 地址仍空。",
     "solDetail": "SOL 使用經典 SPL Token。獨立發行，不經 LayerZero OFT。program 地址仍空。",
     "adaAmm": "Cardano 報價取自 Minswap 聚合器池路徑，不是 Blockfrost 私鑰索引。",
-    "nearAmm": "NEAR 報價取自 Rhea／Ref 合約 get_pool 儲備。",
+    "nearAmm": "NEAR 報價取自 Rhea（Ref Finance）合約 get_pool 儲備。",
     "solAmm": "Solana AMM 取自 Raydium、Orca、Meteora 公開池列表，不是 Jupiter 聚合報價。",
     "markets": "市場",
     "myLp": "我的流動倉",

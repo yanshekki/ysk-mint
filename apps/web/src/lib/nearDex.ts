@@ -61,9 +61,9 @@ type RefPool = {
   shares_total_supply: string;
 };
 
-const REF_VENUE: Venue = {
+export const REF_VENUE: Venue = {
   id: "rhea-ref-397",
-  name: "Rhea / Ref",
+  name: "Rhea",
   chainId: 397,
   kind: "v2",
   factory: "0x0000000000000000000000000000000000000000",
