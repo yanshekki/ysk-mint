@@ -130,6 +130,8 @@ export function dexAppHref(args: DexAppArgs): string | undefined {
   }
   if (h.includes("minswap")) return "https://app.minswap.org/liquidity";
   if (h.includes("cetus")) return "https://app.cetus.zone/pools";
+  if (h.includes("flowx")) return "https://flowx.finance/";
+  if (h.includes("hyperion")) return "https://hyperion.xyz/pools";
   if (h.includes("ston")) return "https://app.ston.fi/pools";
   if (h.includes("raydium")) return "https://raydium.io/liquidity-pools/";
   if (h.includes("orca")) return "https://www.orca.so/pools";
@@ -153,6 +155,8 @@ export function dexBrandHref(name: string, _chainId = 1): string | undefined {
   if (h.includes("raydium")) return "https://raydium.io/portfolio/";
   if (h.includes("orca")) return "https://www.orca.so/portfolio";
   if (h.includes("cetus")) return "https://app.cetus.zone/portfolio";
+  if (h.includes("flowx")) return "https://flowx.finance/";
+  if (h.includes("hyperion")) return "https://hyperion.xyz/pools";
   if (h.includes("minswap")) return "https://app.minswap.org/liquidity";
   return undefined;
 }

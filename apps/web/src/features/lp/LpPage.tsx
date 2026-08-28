@@ -17,7 +17,7 @@ import { ttCoverageLine } from "../../lib/defi/coverage.ts";
 import { useUserSettings } from "../../lib/userSettings.ts";
 
 /** High-usage chains shown before 「更多」. Order follows featuredChains(). */
-const PRIMARY_MARKET_IDS = new Set([1, 101, 56, 8453, 42161, 43114, 137, 784, 607, 999]);
+const PRIMARY_MARKET_IDS = new Set([1, 101, 56, 8453, 42161, 43114, 137, 784, 607, 637, 999]);
 const MARKET_PAGE = 50;
 const MARKETS_KEY = "ysk-markets";
 

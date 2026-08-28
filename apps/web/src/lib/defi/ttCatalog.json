@@ -507,22 +507,22 @@
       "name": "FlowX Finance",
       "sector": "dex",
       "family": "sui-amm",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         784
       ],
-      "note": "無公開 stats list，要 SDK AmmPoolManager，未接"
+      "note": "官方 pool list 503；/ 用 GeckoTerminal flow-x + flowx-clmm reserve_in_usd"
     },
     {
       "id": "hyperion",
       "name": "Hyperion",
       "sector": "dex",
       "family": "aptos-amm",
-      "status": "pending",
+      "status": "wired",
       "chains": [
         637
       ],
-      "note": "官方 GraphQL alcove 404；REST host 未公開 pool list，未接"
+      "note": "官方 GraphQL alcove 404；/ 用 GeckoTerminal hyperion pools reserve_in_usd"
     },
     {
       "id": "pendle",
