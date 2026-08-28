@@ -541,6 +541,7 @@
     "liveDockHint": "讀鏈時喺右下角顯示進度。",
     "hideZero": "隱藏零持倉",
     "hideZeroHint": "持倉頁只列出有餘額嘅代幣。",
+    "addrs": "地址",
     "addrsMine": "我的地址",
     "addrsMineHint": "持倉「我的」會合併已連接錢包同你加嘅地址。發幣同轉帳仍要連接現有錢包。",
     "addrsMineEmpty": "未連接，亦未貼上地址。",

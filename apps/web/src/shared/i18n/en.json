@@ -541,6 +541,7 @@
     "liveDockHint": "Show scan progress in the bottom-right corner.",
     "hideZero": "Hide zero holdings",
     "hideZeroHint": "Holdings lists only tokens with a balance.",
+    "addrs": "Addresses",
     "addrsMine": "My addresses",
     "addrsMineHint": "Holdings “Mine” merges connected wallets with addresses you paste. Launch and transfer still need a connected wallet.",
     "addrsMineEmpty": "Nothing connected, and no pasted address yet.",

@@ -1329,6 +1329,9 @@ button.me-token.transfer-pick-on {
   padding: 14px 16px;
   border-bottom: 1px solid var(--border-color);
 }
+.me-card > .me-card-head:not(:first-child) {
+  border-top: 1px solid var(--border-color);
+}
 .me-card-head img {
   width: 22px;
   height: 22px;
@@ -2612,6 +2615,10 @@ button.me-token:focus-visible {
   }
 }
 
+.me-card > .set-item:first-child,
+.me-card > button.set-item-btn:first-child {
+  border-top: 0;
+}
 .set-item {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
