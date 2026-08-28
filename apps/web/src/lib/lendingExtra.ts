@@ -859,7 +859,7 @@ const SEAMLESS_VAULTS: Address[] = [
   "0x27d8c7273fd3fcc6956a0b370ce5fd4a7fc65c18",
 ];
 
-const DOLOMITE_MARGIN: Record<number, Address> = {
+export const DOLOMITE_MARGIN: Record<number, Address> = {
   42161: "0x6Bd780E7fDf01D77e4d475c821f1e7AE05409072",
   8453: "0x003Ca23Fd5F0ca87D01F6eC6CD14A8AE60c2b97D",
   1: "0x003Ca23Fd5F0ca87D01F6eC6CD14A8AE60c2b97D",

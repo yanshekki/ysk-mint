@@ -1,7 +1,9 @@
 import { erc20Abi, formatUnits, type Address, type PublicClient } from "viem";
 import { CHAINS } from "@ysk-mint/config";
 import { chainIcon } from "./chainIcon.ts";
-import { FRAX_REG } from "./lendingExtra.ts";
+import { callMany } from "./defi/evm/client.ts";
+import { DEX } from "./defiAddresses.ts";
+import { DOLOMITE_MARGIN, FRAX_REG } from "./lendingExtra.ts";
 import { TOKEN_CATALOG } from "./tokenRegistry.ts";
 import type { LendMarketRow } from "./lendMarkets.ts";
 
@@ -512,6 +514,256 @@ export async function readFraxlendMarkets(client: PublicClient, chainId: number)
   return out;
 }
 
+const dolomiteMarketAbi = [
+  { type: "function", name: "getNumMarkets", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "getMarketTokenAddress", stateMutability: "view", inputs: [{ type: "uint256" }], outputs: [{ type: "address" }] },
+  {
+    type: "function",
+    name: "getMarketTotalPar",
+    stateMutability: "view",
+    inputs: [{ type: "uint256" }],
+    outputs: [
+      { name: "borrow", type: "uint128" },
+      { name: "supply", type: "uint128" },
+    ],
+  },
+  {
+    type: "function",
+    name: "getMarketCurrentIndex",
+    stateMutability: "view",
+    inputs: [{ type: "uint256" }],
+    outputs: [
+      { name: "borrow", type: "uint96" },
+      { name: "supply", type: "uint96" },
+      { name: "lastUpdate", type: "uint32" },
+    ],
+  },
+  {
+    type: "function",
+    name: "getMarketPrice",
+    stateMutability: "view",
+    inputs: [{ type: "uint256" }],
+    outputs: [{ name: "value", type: "uint256" }],
+  },
+] as const;
+
+function tupleAmt(x: unknown, i: number): bigint {
+  if (Array.isArray(x)) return BigInt(x[i] ?? 0n);
+  if (x && typeof x === "object") {
+    const o = x as { borrow?: bigint; supply?: bigint; value?: bigint };
+    if (i === 0 && o.borrow != null) return BigInt(o.borrow);
+    if (i === 1 && o.supply != null) return BigInt(o.supply);
+    if (o.value != null) return BigInt(o.value);
+  }
+  return 0n;
+}
+
+function cleanSym(sym: string) {
+  const s = sym.replace(/₮/g, "T").trim();
+  if (/^usd[tT]0?$/i.test(s) || /^usdt\.e$/i.test(s)) return "USDT";
+  if (/^usdc\.e$/i.test(s) || /^usdbc$/i.test(s)) return "USDC";
+  return s || "TKN";
+}
+
+function catalogMeta(chainId: number, token: string): { symbol: string; decimals: number } | null {
+  const hit = TOKEN_CATALOG.find((t) => t.chainId === chainId && t.address?.toLowerCase() === token.toLowerCase());
+  if (hit) return { symbol: cleanSym(hit.symbol), decimals: hit.decimals };
+  const d = DEX[chainId];
+  if (!d) return null;
+  const addr = token.toLowerCase();
+  if (d.wrapped.toLowerCase() === addr) return { symbol: "WETH", decimals: 18 };
+  if (d.usdc.toLowerCase() === addr) return { symbol: "USDC", decimals: d.usdcDecimals };
+  if (d.usdt && d.usdt.toLowerCase() === addr) return { symbol: "USDT", decimals: d.usdtDecimals ?? 6 };
+  if (d.dai && d.dai.toLowerCase() === addr) return { symbol: "DAI", decimals: d.daiDecimals ?? 18 };
+  return null;
+}
+
+export async function readDolomiteMarkets(client: PublicClient, chainId: number): Promise<LendMarketRow[]> {
+  const margin = DOLOMITE_MARGIN[chainId];
+  if (!margin) return [];
+  const n = Number(await client.readContract({ address: margin, abi: dolomiteMarketAbi, functionName: "getNumMarkets" }));
+  if (!Number.isFinite(n) || n <= 0) return [];
+  const max = Math.min(n, 40);
+  type Snap = { i: number; token: Address; supplyWei: bigint; borrowWei: bigint; priceWad: bigint };
+  const snaps: Snap[] = [];
+  const CHUNK = 8;
+  for (let start = 0; start < max; start += CHUNK) {
+    const ids = Array.from({ length: Math.min(CHUNK, max - start) }, (_, j) => BigInt(start + j));
+    const packed = await callMany(
+      client,
+      ids.flatMap((id) => [
+        { address: margin, abi: dolomiteMarketAbi, functionName: "getMarketTokenAddress", args: [id] },
+        { address: margin, abi: dolomiteMarketAbi, functionName: "getMarketTotalPar", args: [id] },
+        { address: margin, abi: dolomiteMarketAbi, functionName: "getMarketCurrentIndex", args: [id] },
+        { address: margin, abi: dolomiteMarketAbi, functionName: "getMarketPrice", args: [id] },
+      ]),
+    );
+    for (let j = 0; j < ids.length; j++) {
+      const i = start + j;
+      const tokenRes = packed[j * 4];
+      const parRes = packed[j * 4 + 1];
+      const idxRes = packed[j * 4 + 2];
+      const priceRes = packed[j * 4 + 3];
+      if (tokenRes?.status !== "success" || parRes?.status !== "success" || idxRes?.status !== "success") continue;
+      const token = tokenRes.result as Address;
+      const borrowPar = tupleAmt(parRes.result, 0);
+      const supplyPar = tupleAmt(parRes.result, 1);
+      const borrowIdx = tupleAmt(idxRes.result, 0) || 10n ** 18n;
+      const supplyIdx = tupleAmt(idxRes.result, 1) || 10n ** 18n;
+      const supplyWei = (supplyPar * supplyIdx) / 10n ** 18n;
+      const borrowWei = (borrowPar * borrowIdx) / 10n ** 18n;
+      if (supplyWei === 0n && borrowWei === 0n) continue;
+      const priceWad =
+        priceRes?.status === "success"
+          ? typeof priceRes.result === "bigint"
+            ? priceRes.result
+            : tupleAmt(priceRes.result, 0)
+          : 0n;
+      snaps.push({ i, token, supplyWei, borrowWei, priceWad });
+    }
+  }
+  const uniq = [...new Set(snaps.map((s) => s.token.toLowerCase()))] as Address[];
+  const meta = new Map<string, { symbol: string; decimals: number }>();
+  for (const token of uniq) {
+    const cat = catalogMeta(chainId, token);
+    if (cat) meta.set(token.toLowerCase(), cat);
+  }
+  const missing = uniq.filter((t) => !meta.has(t.toLowerCase()));
+  for (let i = 0; i < missing.length; i += 16) {
+    const part = missing.slice(i, i + 16);
+    const metaPacked = await callMany(
+      client,
+      part.flatMap((token) => [
+        { address: token, abi: erc20Abi, functionName: "symbol" },
+        { address: token, abi: erc20Abi, functionName: "decimals" },
+      ]),
+    );
+    part.forEach((token, j) => {
+      const symRes = metaPacked[j * 2];
+      const decRes = metaPacked[j * 2 + 1];
+      const symbol = symRes?.status === "success" ? cleanSym(String(symRes.result)) : "";
+      const decimals = decRes?.status === "success" ? Number(decRes.result) || 18 : 18;
+      if (symbol && symbol !== "TKN") meta.set(token.toLowerCase(), { symbol, decimals });
+      else if (!meta.has(token.toLowerCase())) meta.set(token.toLowerCase(), { symbol: `0x${token.slice(2, 6)}`, decimals });
+    });
+  }
+  const out: LendMarketRow[] = [];
+  for (const s of snaps) {
+    const m = meta.get(s.token.toLowerCase()) ?? { symbol: `0x${s.token.slice(2, 6)}`, decimals: 18 };
+    const px = Number(s.priceWad) / 10 ** (36 - m.decimals);
+    const priceUsd = Number.isFinite(px) && px > 0 && px < 1e7 ? px : /usd|dai/i.test(m.symbol) ? 1 : null;
+    const supN = Number(formatUnits(s.supplyWei, m.decimals));
+    const borN = Number(formatUnits(s.borrowWei, m.decimals));
+    out.push(
+      row({
+        protocol: "Dolomite",
+        chainId,
+        symbol: m.symbol,
+        token: s.token,
+        market: `${margin}:${s.i}`,
+        supplyApy: null,
+        borrowApy: null,
+        supplyUsd: priceUsd != null && Number.isFinite(supN) ? supN * priceUsd : null,
+        borrowUsd: priceUsd != null && Number.isFinite(borN) ? borN * priceUsd : null,
+      }),
+    );
+  }
+  return out;
+}
+
+const ECHELON = "0xc6bc659f1649553c1a3fa05d9727433dc03843baac29473c817d06d39e7621ba";
+const APTOS = "https://fullnode.mainnet.aptoslabs.com/v1";
+
+async function aptosView(fn: string, args: unknown[]): Promise<unknown> {
+  try {
+    const res = await fetch(`${APTOS}/view`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ function: fn, type_arguments: [], arguments: args }),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+async function aptosResource(addr: string, typ: string): Promise<Json | null> {
+  try {
+    const res = await fetch(`${APTOS}/accounts/${addr}/resource/${encodeURIComponent(typ)}`);
+    if (!res.ok) return null;
+    const json = (await res.json()) as { data?: Json };
+    return json.data ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function fp64(v: unknown): number {
+  const s = typeof v === "object" && v && "v" in (v as Json) ? String((v as Json).v) : String(v ?? "");
+  if (!/^\d+$/.test(s)) return 0;
+  try {
+    return Number(BigInt(s)) / 2 ** 64;
+  } catch {
+    return 0;
+  }
+}
+
+async function echelon(): Promise<LendMarketRow[]> {
+  const raw = await aptosView(`${ECHELON}::lending::market_objects`, []);
+  const list = (Array.isArray(raw) ? raw[0] : raw) as Array<{ inner?: string } | string> | null;
+  const ids = (list ?? [])
+    .map((m) => (typeof m === "string" ? m : m?.inner))
+    .filter((x): x is string => Boolean(x))
+    .slice(0, 40);
+  const out: LendMarketRow[] = [];
+  for (let i = 0; i < ids.length; i += 8) {
+    const part = ids.slice(i, i + 8);
+    await Promise.all(
+      part.map(async (id) => {
+        try {
+          const [mkt, priceRaw] = await Promise.all([
+            aptosResource(id, `${ECHELON}::lending::Market`),
+            aptosView(`${ECHELON}::lending::asset_price`, [id]),
+          ]);
+          if (!mkt) return;
+          const rawName = String(mkt.asset_name || "TKN").replace(/ Coin$/i, "").trim() || "TKN";
+          const name =
+            /^(tether usd|tether)$/i.test(rawName) ? "USDT"
+            : /^(usd coin)$/i.test(rawName) ? "USDC"
+            : /^aptos$/i.test(rawName) ? "APT"
+            : /^(wrapped ether|weth)$/i.test(rawName) ? "WETH"
+            : /^(wrapped btc|wbtc)$/i.test(rawName) ? "WBTC"
+            : rawName;
+          const mantissa = Number(mkt.asset_mantissa || 1e8) || 1e8;
+          const dec = Math.round(Math.log10(mantissa)) || 8;
+          const cash = Number(mkt.total_cash || 0) / 10 ** dec;
+          const liab = Number(mkt.total_liability || 0) / 10 ** dec;
+          if ((!Number.isFinite(cash) || cash === 0) && (!Number.isFinite(liab) || liab === 0)) return;
+          const px = fp64(Array.isArray(priceRaw) ? priceRaw[0] : priceRaw);
+          const price = px > 0 && px < 1e7 ? px : /usd|dai/i.test(name) ? 1 : null;
+          out.push(
+            row({
+              protocol: "Echelon",
+              chainId: 637,
+              symbol: name,
+              token: String(mkt.asset_type ?? id),
+              market: id,
+              supplyApy: null,
+              borrowApy: null,
+              supplyUsd: price != null && Number.isFinite(cash + liab) ? (cash + liab) * price : null,
+              borrowUsd: price != null && Number.isFinite(liab) ? liab * price : null,
+            }),
+          );
+        } catch {
+          /* market miss */
+        }
+      }),
+    );
+  }
+  return out;
+}
+
 export async function loadHttpLendMarkets(chainId: number): Promise<LendMarketRow[]> {
   const jobs: Array<Promise<LendMarketRow[]>> = [];
   if (chainId === 101) {
@@ -526,6 +778,7 @@ export async function loadHttpLendMarkets(chainId: number): Promise<LendMarketRo
   }
   if (chainId === 728126428) jobs.push(justlend().catch(() => []));
   if (chainId === 56) jobs.push(lista().catch(() => []));
+  if (chainId === 637) jobs.push(echelon().catch(() => []));
   if (!jobs.length) return [];
   const parts = await Promise.all(jobs);
   return parts.flat();

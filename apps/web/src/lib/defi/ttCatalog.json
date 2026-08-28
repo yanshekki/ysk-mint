@@ -967,7 +967,7 @@
         8453,
         1
       ],
-      "note": "DolomiteMargin getAccountBalances account 0–11；Sonic 146 官方未列 Margin，未接"
+      "note": "/lend 用 DolomiteMargin getNumMarkets/totalPar/index/price；持倉 getAccountBalances account 0–11；Sonic 146 官方未列 Margin，未接"
     },
     {
       "id": "hyperlend",
@@ -1071,7 +1071,7 @@
       "chains": [
         637
       ],
-      "note": "Aptos lending::account_coins / account_liability；Aries 2026-07 已撤流動性未接"
+      "note": "/lend 讀 lending::Market total_cash/total_liability；持倉 account_coins / account_liability；Aries 2026-07 已撤流動性未接"
     },
     {
       "id": "scallop",
