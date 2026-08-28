@@ -2676,6 +2676,13 @@ button.set-item-btn:focus-visible {
   font-weight: 800;
   color: var(--text);
 }
+.me-tx-act {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  gap: 4px;
+}
 .me-tx-act b {
   display: inline-flex;
   flex-wrap: wrap;
@@ -2713,7 +2720,7 @@ button.set-item-btn:focus-visible {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  margin-top: 4px;
+  margin-top: 0;
   font-size: 12px;
   font-style: normal;
   font-weight: 600;
