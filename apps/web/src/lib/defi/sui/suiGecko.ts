@@ -44,4 +44,22 @@ export const suiGeckoProtocols = [
     chainId: 784,
     specs: [sui("kriya-dex", "kriya-784", "Kriya", "CLMM")],
   }),
+  makeGeckoProtocol({
+    id: "steamm-784",
+    name: "STEAMM",
+    chainId: 784,
+    specs: [sui("steamm", "steamm-784", "STEAMM", "AMM")],
+  }),
+  makeGeckoProtocol({
+    id: "fullsail-784",
+    name: "Full Sail",
+    chainId: 784,
+    specs: [sui("fullsail-finance", "fullsail-784", "Full Sail", "CLMM")],
+  }),
+  makeGeckoProtocol({
+    id: "ferra-784",
+    name: "Ferra",
+    chainId: 784,
+    specs: [sui("ferra-dlmm", "ferra-784", "Ferra", "DLMM")],
+  }),
 ];

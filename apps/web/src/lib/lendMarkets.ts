@@ -18,7 +18,7 @@ import {
   SILO_FACTORY,
   SPARK,
 } from "./lendingExtra.ts";
-import { HTTP_LEND_CHAINS, loadHttpLendMarkets, readDolomiteMarkets, readFraxlendMarkets } from "./lendMarketsHttp.ts";
+import { CURVE_LEND_CHAINS, HTTP_LEND_CHAINS, loadHttpLendMarkets, readDolomiteMarkets, readFraxlendMarkets } from "./lendMarketsHttp.ts";
 import { TOKEN_CATALOG } from "./tokenRegistry.ts";
 import { chainIcon } from "./chainIcon.ts";
 
@@ -138,7 +138,7 @@ const siloConfigAbi = [
   { type: "function", name: "getSilos", stateMutability: "view", inputs: [], outputs: [{ type: "address" }, { type: "address" }] },
 ] as const;
 
-export const LEND_CACHE = "lend8";
+export const LEND_CACHE = "lend9";
 
 const FLUID_NATIVE = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 const ZERO = "0x0000000000000000000000000000000000000000";
@@ -741,6 +741,7 @@ export function lendChainIds(filter: number | "all", disabled: number[]) {
   for (const id of Object.keys(SILO_FACTORY)) ids.add(Number(id));
   for (const id of Object.keys(DOLOMITE_MARGIN)) ids.add(Number(id));
   for (const id of HTTP_LEND_CHAINS) ids.add(id);
+  for (const id of CURVE_LEND_CHAINS) ids.add(id);
   ids.add(43114);
   const off = new Set(disabled);
   const all = [...ids].filter((id) => !off.has(id));

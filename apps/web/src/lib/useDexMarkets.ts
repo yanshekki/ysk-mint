@@ -56,7 +56,7 @@ async function loadEvm(chainId: number): Promise<MarketRow[]> {
 async function loadNative(chainId: number): Promise<MarketRow[]> {
   const raw = await cacheGet(
     {
-      key: cacheKey("markets", chainId, "n4"),
+      key: cacheKey("markets", chainId, "n5"),
       policy: { ...POLICIES.markets, keep: (rows: DefiMarket[]) => rows.length > 0 },
     },
     async () => {
@@ -89,7 +89,7 @@ const NATIVE = new Set([101, 397, 1815, 784, 607, 637]);
 const SKIP = new Set([101, 397, 1815, 398, 18151, 103, 784, 607, 637, 998, 728126428]);
 
 function marketKey(id: number) {
-  return NATIVE.has(id) ? cacheKey("markets", id, "n4") : marketsCacheKey(id);
+  return NATIVE.has(id) ? cacheKey("markets", id, "n5") : marketsCacheKey(id);
 }
 
 function marketIds(chainId: number | "all", disabled: number[]) {

@@ -140,6 +140,9 @@ export function dexAppHref(args: DexAppArgs): string | undefined {
   if (h.includes("thala")) return "https://app.thala.fi/";
   if (h.includes("tapp")) return "https://tapp.exchange/";
   if (h.includes("liquidswap")) return "https://liquidswap.com/";
+  if (h.includes("steamm")) return "https://steamm.fi/";
+  if (h.includes("full sail") || h.includes("fullsail")) return "https://app.fullsail.finance/";
+  if (h.includes("ferra")) return "https://www.ferra.xyz/";
   if (h.includes("ston")) return "https://app.ston.fi/pools";
   if (h.includes("raydium")) return "https://raydium.io/liquidity-pools/";
   if (h.includes("orca")) return "https://www.orca.so/pools";
@@ -173,6 +176,9 @@ export function dexBrandHref(name: string, _chainId = 1): string | undefined {
   if (h.includes("thala")) return "https://app.thala.fi/";
   if (h.includes("tapp")) return "https://tapp.exchange/";
   if (h.includes("liquidswap")) return "https://liquidswap.com/";
+  if (h.includes("steamm")) return "https://steamm.fi/";
+  if (h.includes("full sail") || h.includes("fullsail")) return "https://app.fullsail.finance/";
+  if (h.includes("ferra")) return "https://www.ferra.xyz/";
   if (h.includes("minswap")) return "https://app.minswap.org/liquidity";
   return undefined;
 }

@@ -8,6 +8,14 @@ import { TOKEN_CATALOG } from "./tokenRegistry.ts";
 import type { LendMarketRow } from "./lendMarkets.ts";
 
 export const HTTP_LEND_CHAINS = [101, 397, 784, 637, 728126428];
+export const CURVE_LEND_CHAINS = [1, 42161, 10, 146];
+
+const CURVE_LEND_CHAIN: Record<number, string> = {
+  1: "ethereum",
+  42161: "arbitrum",
+  10: "optimism",
+  146: "sonic",
+};
 
 function chainShort(chainId: number) {
   return Object.values(CHAINS).find((c) => c.chainId === chainId)?.short ?? String(chainId);
@@ -398,6 +406,59 @@ async function justlend(): Promise<LendMarketRow[]> {
   });
 }
 
+function alreadyPct(x: unknown): number | null {
+  const n = Number(x);
+  if (!Number.isFinite(n) || n < 0 || n > 100) return null;
+  return n;
+}
+
+type CurveVault = {
+  id?: string;
+  address?: string;
+  blockchainId?: string;
+  usdTotal?: number;
+  rates?: { lendApyPcent?: number; borrowApyPcent?: number };
+  totalSupplied?: { usdTotal?: number };
+  borrowed?: { usdTotal?: number };
+  assets?: { borrowed?: { symbol?: string; address?: string } };
+};
+
+let curveVaultCache: Promise<CurveVault[] | null> | null = null;
+
+async function curveVaults(): Promise<CurveVault[]> {
+  if (!curveVaultCache) {
+    curveVaultCache = getJson<{ data?: { lendingVaultData?: CurveVault[] } }>(
+      "https://api.curve.finance/v1/getLendingVaults/all",
+    ).then((j) => j?.data?.lendingVaultData ?? []);
+  }
+  return (await curveVaultCache) ?? [];
+}
+
+async function curveLend(chainId: number): Promise<LendMarketRow[]> {
+  const chain = CURVE_LEND_CHAIN[chainId];
+  if (!chain) return [];
+  const list = (await curveVaults()).filter((v) => v.blockchainId === chain);
+  return list
+    .map((v) => {
+      const sup = num(v.totalSupplied?.usdTotal ?? v.usdTotal);
+      const bor = num(v.borrowed?.usdTotal);
+      const symbol = v.assets?.borrowed?.symbol || "crvUSD";
+      return row({
+        protocol: "Curve",
+        chainId,
+        symbol,
+        token: v.assets?.borrowed?.address || v.address || symbol,
+        market: v.address || v.id || symbol,
+        supplyApy: alreadyPct(v.rates?.lendApyPcent),
+        borrowApy: alreadyPct(v.rates?.borrowApyPcent),
+        supplyUsd: sup,
+        borrowUsd: bor,
+      });
+    })
+    .sort((a, b) => (b.supplyUsd ?? 0) - (a.supplyUsd ?? 0))
+    .slice(0, 40);
+}
+
 async function lista(): Promise<LendMarketRow[]> {
   const json = await getJson<{
     data?: { list?: Array<{ address?: string; asset?: string; assetSymbol?: string; apy?: string; depositsUsd?: string; utilization?: string }> };
@@ -779,6 +840,7 @@ export async function loadHttpLendMarkets(chainId: number): Promise<LendMarketRo
   if (chainId === 728126428) jobs.push(justlend().catch(() => []));
   if (chainId === 56) jobs.push(lista().catch(() => []));
   if (chainId === 637) jobs.push(echelon().catch(() => []));
+  if (CURVE_LEND_CHAIN[chainId]) jobs.push(curveLend(chainId).catch(() => []));
   if (!jobs.length) return [];
   const parts = await Promise.all(jobs);
   return parts.flat();

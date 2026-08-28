@@ -11,7 +11,7 @@ import { pairId } from "./pairKey.ts";
 const NATIVE = new Set([101, 397, 1815, 784, 607, 637]);
 
 function marketKey(chainId: number) {
-  return NATIVE.has(chainId) ? cacheKey("markets", chainId, "n4") : marketsCacheKey(chainId);
+  return NATIVE.has(chainId) ? cacheKey("markets", chainId, "n5") : marketsCacheKey(chainId);
 }
 
 function rowForPair(rows: MarketRow[] | undefined, chainId: number, a: string, b: string) {

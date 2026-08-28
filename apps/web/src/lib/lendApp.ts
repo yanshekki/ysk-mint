@@ -61,6 +61,7 @@ export function lendAppHref(protocol: string, chainId: number, token?: string): 
   if (p === "scallop") return "https://app.scallop.io/";
   if (p === "echelon") return "https://app.echelon.market/";
   if (p === "burrow") return "https://app.burrow.finance/";
+  if (p === "curve") return "https://www.curve.finance/lend";
   return undefined;
 }
 

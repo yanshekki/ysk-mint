@@ -597,6 +597,33 @@
       "note": "GeckoTerminal liquidswap + liquidswap-v0-5"
     },
     {
+      "id": "steamm",
+      "name": "STEAMM",
+      "sector": "dex",
+      "family": "sui-amm",
+      "status": "wired",
+      "chains": [784],
+      "note": "GeckoTerminal steamm reserve_in_usd"
+    },
+    {
+      "id": "fullsail",
+      "name": "Full Sail",
+      "sector": "dex",
+      "family": "sui-amm",
+      "status": "wired",
+      "chains": [784],
+      "note": "GeckoTerminal fullsail-finance"
+    },
+    {
+      "id": "ferra",
+      "name": "Ferra",
+      "sector": "dex",
+      "family": "sui-amm",
+      "status": "wired",
+      "chains": [784],
+      "note": "GeckoTerminal ferra-dlmm"
+    },
+    {
       "id": "pendle",
       "name": "Pendle Yield Tokenization",
       "sector": "dex",
@@ -1188,6 +1215,15 @@
         56
       ],
       "note": "Moolah Morpho-fork + ERC4626 vault + Interaction CDP；唔係 Compound"
+    },
+    {
+      "id": "curve-lending",
+      "name": "Curve",
+      "sector": "lending",
+      "family": "llamalend",
+      "status": "wired",
+      "chains": [1, 42161, 10, 146],
+      "note": "官方 getLendingVaults LlamaLend；lendApyPcent 已係 %"
     },
     {
       "id": "maple",
