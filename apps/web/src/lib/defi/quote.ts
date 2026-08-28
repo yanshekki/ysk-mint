@@ -1,10 +1,12 @@
 import type { Address, PublicClient } from "viem";
 import { DEX, isUsdStableAddress, usdStables } from "../defiAddresses.ts";
 import { canonAddr, pairId } from "../pairKey.ts";
-import { cacheGet, cacheKey, POLICIES } from "./cache.ts";
+import { cacheGet, cacheKey, cacheLastGood, POLICIES } from "./cache.ts";
 import { ensureProtocols } from "./protocols.ts";
 import { protocolById, protocolsOn } from "./registry.ts";
-import type { DefiCtx, Quote, QuoteSource, TokenRef, VenueQuote } from "./types.ts";
+import type { DefiCtx, MarketRow, Quote, QuoteSource, TokenRef, VenueQuote } from "./types.ts";
+
+export const VENUES_CACHE = "venues2";
 
 const OUTLIER = 0.15;
 const quotePolicy = { ...POLICIES.quote, keep: (q: Quote | null) => Boolean(q && q.usdc > 0) };
@@ -154,6 +156,36 @@ export async function quoteUsd(
   return evmQuoteUsd(ctx, chainId, ref);
 }
 
+function mergeQuotes(parts: VenueQuote[][]): VenueQuote[] {
+  const by = new Map<string, VenueQuote>();
+  for (const list of parts) {
+    for (const q of list) {
+      const pool = (q.pool || "").toLowerCase();
+      if (!pool) continue;
+      const k = `${q.protocolId}:${pool}`;
+      if (!by.has(k)) by.set(k, q);
+    }
+  }
+  return [...by.values()];
+}
+
+function quotesFromMarketList(chainId: number, tokenA: string, tokenB: string): VenueQuote[] {
+  const native = cacheLastGood<MarketRow[]>(cacheKey("markets", chainId));
+  const evm = cacheLastGood<MarketRow[]>(cacheKey("markets", chainId, "usd1"));
+  const rows = (evm?.length ? evm : native) ?? [];
+  if (!rows.length) return [];
+  const id = pairId(chainId, tokenA, tokenB);
+  const xa = tokenA.toLowerCase();
+  const xb = tokenB.toLowerCase();
+  const row = rows.find((r) => {
+    if (r.pairId === id) return true;
+    const ta = r.tokenA.toLowerCase();
+    const tb = r.tokenB.toLowerCase();
+    return (ta === xa && tb === xb) || (ta === xb && tb === xa);
+  });
+  return row?.venues?.length ? row.venues : [];
+}
+
 export async function readPairVenues(
   client: PublicClient,
   chainId: number,
@@ -166,13 +198,14 @@ export async function readPairVenues(
   const pid = pairId(chainId, String(tokenA), String(tokenB));
   return cacheGet(
     {
-      key: cacheKey("venues", pid, String(tokenA).toLowerCase()),
+      key: cacheKey(VENUES_CACHE, pid, String(tokenA).toLowerCase()),
       policy: { ...POLICIES.venues, keep: (rows: VenueQuote[]) => rows.length > 0 },
     },
     async () => {
   const ctx: DefiCtx = { evm: client };
   const a: TokenRef = { chainId, address: tokenA, decimals: decA };
   const b: TokenRef = { chainId, address: tokenB, decimals: decB };
+  const fromList = quotesFromMarketList(chainId, String(tokenA), String(tokenB));
   const out = await discoverRead(ctx, chainId, a, b);
   const seen = new Set(out.map((v) => `${v.protocolId}:${v.pool.toLowerCase()}`));
   const a0 = canonAddr(String(tokenA));
@@ -201,7 +234,7 @@ export async function readPairVenues(
     seen.add(key);
     out.push(row);
   }
-  return out;
+  return mergeQuotes([fromList, out]);
     },
   );
 }

@@ -27,9 +27,15 @@ function rowForPair(rows: MarketRow[] | undefined, chainId: number, a: string, b
   });
 }
 
-export function cachedNativePairVenues(chainId: number, tokenA: string, tokenB: string): VenuePool[] {
+/** Same quotes the markets list already loaded for this pair (EVM or native cache). */
+export function cachedMarketPairQuotes(chainId: number, tokenA: string, tokenB: string): VenueQuote[] {
   const row = rowForPair(cacheLastGood<MarketRow[]>(marketKey(chainId)), chainId, tokenA, tokenB);
-  return row ? venueQuotesToPools(row.venues as VenueQuote[]) : [];
+  return row?.venues?.length ? (row.venues as VenueQuote[]) : [];
+}
+
+export function cachedNativePairVenues(chainId: number, tokenA: string, tokenB: string): VenuePool[] {
+  const quotes = cachedMarketPairQuotes(chainId, tokenA, tokenB);
+  return quotes.length ? venueQuotesToPools(quotes) : [];
 }
 
 export async function nativePairVenues(chainId: number, vm: string | undefined, tokenA: string, tokenB: string, decA = 6, decB = 6): Promise<VenuePool[]> {

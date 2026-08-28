@@ -78,6 +78,7 @@ const SEEDS: Record<number, string[]> = {
     "0x8dd4df4ce580b9644437f3375e54f1ab0980822800020000000000000000009c",
     "0xaa56989be5e6267fc579919576948db3e1f108070002000000000000000000ca",
   ],
+  146: ["0x10ac2f9dae6539e77e372adb14b1bf8fbd16b3e8000200000000000000000005"],
 };
 
 type Resolved = { poolId: `0x${string}`; pool: Address; tokens: Address[]; balances: bigint[] };
@@ -238,4 +239,4 @@ export function makeBalancer(chainId: number): DefiProtocol {
   };
 }
 
-export const BALANCER_CHAINS = [1, 10, 137, 8453, 42161, 100];
+export const BALANCER_CHAINS = [1, 10, 137, 8453, 42161, 100, 146];

@@ -159,24 +159,17 @@ export async function loadEvmMarkets(chainId: number): Promise<MarketRow[]> {
     const ctx: DefiCtx = { evm: client };
     const protocols = protocolsOn(chainId);
     const listed: MarketRow[] = [];
-    const skip = new Set<string>();
     await Promise.all(
       protocols.map(async (p) => {
         if (!p.markets) return;
         const rows = await p.markets(ctx).catch(() => []);
         if (!rows.length) return;
-        skip.add(p.id);
         listed.push(...rows);
       }),
     );
     const extras = marketTokensOn(chainId).length < 40 ? tokensFromMarketRows(listed) : [];
     const pairs = candidatePairs(chainId, extras);
-    const hits = await discoverHits(
-      ctx,
-      chainId,
-      pairs,
-      protocols.filter((p) => !skip.has(p.id)),
-    );
+    const hits = await discoverHits(ctx, chainId, pairs, protocols);
     const live = [...listedToLive(listed), ...(await readHits(ctx, hits))];
     const found: DiscoveredPool[] = live.flatMap((h) =>
       h.venues.map((v) => ({

@@ -9,6 +9,7 @@ import { evmPublicClient } from "../../lib/defi/evm/client.ts";
 import { erc20MetaAbi } from "../../lib/defi/evm/abis.ts";
 import { readVenuesForPair, venueQuotesToPools, weightedPrice, type VenuePool } from "../../lib/dexPools.ts";
 import { cacheGet, cacheKey, cacheLastGood, cacheReady, onVisibleInterval, POLICIES } from "../../lib/defi/cache.ts";
+import { VENUES_CACHE } from "../../lib/defi/quote.ts";
 import type { VenueQuote } from "../../lib/defi/types.ts";
 import { usePairSwaps, type SwapRow } from "../../lib/usePairSwaps.ts";
 import { cancelLive, trackLive } from "../../lib/liveStatus.ts";
@@ -18,7 +19,7 @@ import { displayStableSymbol, orientPair } from "../../lib/pairOrient.ts";
 import { TOKEN_CATALOG } from "../../lib/tokenRegistry.ts";
 import { nearToken } from "../../lib/nearDex.ts";
 import { adaTokenMeta } from "../../lib/adaDex.ts";
-import { nativePairVenues } from "../../lib/nativePairVenues.ts";
+import { cachedMarketPairQuotes, nativePairVenues } from "../../lib/nativePairVenues.ts";
 import { SortHead, useSort } from "../../shared/ui/SortTable.tsx";
 import { marketsHref } from "./LpPage.tsx";
 import { dexAppHref } from "../../lib/dexApp.ts";
@@ -110,10 +111,19 @@ export function PairPage() {
   useEffect(() => {
     if (!base || !quote || !Number.isFinite(chainId)) return;
     let cancelled = false;
-    const venuesKey = cacheKey("venues", pairId(chainId, base, quote), "base", base.toLowerCase());
+    const venuesKey = cacheKey(VENUES_CACHE, pairId(chainId, base, quote), "base", base.toLowerCase());
     const seed = cacheLastGood<VenueQuote[]>(venuesKey);
-    if (seed?.length) {
-      setVenues(venueQuotesToPools(seed));
+    const fromList = cachedMarketPairQuotes(chainId, base, quote);
+    if (fromList.length || seed?.length) {
+      const seen = new Set<string>();
+      const merged: VenueQuote[] = [];
+      for (const q of [...fromList, ...(seed ?? [])]) {
+        const k = `${q.protocolId}:${(q.pool || "").toLowerCase()}`;
+        if (seen.has(k)) continue;
+        seen.add(k);
+        merged.push(q);
+      }
+      setVenues(venueQuotesToPools(merged));
       setLoading(false);
     } else {
       setLoading(true);
