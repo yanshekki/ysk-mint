@@ -27,6 +27,20 @@ function parseChain(raw: string | null): number | "all" {
   return Number.isFinite(n) ? n : "all";
 }
 
+function normTok(s: string) {
+  return s.toLowerCase().replace(/^w/, "");
+}
+
+/** Whole-token match. "near" must not hit LINEAR. */
+function symHit(sym: string, needle: string) {
+  const s = normTok(sym);
+  const n = needle.toLowerCase().replace(/^w/, "");
+  if (!n) return false;
+  if (s === n) return true;
+  if (n === "usd") return s.startsWith("usd");
+  return false;
+}
+
 export function persistMarketsQuery(q: string, chain: number | "all", n: number) {
   try {
     sessionStorage.setItem(MARKETS_KEY, JSON.stringify({ q, chain, n }));
@@ -121,12 +135,15 @@ export function LpPage() {
     const q = marketQ.trim().toLowerCase();
     if (!q) return markets.rows;
     const addrQ = q.startsWith("0x") || (q.length >= 8 && /^[0-9a-f]+$/.test(q));
+    const parts = q.split(/[/\s]+/).filter(Boolean);
     return markets.rows.filter((r) => {
-      const a = r.symbolA.toLowerCase();
-      const b = r.symbolB.toLowerCase();
-      if (a.includes(q) || b.includes(q) || `${a}/${b}`.includes(q)) return true;
+      if (parts.length >= 2) {
+        const [qa, qb] = parts;
+        return (symHit(r.symbolA, qa) && symHit(r.symbolB, qb)) || (symHit(r.symbolA, qb) && symHit(r.symbolB, qa));
+      }
+      if (symHit(r.symbolA, q) || symHit(r.symbolB, q)) return true;
       if (r.venueNames.some((n) => n.toLowerCase().includes(q))) return true;
-      if (filter === "all" && r.chainShort.toLowerCase().includes(q)) return true;
+      if (filter === "all" && r.chainShort.toLowerCase() === q) return true;
       if (addrQ && (r.tokenA.toLowerCase().includes(q) || r.tokenB.toLowerCase().includes(q))) return true;
       return false;
     });

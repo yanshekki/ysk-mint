@@ -1,5 +1,4 @@
-import { cacheGet, cacheKey, POLICIES } from "../cache.ts";
-import { loadNearMarkets, N_USDC, N_USDT, N_WRAP, quoteNearToken, REF_VENUE } from "../../nearDex.ts";
+import { fetchRefTopPools, loadNearMarkets, nearDecimals, nearToken, N_USDC, N_USDT, N_WRAP, quoteNearToken, REF_VENUE } from "../../nearDex.ts";
 import type { VenuePool } from "../../dexPools.ts";
 import { pairId } from "../../pairKey.ts";
 import { catalogTopOn } from "../universe.ts";
@@ -20,27 +19,16 @@ function asQuote(v: VenuePool): VenueQuote {
   };
 }
 
-type RefTop = {
-  id: string | number;
-  token_account_ids?: string[];
-  amounts?: string[];
-  token_symbols?: string[];
-  total_fee?: number;
-  tvl?: string | number;
-  pool_kind?: string;
-};
-
 function decOf(id: string, catalog: Map<string, { decimals: number; symbol: string; icon: string }>) {
-  if (id === N_WRAP.address) return 24;
-  if (id === N_USDT.address || id === N_USDC.address) return 6;
-  return catalog.get(id)?.decimals ?? 18;
+  const known = nearToken(id);
+  if (known) return known.decimals;
+  return catalog.get(id)?.decimals ?? nearDecimals(id);
 }
 
 function metaOf(id: string, catalog: Map<string, { decimals: number; symbol: string; icon: string }>) {
-  if (id === N_WRAP.address) return { symbol: "NEAR", icon: "/tokens/near.png" };
-  if (id === N_USDT.address) return { symbol: "USDT", icon: "/tokens/usdt.png" };
-  if (id === N_USDC.address) return { symbol: "USDC", icon: "/tokens/usdc.png" };
-  return catalog.get(id) ?? { symbol: id.slice(0, 6), icon: "/tokens/near.png" };
+  const known = nearToken(id);
+  if (known) return { symbol: known.symbol, icon: known.icon };
+  return catalog.get(id) ?? { symbol: id.split(".")[0] || id.slice(0, 6), icon: "/tokens/near.png" };
 }
 
 function isStable(id: string) {
@@ -49,29 +37,16 @@ function isStable(id: string) {
 
 async function marketsFromIndexer(): Promise<MarketRow[] | null> {
   try {
-    const json = await cacheGet(
-      {
-        key: cacheKey("http.ref", 397, "list-top-pools"),
-        policy: { ...POLICIES.catalog, keep: (rows: RefTop[] | null) => Boolean(rows?.length) },
-      },
-      async () => {
-        const res = await fetch("https://api.ref.finance/list-top-pools");
-        if (!res.ok) return null;
-        const data = (await res.json()) as RefTop[];
-        return Array.isArray(data) && data.length ? data : null;
-      },
-    );
-    if (!json) return null;
-    if (!Array.isArray(json) || !json.length) return null;
+    const json = await fetchRefTopPools();
+    if (!json.length) return null;
     const tokens = catalogTopOn(397, 500);
     const catalog = new Map(tokens.map((t) => [t.address.toLowerCase(), { decimals: t.decimals, symbol: t.symbol ?? t.address, icon: t.icon ?? "/tokens/near.png" }]));
-    const rows: MarketRow[] = [];
-    const seen = new Set<string>();
+    const byPair = new Map<string, MarketRow>();
     for (const p of json) {
       const ids = (p.token_account_ids ?? []).map((x) => x.toLowerCase());
       if (ids.length !== 2) continue;
       const tvl = Number(p.tvl);
-      if (!Number.isFinite(tvl) || tvl <= 0) continue;
+      if (!Number.isFinite(tvl) || tvl < 10) continue;
       const stableIdx = ids.findIndex((id) => isStable(id));
       const wrapIdx = ids.findIndex((id) => id === N_WRAP.address);
       let iA = 0;
@@ -86,17 +61,36 @@ async function marketsFromIndexer(): Promise<MarketRow[] | null> {
       const a = ids[iA];
       const b = ids[iB];
       const id = pairId(397, a, b);
-      if (seen.has(id)) continue;
-      seen.add(id);
       const decA = decOf(a, catalog);
       const decB = decOf(b, catalog);
       const amtA = Number(p.amounts?.[iA] ?? 0) / 10 ** decA;
       const amtB = Number(p.amounts?.[iB] ?? 0) / 10 ** decB;
-      const price = amtA > 0 && amtB > 0 ? amtB / amtA : null;
+      const price = amtA > 0 && amtB > 0 ? amtB / amtA : 0;
+      const venue = {
+        protocolId: REF_VENUE.id,
+        protocolName: REF_VENUE.name,
+        chainId: 397,
+        pool: `ref:${p.id}`,
+        feeLabel: p.total_fee != null ? `${(Number(p.total_fee) / 100).toFixed(2)}%` : "0.30%",
+        priceAinB: price,
+        reserveA: amtA,
+        reserveB: amtB,
+        tvlQuote: tvl,
+        kind: "ref" as const,
+      };
+      const prev = byPair.get(id);
+      if (prev) {
+        if (prev.venues.some((v) => v.pool === venue.pool)) continue;
+        prev.venues.push(venue);
+        prev.depth = prev.venues.reduce((s, v) => s + (v.tvlQuote || 0), 0);
+        const w = prev.venues.reduce((s, v) => s + (v.tvlQuote || 0) * v.priceAinB, 0);
+        prev.price = prev.depth > 0 ? w / prev.depth : prev.price;
+        continue;
+      }
       const ma = metaOf(a, catalog);
       const mb = metaOf(b, catalog);
       const usd = isStable(b) && price ? price : isStable(a) && price ? 1 / price : null;
-      rows.push({
+      byPair.set(id, {
         pairId: id,
         chainId: 397,
         chainShort: "NEAR",
@@ -106,26 +100,13 @@ async function marketsFromIndexer(): Promise<MarketRow[] | null> {
         iconB: mb.icon,
         tokenA: a,
         tokenB: b,
-        venues: [
-          {
-            protocolId: REF_VENUE.id,
-            protocolName: REF_VENUE.name,
-            chainId: 397,
-            pool: `ref:${p.id}`,
-            feeLabel: p.total_fee != null ? `${(Number(p.total_fee) / 100).toFixed(2)}%` : "0.30%",
-            priceAinB: price ?? 0,
-            reserveA: amtA,
-            reserveB: amtB,
-            tvlQuote: tvl,
-            kind: "ref",
-          },
-        ],
+        venues: [venue],
         price: usd,
         depth: tvl,
         venueNames: [REF_VENUE.name],
       });
     }
-    return rows;
+    return [...byPair.values()];
   } catch {
     return null;
   }

@@ -1,3 +1,4 @@
+import { cacheGet, cacheKey, POLICIES } from "./defi/cache.ts";
 import { nearView } from "./nearRpc.ts";
 import type { Quote } from "./defiQuotes.ts";
 import type { VenuePool } from "./dexPools.ts";
@@ -48,10 +49,37 @@ export const NEAR_LST = new Set([N_STNEAR.address, N_LINEAR.address]);
 export type NearPoolSeed = { poolId: number; a: NearTok; b: NearTok };
 
 export const NEAR_POOLS: NearPoolSeed[] = [
-  { poolId: 6063, a: N_WRAP, b: N_USDT },
+  { poolId: 4512, a: N_WRAP, b: N_USDC },
   { poolId: 5515, a: N_WRAP, b: N_USDC },
+  { poolId: 6063, a: N_WRAP, b: N_USDT },
   { poolId: 79, a: N_REF, b: N_WRAP },
 ];
+
+export type RefTopPool = {
+  id: string | number;
+  token_account_ids?: string[];
+  amounts?: string[];
+  token_symbols?: string[];
+  total_fee?: number;
+  tvl?: string | number;
+  pool_kind?: string;
+};
+
+export async function fetchRefTopPools(): Promise<RefTopPool[]> {
+  const rows = await cacheGet(
+    {
+      key: cacheKey("http.ref", 397, "list-top-pools"),
+      policy: { ...POLICIES.catalog, keep: (v: RefTopPool[] | null) => Boolean(v?.length) },
+    },
+    async () => {
+      const res = await fetch("https://api.ref.finance/list-top-pools");
+      if (!res.ok) return null;
+      const data = (await res.json()) as RefTopPool[];
+      return Array.isArray(data) && data.length ? data : null;
+    },
+  );
+  return rows ?? [];
+}
 
 type RefPool = {
   pool_kind?: string;
@@ -79,8 +107,23 @@ export function nearToken(id: string): NearTok | undefined {
   return all.find((t) => t.address.toLowerCase() === id.toLowerCase());
 }
 
+export function nearDecimals(id: string) {
+  const hit = nearToken(id);
+  if (hit) return hit.decimals;
+  const x = id.toLowerCase();
+  if (x === "wrap.near" || x === LINEAR || x === META_POOL) return 24;
+  if (x === N_USDT.address || x === N_USDC.address) return 6;
+  if (x.startsWith("dac17f958d2ee523a2206206994597c13d831ec7") || x.startsWith("a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")) return 6;
+  return 18;
+}
+
 function tokenMeta(id: string): NearTok {
-  return nearToken(id) ?? { address: id, symbol: id.split(".")[0] || id.slice(0, 6), decimals: 24, icon: I("near") };
+  const hit = nearToken(id);
+  if (hit) return hit;
+  const parts = id.split(".");
+  const raw = parts[0] || id.slice(0, 6);
+  const symbol = raw.length <= 8 ? raw.toUpperCase() : raw;
+  return { address: id, symbol, decimals: nearDecimals(id), icon: I("near") };
 }
 
 export function isNearStable(id?: string) {
@@ -122,19 +165,32 @@ function venueFromPool(seed: NearPoolSeed, pool: RefPool): VenuePool | null {
 export async function nearVenuesForPair(tokenA: string, tokenB: string): Promise<VenuePool[]> {
   const a = tokenA.toLowerCase();
   const b = tokenB.toLowerCase();
-  const seeds = NEAR_POOLS.filter((p) => {
+  const ids = new Set<number>();
+  for (const p of NEAR_POOLS) {
     const x = p.a.address.toLowerCase();
     const y = p.b.address.toLowerCase();
-    return (x === a && y === b) || (x === b && y === a);
-  });
+    if ((x === a && y === b) || (x === b && y === a)) ids.add(p.poolId);
+  }
+  try {
+    const top = await fetchRefTopPools();
+    for (const p of top) {
+      const tids = (p.token_account_ids ?? []).map((x) => x.toLowerCase());
+      if (tids.length !== 2) continue;
+      if (!(tids.includes(a) && tids.includes(b))) continue;
+      const n = Number(p.id);
+      if (Number.isFinite(n)) ids.add(n);
+    }
+  } catch {
+    /* indexer optional; seeds still run */
+  }
+  const wantA = nearToken(a) ?? { ...tokenMeta(a), address: a };
+  const wantB = nearToken(b) ?? { ...tokenMeta(b), address: b };
   const out: VenuePool[] = [];
   await Promise.all(
-    seeds.map(async (s) => {
-      const pool = await readRefPool(s.poolId);
+    [...ids].map(async (poolId) => {
+      const pool = await readRefPool(poolId);
       if (!pool) return;
-      const wantA = s.a.address.toLowerCase() === a ? s.a : s.b;
-      const wantB = s.b.address.toLowerCase() === b ? s.b : s.a;
-      const row = venueFromPool({ ...s, a: wantA, b: wantB }, pool);
+      const row = venueFromPool({ poolId, a: wantA, b: wantB }, pool);
       if (row) out.push(row);
     }),
   );

@@ -19,19 +19,19 @@ export function canonId(a: string) {
   return a.toLowerCase();
 }
 
-export function sortPair(a: string, b: string): [Addr, Addr] {
-  const x = canonAddr(a);
-  const y = canonAddr(b);
+export function sortPair(a: string, b: string): [string, string] {
+  const x = canonId(a);
+  const y = canonId(b);
   return x < y ? [x, y] : [y, x];
 }
 
+/** `|` so NEAR account ids (`linear-protocol.near`) are not split. */
 export function pairId(chainId: number, a: string, b: string) {
   const [x, y] = sortPair(a, b);
-  return `${chainId}:${x}-${y}`;
+  return `${chainId}|${x}|${y}`;
 }
 
 export function parsePairId(id: string) {
-  const [chain, rest] = id.split(":");
-  const [a, b] = (rest || "").split("-");
-  return { chainId: Number(chain), tokenA: a as Addr, tokenB: b as Addr };
+  const [chain, a, b] = id.split("|");
+  return { chainId: Number(chain), tokenA: a ?? "", tokenB: b ?? "" };
 }
