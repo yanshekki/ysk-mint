@@ -6,6 +6,27 @@ import { ConnectBar } from "../features/wallet/ConnectBar.tsx";
 import { LiveDock } from "../shared/ui/LiveDock.tsx";
 import { useNativeWallets } from "../lib/nativeWallets.ts";
 
+const NAV = [
+  ["/", "nav.lp"],
+  ["/lend", "nav.lend"],
+  ["/create", "nav.create"],
+  ["/transfer", "nav.transfer"],
+  ["/me", "nav.me"],
+  ["/settings", "nav.settings"],
+] as const;
+
+function navOn(path: string, href: string) {
+  return path === href || (href !== "/" && path.startsWith(href));
+}
+
+function gasLabel(formatted?: string) {
+  if (!formatted) return "";
+  const n = Number(formatted);
+  if (!Number.isFinite(n) || n <= 0) return "";
+  if (n < 0.001) return " <0.001";
+  return ` ${n.toLocaleString(undefined, { maximumFractionDigits: 3 })}`;
+}
+
 export function Shell() {
   const { t } = useTranslation();
   const loc = useLocation();
@@ -15,14 +36,14 @@ export function Shell() {
   const native = useNativeWallets();
   const chain = evmEnabledChains().find((c) => c.chainId === chainId);
 
-  const nav = [
-    ["/", "nav.lp"],
-    ["/lend", "nav.lend"],
-    ["/create", "nav.create"],
-    ["/transfer", "nav.transfer"],
-    ["/me", "nav.me"],
-    ["/settings", "nav.settings"],
-  ] as const;
+  const sessionChips: string[] = [];
+  if (isConnected) sessionChips.push(`${chain?.short ?? "EVM"}${gasLabel(bal.data?.formatted)}`);
+  if (native.nearAccount) sessionChips.push("NEAR");
+  if (native.cardanoAddress) sessionChips.push("ADA");
+  if (native.solanaAddress) sessionChips.push("SOL");
+  if (native.suiAddress) sessionChips.push("SUI");
+  if (native.aptosAddress) sessionChips.push("APT");
+  if (native.tonAddress) sessionChips.push("TON");
 
   return (
     <div className="app">
@@ -32,12 +53,8 @@ export function Shell() {
           ysk-mint
         </Link>
         <nav className="top-nav">
-          {nav.map(([href, key]) => (
-            <Link
-              key={href}
-              to={href}
-              className={loc.pathname === href || (href !== "/" && loc.pathname.startsWith(href)) ? "on" : ""}
-            >
+          {NAV.map(([href, key]) => (
+            <Link key={href} to={href} className={navOn(loc.pathname, href) ? "on" : ""}>
               {t(key)}
             </Link>
           ))}
@@ -51,22 +68,23 @@ export function Shell() {
       </main>
       <LiveDock />
       <footer className="botbar">
-        <Link to="/">{t("nav.lp")}</Link>
-        <Link to="/lend">{t("nav.lend")}</Link>
-        <Link to="/create">{t("nav.create")}</Link>
-        <Link to="/transfer">{t("nav.transfer")}</Link>
-        <span className="bot-session">
-          {isConnected ? (
-            <span>
-              {chain?.short ?? "EVM"} <b>{bal.data ? Number(bal.data.formatted).toFixed(4) : "—"}</b>
-            </span>
-          ) : null}
-          {native.nearAccount ? <span>NEAR</span> : null}
-          {native.cardanoAddress ? <span>ADA</span> : null}
-          {native.solanaAddress ? <span>SOL</span> : null}
-          {!isConnected && !native.nearAccount && !native.cardanoAddress && !native.solanaAddress ? t("wallet.connect") : null}
-        </span>
-        <span className="bot-dot">● {t("nav.disclaimer")}</span>
+        <nav className="bot-nav" aria-label={t("app.name")}>
+          {NAV.map(([href, key]) => (
+            <Link key={href} to={href} className={navOn(loc.pathname, href) ? "on" : ""}>
+              {t(key)}
+            </Link>
+          ))}
+        </nav>
+        {sessionChips.length ? (
+          <div className="bot-session">
+            {sessionChips.map((chip) => (
+              <span key={chip} className="bot-chip">
+                {chip}
+              </span>
+            ))}
+          </div>
+        ) : null}
+        <span className="bot-dot">{t("nav.disclaimer")}</span>
       </footer>
     </div>
   );
