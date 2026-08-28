@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { formatEther, zeroAddress } from "viem";
-import { useAccount, useChainId, useConfig, useSwitchChain } from "wagmi";
+import { formatEther, zeroAddress, type Address } from "viem";
+import { useAccount, useChainId, useConfig, useReadContracts, useSwitchChain } from "wagmi";
 import { getPublicClient, getWalletClient } from "wagmi/actions";
 import {
   CHAINS,
@@ -87,27 +87,31 @@ export function TransferPage() {
   const destBlocked = destIsNative || destIsSelf;
   const token = pick?.contract ?? (pasted.startsWith("0x") ? (pasted as `0x${string}`) : "");
 
+  const holdRows = useMemo(
+    () =>
+      evmHold.rows.filter(
+        (r): r is HoldingRow & { contract: string; chainId: number } => Boolean(r.contract && r.chainId && r.raw > 0n && !r.native),
+      ),
+    [evmHold.rows],
+  );
+  const oftProbe = useReadContracts({
+    contracts: holdRows.map((r) => ({
+      address: r.contract as Address,
+      abi: yskOftAbi,
+      functionName: "endpoint" as const,
+      chainId: r.chainId,
+    })),
+    query: { enabled: holdRows.length > 0, staleTime: 60_000 },
+  });
+
   const walletPicks = useMemo(() => {
-    const fromHold: Pick[] = evmHold.rows
-      .filter((r): r is HoldingRow & { contract: string; chainId: number } => Boolean(r.contract && r.chainId && r.raw > 0n && !r.native))
-      .map((r) => ({
-        id: r.id,
-        symbol: r.symbol,
-        name: r.name,
-        icon: r.icon,
-        amount: r.amount,
-        contract: r.contract as `0x${string}`,
-        chainId: r.chainId,
-        chainTag: r.chainTag ?? "",
-      }));
-    const seen = new Set(fromHold.map((p) => `${p.chainId}:${p.contract.toLowerCase()}`));
     const launched: Pick[] = [];
+    const seen = new Set<string>();
     for (const [key, v] of Object.entries(w.perChain)) {
       if (!v.token) continue;
       const c = CHAINS[Number(key) as keyof typeof CHAINS];
       if (!c?.evm) continue;
       const k = `${c.chainId}:${v.token.toLowerCase()}`;
-      if (seen.has(k)) continue;
       seen.add(k);
       launched.push({
         id: `launch-${key}`,
@@ -120,8 +124,29 @@ export function TransferPage() {
         chainTag: c.short,
       });
     }
+    const fromHold: Pick[] = [];
+    holdRows.forEach((r, i) => {
+      const hit = oftProbe.data?.[i];
+      if (hit?.status !== "success" || !hit.result) return;
+      const chain = Object.values(CHAINS).find((c) => c.chainId === r.chainId);
+      if (!chain?.endpoint || chain.endpoint === zeroAddress) return;
+      if ((hit.result as string).toLowerCase() !== chain.endpoint.toLowerCase()) return;
+      const k = `${r.chainId}:${r.contract.toLowerCase()}`;
+      if (seen.has(k)) return;
+      seen.add(k);
+      fromHold.push({
+        id: r.id,
+        symbol: r.symbol,
+        name: r.name,
+        icon: r.icon,
+        amount: r.amount,
+        contract: r.contract as `0x${string}`,
+        chainId: r.chainId,
+        chainTag: r.chainTag ?? "",
+      });
+    });
     return [...launched, ...fromHold];
-  }, [evmHold.rows, w.name, w.perChain, w.symbol]);
+  }, [holdRows, oftProbe.data, w.name, w.perChain, w.symbol]);
 
   const evmGroup = issuanceGroups().find((g) => g.vm === "evm");
   const destMain = (evmGroup?.main ?? []).filter((c) => c.eid > 0);
@@ -199,13 +224,20 @@ export function TransferPage() {
   }, [address, chainId, config, destBlocked, dst?.eid, locale, pct, pick, srcChainId, switchChainAsync, t, token]);
 
   useEffect(() => {
-    if (!canAct) {
+    if (pick && !walletPicks.some((p) => p.id === pick.id)) {
+      setPick(null);
+      setQuote("");
+      setErrors([]);
+    }
+  }, [pick, walletPicks]);
+  useEffect(() => {
+    if (!canAct || (!pick && !pasted)) {
       setQuote("");
       return;
     }
     const handle = window.setTimeout(() => void quoteNow(), 200);
     return () => window.clearTimeout(handle);
-  }, [canAct, quoteNow]);
+  }, [canAct, pasted, pick, quoteNow]);
 
   async function doSend() {
     if (!address || !token || !dst?.eid) return;
@@ -311,6 +343,8 @@ export function TransferPage() {
             ) : null}
             {!isConnected ? (
               <p className="me-card-empty">{t("transfer.needWallet")}</p>
+            ) : evmHold.loading || (holdRows.length > 0 && oftProbe.isPending && walletPicks.length === 0) ? (
+              <p className="me-card-empty">{t("transfer.scanning")}</p>
             ) : walletPicks.length === 0 && !pasted ? (
               <p className="me-card-empty">{t("transfer.noTokens")}</p>
             ) : (
