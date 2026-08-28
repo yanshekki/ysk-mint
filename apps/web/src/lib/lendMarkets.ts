@@ -4,7 +4,19 @@ import { cacheGet, cacheKey, POLICIES } from "./defi/cache.ts";
 import { evmPublicClient } from "./defi/evm/client.ts";
 import { quoteUsd } from "./defi/quote.ts";
 import { DEX } from "./defiAddresses.ts";
-import { AAVE_FORKS, COMETS, COMPOUND_FORKS, COMPOUND_V2, SPARK } from "./lendingExtra.ts";
+import {
+  AAVE_FORKS,
+  COMETS,
+  COMPOUND_FORKS,
+  COMPOUND_V2,
+  EULER_VAULTS,
+  FLUID_CHAINS,
+  FLUID_LEND,
+  MORPHO,
+  MORPHO_MARKETS,
+  SILO_FACTORY,
+  SPARK,
+} from "./lendingExtra.ts";
 import { TOKEN_CATALOG } from "./tokenRegistry.ts";
 import { chainIcon } from "./chainIcon.ts";
 
@@ -55,6 +67,8 @@ const comptrollerAbi = [
 ] as const;
 
 const cTokenAbi = [
+  { type: "function", name: "supplyRatePerTimestamp", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "borrowRatePerTimestamp", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
   { type: "function", name: "supplyRatePerBlock", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
   { type: "function", name: "borrowRatePerBlock", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
   { type: "function", name: "getCash", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
@@ -74,15 +88,58 @@ const cometAbi = [
   { type: "function", name: "decimals", stateMutability: "view", inputs: [], outputs: [{ type: "uint8" }] },
 ] as const;
 
-const BENQI: Array<{ cToken: Address; symbol: string; underlying?: Address; dec: number }> = [
-  { cToken: "0x5C0401e81Bc07Ca70fAD469b451682c0d747Ef1c", symbol: "AVAX", dec: 18 },
-  { cToken: "0xF362feA9659cf036792c9cb02f8ff8198E21B4cB", symbol: "sAVAX", underlying: "0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE", dec: 18 },
-  { cToken: "0xBEb5d47A3f720Ec0a390d04b4d41ED7d9688bC7F", symbol: "USDC", underlying: "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c6dBe1", dec: 6 },
-  { cToken: "0xc9e5999b8e75C3fEB117F6f73E664b9f3C8ca65C", symbol: "USDT.e", underlying: "0xc7198437980c041c805A1EDcbA50c1Ce5db95118", dec: 6 },
-  { cToken: "0xB715808a78F6041E46d61Cb123C9B4A27056AE9C", symbol: "USDC.e", underlying: "0xA7D7079b0FEaD91F3e65f86E304CbC559FfF1a7d", dec: 6 },
-  { cToken: "0xd8fcDa6ec4Bdc547C0827B8804e89aCd817d56EF", symbol: "USDT", underlying: "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7", dec: 6 },
-  { cToken: "0x835866d37AFB8CB8F8334dCCdaf66cf01832Ff5D", symbol: "DAI", underlying: "0xd586E7F844cEa2F87f50152665BCbc2C279D8d70", dec: 18 },
-];
+const vaultAbi = [
+  { type: "function", name: "asset", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
+  { type: "function", name: "totalAssets", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "totalBorrows", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "decimals", stateMutability: "view", inputs: [], outputs: [{ type: "uint8" }] },
+] as const;
+
+const morphoBlueAbi = [
+  {
+    type: "function",
+    name: "market",
+    stateMutability: "view",
+    inputs: [{ type: "bytes32" }],
+    outputs: [
+      { name: "totalSupplyAssets", type: "uint128" },
+      { name: "totalSupplyShares", type: "uint128" },
+      { name: "totalBorrowAssets", type: "uint128" },
+      { name: "totalBorrowShares", type: "uint128" },
+      { name: "lastUpdate", type: "uint128" },
+      { name: "fee", type: "uint128" },
+    ],
+  },
+  {
+    type: "function",
+    name: "idToMarketParams",
+    stateMutability: "view",
+    inputs: [{ type: "bytes32" }],
+    outputs: [
+      { name: "loanToken", type: "address" },
+      { name: "collateralToken", type: "address" },
+      { name: "oracle", type: "address" },
+      { name: "irm", type: "address" },
+      { name: "lltv", type: "uint256" },
+    ],
+  },
+] as const;
+
+const fluidLendAbi = [{ type: "function", name: "getAllFTokens", stateMutability: "view", inputs: [], outputs: [{ type: "address[]" }] }] as const;
+
+const siloFactoryAbi = [
+  { type: "function", name: "getNextSiloId", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "idToSiloConfig", stateMutability: "view", inputs: [{ type: "uint256" }], outputs: [{ type: "address" }] },
+] as const;
+
+const siloConfigAbi = [
+  { type: "function", name: "getSilos", stateMutability: "view", inputs: [], outputs: [{ type: "address" }, { type: "address" }] },
+] as const;
+
+export const LEND_CACHE = "lend3";
+
+const FLUID_NATIVE = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
+const ZERO = "0x0000000000000000000000000000000000000000";
 
 const YEAR = 365.25 * 24 * 3600;
 const RAY = 1e27;
@@ -267,35 +324,71 @@ async function readAaveStyle(
   return out;
 }
 
+function rateOk(row: { status: string; result?: unknown }): bigint | null {
+  if (row.status !== "success") return null;
+  try {
+    return BigInt(row.result as bigint);
+  } catch {
+    return null;
+  }
+}
+
+function cTokenApys(
+  pack: Array<{ status: string; result?: unknown }>,
+  chainId: number,
+): { supplyApy: number | null; borrowApy: number | null } | null {
+  const tsS = rateOk(pack[0]);
+  const tsB = rateOk(pack[1]);
+  if (tsS != null || tsB != null) {
+    return { supplyApy: tsS != null ? perSecondApy(tsS) : null, borrowApy: tsB != null ? perSecondApy(tsB) : null };
+  }
+  const blkS = rateOk(pack[2]);
+  const blkB = rateOk(pack[3]);
+  if (blkS == null && blkB == null) return null;
+  const by = blocksYear(chainId);
+  return { supplyApy: blkS != null ? perBlockApy(blkS, by) : null, borrowApy: blkB != null ? perBlockApy(blkB, by) : null };
+}
+
 async function readComptroller(
   client: PublicClient,
   chainId: number,
   cfg: { comptroller: Address; nativeC?: Address; name: string },
 ): Promise<LendMarketRow[]> {
   const markets = await client.readContract({ address: cfg.comptroller, abi: comptrollerAbi, functionName: "getAllMarkets" });
-  const list = markets.slice(0, 24);
+  const list = markets.slice(0, 40);
   const short = chainShort(chainId);
-  const by = blocksYear(chainId);
-  const rows = await mapLimit(list, 6, async (cTok) => {
+  const rows = await mapLimit(list, 8, async (cTok) => {
     try {
-      const [sup, brw, cash, borrows, symbol] = await Promise.all([
-        client.readContract({ address: cTok, abi: cTokenAbi, functionName: "supplyRatePerBlock" }),
-        client.readContract({ address: cTok, abi: cTokenAbi, functionName: "borrowRatePerBlock" }),
-        client.readContract({ address: cTok, abi: cTokenAbi, functionName: "getCash" }),
-        client.readContract({ address: cTok, abi: cTokenAbi, functionName: "totalBorrows" }),
-        client.readContract({ address: cTok, abi: cTokenAbi, functionName: "symbol" }).catch(() => "cTKN"),
-      ]);
+      const pack = await client.multicall({
+        contracts: [
+          { address: cTok, abi: cTokenAbi, functionName: "supplyRatePerTimestamp" as const },
+          { address: cTok, abi: cTokenAbi, functionName: "borrowRatePerTimestamp" as const },
+          { address: cTok, abi: cTokenAbi, functionName: "supplyRatePerBlock" as const },
+          { address: cTok, abi: cTokenAbi, functionName: "borrowRatePerBlock" as const },
+          { address: cTok, abi: cTokenAbi, functionName: "getCash" as const },
+          { address: cTok, abi: cTokenAbi, functionName: "totalBorrows" as const },
+          { address: cTok, abi: cTokenAbi, functionName: "symbol" as const },
+        ],
+        allowFailure: true,
+      });
+      const apys = cTokenApys(pack, chainId);
+      if (!apys) return null;
+      if (pack[4].status !== "success" || pack[5].status !== "success") return null;
+      const cash = pack[4].result as bigint;
+      const borrows = pack[5].result as bigint;
+      const symbol = pack[6].status === "success" ? String(pack[6].result) : "cTKN";
       const native = Boolean(cfg.nativeC && cTok.toLowerCase() === cfg.nativeC.toLowerCase());
       let underlying: Address | undefined;
       let decimals = 18;
-      let display = String(symbol).replace(/^c/, "");
+      let display = String(symbol).replace(/^c/, "").replace(/^v/, "").replace(/^qi/i, "").replace(/^m/, "");
       if (!native) {
         underlying = await client.readContract({ address: cTok, abi: cTokenAbi, functionName: "underlying" }).catch(() => undefined);
         if (underlying) {
           decimals = Number(await client.readContract({ address: underlying, abi: erc20Abi, functionName: "decimals" }).catch(() => 18));
           display = String(await client.readContract({ address: underlying, abi: erc20Abi, functionName: "symbol" }).catch(() => display));
         }
-      }
+      } else if (chainId === 43114) display = "AVAX";
+      else if (chainId === 56) display = "BNB";
       const cashN = Number(formatUnits(cash, decimals));
       const borN = Number(formatUnits(borrows, decimals));
       if ((!Number.isFinite(cashN) || cashN === 0) && (!Number.isFinite(borN) || borN === 0)) return null;
@@ -310,8 +403,8 @@ async function readComptroller(
         icon: meta.icon,
         token: native ? "native" : underlying || cTok,
         market: cTok,
-        supplyApy: perBlockApy(sup, by),
-        borrowApy: perBlockApy(brw, by),
+        supplyApy: apys.supplyApy,
+        borrowApy: apys.borrowApy,
         supplyUsd: price != null && Number.isFinite(cashN + borN) ? (cashN + borN) * price : null,
         borrowUsd: price != null && Number.isFinite(borN) ? borN * price : null,
       } satisfies LendMarketRow;
@@ -368,42 +461,267 @@ async function readComets(client: PublicClient, chainId: number): Promise<LendMa
   return rows.filter((r) => r != null) as LendMarketRow[];
 }
 
-async function readBenqi(client: PublicClient): Promise<LendMarketRow[]> {
-  const short = "AVAX";
-  const by = blocksYear(43114);
+function fracApy(x: unknown): number | null {
+  const n = Number(x);
+  if (!Number.isFinite(n) || n < 0) return null;
+  const pct = n * 100;
+  if (pct > 100) return null;
+  return pct;
+}
+
+async function fetchJson<T>(url: string, init?: RequestInit, ms = 12000): Promise<T | null> {
+  const ac = new AbortController();
+  const t = setTimeout(() => ac.abort(), ms);
+  try {
+    const res = await fetch(url, { ...init, signal: ac.signal });
+    if (!res.ok) return null;
+    return (await res.json()) as T;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+type MorphoGql = {
+  data?: {
+    markets?: {
+      items?: Array<{
+        marketId?: string;
+        loanAsset?: { address?: string; symbol?: string };
+        state?: { supplyApy?: number; borrowApy?: number; supplyAssetsUsd?: number; borrowAssetsUsd?: number };
+      }>;
+    };
+  };
+};
+
+async function readMorphoOnChain(client: PublicClient, chainId: number): Promise<LendMarketRow[]> {
+  const ids = MORPHO_MARKETS[chainId];
+  if (!ids?.length) return [];
+  const short = chainShort(chainId);
+  const rows = await mapLimit(ids, 4, async (id) => {
+    try {
+      const [mkt, params] = await Promise.all([
+        client.readContract({ address: MORPHO, abi: morphoBlueAbi, functionName: "market", args: [id] }),
+        client.readContract({ address: MORPHO, abi: morphoBlueAbi, functionName: "idToMarketParams", args: [id] }),
+      ]);
+      const totSup = BigInt(mkt[0]);
+      const totBor = BigInt(mkt[2]);
+      if (totSup === 0n) return null;
+      if (totBor * 100n > totSup * 98n) return null;
+      const loan = params[0] as Address;
+      const meta = tokenMeta(chainId, loan, "TKN");
+      const dec = meta.decimals;
+      const supN = Number(formatUnits(totSup, dec));
+      const borN = Number(formatUnits(totBor, dec));
+      const price = await usd(client, chainId, loan, dec, false, meta.symbol);
+      return {
+        id: `Morpho:${chainId}:${id}`,
+        chainId,
+        chainShort: short,
+        protocol: "Morpho",
+        symbol: meta.symbol,
+        icon: meta.icon,
+        token: loan,
+        market: id,
+        supplyApy: null,
+        borrowApy: null,
+        supplyUsd: price != null && Number.isFinite(supN) ? supN * price : null,
+        borrowUsd: price != null && Number.isFinite(borN) ? borN * price : null,
+      } satisfies LendMarketRow;
+    } catch {
+      return null;
+    }
+  });
+  return rows.filter((r) => r != null) as LendMarketRow[];
+}
+
+async function readMorphoMarkets(client: PublicClient, chainId: number): Promise<LendMarketRow[]> {
+  const short = chainShort(chainId);
+  const gql = await fetchJson<MorphoGql>("https://api.morpho.org/graphql", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      query: `{ markets(first: 40, orderBy: SupplyAssetsUsd, orderDirection: Desc, where: { chainId_in: [${chainId}], listed: true }) { items { marketId loanAsset { address symbol } state { supplyApy borrowApy supplyAssetsUsd borrowAssetsUsd } } } }`,
+    }),
+  });
+  const items = gql?.data?.markets?.items ?? [];
+  const out: LendMarketRow[] = [];
+  for (const it of items) {
+    const id = it.marketId;
+    const loan = it.loanAsset?.address;
+    if (!id || !loan) continue;
+    const meta = tokenMeta(chainId, loan, it.loanAsset?.symbol || "TKN");
+    const supUsd = Number(it.state?.supplyAssetsUsd);
+    const borUsd = Number(it.state?.borrowAssetsUsd);
+    out.push({
+      id: `Morpho:${chainId}:${id}`,
+      chainId,
+      chainShort: short,
+      protocol: "Morpho",
+      symbol: meta.symbol,
+      icon: meta.icon,
+      token: loan,
+      market: id,
+      supplyApy: fracApy(it.state?.supplyApy),
+      borrowApy: fracApy(it.state?.borrowApy),
+      supplyUsd: Number.isFinite(supUsd) ? supUsd : null,
+      borrowUsd: Number.isFinite(borUsd) ? borUsd : null,
+    });
+  }
+  if (out.length) return out;
+  return readMorphoOnChain(client, chainId);
+}
+
+async function readFluidMarkets(client: PublicClient, chainId: number): Promise<LendMarketRow[]> {
+  if (!FLUID_CHAINS.has(chainId)) return [];
+  const list = await client.readContract({ address: FLUID_LEND, abi: fluidLendAbi, functionName: "getAllFTokens" });
+  const fts = list.slice(0, 24);
+  const short = chainShort(chainId);
+  const rows = await mapLimit(fts, 6, async (ft) => {
+    try {
+      const [asset, total] = await Promise.all([
+        client.readContract({ address: ft, abi: vaultAbi, functionName: "asset" }),
+        client.readContract({ address: ft, abi: vaultAbi, functionName: "totalAssets" }),
+      ]);
+      if (total === 0n) return null;
+      const native = asset.toLowerCase() === FLUID_NATIVE.toLowerCase();
+      const token = native ? "native" : asset;
+      let decimals = 18;
+      let display = native ? (chainId === 56 ? "BNB" : chainId === 137 ? "POL" : "ETH") : "TKN";
+      if (!native) {
+        decimals = Number(await client.readContract({ address: asset, abi: erc20Abi, functionName: "decimals" }).catch(() => 18));
+        display = String(await client.readContract({ address: asset, abi: erc20Abi, functionName: "symbol" }).catch(() => display));
+      }
+      const n = Number(formatUnits(total, decimals));
+      if (!Number.isFinite(n) || n <= 0) return null;
+      const price = await usd(client, chainId, native ? undefined : asset, decimals, native, display);
+      const meta = tokenMeta(chainId, token, display);
+      return {
+        id: `Fluid:${chainId}:${ft}`,
+        chainId,
+        chainShort: short,
+        protocol: "Fluid",
+        symbol: meta.symbol,
+        icon: meta.icon,
+        token,
+        market: ft,
+        supplyApy: null,
+        borrowApy: null,
+        supplyUsd: price != null ? n * price : null,
+        borrowUsd: null,
+      } satisfies LendMarketRow;
+    } catch {
+      return null;
+    }
+  });
+  return rows.filter((r) => r != null) as LendMarketRow[];
+}
+
+async function readEulerMarkets(client: PublicClient, chainId: number): Promise<LendMarketRow[]> {
+  const vaults = EULER_VAULTS[chainId];
+  if (!vaults?.length) return [];
+  const short = chainShort(chainId);
   const rows = await Promise.all(
-    BENQI.map(async (m) => {
+    vaults.map(async (vault) => {
       try {
-        const [sup, brw, cash, borrows] = await Promise.all([
-          client.readContract({ address: m.cToken, abi: cTokenAbi, functionName: "supplyRatePerBlock" }),
-          client.readContract({ address: m.cToken, abi: cTokenAbi, functionName: "borrowRatePerBlock" }),
-          client.readContract({ address: m.cToken, abi: cTokenAbi, functionName: "getCash" }),
-          client.readContract({ address: m.cToken, abi: cTokenAbi, functionName: "totalBorrows" }),
+        const [asset, total, borrows] = await Promise.all([
+          client.readContract({ address: vault, abi: vaultAbi, functionName: "asset" }),
+          client.readContract({ address: vault, abi: vaultAbi, functionName: "totalAssets" }),
+          client.readContract({ address: vault, abi: vaultAbi, functionName: "totalBorrows" }).catch(() => 0n),
         ]);
-        const native = !m.underlying;
-        const cashN = Number(formatUnits(cash, m.dec));
-        const borN = Number(formatUnits(borrows, m.dec));
-        const price = await usd(client, 43114, m.underlying, m.dec, native, m.symbol);
-        const meta = tokenMeta(43114, native ? "native" : m.underlying!, m.symbol);
+        if (total === 0n && borrows === 0n) return null;
+        const meta0 = tokenMeta(chainId, asset, "TKN");
+        const decimals = Number(await client.readContract({ address: asset, abi: erc20Abi, functionName: "decimals" }).catch(() => meta0.decimals));
+        const display = String(await client.readContract({ address: asset, abi: erc20Abi, functionName: "symbol" }).catch(() => meta0.symbol));
+        const supN = Number(formatUnits(total, decimals));
+        const borN = Number(formatUnits(borrows, decimals));
+        const price = await usd(client, chainId, asset, decimals, false, display);
+        const meta = tokenMeta(chainId, asset, display);
         return {
-          id: `BENQI:43114:${m.cToken}`,
-          chainId: 43114,
+          id: `Euler:${chainId}:${vault}`,
+          chainId,
           chainShort: short,
-          protocol: "BENQI",
+          protocol: "Euler",
           symbol: meta.symbol,
           icon: meta.icon,
-          token: native ? "native" : m.underlying!,
-          market: m.cToken,
-          supplyApy: perBlockApy(sup, by),
-          borrowApy: perBlockApy(brw, by),
-          supplyUsd: price != null ? (cashN + borN) * price : null,
-          borrowUsd: price != null ? borN * price : null,
+          token: asset,
+          market: vault,
+          supplyApy: null,
+          borrowApy: null,
+          supplyUsd: price != null && Number.isFinite(supN) ? supN * price : null,
+          borrowUsd: price != null && Number.isFinite(borN) ? borN * price : null,
         } satisfies LendMarketRow;
       } catch {
         return null;
       }
     }),
   );
+  return rows.filter((r) => r != null) as LendMarketRow[];
+}
+
+async function readSiloMarkets(client: PublicClient, chainId: number): Promise<LendMarketRow[]> {
+  const factories = SILO_FACTORY[chainId];
+  if (!factories?.length) return [];
+  const short = chainShort(chainId);
+  const silos: Address[] = [];
+  const seen = new Set<string>();
+  for (const factory of factories) {
+    try {
+      const next = await client.readContract({ address: factory, abi: siloFactoryAbi, functionName: "getNextSiloId" });
+      const max = Math.min(Number(next), 21);
+      const found = await mapLimit(Array.from({ length: Math.max(0, max - 1) }, (_, i) => i + 1), 6, async (i) => {
+        try {
+          const cfg = await client.readContract({ address: factory, abi: siloFactoryAbi, functionName: "idToSiloConfig", args: [BigInt(i)] });
+          if (!cfg || cfg.toLowerCase() === ZERO) return [] as Address[];
+          const pair = await client.readContract({ address: cfg, abi: siloConfigAbi, functionName: "getSilos" });
+          return [pair[0], pair[1]].filter((s): s is Address => Boolean(s && s.toLowerCase() !== ZERO));
+        } catch {
+          return [] as Address[];
+        }
+      });
+      for (const s of found.flat()) {
+        const k = s.toLowerCase();
+        if (seen.has(k)) continue;
+        seen.add(k);
+        silos.push(s);
+      }
+    } catch {
+      /* factory miss */
+    }
+  }
+  const rows = await mapLimit(silos.slice(0, 24), 6, async (silo) => {
+    try {
+      const [asset, total] = await Promise.all([
+        client.readContract({ address: silo, abi: vaultAbi, functionName: "asset" }),
+        client.readContract({ address: silo, abi: vaultAbi, functionName: "totalAssets" }),
+      ]);
+      if (total === 0n) return null;
+      const meta0 = tokenMeta(chainId, asset, "TKN");
+      const decimals = Number(await client.readContract({ address: asset, abi: erc20Abi, functionName: "decimals" }).catch(() => meta0.decimals));
+      const display = String(await client.readContract({ address: asset, abi: erc20Abi, functionName: "symbol" }).catch(() => meta0.symbol));
+      const n = Number(formatUnits(total, decimals));
+      if (!Number.isFinite(n) || n <= 0) return null;
+      const price = await usd(client, chainId, asset, decimals, false, display);
+      const meta = tokenMeta(chainId, asset, display);
+      return {
+        id: `Silo:${chainId}:${silo}`,
+        chainId,
+        chainShort: short,
+        protocol: "Silo",
+        symbol: meta.symbol,
+        icon: meta.icon,
+        token: asset,
+        market: silo,
+        supplyApy: null,
+        borrowApy: null,
+        supplyUsd: price != null ? n * price : null,
+        borrowUsd: null,
+      } satisfies LendMarketRow;
+    } catch {
+      return null;
+    }
+  });
   return rows.filter((r) => r != null) as LendMarketRow[];
 }
 
@@ -415,6 +733,10 @@ export function lendChainIds(filter: number | "all", disabled: number[]) {
   for (const id of Object.keys(COMPOUND_V2)) ids.add(Number(id));
   for (const id of Object.keys(COMPOUND_FORKS)) ids.add(Number(id));
   for (const id of Object.keys(COMETS)) ids.add(Number(id));
+  for (const id of Object.keys(MORPHO_MARKETS)) ids.add(Number(id));
+  for (const id of FLUID_CHAINS) ids.add(id);
+  for (const id of Object.keys(EULER_VAULTS)) ids.add(Number(id));
+  for (const id of Object.keys(SILO_FACTORY)) ids.add(Number(id));
   ids.add(43114);
   const off = new Set(disabled);
   const all = [...ids].filter((id) => !off.has(id));
@@ -559,7 +881,7 @@ export async function loadLendMarkets(chainId: number, onPart?: (rows: LendMarke
   const client = evmPublicClient(chainId);
   if (!client) return [];
   return cacheGet(
-    { key: cacheKey("lend", chainId), policy: { ...POLICIES.markets, keep: (rows: LendMarketRow[]) => rows.length > 0 } },
+    { key: cacheKey(LEND_CACHE, chainId), policy: { ...POLICIES.markets, keep: (rows: LendMarketRow[]) => rows.length > 0 } },
     async () => {
       const acc: LendMarketRow[] = [];
       const add = (rows: LendMarketRow[]) => {
@@ -571,22 +893,27 @@ export async function loadLendMarkets(chainId: number, onPart?: (rows: LendMarke
         acc.push(...by.values());
         onPart?.(acc.slice());
       };
-      const jobs: Array<Promise<void>> = [];
+      const core: Array<Promise<void>> = [];
+      const extra: Array<Promise<void>> = [];
       const aave = DEX[chainId]?.aave;
-      if (aave) jobs.push(readAaveStyle(client, chainId, "Aave", { pool: aave.pool, data: aave.data }, add).then(() => {}).catch(() => {}));
+      if (aave) core.push(readAaveStyle(client, chainId, "Aave", { pool: aave.pool, data: aave.data }, add).then(() => {}).catch(() => {}));
       const spark = SPARK[chainId];
-      if (spark) jobs.push(readAaveStyle(client, chainId, "Spark", spark, add).then(() => {}).catch(() => {}));
+      if (spark) core.push(readAaveStyle(client, chainId, "Spark", spark, add).then(() => {}).catch(() => {}));
       for (const fork of AAVE_FORKS[chainId] ?? []) {
-        jobs.push(readAaveStyle(client, chainId, fork.name, { pool: fork.pool, data: fork.data }, add).then(() => {}).catch(() => {}));
+        core.push(readAaveStyle(client, chainId, fork.name, { pool: fork.pool, data: fork.data }, add).then(() => {}).catch(() => {}));
       }
       const v2 = COMPOUND_V2[chainId];
-      if (v2) jobs.push(readComptroller(client, chainId, v2).then(add).catch(() => {}));
+      if (v2) core.push(readComptroller(client, chainId, v2).then(add).catch(() => {}));
       for (const fork of COMPOUND_FORKS[chainId] ?? []) {
-        jobs.push(readComptroller(client, chainId, fork).then(add).catch(() => {}));
+        core.push(readComptroller(client, chainId, fork).then(add).catch(() => {}));
       }
-      jobs.push(readComets(client, chainId).then(add).catch(() => {}));
-      if (chainId === 43114) jobs.push(readBenqi(client).then(add).catch(() => {}));
-      await Promise.all(jobs);
+      core.push(readComets(client, chainId).then(add).catch(() => {}));
+      extra.push(readMorphoMarkets(client, chainId).then(add).catch(() => {}));
+      extra.push(readFluidMarkets(client, chainId).then(add).catch(() => {}));
+      extra.push(readEulerMarkets(client, chainId).then(add).catch(() => {}));
+      extra.push(readSiloMarkets(client, chainId).then(add).catch(() => {}));
+      await Promise.all(core);
+      await Promise.all(extra);
       return acc;
     },
   );

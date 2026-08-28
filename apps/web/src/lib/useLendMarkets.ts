@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { cacheFresh, cacheKey, cacheLastGood, cacheReady, onVisibleInterval } from "./defi/cache.ts";
-import { lendChainIds, loadLendMarkets, type LendMarketRow } from "./lendMarkets.ts";
+import { LEND_CACHE, lendChainIds, loadLendMarkets, type LendMarketRow } from "./lendMarkets.ts";
 import { useLiveStatus } from "./liveStatus.ts";
 import { useUserSettings } from "./userSettings.ts";
 
@@ -11,7 +11,7 @@ function sortRows(rows: LendMarketRow[]) {
 function seed(ids: number[]) {
   const out: LendMarketRow[] = [];
   for (const id of ids) {
-    const raw = cacheLastGood<LendMarketRow[]>(cacheKey("lend", id));
+    const raw = cacheLastGood<LendMarketRow[]>(cacheKey(LEND_CACHE, id));
     if (raw?.length) out.push(...raw);
   }
   return sortRows(out);
@@ -59,7 +59,7 @@ export function useLendMarkets(chainId: number | "all") {
       setError(null);
       const live = useLiveStatus.getState();
       for (const id of ids) {
-        if (!cacheFresh(cacheKey("lend", id))) live.start(`lend:${id}`, id, "lend", "wait");
+        if (!cacheFresh(cacheKey(LEND_CACHE, id))) live.start(`lend:${id}`, id, "lend", "wait");
       }
       try {
         if (!ids.length) {
@@ -70,7 +70,7 @@ export function useLendMarkets(chainId: number | "all") {
           return;
         }
         await mapLimit(ids, 2, async (id) => {
-          const miss = !cacheFresh(cacheKey("lend", id));
+          const miss = !cacheFresh(cacheKey(LEND_CACHE, id));
           if (miss) useLiveStatus.getState().run(`lend:${id}`);
           try {
             const part = await loadLendMarkets(id, (rows) => {

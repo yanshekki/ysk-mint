@@ -109,7 +109,7 @@ const SPECIFIC: Array<[number, string, string]> = [
   [8453, "0x420dd381b31aef6683db6b902084cb0ffece40da", "Aerodrome"],
   [8453, "0xcf77a3ba9a5ca399b7c97c74d54e5b1beb874e43", "Aerodrome"],
   [43114, "0x2b2c81e08f1af8835a78bb2a90ae924ace0ea4be", "BENQI"],
-  [43114, "0x486af39519b4dc9a7fccd292b654305cc5328ae0", "BENQI"],
+  [43114, "0x486af39519b4dc9a7fccd318217352830e8ad9b4", "BENQI"],
   [43114, "0x5c0401e81bc07ca70fad469b451682c0d747ef1c", "BENQI"],
   [43114, "0xb4315e873dbcf96ffd0acd8ea43f689d8c20fb30", "LFJ"],
   [43114, "0x60ae616a2155ee3d9a68541ba4544862310933d4", "Trader Joe"],

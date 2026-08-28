@@ -114,16 +114,17 @@ const eulerAbi = [
   { type: "function", name: "debtOf", stateMutability: "view", inputs: [{ type: "address" }], outputs: [{ type: "uint256" }] },
 ] as const;
 
-const MORPHO = "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb" as Address;
+export const MORPHO = "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb" as Address;
 
 export const COMPOUND_V2: Record<number, { comptroller: Address; nativeC?: Address; name: string }> = {
   1: { comptroller: "0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B", nativeC: "0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5", name: "Compound" },
 };
 
 export const COMPOUND_FORKS: Record<number, Array<{ comptroller: Address; nativeC?: Address; name: string }>> = {
-  56: [{ comptroller: "0xfD36E2c2a6789Db23113685031d7F163148ECA35", nativeC: "0xA07c5b74C9B40447a954e1466938b865b6BBea36", name: "Venus" }],
+  56: [{ comptroller: "0xfD36E2c2a6789Db23113685031d7F16329158384", nativeC: "0xA07c5b74C9B40447a954e1466938b865b6BBea36", name: "Venus" }],
   8453: [{ comptroller: "0xfBb21d0380beE3312B33c4353c8936a0F13EF26C", name: "Moonwell" }],
   10: [{ comptroller: "0xCa889f40aae37FFf165BccF69aeF1E82b5C511B9", name: "Moonwell" }],
+  43114: [{ comptroller: "0x486Af39519B4Dc9a7fCcd318217352830E8AD9b4", nativeC: "0x5C0401e81Bc07Ca70fAD469b451682c0d747Ef1c", name: "BENQI" }],
 };
 
 export const COMETS: Record<number, Address[]> = {
@@ -154,6 +155,14 @@ export const SPARK: Record<number, { pool: Address; data: Address }> = {
 };
 
 export const AAVE_FORKS: Record<number, Array<{ pool: Address; data: Address; name: string; slug: string }>> = {
+  8453: [
+    {
+      pool: "0x8F44Fd754285aa6A2b8B9B97739B79746e0475a7",
+      data: "0x2A0979257105834789bC6b9E1B00446DFbA8dFBa",
+      name: "Seamless",
+      slug: "seamless",
+    },
+  ],
   999: [
     {
       pool: "0x00A89d7a5A02160f20150EbEA7a2b5E4879A1A8b",
@@ -180,7 +189,7 @@ export const AAVE_FORKS: Record<number, Array<{ pool: Address; data: Address; na
   ],
 };
 
-const MORPHO_MARKETS: Record<number, `0x${string}`[]> = {
+export const MORPHO_MARKETS: Record<number, `0x${string}`[]> = {
   1: [
     "0x3a85e619751152991742810df6ec69ce473daef99e28a64ab2340d7b7ccfee49",
     "0x64d65c9a2d91c36d56fbc42d69e979335320169b3df63bf92789e2c8883fcc64",
@@ -335,11 +344,11 @@ const USER_POS = [
 
 const FLUID_NATIVE = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 const ZERO_ADDR = "0x0000000000000000000000000000000000000000";
-const FLUID_LEND = "0x48D32f49aFeAEC7AE66ad7B9264f446fc11a1569" as Address;
+export const FLUID_LEND = "0x48D32f49aFeAEC7AE66ad7B9264f446fc11a1569" as Address;
 const FLUID_VAULT = "0xA5C3E16523eeeDDcC34706b0E6bE88b4c6EA95cC" as Address;
-const FLUID_CHAINS = new Set([1, 8453, 42161, 137, 56]);
+export const FLUID_CHAINS = new Set([1, 8453, 42161, 137, 56]);
 
-const SILO_FACTORY: Record<number, Address[]> = {
+export const SILO_FACTORY: Record<number, Address[]> = {
   1: ["0x22a3cF6149bFa611bAFc89Fd721918EC3Cf7b581"],
   42161: ["0x384DC7759d35313F0b567D42bf2f611B285B657C"],
   146: ["0xa42001d6d2237d2c74108fe360403c4b796b7170", "0x4e9dE3a64c911A37f7EB2fCb06D1e68c3cBe9203"],
@@ -354,7 +363,7 @@ const FRAX_REG: Record<number, Address[]> = {
   ],
 };
 
-const EULER_VAULTS: Record<number, Address[]> = {
+export const EULER_VAULTS: Record<number, Address[]> = {
   1: [
     "0x9bD52F2805c6aF014132874124686e7b248c2Cbb",
     "0x7c280DBDEf569e96c7919251bD2B0edF0734C5A8",
