@@ -2654,9 +2654,11 @@ button.set-item-btn:focus-visible {
   text-align: left;
   cursor: pointer;
 }
-.me-tx-main:hover,
-.me-tx.is-open .me-tx-main {
+.me-tx-main:hover {
   background: var(--bg-subtle);
+}
+.me-tx.is-open .me-tx-main {
+  background: transparent;
 }
 .me-tx-time {
   display: flex;
@@ -2750,7 +2752,7 @@ button.set-item-btn:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  margin: 0 12px 14px;
+  margin: 12px 12px 14px;
   padding: 16px 18px;
   border-radius: 12px;
   background: var(--bg-subtle);
@@ -2840,7 +2842,7 @@ button.set-item-btn:focus-visible {
     padding: 14px 14px;
   }
   .me-tx-more {
-    margin: 0 10px 12px;
+    margin: 10px 10px 12px;
     padding: 14px;
   }
   .me-tx-kv > div {
