@@ -15,6 +15,7 @@ Guided multi-chain token launcher: deploy a native LayerZero OFT, create LP, and
 ## Honesty
 
 - Contracts are **not audited**.
+- The testnet OFT loop was proven on 2026-08-28 (Base Sepolia → Arb Sepolia mint). See [testnet-proof.md](./docs/testnet-proof.md). Mainnet factories stay zero.
 - Mainnet chain keys exist in config but are **disabled**.
 - Phase 1 includes the guided wizard, V2 LP + lock contracts, and live `eth_call` success pages. Factory addresses are still zero until a testnet deploy.
 - Bonding curve is **not enabled**. Solana is listed as **SPL native issuance**, not LayerZero OFT; the program address is still empty. Platform fee defaults to **0**. There is still no audit.
@@ -43,5 +44,6 @@ Foundry: `forge test -vv`
 - [Error codes](./docs/errors.md)
 - [Phases](./docs/phases.md)
 - [Security checklist](./docs/security-checklist.md)
+- [Testnet OFT proof](./docs/testnet-proof.md)
 - [Audit prep](./docs/audit-prep.md)
 - [Product blueprint](./docs/blueprint.md)

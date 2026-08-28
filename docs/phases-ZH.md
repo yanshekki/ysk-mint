@@ -27,3 +27,7 @@ Monorepo、ENUM、錯誤、校驗、可 clone 的 OFT、Factory、錢包 SPA。
 ## Phase 5 — 費用、Presale、審計準備（本版本）
 
 平台費預設 0。沒有 HTTP API。Solana 係 SPL 原生路徑（唔係 OFT）；program 未部署。
+
+## Phase 6 — 測試網 OFT 迴路
+
+2026-08-28：腳本喺 live LayerZero testnet 完成 Base Sepolia burn → Arb Sepolia mint。證明連結見 [testnet-proof-ZH.md](./testnet-proof-ZH.md)。主網 factory 仍為零。未經審計。Wizard LP 同瀏覽器簽名唔喺呢次證明入面。

@@ -15,6 +15,7 @@
 ## 誠實說明
 
 - 合約**未經審計**。
+- 測試網 OFT 迴路已喺 2026-08-28 證明（Base Sepolia → Arb Sepolia mint）。見 [testnet-proof-ZH.md](./docs/testnet-proof-ZH.md)。主網 factory 仍為零。
 - 配置裡有主網 chain key，但**已關閉**。
 - Phase 1 包含引導式 Wizard、V2 LP + 鎖定合約，以及即時 `eth_call` 成功頁。Factory 地址在測試網部署前仍為零。
 - Bonding Curve **未開放**。Solana 以 **SPL 獨立發行** 列入產品鏈，唔走 LayerZero OFT；program 地址仍空。平台費預設為 **0**。仍然未經審計。
@@ -44,4 +45,5 @@ Foundry：`forge test -vv`
 - [階段](./docs/phases-ZH.md)
 - [安全清單](./docs/security-checklist-ZH.md)
 - [審計準備](./docs/audit-prep-ZH.md)
+- [測試網 OFT 證明](./docs/testnet-proof-ZH.md)
 - [產品藍圖](./docs/blueprint.md)

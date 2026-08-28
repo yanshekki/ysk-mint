@@ -27,3 +27,7 @@ On-chain transfer UI quotes on the connected EVM. Native VMs and the same chain 
 ## Phase 5 — Fees, presale, audit prep (this release)
 
 Default platform fee is 0. No HTTP API. Solana is a native SPL path (not OFT); the program is undeployed.
+
+## Phase 6 — Testnet OFT loop
+
+2026-08-28: a script burned on live LayerZero testnet Base Sepolia and minted on Arb Sepolia. Links: [testnet-proof.md](./testnet-proof.md). Mainnet factories stay zero. Not audited. Wizard LP and browser signatures are not part of this proof.
