@@ -2441,14 +2441,14 @@ button.me-token:focus-visible {
   z-index: 400;
   display: flex;
   flex-direction: column;
-  min-width: 220px;
-  max-width: min(320px, calc(100vw - 32px));
+  width: min(300px, calc(100vw - 32px));
   max-height: min(260px, calc(100dvh - 128px));
   padding: 12px 14px;
   border-radius: 14px;
   border: 1px solid var(--border-color);
   background: var(--bg-white);
   box-shadow: 0 10px 32px rgba(15, 23, 42, 0.12);
+  box-sizing: border-box;
 }
 .live-dock-title {
   margin: 0 0 8px;
@@ -2466,18 +2466,26 @@ button.me-token:focus-visible {
   display: grid;
   gap: 8px;
   min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
+  scrollbar-gutter: stable;
 }
 .live-dock-list li {
   display: grid;
-  grid-template-columns: 18px 1fr auto;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
   font-size: 13px;
   font-weight: 700;
   color: var(--text-main);
+}
+.live-dock-list li > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .live-dock-list img {
   width: 18px;
