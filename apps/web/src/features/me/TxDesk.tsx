@@ -5,7 +5,8 @@ import { chainIcon } from "../../lib/chainIcon.ts";
 import { CHAINS } from "@ysk-mint/config";
 import { applyPeekHash } from "../../lib/shareSet.ts";
 import { enrichTx } from "../../lib/useAddressTxs.ts";
-import { canFollow, chainMeta, isZeroAddr, txIndexed, type TxKind, type TxRow } from "../../lib/txIndex.ts";
+import { isSpamRow } from "../../lib/addrLabels.ts";
+import { canFollow, chainMeta, isZeroAddr, txIndexed, type AddrTag, type TxKind, type TxRow } from "../../lib/txIndex.ts";
 
 const KINDS: TxKind[] = ["in", "out", "swap", "approve", "call", "fail"];
 
@@ -54,6 +55,7 @@ export function TxDesk({
 }) {
   const { t } = useTranslation();
   const [kind, setKind] = useState<TxKind | "all">("all");
+  const [hideOutside, setHideOutside] = useState(false);
   const [q, setQ] = useState("");
   const [open, setOpen] = useState<string | null>(null);
   const [extra, setExtra] = useState<Record<string, TxRow>>({});
@@ -65,6 +67,7 @@ export function TxDesk({
     return rows.filter((r) => {
       if (chainFilter !== "all" && r.chainId !== chainFilter) return false;
       if (kind !== "all" && r.kind !== kind) return false;
+      if (hideOutside && isSpamRow(r)) return false;
       if (!qq) return true;
       return (
         r.hash.toLowerCase().includes(qq) ||
@@ -75,10 +78,11 @@ export function TxDesk({
         (r.protocol || "").toLowerCase().includes(qq) ||
         (r.fromLabel || "").toLowerCase().includes(qq) ||
         (r.toLabel || "").toLowerCase().includes(qq) ||
+        (r.peerTag?.name || "").toLowerCase().includes(qq) ||
         r.flows.some((f) => f.symbol.toLowerCase().includes(qq) || (f.token || "").toLowerCase().includes(qq))
       );
     });
-  }, [rows, chainFilter, kind, q]);
+  }, [rows, chainFilter, kind, hideOutside, q]);
 
   useEffect(() => {
     if (!open) return;
@@ -120,6 +124,7 @@ export function TxDesk({
         <span className="me-count">{loading ? "…" : list.length}</span>
       </div>
       <p className="me-tx-hint">{t("me.txHint")}</p>
+      <p className="me-tx-hint me-tx-label-hint">{t("me.txLabelHint")}</p>
       <div className="me-tx-tools">
         <input className="me-filter" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("me.txSearch")} />
         <div className="me-chips">
@@ -131,6 +136,10 @@ export function TxDesk({
               {t(`me.txKind.${k}`)}
             </button>
           ))}
+          <label className="me-hide-zero me-tx-hide-out">
+            <input type="checkbox" checked={hideOutside} onChange={(e) => setHideOutside(e.target.checked)} />
+            {t("me.hideOutside")}
+          </label>
         </div>
       </div>
       {loading && list.length === 0 && !noIndex ? (
@@ -159,8 +168,14 @@ export function TxDesk({
               : r.peer
                 ? shortAddr(k, r.peer)
                 : r.toLabel || r.fromLabel || "—";
+            const named =
+              r.peerTag?.kind === "cex" || r.peerTag?.kind === "dex"
+                ? r.peerTag.name
+                : r.toTag?.kind === "cex" || r.toTag?.kind === "dex"
+                  ? r.toTag.name
+                  : r.protocol;
             return (
-              <div key={r.id} className={`me-tx${r.fail ? " is-fail" : ""}${expanded ? " is-open" : ""}`}>
+              <div key={r.id} className={`me-tx${r.fail ? " is-fail" : ""}${expanded ? " is-open" : ""}${r.spam ? " is-spam" : ""}`}>
                 <button type="button" className="me-tx-main" aria-expanded={expanded} onClick={() => setOpen(expanded ? null : r.id)}>
                   <span className="me-tx-time" title={absTime(r.ts)}>
                     {relTime(r.ts)}
@@ -176,20 +191,23 @@ export function TxDesk({
                       {r.fail ? <span className="badge badge-warn">{t("me.txKind.fail")}</span> : null}
                       {r.risk ? <span className="badge badge-warn">{t("me.txRisk")}</span> : null}
                       {r.nft ? <span className="badge badge-info">NFT</span> : null}
+                      {r.spam ? <TagBadge tag={{ kind: "outside", name: t("me.txOutside") }} /> : null}
                     </b>
                     <span>
-                      {r.protocol ? <em>{r.protocol}</em> : null}
-                      {r.protocol ? " · " : null}
+                      {named ? <em>{named}</em> : null}
+                      {named ? " · " : null}
                       {who}
+                      {!named && (r.peerTag?.kind === "outside" || r.peerTag?.kind === "airdrop") ? <TagBadge tag={r.peerTag} /> : null}
                     </span>
                   </span>
                   <span className="me-tx-flows">
                     {r.flows.length === 0 ? <span className="num">—</span> : null}
                     {r.flows.map((f, i) => (
-                      <span key={`${f.symbol}:${f.dir}:${i}`} className={`me-tx-flow is-${f.dir}`}>
+                      <span key={`${f.symbol}:${f.dir}:${i}`} className={`me-tx-flow is-${f.dir}${f.tag?.kind === "outside" || f.tag?.kind === "airdrop" ? " is-muted" : ""}`}>
                         <img src={f.icon} alt="" width={16} height={16} />
                         {f.dir === "out" ? "−" : "+"}
                         {f.amount} {f.symbol}
+                        {f.tag?.kind === "airdrop" ? <TagBadge tag={f.tag} /> : null}
                       </span>
                     ))}
                   </span>
@@ -210,6 +228,7 @@ export function TxDesk({
                             chainId={r.chainId}
                             addr={r.from}
                             label={r.fromLabel}
+                            tag={r.fromTag}
                             ours={r.ours}
                             copied={copied}
                             onPeek={peekAddr}
@@ -224,6 +243,7 @@ export function TxDesk({
                             chainId={r.chainId}
                             addr={r.to}
                             label={r.toLabel || r.protocol}
+                            tag={r.toTag}
                             ours={r.ours}
                             copied={copied}
                             onPeek={peekAddr}
@@ -235,10 +255,11 @@ export function TxDesk({
                         <div key={`f-${f.symbol}-${i}`}>
                           <dt>{f.dir === "in" ? t("me.txKind.in") : t("me.txKind.out")}</dt>
                           <dd>
-                            <span className={`me-tx-flow is-${f.dir}`}>
+                            <span className={`me-tx-flow is-${f.dir}${f.tag?.kind === "outside" || f.tag?.kind === "airdrop" ? " is-muted" : ""}`}>
                               {f.dir === "out" ? "−" : "+"}
                               {f.amount} {f.symbol}
                             </span>
+                            {f.tag ? <TagBadge tag={f.tag} /> : null}
                             {f.token ? <span className="me-tx-mini">{t("me.txToken")} {shortAddr(k, f.token)}</span> : null}
                             {f.counter && canFollow(r.ours, f.counter) ? (
                               <button type="button" className="me-tx-link" onClick={() => peekAddr(r.chainId, f.counter!, f.symbol)}>
@@ -287,10 +308,18 @@ export function TxDesk({
   );
 }
 
+function TagBadge({ tag }: { tag?: AddrTag }) {
+  const { t } = useTranslation();
+  if (!tag || tag.kind === "token") return null;
+  const text = tag.kind === "outside" ? t("me.txOutside") : tag.kind === "airdrop" ? t("me.txAirdrop") : tag.name;
+  return <span className={`me-tx-tag is-${tag.kind}`}>{text}</span>;
+}
+
 function Party({
   chainId,
   addr,
   label,
+  tag,
   ours,
   copied,
   onPeek,
@@ -299,6 +328,7 @@ function Party({
   chainId: number;
   addr: string;
   label?: string;
+  tag?: AddrTag;
   ours: string;
   copied: string;
   onPeek: (chainId: number, value: string, label?: string) => void;
@@ -313,8 +343,9 @@ function Party({
   const short = shortAddr(k, addr);
   return (
     <span className="me-tx-party">
-      <b>{label || short}</b>
-      {mine ? <em>{t("me.txOurs")}</em> : label ? <span className="num">{short}</span> : null}
+      <b>{label && tag?.kind !== "cex" && tag?.kind !== "dex" ? label : short}</b>
+      {mine ? <em>{t("me.txOurs")}</em> : null}
+      {!mine ? <TagBadge tag={tag} /> : null}
       {canFollow(ours, addr) ? (
         <button type="button" className="me-tx-link" onClick={() => onPeek(chainId, addr, label)}>
           {t("me.txFollow")}

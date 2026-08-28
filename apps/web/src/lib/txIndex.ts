@@ -4,6 +4,13 @@ import { DEX } from "./defiAddresses.ts";
 
 export type TxKind = "in" | "out" | "swap" | "approve" | "call" | "fail";
 
+export type AddrTagKind = "cex" | "dex" | "token" | "outside" | "airdrop";
+
+export type AddrTag = {
+  kind: AddrTagKind;
+  name: string;
+};
+
 export type TxFlow = {
   symbol: string;
   icon: string;
@@ -12,6 +19,7 @@ export type TxFlow = {
   token?: string;
   nft?: boolean;
   counter?: string;
+  tag?: AddrTag;
 };
 
 export type TxRow = {
@@ -25,8 +33,11 @@ export type TxRow = {
   to: string;
   fromLabel?: string;
   toLabel?: string;
+  fromTag?: AddrTag;
+  toTag?: AddrTag;
   peer: string;
   peerLabel: string;
+  peerTag?: AddrTag;
   protocol?: string;
   ours: string;
   flows: TxFlow[];
@@ -34,6 +45,7 @@ export type TxRow = {
   fail?: boolean;
   risk?: boolean;
   nft?: boolean;
+  spam?: boolean;
   explorer: string;
 };
 
@@ -92,6 +104,7 @@ const SPECIFIC: Array<[number, string, string]> = [
   [1, "0xae7ab96520de3a18e5e111b5eaab095312d7fe84", "Lido"],
   [56, "0x10ed43c718714eb63d5aa57b78b54704e256024e", "PancakeSwap"],
   [56, "0x13f4ea83d0bd40e75c8222255bc855a974568dd4", "PancakeSwap"],
+  [56, "0x1b81d678ffb9c0263b24a97847620c99d213eb14", "PancakeSwap"],
   [8453, "0xcfcf3b405b020d90d87fe6c8a743dc268589e6a1", "Aerodrome"],
   [8453, "0x420dd381b31aef6683db6b902084cb0ffece40da", "Aerodrome"],
   [8453, "0xcf77a3ba9a5ca399b7c97c74d54e5b1beb874e43", "Aerodrome"],

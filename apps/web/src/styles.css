@@ -2742,6 +2742,47 @@ button.set-item-btn:focus-visible {
 .me-tx-flow.is-out {
   color: var(--trade-sell, #ef4444);
 }
+.me-tx-flow.is-muted,
+.me-tx.is-spam .me-tx-flow {
+  color: var(--text-muted) !important;
+}
+.me-tx.is-spam .me-tx-act b,
+.me-tx.is-spam .me-tx-act > span {
+  color: var(--text-muted);
+}
+.me-tx.is-spam img {
+  opacity: 0.45;
+}
+.me-tx-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.me-tx-tag.is-outside,
+.me-tx-tag.is-airdrop {
+  background: #e2e8f0;
+  color: #475569;
+}
+.me-tx-tag.is-cex {
+  background: #ecfeff;
+  color: #0e7490;
+}
+.me-tx-tag.is-dex {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+.me-tx-label-hint {
+  padding-top: 6px;
+}
+.me-tx-hide-out {
+  margin-left: 4px;
+  height: 40px;
+}
 .me-tx-gas {
   font-size: 12px;
   color: var(--text-muted);

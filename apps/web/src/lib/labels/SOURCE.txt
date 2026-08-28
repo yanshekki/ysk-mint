@@ -1,0 +1,19 @@
+ysk-mint CEX address book  2026-08-28
+
+These are publicly disclosed exchange hot/cold wallets (proof-of-reserves / explorer name tags).
+They are NOT per-customer deposit addresses. Exchanges issue those privately and rotate them.
+Unknown counterparties are labelled 系統外 in the UI — that means unlisted, not a scam verdict.
+
+- Binance PoR API 296 mapped rows (https://www.binance.com/bapi/apex/v1/public/apex/market/por/address)
+- DefiLlama projects/binance/index.js → Binance (2 extracts)
+- DefiLlama projects/okex/index.js → OKX (353 extracts)
+- DefiLlama projects/kucoin/index.js → KuCoin (163 extracts)
+- DefiLlama projects/bitget/index.js → Bitget (132 extracts)
+- DefiLlama projects/gate-io/index.js → Gate.io (34 extracts)
+- DefiLlama projects/huobi/index.js → HTX (66 extracts)
+- DefiLlama projects/bitfinex/index.js → Bitfinex (17 extracts)
+- DefiLlama projects/gemini/index.js → Gemini (5 extracts)
+- DefiLlama projects/bitstamp/index.js → Bitstamp (0 extracts)
+- DefiLlama cex/mexc-cex.js → MEXC (41 extracts)
+- Etherscan public name tags for Coinbase / Kraken / extra Binance / OKX / Bybit hot wallets
+- 1110 unique chainId+address rows

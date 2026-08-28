@@ -22,6 +22,7 @@ import {
   type TxKind,
   type TxRow,
 } from "./txIndex.ts";
+import { applyTags } from "./addrLabels.ts";
 
 const PAGE = 40;
 const SOL_RPCS = [
@@ -281,7 +282,7 @@ async function fetchBlockscout(chainId: number, addr: string, ours: Set<string>)
     }
     applyToken(prev, t, addr, ours, chainId);
   }
-  return [...by.values()].map(retouch);
+  return [...by.values()].map((r) => applyTags(retouch(r)));
 }
 
 type ScanTx = {
@@ -399,7 +400,7 @@ async function fetchScan(chainId: number, addr: string, ours: Set<string>): Prom
         by.set(t.hash.toLowerCase(), row);
       }
     }
-  return [...by.values()].map(retouch);
+  return [...by.values()].map((r) => applyTags(retouch(r)));
 }
 
 async function fetchSol(addr: string): Promise<TxRow[]> {
@@ -487,7 +488,7 @@ async function fetchSol(addr: string): Promise<TxRow[]> {
         });
       }
       if (j?.result?.meta?.fee) r.gas = `${fmtAmt(BigInt(j.result.meta.fee), 9)} SOL`;
-      retouch(r);
+      applyTags(retouch(r));
     }
     return rows;
   }
@@ -587,7 +588,7 @@ async function fetchAda(addr: string): Promise<TxRow[]> {
     row.peer = peer;
     row.flows = flows;
     if (t.fee) row.gas = `${fmtAmt(t.fee, 6)} ADA`;
-    rows.push(retouch(row));
+    rows.push(applyTags(retouch(row)));
   }
   return rows;
 }
@@ -632,7 +633,7 @@ async function fetchNear(addr: string): Promise<TxRow[]> {
         counter: from === addr ? to : from,
       });
     }
-    rows.push(retouch(row));
+    rows.push(applyTags(retouch(row)));
   }
   return rows;
 }
@@ -692,7 +693,7 @@ export async function enrichTx(row: TxRow): Promise<TxRow> {
     if (dir === "out" && from && !isZeroAddr(to)) next.peer = next.peer || to;
   }
   if (!next.peer) next.peer = peerOf(ours, next.from, next.to);
-  return retouch(next);
+  return applyTags(retouch(next));
 }
 
 export function useAddressTxs(addrs: AddrIn[]) {

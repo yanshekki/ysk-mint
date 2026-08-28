@@ -456,6 +456,10 @@
     "txZero": "Zero address",
     "txToken": "Token",
     "txDetail": "Filling in this transaction…",
+    "txOutside": "Unlisted",
+    "txAirdrop": "Airdrop",
+    "hideOutside": "Hide unlisted",
+    "txLabelHint": "Exchange tags are public hot wallets / proof-of-reserves snapshots, not customer deposits. Unlisted means not in our book — not a scam score.",
     "txKind": {
       "in": "In",
       "out": "Out",

@@ -456,6 +456,10 @@
     "txZero": "零地址",
     "txToken": "代幣",
     "txDetail": "正在補齊此筆詳情…",
+    "txOutside": "系統外",
+    "txAirdrop": "空投",
+    "hideOutside": "隱藏系統外",
+    "txLabelHint": "交易所為公開熱錢包／儲備證明快照，唔含私人入金址。系統外只代表未收錄，唔係詐騙評級。",
     "txKind": {
       "in": "轉入",
       "out": "轉出",
