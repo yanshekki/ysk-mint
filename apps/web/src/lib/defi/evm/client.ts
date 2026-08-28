@@ -1,31 +1,8 @@
-import { createPublicClient, defineChain, http, type Chain, type PublicClient } from "viem";
+import { createPublicClient, defineChain, type Chain, type PublicClient } from "viem";
 import * as viemChains from "viem/chains";
 import { CHAINS } from "@ysk-mint/config";
 import { asAddr } from "../../pairKey.ts";
-
-const RPC_FALLBACK: Record<number, string> = {
-  1: "https://ethereum-rpc.publicnode.com",
-  8453: "https://base.publicnode.com",
-  42161: "https://arbitrum-one-rpc.publicnode.com",
-  56: "https://bsc-rpc.publicnode.com",
-  43114: "https://avalanche-c-chain-rpc.publicnode.com",
-  10: "https://optimism-rpc.publicnode.com",
-  137: "https://polygon-bor-rpc.publicnode.com",
-  59144: "https://linea-rpc.publicnode.com",
-  534352: "https://scroll-rpc.publicnode.com",
-  100: "https://gnosis-rpc.publicnode.com",
-  324: "https://mainnet.era.zksync.io",
-  146: "https://sonic-rpc.publicnode.com",
-  999: "https://rpc.hyperliquid.xyz/evm",
-  80094: "https://rpc.berachain.com",
-  50: "https://rpc.xdc.org",
-  2020: "https://api.roninchain.com/rpc",
-  81457: "https://rpc.blast.io",
-  1868: "https://rpc.soneium.org",
-  42220: "https://forno.celo.org",
-  480: "https://worldchain-mainnet.g.alchemy.com/public",
-  130: "https://mainnet.unichain.org",
-};
+import { builtinRpc, liveTransport, rpcUrl } from "../../rpc.ts";
 
 const MULTICALL3 = "0xca11bde05977b3631167028862be2a173976ca11" as const;
 
@@ -38,7 +15,7 @@ for (const v of Object.values(viemChains)) {
 
 export function evmPublicClient(chainId: number): PublicClient | undefined {
   const meta = Object.values(CHAINS).find((c) => c.chainId === chainId);
-  const url = RPC_FALLBACK[chainId] ?? meta?.rpc;
+  const url = rpcUrl(chainId) ?? builtinRpc(chainId);
   if (!url) return undefined;
   const base =
     known[chainId] ??
@@ -57,7 +34,7 @@ export function evmPublicClient(chainId: number): PublicClient | undefined {
       multicall3: base.contracts?.multicall3 ?? { address: MULTICALL3, blockCreated: 0 },
     },
   };
-  return createPublicClient({ chain, transport: http(url, { timeout: 25_000 }) });
+  return createPublicClient({ chain, transport: liveTransport(chainId) });
 }
 
 type Call = {

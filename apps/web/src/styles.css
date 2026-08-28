@@ -2656,6 +2656,45 @@ button.set-item-btn:focus-visible {
 .set-ctrl .me-chips {
   justify-content: flex-end;
 }
+.set-rpc-row {
+  display: grid;
+  grid-template-columns: 36px minmax(7rem, 0.8fr) minmax(0, 1.4fr) auto;
+  gap: 10px 12px;
+  align-items: center;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border-light);
+}
+.set-rpc-row .holding-meta b {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.set-rpc-input {
+  width: 100%;
+  min-width: 0;
+  height: 36px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-family: var(--font-mono);
+}
+.set-rpc-row.is-bad .set-rpc-input {
+  border-color: var(--trade-sell);
+}
+.set-rpc-err {
+  grid-column: 2 / -1;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--trade-sell);
+}
+@media (max-width: 720px) {
+  .set-rpc-row {
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+  }
+  .set-rpc-input {
+    grid-column: 1 / -1;
+  }
+}
 .set-switch {
   position: relative;
   display: inline-block;

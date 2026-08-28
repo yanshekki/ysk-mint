@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useAccount } from "wagmi";
-import { featuredChains } from "@ysk-mint/config";
+import { CHAINS as CHAIN_MAP, featuredChains, type ChainDefinition } from "@ysk-mint/config";
+import { builtinRpc, parseRpc, pingRpc } from "../../lib/rpc.ts";
 import { LOCALES } from "../../lib/i18n.ts";
 import { cacheWipe } from "../../lib/defi/cache.ts";
 import { chainIcon } from "../../lib/chainIcon.ts";
@@ -33,6 +34,88 @@ function SetItem({ title, hint, children }: { title: string; hint: string; child
         <span>{hint}</span>
       </div>
       <div className="set-ctrl">{children}</div>
+    </div>
+  );
+}
+
+function RpcRow({ chain }: { chain: ChainDefinition }) {
+  const { t } = useTranslation();
+  const saved = useUserSettings((s) => s.rpcByChain?.[String(chain.chainId)] ?? "");
+  const setRpc = useUserSettings((s) => s.setRpc);
+  const fallback = builtinRpc(chain.chainId) ?? chain.rpc;
+  const [text, setText] = useState(saved);
+  const [bad, setBad] = useState(false);
+  const [ping, setPing] = useState<"" | "ok" | "bad" | "mismatch">("");
+  useEffect(() => {
+    setText(saved);
+  }, [saved]);
+
+  function commit(raw: string) {
+    const next = raw.trim();
+    if (!next) {
+      setBad(false);
+      setPing("");
+      setRpc(chain.chainId, undefined);
+      return;
+    }
+    const url = parseRpc(next);
+    if (!url) {
+      setBad(true);
+      setPing("");
+      return;
+    }
+    setBad(false);
+    setRpc(chain.chainId, url);
+    void pingRpc(url, chain.chainId).then(setPing);
+  }
+
+  const pingNote = ping === "ok" ? t("settings.rpcOk") : ping === "mismatch" ? t("settings.rpcMismatch") : ping === "bad" ? t("settings.rpcFail") : "";
+
+  return (
+    <div className={`set-rpc-row ${bad ? "is-bad" : ""}`}>
+      <span className="holding-ico-wrap">
+        <img src={chainIcon(chain)} alt="" className="holding-ico" />
+      </span>
+      <div className="holding-meta">
+        <b>
+          {chain.name}
+          {saved ? <span className="me-count">{t("settings.rpcCustom")}</span> : null}
+        </b>
+        <span>{pingNote || `${chain.short} · ${chain.chainId}`}</span>
+      </div>
+      <input
+        className="field-text set-rpc-input"
+        value={text}
+        spellCheck={false}
+        autoComplete="off"
+        autoCorrect="off"
+        placeholder={t("settings.rpcPlaceholder", { url: fallback })}
+        aria-label={`${chain.short} RPC`}
+        onChange={(e) => {
+          setText(e.target.value);
+          setPing("");
+          if (bad) setBad(false);
+        }}
+        onBlur={() => commit(text)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+        }}
+      />
+      {saved ? (
+        <button
+          type="button"
+          className="me-pool-btn me-pool-btn-explore"
+          onClick={() => {
+            setText("");
+            commit("");
+          }}
+        >
+          {t("settings.rpcDefault")}
+        </button>
+      ) : (
+        <span />
+      )}
+      {bad ? <p className="set-rpc-err">{t("settings.rpcBad")}</p> : null}
     </div>
   );
 }
@@ -415,6 +498,24 @@ export function SettingsPage() {
                 })}
               </div>
             )}
+          </section>
+
+          <section className="me-card">
+            <div className="me-card-head">
+              <b>{t("settings.rpc")}</b>
+            </div>
+            <p className="set-note set-note-pad">{t("settings.rpcHint")}</p>
+            {Object.values(CHAIN_MAP)
+              .filter((c) => c.evm && c.enabled && !c.testnet)
+              .map((c) => (
+                <RpcRow key={c.chainId} chain={c} />
+              ))}
+            <p className="set-note set-note-pad">{t("settings.rpcTestnets")}</p>
+            {Object.values(CHAIN_MAP)
+              .filter((c) => c.evm && c.enabled && c.testnet)
+              .map((c) => (
+                <RpcRow key={c.chainId} chain={c} />
+              ))}
           </section>
 
           <section className="me-card">

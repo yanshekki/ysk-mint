@@ -1,8 +1,9 @@
 import { getDefaultConfig } from "@rainbow-me/rainbowkit";
 import { featuredChains, type ChainDefinition } from "@ysk-mint/config";
-import { defineChain, type Chain, http } from "viem";
+import { defineChain, type Chain } from "viem";
 import * as wagmiChains from "wagmi/chains";
 import { arbitrumSepolia, avalancheFuji, baseSepolia, bscTestnet, sepolia } from "wagmi/chains";
+import { liveTransport } from "./rpc.ts";
 
 const projectId = import.meta.env.VITE_WC_PROJECT_ID || "ysk-mint-local";
 
@@ -34,7 +35,7 @@ export const appChains = [...featuredEvm, ...tests].filter((c) => {
   return true;
 }) as unknown as [Chain, ...Chain[]];
 
-const transports = Object.fromEntries(appChains.map((c) => [c.id, http(c.rpcUrls.default.http[0] ?? "https://ethereum-rpc.publicnode.com")]));
+const transports = Object.fromEntries(appChains.map((c) => [c.id, liveTransport(c.id)]));
 
 export const wagmiConfig = getDefaultConfig({
   appName: "ysk-mint",

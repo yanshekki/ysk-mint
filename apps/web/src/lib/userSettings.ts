@@ -16,6 +16,7 @@ export type UserSettings = {
   buyColor: string;
   sellColor: string;
   disabledChains: number[];
+  rpcByChain: Record<string, string>;
 };
 
 export const SETTINGS_DEFAULTS: UserSettings = {
@@ -27,12 +28,14 @@ export const SETTINGS_DEFAULTS: UserSettings = {
   buyColor: BUY_GREEN,
   sellColor: SELL_RED,
   disabledChains: [],
+  rpcByChain: {},
 };
 
 type Store = UserSettings & {
   patch: (next: Partial<UserSettings>) => void;
   reset: () => void;
   setChainEnabled: (chainId: number, on: boolean) => void;
+  setRpc: (chainId: number, url?: string) => void;
 };
 
 export const useUserSettings = create<Store>()(
@@ -46,6 +49,13 @@ export const useUserSettings = create<Store>()(
         const has = cur.includes(chainId);
         if (on && has) set({ disabledChains: cur.filter((id) => id !== chainId) });
         if (!on && !has) set({ disabledChains: [...cur, chainId] });
+      },
+      setRpc: (chainId, url) => {
+        const cur = { ...(get().rpcByChain ?? {}) };
+        const key = String(chainId);
+        if (!url) delete cur[key];
+        else cur[key] = url;
+        set({ rpcByChain: cur });
       },
     }),
     { name: "ysk-mint.settings", version: 1 },
