@@ -2439,8 +2439,11 @@ button.me-token:focus-visible {
   right: 20px;
   bottom: 56px;
   z-index: 400;
+  display: flex;
+  flex-direction: column;
   min-width: 220px;
   max-width: min(320px, calc(100vw - 32px));
+  max-height: min(260px, calc(100dvh - 128px));
   padding: 12px 14px;
   border-radius: 14px;
   border: 1px solid var(--border-color);
@@ -2449,6 +2452,7 @@ button.me-token:focus-visible {
 }
 .live-dock-title {
   margin: 0 0 8px;
+  flex-shrink: 0;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -2461,6 +2465,10 @@ button.me-token:focus-visible {
   list-style: none;
   display: grid;
   gap: 8px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
 .live-dock-list li {
   display: grid;
@@ -2488,9 +2496,17 @@ button.me-token:focus-visible {
 }
 .live-dock-more {
   margin: 8px 0 0;
+  flex-shrink: 0;
   font-size: 12px;
   font-weight: 650;
   color: var(--text-muted);
+}
+@media (max-width: 640px) {
+  .live-dock {
+    right: 12px;
+    bottom: 56px;
+    max-height: min(36vh, calc(100dvh - 112px));
+  }
 }
 .live-dock-dot {
   width: 8px;
