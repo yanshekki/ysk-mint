@@ -2642,6 +2642,17 @@ button.set-item-btn:focus-visible {
   overflow: hidden;
   background: var(--bg-white);
 }
+.me-tx-list .me-more-rows {
+  box-sizing: border-box;
+  width: auto;
+  align-self: stretch;
+  height: 44px;
+  margin: 0 4px 8px;
+  border-radius: 14px;
+}
+.me-tx-list .me-shown {
+  margin: 0 4px 6px;
+}
 .me-tx-main {
   display: grid;
   grid-template-columns: 108px minmax(0, 1.1fr) minmax(0, 1.4fr) minmax(88px, 120px);
