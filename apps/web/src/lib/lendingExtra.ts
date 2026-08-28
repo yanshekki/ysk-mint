@@ -116,17 +116,17 @@ const eulerAbi = [
 
 const MORPHO = "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb" as Address;
 
-const COMPOUND_V2: Record<number, { comptroller: Address; nativeC?: Address; name: string }> = {
+export const COMPOUND_V2: Record<number, { comptroller: Address; nativeC?: Address; name: string }> = {
   1: { comptroller: "0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B", nativeC: "0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5", name: "Compound" },
 };
 
-const COMPOUND_FORKS: Record<number, Array<{ comptroller: Address; nativeC?: Address; name: string }>> = {
+export const COMPOUND_FORKS: Record<number, Array<{ comptroller: Address; nativeC?: Address; name: string }>> = {
   56: [{ comptroller: "0xfD36E2c2a6789Db23113685031d7F163148ECA35", nativeC: "0xA07c5b74C9B40447a954e1466938b865b6BBea36", name: "Venus" }],
   8453: [{ comptroller: "0xfBb21d0380beE3312B33c4353c8936a0F13EF26C", name: "Moonwell" }],
   10: [{ comptroller: "0xCa889f40aae37FFf165BccF69aeF1E82b5C511B9", name: "Moonwell" }],
 };
 
-const COMETS: Record<number, Address[]> = {
+export const COMETS: Record<number, Address[]> = {
   1: [
     "0xc3d688B66703497DAA19211EEdff47f25384cdc3",
     "0xA17581A9E3356d9A858b789D68B4d866e593aE94",
@@ -149,11 +149,11 @@ const COMETS: Record<number, Address[]> = {
   137: ["0xF25212E676D1F7F89Cd72fFEe66158f541246445", "0xaeB318360f27748Acb200CE616E389A6C9409a07"],
 };
 
-const SPARK: Record<number, { pool: Address; data: Address }> = {
+export const SPARK: Record<number, { pool: Address; data: Address }> = {
   1: { pool: "0xC13e21B648A5Ee794902342038FF3aDAB66BE987", data: "0xFc21d6d146E6086B8359705C8b28512a983db0cb" },
 };
 
-const AAVE_FORKS: Record<number, Array<{ pool: Address; data: Address; name: string; slug: string }>> = {
+export const AAVE_FORKS: Record<number, Array<{ pool: Address; data: Address; name: string; slug: string }>> = {
   999: [
     {
       pool: "0x00A89d7a5A02160f20150EbEA7a2b5E4879A1A8b",

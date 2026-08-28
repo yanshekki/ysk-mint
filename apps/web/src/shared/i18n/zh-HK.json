@@ -15,12 +15,14 @@
       "lp": "流動倉",
       "trades": "成交",
       "defi": "協議倉",
-      "txs": "交易記錄"
+      "txs": "交易記錄",
+      "lend": "借貸"
     }
   },
   "nav": {
     "home": "市場",
     "lp": "市場",
+    "lend": "借貸",
     "create": "發幣",
     "transfer": "跨鏈",
     "me": "持倉",
@@ -102,6 +104,38 @@
       "amount": "LP 數量",
       "explorer": "區塊瀏覽器"
     }
+  },
+  "lend": {
+    "kicker": "鏈上利率",
+    "hint": "已接協議嘅存款／借款市場。APY 同規模由鏈上儲備同利率算出，唔造假盤。本頁只供查看，唔提供存款或借款。Morpho、Euler 等未有穩定公開市場清單嘅協議，只會喺已連接錢包嘅持倉顯示。",
+    "all": "全部",
+    "allProtocols": "全部協議",
+    "moreChains": "更多",
+    "lessChains": "收起",
+    "loading": "正在讀取鏈上借貸市場…",
+    "loadingChain": "正在讀 {{chain}}…",
+    "loadingMine": "正在讀取你嘅借貸倉…",
+    "rpcError": "RPC 讀取失敗。無造假資料。",
+    "empty": "呢條鏈未有已接嘅公開借貸市場。",
+    "emptyFilter": "沒有符合搜尋的市場。",
+    "search": "搜尋代幣、協議或地址",
+    "markets": "借貸市場",
+    "my": "我的借貸",
+    "supplyApy": "存款 APY",
+    "borrowApy": "借款 APY",
+    "supplied": "存款規模",
+    "util": "占用",
+    "openApp": "協議",
+    "explorer": "瀏覽器",
+    "moreRows": "更多",
+    "shown": "已顯示 {{shown}}／合共 {{total}}",
+    "ttCoverage": "Token Terminal 公開名冊 {{asOf}}。Lending 已接 {{wired}}／{{total}}。未接唔填假 APY。",
+    "statTvl": "總存款",
+    "statMarkets": "市場",
+    "statProtocols": "協議",
+    "health": "健康度",
+    "sideSupply": "存款",
+    "sideBorrow": "借款"
   },
   "home": {
     "title": "發原生多鏈幣。鎖定 LP。",

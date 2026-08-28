@@ -17,6 +17,7 @@ export function Shell() {
 
   const nav = [
     ["/", "nav.lp"],
+    ["/lend", "nav.lend"],
     ["/create", "nav.create"],
     ["/transfer", "nav.transfer"],
     ["/me", "nav.me"],
@@ -50,8 +51,9 @@ export function Shell() {
       </main>
       <LiveDock />
       <footer className="botbar">
-        <span>{t("nav.lp")}</span>
-        <span>{t("nav.create")}</span>
+        <Link to="/">{t("nav.lp")}</Link>
+        <Link to="/lend">{t("nav.lend")}</Link>
+        <Link to="/create">{t("nav.create")}</Link>
         <span className="bot-session">
           {isConnected ? (
             <span>

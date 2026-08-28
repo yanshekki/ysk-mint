@@ -15,12 +15,14 @@
       "lp": "liquidity",
       "trades": "trades",
       "defi": "protocol",
-      "txs": "activity"
+      "txs": "activity",
+      "lend": "lending"
     }
   },
   "nav": {
     "home": "Markets",
     "lp": "Markets",
+    "lend": "Lending",
     "create": "Launch",
     "transfer": "Bridge",
     "me": "Holdings",
@@ -102,6 +104,38 @@
       "amount": "LP amount",
       "explorer": "Explorer"
     }
+  },
+  "lend": {
+    "kicker": "On-chain rates",
+    "hint": "Supply and borrow markets from wired protocols. APY and size come from on-chain reserves and rates. This page is read-only — no supply or borrow in-app. Protocols without a stable public market list, such as Morpho and Euler, appear only as wallet positions.",
+    "all": "All",
+    "allProtocols": "All protocols",
+    "moreChains": "More",
+    "lessChains": "Less",
+    "loading": "Reading on-chain lending markets…",
+    "loadingChain": "Reading {{chain}}…",
+    "loadingMine": "Reading your lending positions…",
+    "rpcError": "RPC read failed. No synthetic rows.",
+    "empty": "No wired public lending markets on this chain.",
+    "emptyFilter": "No markets match this search.",
+    "search": "Search token, protocol or address",
+    "markets": "Lending markets",
+    "my": "My lending",
+    "supplyApy": "Supply APY",
+    "borrowApy": "Borrow APY",
+    "supplied": "Supplied",
+    "util": "Util.",
+    "openApp": "App",
+    "explorer": "Explorer",
+    "moreRows": "More",
+    "shown": "Showing {{shown}} of {{total}}",
+    "ttCoverage": "Token Terminal public roster {{asOf}}. Lending wired {{wired}}/{{total}}. Unwired names are not filled with fake APY.",
+    "statTvl": "Total supplied",
+    "statMarkets": "Markets",
+    "statProtocols": "Protocols",
+    "health": "Health",
+    "sideSupply": "Supply",
+    "sideBorrow": "Borrow"
   },
   "home": {
     "title": "Launch an omnichain token. Lock LP.",

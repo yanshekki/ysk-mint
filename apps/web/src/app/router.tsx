@@ -11,6 +11,13 @@ export const router = createBrowserRouter([
       { path: "hot", element: <Navigate to="/" replace /> },
       { path: "board", element: <Navigate to="/" replace /> },
       {
+        path: "lend",
+        lazy: async () => {
+          const { LendPage } = await import("../features/lend/LendPage.tsx");
+          return { Component: LendPage };
+        },
+      },
+      {
         path: "create",
         lazy: async () => {
           const { CreatePage } = await import("../features/wizard/CreatePage.tsx");
