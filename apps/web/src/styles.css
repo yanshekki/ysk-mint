@@ -2709,7 +2709,10 @@ button.set-item-btn:focus-visible {
   background: #eff6ff;
 }
 .me-tx-act > span {
-  display: block;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
   margin-top: 4px;
   font-size: 12px;
   font-style: normal;
@@ -2757,11 +2760,18 @@ button.set-item-btn:focus-visible {
   display: inline-flex;
   align-items: center;
   height: 20px;
+  margin: 0 0 0 8px;
   padding: 0 8px;
   border-radius: 6px;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.02em;
+}
+.me-tx-act > span .me-tx-tag,
+.me-tx-act b .me-tx-tag,
+.me-tx-flow .me-tx-tag,
+.me-tx-party .me-tx-tag {
+  margin-left: 0;
 }
 .me-tx-tag.is-outside,
 .me-tx-tag.is-airdrop {
