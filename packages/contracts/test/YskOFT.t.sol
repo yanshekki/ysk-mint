@@ -126,9 +126,32 @@ contract YskOFTTest is Test {
         vm.prank(owner);
         token.send{value: 0.01 ether}(sp, ILayerZeroEndpointV2.MessagingFee({nativeFee: 0.01 ether, lzTokenFee: 0}), owner);
         assertEq(token.balanceOf(owner), 1_000_000 ether - 10 ether);
+        assertEq(endpoint.lastOptions(), hex"00030100110100000000000000000000000000030d40");
 
         bytes memory payload = abi.encode(bytes32(uint256(uint160(address(0xBEEF)))), uint256(10 ether));
-        endpoint.deliver(address(dest), 40245, bytes32("g"), payload);
+        endpoint.deliver(address(dest), 40245, bytes32(uint256(uint160(address(token)))), bytes32("g"), payload);
         assertEq(dest.balanceOf(address(0xBEEF)), 10 ether);
+    }
+
+    function test_allowInitializePath() public {
+        vm.prank(owner);
+        token.setPeer(40231, bytes32(uint256(uint160(address(0xBEEF)))));
+        ILayerZeroEndpointV2.Origin memory ok =
+            ILayerZeroEndpointV2.Origin({srcEid: 40231, sender: bytes32(uint256(uint160(address(0xBEEF)))), nonce: 1});
+        assertTrue(token.allowInitializePath(ok));
+        ILayerZeroEndpointV2.Origin memory bad =
+            ILayerZeroEndpointV2.Origin({srcEid: 40231, sender: bytes32(uint256(uint160(address(this)))), nonce: 1});
+        assertFalse(token.allowInitializePath(bad));
+        assertEq(token.nextNonce(40231, bytes32(0)), 0);
+    }
+
+    function test_lzReceive_rejectsWrongCaller() public {
+        vm.prank(owner);
+        token.setPeer(40231, bytes32(uint256(uint160(address(this)))));
+        ILayerZeroEndpointV2.Origin memory origin =
+            ILayerZeroEndpointV2.Origin({srcEid: 40231, sender: bytes32(uint256(uint160(address(this)))), nonce: 1});
+        bytes memory payload = abi.encode(bytes32(uint256(uint160(owner))), uint256(1 ether));
+        vm.expectRevert(LaunchErrors.NotOwner.selector);
+        token.lzReceive(origin, bytes32("g"), payload, address(this), "");
     }
 }

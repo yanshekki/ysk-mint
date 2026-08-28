@@ -161,8 +161,14 @@ export function StepExecute() {
       }
       w.set({ step: LaunchStep.Success, perChain, createTx: lastCreate, tokenAddress: homeToken, lpTx: lastLp, lockId });
     } catch (e) {
-      const data = (e as { data?: `0x${string}` }).data;
-      setErrors([data ? decodeLaunchError(data, locale) : decodeLaunchError("0x", locale)]);
+      const err = e as { data?: `0x${string}`; cause?: { data?: `0x${string}` }; shortMessage?: string; message?: string };
+      const data = err.data ?? err.cause?.data;
+      if (data && data !== "0x") {
+        setErrors([decodeLaunchError(data, locale)]);
+      } else {
+        const msg = (err.shortMessage || err.message || String(e)).slice(0, 280);
+        setErrors([{ code: ErrorCode.Unknown, args: [], severity: "user", retryable: true, message: msg }]);
+      }
     } finally {
       setBusy(null);
     }

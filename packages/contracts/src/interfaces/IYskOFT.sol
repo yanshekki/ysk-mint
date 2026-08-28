@@ -43,6 +43,14 @@ interface IYskOFT {
         external
         payable
         returns (ILayerZeroEndpointV2.MessagingReceipt memory);
-    function lzReceive(uint32 srcEid, bytes32 guid, bytes calldata message) external;
+    function allowInitializePath(ILayerZeroEndpointV2.Origin calldata origin) external view returns (bool);
+    function nextNonce(uint32 eid, bytes32 sender) external view returns (uint64);
+    function lzReceive(
+        ILayerZeroEndpointV2.Origin calldata origin,
+        bytes32 guid,
+        bytes calldata message,
+        address executor,
+        bytes calldata extraData
+    ) external payable;
     function mint(address to, uint256 amount) external;
 }

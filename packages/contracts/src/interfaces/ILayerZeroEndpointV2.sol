@@ -1,8 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.22;
 
-/// @notice Minimal LayerZero V2 endpoint surface used by YskOFT.
+/// @notice Minimal LayerZero V2 endpoint + receiver surface used by YskOFT.
 interface ILayerZeroEndpointV2 {
+    struct Origin {
+        uint32 srcEid;
+        bytes32 sender;
+        uint64 nonce;
+    }
+
     struct MessagingParams {
         uint32 dstEid;
         bytes32 receiver;

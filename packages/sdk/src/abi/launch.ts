@@ -127,6 +127,33 @@ export const yskOftAbi = [
     ],
     outputs: [],
   },
+  {
+    type: "function",
+    name: "allowInitializePath",
+    stateMutability: "view",
+    inputs: [
+      {
+        name: "origin",
+        type: "tuple",
+        components: [
+          { name: "srcEid", type: "uint32" },
+          { name: "sender", type: "bytes32" },
+          { name: "nonce", type: "uint64" },
+        ],
+      },
+    ],
+    outputs: [{ type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "nextNonce",
+    stateMutability: "view",
+    inputs: [
+      { name: "eid", type: "uint32" },
+      { name: "sender", type: "bytes32" },
+    ],
+    outputs: [{ type: "uint64" }],
+  },
 ] as const;
 
 export const liquidityManagerAbi = [

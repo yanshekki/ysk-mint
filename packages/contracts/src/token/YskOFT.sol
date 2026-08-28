@@ -189,20 +189,42 @@ contract YskOFT is ERC20, IYskOFT {
         emit OFTSent(receipt.guid, sendParam.dstEid, msg.sender, sendParam.amountLD);
     }
 
-    /// @notice Endpoint (or tests) delivers a mint on the destination chain.
-    function lzReceive(uint32 srcEid, bytes32 guid, bytes calldata message) external override {
+    /// @notice Unordered nonces — LayerZero skips inbound nonce checks when this returns 0.
+    function nextNonce(uint32, bytes32) external pure override returns (uint64) {
+        return 0;
+    }
+
+    function allowInitializePath(ILayerZeroEndpointV2.Origin calldata origin) external view override returns (bool) {
+        return peers[origin.srcEid] == origin.sender && origin.sender != bytes32(0);
+    }
+
+    /// @notice Real EndpointV2 executor callback. `origin.sender` is the source OFT.
+    function lzReceive(
+        ILayerZeroEndpointV2.Origin calldata origin,
+        bytes32 guid,
+        bytes calldata message,
+        address,
+        bytes calldata
+    ) external payable override {
         if (msg.sender != endpoint) revert LaunchErrors.NotOwner();
-        _requirePeer(srcEid);
+        _requirePeer(origin.srcEid);
+        if (peers[origin.srcEid] != origin.sender) revert LaunchErrors.InvalidPeer();
         (bytes32 toBytes, uint256 amountLD) = abi.decode(message, (bytes32, uint256));
         address to = address(uint160(uint256(toBytes)));
         LaunchValidation.validateNonZeroAddress(to);
         if (amountLD == 0) revert LaunchErrors.ZeroAmount();
         _mint(to, amountLD);
-        emit OFTReceived(guid, srcEid, to, amountLD);
+        emit OFTReceived(guid, origin.srcEid, to, amountLD);
     }
 
     function _requirePeer(uint32 eid) private view {
         if (peers[eid] == bytes32(0)) revert LaunchErrors.PeerNotSet(eid);
+    }
+
+    /// @dev TYPE_3 executor lzReceive option, 200_000 gas, 0 value. Empty extraOptions use this.
+    function _lzReceiveOptions(bytes calldata extra) private pure returns (bytes memory) {
+        if (extra.length > 0) return extra;
+        return hex"00030100110100000000000000000000000000030d40";
     }
 
     function _messagingParams(SendParam calldata sendParam, bool payInLzToken)
@@ -214,7 +236,7 @@ contract YskOFT is ERC20, IYskOFT {
             dstEid: sendParam.dstEid,
             receiver: peers[sendParam.dstEid],
             message: abi.encode(sendParam.to, sendParam.amountLD),
-            options: sendParam.extraOptions,
+            options: _lzReceiveOptions(sendParam.extraOptions),
             payInLzToken: payInLzToken
         });
     }

@@ -19,6 +19,7 @@ import { chainIcon } from "../../lib/chainIcon.ts";
 import { ISSUANCE_GROUP_TITLE, issuanceGroups } from "../../lib/launchTargets.ts";
 import { useWizard } from "../wizard/store.ts";
 import { cacheGet, cacheInvalidateAccount, cacheKey, POLICIES } from "../../lib/defi/cache.ts";
+import { lzExecutorLzReceiveOption } from "../../lib/lzOptions.ts";
 
 const PCT = [10, 25, 50, 75, 100] as const;
 const ZERO_PEER = `0x${"00".repeat(32)}` as const;
@@ -161,7 +162,7 @@ export function TransferPage() {
             to: toPeerBytes32(address),
             amountLD: value,
             minAmountLD: value,
-            extraOptions: "0x",
+            extraOptions: lzExecutorLzReceiveOption(),
             composeMsg: "0x",
             oftCmd: "0x",
           },
@@ -206,7 +207,7 @@ export function TransferPage() {
         to: toPeerBytes32(address),
         amountLD: value,
         minAmountLD: value,
-        extraOptions: "0x" as const,
+        extraOptions: lzExecutorLzReceiveOption(),
         composeMsg: "0x" as const,
         oftCmd: "0x" as const,
       };
