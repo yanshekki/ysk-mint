@@ -206,11 +206,41 @@ export async function readPairVenues(
   );
 }
 
-export function consensusPairPrice(venues: VenueQuote[]): number | null {
-  const rows = venues.map((v) => ({ usdc: v.priceAinB, depth: v.tvlQuote, venue: v }));
+export type TvlLike = { priceAinB: number; reserveA: number; reserveB: number; tvlQuote?: number };
+
+export function venueTvlInQuote(v: TvlLike): number {
+  if (v.reserveA > 0 && v.priceAinB > 0 && Number.isFinite(v.reserveB)) {
+    const tvl = v.reserveA * v.priceAinB + Math.max(v.reserveB, 0);
+    if (Number.isFinite(tvl) && tvl > 0) return tvl;
+  }
+  return Math.max(v.tvlQuote ?? 0, 0);
+}
+
+export function quoteAmountUsd(amount: number, quoteAddr: string, chainId: number, wrapUsd: number | null): number | null {
+  const d = DEX[chainId];
+  if (!d || !Number.isFinite(amount) || amount < 0) return null;
+  const q = quoteAddr.toLowerCase();
+  if (isUsdStableAddress(d, q)) return amount;
+  if (wrapUsd && wrapUsd > 0 && q === d.wrapped.toLowerCase()) return amount * wrapUsd;
+  return null;
+}
+
+export function consensusPairPrice(venues: TvlLike[]): number | null {
+  const rows = venues.map((v) => ({ usdc: v.priceAinB, depth: venueTvlInQuote(v) }));
   return weightedUsd(rejectOutliers(rows));
 }
 
-export function venueDepthUsd(venues: VenueQuote[]): number {
-  return venues.reduce((n, v) => n + Math.max(v.tvlQuote, 0), 0);
+export function venuesPriceUsd(venues: TvlLike[], quoteAddr: string, chainId: number, wrapUsd: number | null): number | null {
+  const px = consensusPairPrice(venues);
+  if (px == null) return null;
+  return quoteAmountUsd(px, quoteAddr, chainId, wrapUsd);
+}
+
+export function venuesTvlUsd(venues: TvlLike[], quoteAddr: string, chainId: number, wrapUsd: number | null): number {
+  const tvlQ = venues.reduce((n, v) => n + venueTvlInQuote(v), 0);
+  return quoteAmountUsd(tvlQ, quoteAddr, chainId, wrapUsd) ?? 0;
+}
+
+export function venueDepthUsd(venues: TvlLike[]): number {
+  return venues.reduce((n, v) => n + venueTvlInQuote(v), 0);
 }

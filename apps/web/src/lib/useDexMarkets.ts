@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { featuredChains } from "@ysk-mint/config";
 import { type VenuePool } from "./dexPools.ts";
 import { cacheFresh, cacheKey, cacheLastGood, cacheReady, onVisibleInterval, POLICIES, cacheGet } from "./defi/cache.ts";
-import { loadEvmMarkets } from "./defi/markets.ts";
+import { loadEvmMarkets, marketsCacheKey } from "./defi/markets.ts";
 import { ensureProtocols } from "./defi/protocols.ts";
 import { protocolsOn } from "./defi/registry.ts";
 import type { MarketRow as DefiMarket, VenueQuote } from "./defi/types.ts";
@@ -88,6 +88,10 @@ function sortMarkets(rows: MarketRow[]) {
 const NATIVE = new Set([101, 397, 1815, 784, 607]);
 const SKIP = new Set([101, 397, 1815, 398, 18151, 103, 784, 607, 637, 998, 728126428]);
 
+function marketKey(id: number) {
+  return NATIVE.has(id) ? cacheKey("markets", id) : marketsCacheKey(id);
+}
+
 function marketIds(chainId: number | "all", disabled: number[]) {
   ensureProtocols();
   const off = new Set(disabled);
@@ -103,7 +107,7 @@ function marketIds(chainId: number | "all", disabled: number[]) {
 function seedRows(ids: number[]) {
   const out: MarketRow[] = [];
   for (const id of ids) {
-    const raw = cacheLastGood<DefiMarket[]>(cacheKey("markets", id));
+    const raw = cacheLastGood<DefiMarket[]>(marketKey(id));
     if (raw?.length) out.push(...raw.map(asRow));
   }
   return sortMarkets(mergeOriented(out) as MarketRow[]);
@@ -144,7 +148,7 @@ export function useDexMarkets(chainId: number | "all") {
 
       const live = useLiveStatus.getState();
       for (const id of ids) {
-        if (!cacheFresh(cacheKey("markets", id))) live.start(`markets:${id}`, id, "markets", "wait");
+        if (!cacheFresh(marketKey(id))) live.start(`markets:${id}`, id, "markets", "wait");
       }
 
       try {
@@ -158,7 +162,7 @@ export function useDexMarkets(chainId: number | "all") {
         const evmIds = ids.filter((id) => !SKIP.has(id));
         const nativeIds = ids.filter((id) => NATIVE.has(id));
         const one = async (id: number, fn: () => Promise<MarketRow[]>) => {
-          const miss = !cacheFresh(cacheKey("markets", id));
+          const miss = !cacheFresh(marketKey(id));
           if (miss) useLiveStatus.getState().run(`markets:${id}`);
           try {
             const part = await fn();
@@ -191,7 +195,7 @@ export function useDexMarkets(chainId: number | "all") {
       const evmIds = ids.filter((id) => !SKIP.has(id));
       const nativeIds = ids.filter((id) => NATIVE.has(id));
       const one = async (id: number, fn: () => Promise<MarketRow[]>) => {
-        const miss = !cacheFresh(cacheKey("markets", id));
+        const miss = !cacheFresh(marketKey(id));
         if (miss) useLiveStatus.getState().start(`markets:${id}`, id, "markets", "run");
         try {
           const part = await fn();

@@ -6,9 +6,13 @@ import { cacheGet, cacheKey, cacheLastGood, cacheWrite, forChunks, POLICIES } fr
 import { evmPublicClient } from "./evm/client.ts";
 import { ensureProtocols } from "./protocols.ts";
 import { protocolsOn } from "./registry.ts";
-import { rejectOutliers, weightedUsd } from "./quote.ts";
+import { consensusPairPrice, rejectOutliers, venueDepthUsd, weightedUsd } from "./quote.ts";
 import type { DefiCtx, DefiProtocol, MarketRow, PoolRef, TokenRef, VenueQuote } from "./types.ts";
 import { candidatePairs, marketTokensOn, tokensFromMarketRows, type MarketToken } from "./universe.ts";
+
+export function marketsCacheKey(chainId: number) {
+  return cacheKey("markets", chainId, "usd1");
+}
 
 export type DiscoveredPool = {
   chainId: number;
@@ -34,6 +38,13 @@ export function discoveredPools(chainId: number) {
 
 function evmClient(chainId: number) {
   return evmPublicClient(chainId);
+}
+
+function approxStableUsd(symbol?: string): number | null {
+  const s = (symbol ?? "").replace(/\s+/g, "").toUpperCase();
+  if (!s) return null;
+  if (/^(W?USDC|W?USDT|DAI|USDS|FRAX|USDB|USDE|USDM|USDA|USD1)(\.E)?$/.test(s)) return 1;
+  return null;
 }
 
 type Hit = { a: MarketToken; b: MarketToken; protocolId: string; refs: PoolRef[] };
@@ -139,7 +150,7 @@ export async function loadEvmMarkets(chainId: number): Promise<MarketRow[]> {
   if (!chain) return [];
   return cacheGet(
     {
-      key: cacheKey("markets", chainId),
+      key: marketsCacheKey(chainId),
       policy: { ...POLICIES.markets, keep: (rows: MarketRow[]) => rows.length > 0 },
     },
     async () => {
@@ -212,10 +223,16 @@ export async function loadEvmMarkets(chainId: number): Promise<MarketRow[]> {
       }
       const names = [...new Set(venues.map((v) => v.protocolName))];
       const usd = usdByBase.get(a.address.toLowerCase());
-      let price = usd?.usdc ?? null;
-      if (price == null && isUsdStableAddress(d, b.address)) {
-        price = weightedUsd(venues.map((v) => ({ usdc: v.priceAinB, depth: Math.max(v.tvlQuote, 0) })));
-      }
+      const qUsd = isUsdStableAddress(d, b.address)
+        ? 1
+        : (approxStableUsd(b.symbol) ??
+          (b.address.toLowerCase() === wrap ? wrapUsd : null) ??
+          usdByBase.get(b.address.toLowerCase())?.usdc ??
+          null);
+      const px = consensusPairPrice(venues);
+      const tvlQ = venueDepthUsd(venues);
+      const price = px != null && qUsd != null ? px * qUsd : (usd?.usdc ?? null);
+      const depth = qUsd != null && tvlQ > 0 ? tvlQ * qUsd : 0;
       byPair.set(id, {
         pairId: id,
         chainId,
@@ -228,7 +245,7 @@ export async function loadEvmMarkets(chainId: number): Promise<MarketRow[]> {
         tokenB: b.address,
         venues,
         price,
-        depth: usd?.depth ?? venues.reduce((n, v) => n + v.tvlQuote, 0),
+        depth,
         venueNames: names,
       });
     }

@@ -21,6 +21,7 @@ import { adaTokenMeta, adaVenuesForPair } from "../../lib/adaDex.ts";
 import { SortHead, useSort } from "../../shared/ui/SortTable.tsx";
 import { marketsHref } from "./LpPage.tsx";
 import { dexAppHref } from "../../lib/dexApp.ts";
+import { venueTvlInQuote } from "../../lib/defi/quote.ts";
 
 type TokenMeta = { symbol: string; decimals: number; icon: string };
 
@@ -172,7 +173,7 @@ export function PairPage() {
     if (k === "name") return v.venue.name;
     if (k === "quote") return v.priceAinB;
     if (k === "amount") return v.reserveA;
-    return v.tvlQuote;
+    return venueTvlInQuote(v);
   }, []);
   const venueSort = useSort(venues, "depth", venueGet);
   const tradeGet = useCallback((s: SwapRow, k: string) => {
@@ -233,7 +234,7 @@ export function PairPage() {
                   <SortHead id="name" label={t("lp.protocol")} active={venueSort.key === "name"} dir={venueSort.dir} onToggle={venueSort.toggle} align="left" />
                   <SortHead id="quote" label={t("me.quote")} active={venueSort.key === "quote"} dir={venueSort.dir} onToggle={venueSort.toggle} />
                   <SortHead id="amount" label={metaA.symbol} active={venueSort.key === "amount"} dir={venueSort.dir} onToggle={venueSort.toggle} />
-                  <SortHead id="depth" label={t("lp.depth")} active={venueSort.key === "depth"} dir={venueSort.dir} onToggle={venueSort.toggle} />
+                  <SortHead id="depth" label={t("lp.depthUnit", { unit: quoteIsStable ? "USD" : metaB.symbol })} active={venueSort.key === "depth"} dir={venueSort.dir} onToggle={venueSort.toggle} />
                   <span />
                 </div>
                 {venueSort.sorted.map((v) => {
@@ -263,7 +264,7 @@ export function PairPage() {
                       </div>
                       <span className="num me-price">{fmtCompact(v.priceAinB)}</span>
                       <span className="num holding-amt">{v.reserveA > 0 ? fmtCompact(v.reserveA) : "—"}</span>
-                      <span className="num me-value">{v.tvlQuote > 0 ? fmtCompact(v.tvlQuote) : "—"}</span>
+                      <span className="num me-value">{venueTvlInQuote(v) > 0 ? fmtCompact(venueTvlInQuote(v)) : "—"}</span>
                       <span className="me-pool-acts">
                         {explore ? (
                           <a className="me-pool-btn me-pool-btn-explore" href={explore} target="_blank" rel="noreferrer">

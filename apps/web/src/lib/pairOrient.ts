@@ -1,5 +1,6 @@
 import { CHAINS } from "@ysk-mint/config";
 import { DEX, isUsdStableAddress, usdStables } from "./defiAddresses.ts";
+import { venuesPriceUsd, venuesTvlUsd, venueTvlInQuote } from "./defi/quote.ts";
 import { canonId, sortPair } from "./pairKey.ts";
 import { useUserSettings } from "./userSettings.ts";
 
@@ -133,8 +134,12 @@ export function invertPrice(price: number) {
   return 1 / price;
 }
 
-export function invertVenue<T extends { priceAinB: number; reserveA: number; reserveB: number }>(v: T): T {
-  return { ...v, priceAinB: invertPrice(v.priceAinB), reserveA: v.reserveB, reserveB: v.reserveA };
+export function invertVenue<T extends { priceAinB: number; reserveA: number; reserveB: number; tvlQuote?: number }>(v: T): T {
+  const priceAinB = invertPrice(v.priceAinB);
+  const reserveA = v.reserveB;
+  const reserveB = v.reserveA;
+  const tvlQuote = reserveA > 0 && priceAinB > 0 ? reserveA * priceAinB + reserveB : v.tvlQuote;
+  return { ...v, priceAinB, reserveA, reserveB, ...(tvlQuote != null ? { tvlQuote } : {}) };
 }
 
 export function displayStableSymbol(chainId: number, address: string, fallback: string) {
@@ -170,6 +175,10 @@ export function orientMarketRow<V extends { priceAinB: number; reserveA: number;
   const symbolA = displayStableSymbol(row.chainId, row.tokenA, row.symbolA);
   const symbolB = displayStableSymbol(row.chainId, row.tokenB, row.symbolB);
   if (keep) return { ...row, symbolA, symbolB };
+  const venues = row.venues.map(invertVenue);
+  const quote = row.tokenA;
+  const price = venuesPriceUsd(venues, quote, row.chainId, null);
+  const depth = venuesTvlUsd(venues, quote, row.chainId, null);
   return {
     ...row,
     tokenA: row.tokenB,
@@ -178,8 +187,9 @@ export function orientMarketRow<V extends { priceAinB: number; reserveA: number;
     symbolB: displayStableSymbol(row.chainId, row.tokenA, row.symbolA),
     iconA: row.iconB,
     iconB: row.iconA,
-    venues: row.venues.map(invertVenue),
-    price: null,
+    venues,
+    price,
+    depth: depth > 0 ? depth : venues.reduce((n, v) => n + venueTvlInQuote(v), 0),
   };
 }
 
@@ -207,12 +217,14 @@ export function mergeOriented<V extends { priceAinB: number; reserveA: number; r
       venues.push(v);
     }
     const names = [...new Set([...prev.venueNames, ...row.venueNames])];
+    const price = venuesPriceUsd(venues, row.tokenB, row.chainId, null);
+    const depthUsd = venuesTvlUsd(venues, row.tokenB, row.chainId, null);
     by.set(row.pairId, {
       ...prev,
       venues,
       venueNames: names,
-      depth: Math.max(prev.depth, row.depth),
-      price: prev.price ?? row.price,
+      price: price ?? prev.price ?? row.price,
+      depth: depthUsd > 0 ? depthUsd : venues.reduce((n, v) => n + venueTvlInQuote(v), 0),
     });
   }
   return [...by.values()];

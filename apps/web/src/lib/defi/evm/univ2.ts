@@ -122,7 +122,7 @@ export async function readV2Pool(
       priceAinB,
       reserveA,
       reserveB,
-      tvlQuote: reserveB * 2,
+      tvlQuote: reserveA * priceAinB + reserveB,
       kind,
     };
   } catch {

@@ -134,7 +134,7 @@ export function makeSync(venue: SyncVenue): DefiProtocol {
           priceAinB,
           reserveA,
           reserveB,
-          tvlQuote: reserveB * 2,
+          tvlQuote: reserveA * priceAinB + reserveB,
           kind: "v2",
         };
       } catch {

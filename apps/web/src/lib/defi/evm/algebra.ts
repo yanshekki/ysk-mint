@@ -211,7 +211,7 @@ export function makeAlgebra(venue: AlgebraVenue): DefiProtocol {
           priceAinB: price,
           reserveA,
           reserveB,
-          tvlQuote: reserveB > 0 ? reserveB * 2 : reserveA * price * 2,
+          tvlQuote: reserveA > 0 && price > 0 ? reserveA * price + Math.max(reserveB, 0) : Math.max(reserveB, 0) * 2,
           kind: "v3",
         } satisfies VenueQuote;
       } catch {
