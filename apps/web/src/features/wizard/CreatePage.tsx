@@ -135,7 +135,6 @@ export function CreatePage() {
           <h1>{t("nav.create")}</h1>
           <p className="mt-1 text-[15px] text-text-sub">{t("wizard.hint")}</p>
         </div>
-        <span className="badge badge-warn">{t("nav.disclaimer")}</span>
       </div>
       <div className="workspace-scroll">
         <div className="me-desk">

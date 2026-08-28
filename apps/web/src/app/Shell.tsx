@@ -84,7 +84,6 @@ export function Shell() {
             ))}
           </div>
         ) : null}
-        <span className="bot-dot">{t("nav.disclaimer")}</span>
       </footer>
     </div>
   );

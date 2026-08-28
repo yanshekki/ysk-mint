@@ -32,7 +32,6 @@ export function TokenPage() {
         <div>
           <div className="mb-1 flex items-center gap-2">
             <Badge kind="info">OFT</Badge>
-            <Badge kind="warn">{t("nav.disclaimer")}</Badge>
           </div>
           <h1>
             {String(name?.result ?? "…")}{" "}

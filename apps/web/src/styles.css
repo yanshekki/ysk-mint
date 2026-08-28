@@ -857,15 +857,6 @@ select {
   color: var(--text-sub);
   white-space: nowrap;
 }
-.bot-dot {
-  margin-left: auto;
-  flex-shrink: 0;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  color: var(--text-muted);
-}
-
 .empty {
   padding: 56px 16px;
   text-align: center;
@@ -2360,9 +2351,6 @@ button.me-token:focus-visible {
     background: var(--bg-subtle);
   }
   .bot-session {
-    display: none;
-  }
-  .bot-dot {
     display: none;
   }
   .wallet-hint {
