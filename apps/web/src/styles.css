@@ -1407,6 +1407,18 @@ button.oft-chain:disabled {
   background: var(--bg-white);
   color: var(--text-main);
 }
+.lend-asset-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
+}
+.lend-asset-head .holding-ico-wrap {
+  margin-top: 18px;
+}
+.lend-asset-head h1 {
+  margin: 0;
+}
 .lend-stats {
   display: flex;
   gap: 28px;

@@ -427,6 +427,80 @@ function keepMarket(r: LendMarketRow) {
   return Math.max(r.supplyUsd ?? 0, r.borrowUsd ?? 0) >= 1000;
 }
 
+export type LendAssetRow = {
+  id: string;
+  chainId: number;
+  chainShort: string;
+  symbol: string;
+  icon: string;
+  token: string;
+  venues: LendMarketRow[];
+  venueNames: string[];
+  supplyApy: number | null;
+  borrowApy: number | null;
+  supplyUsd: number | null;
+  borrowUsd: number | null;
+};
+
+function wavg(rows: LendMarketRow[], apy: "supplyApy" | "borrowApy", weight: "supplyUsd" | "borrowUsd") {
+  let num = 0;
+  let den = 0;
+  for (const r of rows) {
+    const a = r[apy];
+    const m = r[weight];
+    if (a == null || !Number.isFinite(a) || m == null || !Number.isFinite(m) || m <= 0) continue;
+    num += a * m;
+    den += m;
+  }
+  if (den > 0) return num / den;
+  const hit = rows.find((r) => r[apy] != null && Number.isFinite(r[apy] as number));
+  return hit?.[apy] ?? null;
+}
+
+function sumField(rows: LendMarketRow[], key: "supplyUsd" | "borrowUsd") {
+  let n = 0;
+  let any = false;
+  for (const r of rows) {
+    const v = r[key];
+    if (v == null || !Number.isFinite(v)) continue;
+    n += v;
+    any = true;
+  }
+  return any ? n : null;
+}
+
+export function groupLendAssets(rows: LendMarketRow[]): LendAssetRow[] {
+  const m = new Map<string, LendMarketRow[]>();
+  for (const r of rows) {
+    const key = `${r.chainId}:${r.token.toLowerCase()}`;
+    const list = m.get(key);
+    if (list) list.push(r);
+    else m.set(key, [r]);
+  }
+  const out: LendAssetRow[] = [];
+  for (const [id, venues] of m) {
+    const sorted = [...venues].sort((a, b) => (b.supplyUsd ?? 0) - (a.supplyUsd ?? 0));
+    const head = sorted[0];
+    const names: string[] = [];
+    for (const v of sorted) if (!names.includes(v.protocol)) names.push(v.protocol);
+    out.push({
+      id,
+      chainId: head.chainId,
+      chainShort: head.chainShort,
+      symbol: head.symbol,
+      icon: head.icon,
+      token: head.token,
+      venues: sorted,
+      venueNames: names,
+      supplyApy: wavg(sorted, "supplyApy", "supplyUsd"),
+      borrowApy: wavg(sorted, "borrowApy", "borrowUsd"),
+      supplyUsd: sumField(sorted, "supplyUsd"),
+      borrowUsd: sumField(sorted, "borrowUsd"),
+    });
+  }
+  return out.sort((a, b) => (b.supplyUsd ?? 0) - (a.supplyUsd ?? 0));
+}
+
 export async function loadLendMarkets(chainId: number, onPart?: (rows: LendMarketRow[]) => void): Promise<LendMarketRow[]> {
   const client = evmPublicClient(chainId);
   if (!client) return [];

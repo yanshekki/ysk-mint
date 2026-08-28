@@ -107,7 +107,7 @@
   },
   "lend": {
     "kicker": "鏈上利率",
-    "hint": "已接協議嘅存款／借款市場。APY 同規模由鏈上儲備同利率算出，唔造假盤。本頁只供查看，唔提供存款或借款。Morpho、Euler 等未有穩定公開市場清單嘅協議，只會喺已連接錢包嘅持倉顯示。",
+    "hint": "同一代幣會合併各已接協議，撳入內頁睇明細。APY 按存款規模加權，數字嚟自鏈上儲備同利率。本頁只供查看，唔提供存款或借款。",
     "all": "全部",
     "allProtocols": "全部協議",
     "moreChains": "更多",
@@ -135,7 +135,11 @@
     "statProtocols": "協議",
     "health": "健康度",
     "sideSupply": "存款",
-    "sideBorrow": "借款"
+    "sideBorrow": "借款",
+    "assetHint": "呢個代幣喺各已接協議嘅市場。APY 按存款規模加權。只讀鏈上數據，唔提供存款或借款。",
+    "venues": "協議市場",
+    "assetMissing": "需要 chainId 與代幣地址。",
+    "noVenues": "呢個代幣未有已接嘅借貸市場。"
   },
   "home": {
     "title": "發原生多鏈幣。鎖定 LP。",

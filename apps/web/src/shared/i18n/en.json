@@ -107,7 +107,7 @@
   },
   "lend": {
     "kicker": "On-chain rates",
-    "hint": "Supply and borrow markets from wired protocols. APY and size come from on-chain reserves and rates. This page is read-only — no supply or borrow in-app. Protocols without a stable public market list, such as Morpho and Euler, appear only as wallet positions.",
+    "hint": "The same token is merged across wired protocols. Open a row for the breakdown. APY is size-weighted from on-chain reserves and rates. This page is read-only — no supply or borrow in-app.",
     "all": "All",
     "allProtocols": "All protocols",
     "moreChains": "More",
@@ -135,7 +135,11 @@
     "statProtocols": "Protocols",
     "health": "Health",
     "sideSupply": "Supply",
-    "sideBorrow": "Borrow"
+    "sideBorrow": "Borrow",
+    "assetHint": "This token across wired protocols. APY is size-weighted. On-chain data only — no supply or borrow in-app.",
+    "venues": "Protocol markets",
+    "assetMissing": "Need chainId and a token address.",
+    "noVenues": "No wired lending market for this token."
   },
   "home": {
     "title": "Launch an omnichain token. Lock LP.",

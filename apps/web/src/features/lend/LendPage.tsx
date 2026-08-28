@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAccount } from "wagmi";
 import { CHAINS, featuredChains, type ChainDefinition } from "@ysk-mint/config";
 import { chainIcon } from "../../lib/chainIcon.ts";
-import { fmtCompact, fmtUsdc } from "../../lib/defiQuotes.ts";
+import { fmtUsdc } from "../../lib/defiQuotes.ts";
 import { ttCoverage } from "../../lib/defi/coverage.ts";
 import { lendAppHref, lendExplorerHref } from "../../lib/lendApp.ts";
-import { lendChainIds, type LendMarketRow } from "../../lib/lendMarkets.ts";
+import { fmtApy, fmtUsd, utilOf } from "../../lib/lendFormat.ts";
+import { groupLendAssets, lendChainIds, type LendAssetRow } from "../../lib/lendMarkets.ts";
 import { useLiveStatus } from "../../lib/liveStatus.ts";
 import { useLendMarkets } from "../../lib/useLendMarkets.ts";
 import { useMyLending, type MyLendRow } from "../../lib/useMyLending.ts";
@@ -26,26 +27,29 @@ function parseChain(raw: string | null): number | "all" {
   return Number.isFinite(n) ? n : "all";
 }
 
-function fmtApy(n: number | null | undefined) {
-  if (n == null || !Number.isFinite(n)) return "—";
-  if (n === 0) return "0%";
-  if (Math.abs(n) < 0.01) return "<0.01%";
-  if (Math.abs(n) < 10) return `${n.toFixed(2)}%`;
-  return `${n.toFixed(1)}%`;
+export function persistLendQuery(q: string, chain: number | "all", n: number, p: string) {
+  try {
+    sessionStorage.setItem(LEND_KEY, JSON.stringify({ q, chain, n, p }));
+  } catch {
+    /* ignore */
+  }
 }
 
-function fmtUsd(n: number | null | undefined) {
-  if (n == null || !Number.isFinite(n)) return "—";
-  const abs = Math.abs(n);
-  if (abs >= 10_000 && abs < 1e6) return `$${(n / 1000).toFixed(1)}K`;
-  return `$${fmtCompact(n)}`;
-}
-
-function utilOf(r: LendMarketRow) {
-  if (r.supplyUsd == null || r.supplyUsd <= 0 || r.borrowUsd == null || r.borrowUsd < 0) return null;
-  const pct = (r.borrowUsd / r.supplyUsd) * 100;
-  if (!Number.isFinite(pct) || pct < 0) return null;
-  return Math.min(100, pct);
+export function lendHref() {
+  try {
+    const raw = sessionStorage.getItem(LEND_KEY);
+    if (!raw) return "/lend";
+    const saved = JSON.parse(raw) as { q?: string; chain?: number | "all"; n?: number; p?: string };
+    const next = new URLSearchParams();
+    if (saved.q) next.set("q", saved.q);
+    if (saved.chain && saved.chain !== "all") next.set("chain", String(saved.chain));
+    if (saved.n && saved.n !== PAGE) next.set("n", String(saved.n));
+    if (saved.p && saved.p !== "all") next.set("p", saved.p);
+    const s = next.toString();
+    return s ? `/lend?${s}` : "/lend";
+  } catch {
+    return "/lend";
+  }
 }
 
 type MineGroup = { key: string; protocol: string; chain: string; chainId: number; health: string; rows: MyLendRow[] };
@@ -110,24 +114,31 @@ export function LendPage() {
     return [...c.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   }, [markets.rows]);
 
-  const marketGet = useCallback((r: LendMarketRow, k: string) => {
+  const marketGet = useCallback((r: LendAssetRow, k: string) => {
     if (k === "name") return r.symbol;
     if (k === "supply") return r.supplyApy;
     if (k === "borrow") return r.borrowApy;
+    if (k === "venues") return r.venues.length;
     return r.supplyUsd;
   }, []);
 
+  const grouped = useMemo(() => {
+    const src = proto === "all" ? markets.rows : markets.rows.filter((r) => r.protocol === proto);
+    return groupLendAssets(src);
+  }, [markets.rows, proto]);
+
   const marketFiltered = useMemo(() => {
     const q = marketQ.trim().toLowerCase();
-    return markets.rows.filter((r) => {
-      if (proto !== "all" && r.protocol !== proto) return false;
-      if (!q) return true;
-      if (r.symbol.toLowerCase().includes(q) || r.protocol.toLowerCase().includes(q)) return true;
+    if (!q) return grouped;
+    const addrQ = q.startsWith("0x") || (q.length >= 8 && /^[0-9a-f]+$/.test(q));
+    return grouped.filter((r) => {
+      if (r.symbol.toLowerCase().includes(q)) return true;
+      if (r.venueNames.some((n) => n.toLowerCase().includes(q))) return true;
       if (filter === "all" && r.chainShort.toLowerCase().includes(q)) return true;
-      if (r.token.toLowerCase().includes(q) || r.market.toLowerCase().includes(q)) return true;
+      if (addrQ && r.token.toLowerCase().includes(q)) return true;
       return false;
     });
-  }, [filter, marketQ, markets.rows, proto]);
+  }, [filter, grouped, marketQ]);
 
   const marketSort = useSort(marketFiltered, "tvl", marketGet);
   const marketVisible = useMemo(() => marketSort.sorted.slice(0, shownCap), [marketSort.sorted, shownCap]);
@@ -138,7 +149,7 @@ export function LendPage() {
     let tvlN = 0;
     const protos = new Set<string>();
     for (const r of marketFiltered) {
-      protos.add(r.protocol);
+      for (const n of r.venueNames) protos.add(n);
       if (r.supplyUsd != null && Number.isFinite(r.supplyUsd)) {
         tvl += r.supplyUsd;
         tvlN += 1;
@@ -204,11 +215,7 @@ export function LendPage() {
     [setParams],
   );
   useEffect(() => {
-    try {
-      sessionStorage.setItem(LEND_KEY, JSON.stringify({ q: marketQ, chain: filter, n: shownCap, p: proto }));
-    } catch {
-      /* ignore */
-    }
+    persistLendQuery(marketQ, filter, shownCap, proto);
   }, [filter, marketQ, proto, shownCap]);
   useEffect(() => {
     const handle = window.setTimeout(() => writeSearch(marketQ), 250);
@@ -396,22 +403,19 @@ export function LendPage() {
               <p className="me-card-empty">{t("lend.emptyFilter")}</p>
             ) : (
               <div className="me-list">
-                <div className="me-cols me-cols-5 me-cols-lend">
+                <div className="me-cols me-cols-5">
                   <SortHead id="name" label={t("lend.markets")} active={marketSort.key === "name"} dir={marketSort.dir} onToggle={marketSort.toggle} align="left" />
                   <SortHead id="supply" label={t("lend.supplyApy")} active={marketSort.key === "supply"} dir={marketSort.dir} onToggle={marketSort.toggle} />
                   <SortHead id="borrow" label={t("lend.borrowApy")} active={marketSort.key === "borrow"} dir={marketSort.dir} onToggle={marketSort.toggle} />
                   <SortHead id="tvl" label={t("lend.supplied")} active={marketSort.key === "tvl"} dir={marketSort.dir} onToggle={marketSort.toggle} />
-                  <span />
                 </div>
                 {markets.loading && readingShort && !marketVisible.length ? (
                   <p className="me-card-empty">{t("lend.loadingChain", { chain: readingShort })}</p>
                 ) : null}
                 {marketVisible.map((r) => {
                   const util = utilOf(r);
-                  const explore = lendExplorerHref(r.chainId, r.token === "native" ? r.market : r.token);
-                  const app = lendAppHref(r.protocol, r.chainId, r.token);
                   return (
-                    <div key={r.id} className="me-token me-token-5 me-token-lend">
+                    <Link key={r.id} to={`/lend/${r.chainId}/${encodeURIComponent(r.token)}`} className="me-token me-token-5">
                       <span className="holding-ico-wrap">
                         <img src={r.icon} alt="" className="holding-ico" />
                         <span className="holding-chain-tag">{r.chainShort}</span>
@@ -419,31 +423,14 @@ export function LendPage() {
                       <div className="holding-meta">
                         <b>{r.symbol}</b>
                         <span>
-                          {r.protocol} · {r.chainShort}
+                          {r.venueNames.join(" · ") || r.chainShort}
                           {util != null && util >= 1 ? ` · ${t("lend.util")} ${util.toFixed(0)}%` : ""}
                         </span>
-                        {util != null && util >= 1 ? (
-                          <i className="lend-util" aria-hidden>
-                            <i style={{ width: `${util}%` }} />
-                          </i>
-                        ) : null}
                       </div>
-                      <span className={`num me-price lend-apy-in`}>{fmtApy(r.supplyApy)}</span>
-                      <span className={`num holding-amt me-lend-borrow lend-apy-out`}>{fmtApy(r.borrowApy)}</span>
+                      <span className="num me-price lend-apy-in">{fmtApy(r.supplyApy)}</span>
+                      <span className="num holding-amt lend-apy-out">{fmtApy(r.borrowApy)}</span>
                       <span className="num me-value">{fmtUsd(r.supplyUsd)}</span>
-                      <span className="me-pool-acts">
-                        {explore ? (
-                          <a className="me-pool-btn me-pool-btn-explore" href={explore} target="_blank" rel="noreferrer">
-                            {t("lend.explorer")}
-                          </a>
-                        ) : null}
-                        {app ? (
-                          <a className="me-pool-btn me-pool-btn-dex" href={app} target="_blank" rel="noreferrer">
-                            {t("lend.openApp")}
-                          </a>
-                        ) : null}
-                      </span>
-                    </div>
+                    </Link>
                   );
                 })}
                 {marketMore ? (
