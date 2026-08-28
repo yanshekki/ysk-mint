@@ -9,6 +9,7 @@ import { isSpamRow } from "../../lib/addrLabels.ts";
 import { canFollow, chainMeta, isZeroAddr, txIndexed, type AddrTag, type TxKind, type TxRow } from "../../lib/txIndex.ts";
 
 const KINDS: TxKind[] = ["in", "out", "swap", "approve", "call", "fail"];
+const PAGE = 100;
 
 function kindOfChain(chainId: number): AddrKind {
   if (chainId === 101) return "solana";
@@ -57,6 +58,7 @@ export function TxDesk({
   const [kind, setKind] = useState<TxKind | "all">("all");
   const [hideOutside, setHideOutside] = useState(false);
   const [q, setQ] = useState("");
+  const [shown, setShown] = useState(PAGE);
   const [open, setOpen] = useState<string | null>(null);
   const [extra, setExtra] = useState<Record<string, TxRow>>({});
   const [copied, setCopied] = useState("");
@@ -83,6 +85,15 @@ export function TxDesk({
       );
     });
   }, [rows, chainFilter, kind, hideOutside, q]);
+
+  useEffect(() => {
+    setShown(PAGE);
+  }, [chainFilter, kind, hideOutside, q]);
+  useEffect(() => {
+    if (!rows.length) setShown(PAGE);
+  }, [rows.length]);
+
+  const visible = list.slice(0, shown);
 
   useEffect(() => {
     if (!open) return;
@@ -121,7 +132,7 @@ export function TxDesk({
     <section className="me-card">
       <div className="me-card-head">
         <b>{t("me.txTitle")}</b>
-        <span className="me-count">{loading ? "…" : list.length}</span>
+        <span className="me-count">{loading ? "…" : `${Math.min(shown, list.length)}／${list.length}`}</span>
       </div>
       <p className="me-tx-hint">{t("me.txHint")}</p>
       <p className="me-tx-hint me-tx-label-hint">{t("me.txLabelHint")}</p>
@@ -158,7 +169,7 @@ export function TxDesk({
             <span>{t("me.txFlow")}</span>
             <span>{t("me.txGas")}</span>
           </div>
-          {list.map((raw) => {
+          {visible.map((raw) => {
             const r = extra[raw.id] ?? raw;
             const expanded = open === r.id;
             const meta = chainMeta(r.chainId);
@@ -302,6 +313,12 @@ export function TxDesk({
               </div>
             );
           })}
+          {shown < list.length ? (
+            <button type="button" className="me-more-rows" onClick={() => setShown((n) => n + PAGE)}>
+              {t("me.txMore")}
+            </button>
+          ) : null}
+          <p className="me-shown">{t("me.txShown", { shown: visible.length, total: list.length })}</p>
         </div>
       )}
     </section>

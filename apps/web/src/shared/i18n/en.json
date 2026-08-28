@@ -435,6 +435,8 @@
     "txLoading": "Reading public explorers / RPC…",
     "txFail": "Read failed. No fabricated rows.",
     "txEmpty": "No records on this page (or this chain has no indexer).",
+    "txMore": "Load more",
+    "txShown": "Showing {{shown}} of {{total}}",
     "txExplore": "Explorer",
     "txFollow": "Follow",
     "txBack": "← Previous address",

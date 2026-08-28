@@ -435,6 +435,8 @@
     "txLoading": "正在讀取公開 explorer／RPC…",
     "txFail": "讀取失敗。無造假資料。",
     "txEmpty": "呢頁未有記錄（或此鏈未接索引）。",
+    "txMore": "載入更多",
+    "txShown": "已顯示 {{shown}}／合共 {{total}}",
     "txExplore": "瀏覽器",
     "txFollow": "追查去向",
     "txBack": "← 返回上一址",
