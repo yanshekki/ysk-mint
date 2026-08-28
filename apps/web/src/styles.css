@@ -1260,6 +1260,45 @@ button.oft-chain:disabled {
   font-weight: 700;
   color: var(--text-muted);
 }
+.me-card-body {
+  padding: 14px 16px 16px;
+}
+.me-errors {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--trade-sell) 30%, var(--border-color));
+  background: color-mix(in srgb, var(--trade-sell) 8%, var(--bg-white));
+  color: var(--trade-sell);
+  font-size: 14px;
+  font-weight: 650;
+}
+.me-card > .me-errors {
+  margin: 12px 16px 16px;
+}
+.me-errors b {
+  display: block;
+  margin-bottom: 6px;
+}
+.me-errors ul {
+  margin: 0;
+  padding-left: 18px;
+}
+.xfer-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 16px 16px;
+}
+button.me-token.transfer-pick-on {
+  background: var(--bg-subtle);
+  box-shadow: inset 3px 0 0 var(--brand-blue);
+}
+.me-card > .me-filter {
+  display: block;
+  width: calc(100% - 32px);
+  margin: 0 16px 12px;
+}
 .me-card {
   border: 1px solid var(--border-color);
   border-radius: 16px;

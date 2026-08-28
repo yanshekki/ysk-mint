@@ -320,7 +320,7 @@ export function StepExecute() {
       </section>
 
       {errors.length ? (
-        <ul className="review-notes" style={{ color: "#b91c1c" }}>
+        <ul className="me-errors">
           {errors.map((err) => (
             <li key={err.code}>{err.message ?? err.code}</li>
           ))}
@@ -338,8 +338,20 @@ export function StepExecute() {
                 ? t("wizard.execute.deploySign")
                 : t("wizard.execute.simulate")}
       </Button>
-      {w.createTx ? <p className="font-mono text-xs break-all">create {w.createTx}</p> : null}
-      {w.lpTx ? <p className="font-mono text-xs break-all">lp {w.lpTx}</p> : null}
+      {home && (w.createTx || w.lpTx) ? (
+        <div className="xfer-acts">
+          {w.createTx ? (
+            <a className="me-pool-btn me-pool-btn-explore" href={`${home.explorer.replace(/\/$/, "")}/tx/${w.createTx}`} target="_blank" rel="noreferrer">
+              {t("transfer.explorer")} {w.createTx.slice(0, 6)}…{w.createTx.slice(-4)}
+            </a>
+          ) : null}
+          {w.lpTx ? (
+            <a className="me-pool-btn me-pool-btn-explore" href={`${home.explorer.replace(/\/$/, "")}/tx/${w.lpTx}`} target="_blank" rel="noreferrer">
+              LP {w.lpTx.slice(0, 6)}…{w.lpTx.slice(-4)}
+            </a>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

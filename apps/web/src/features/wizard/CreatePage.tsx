@@ -16,7 +16,6 @@ import {
   validateSupply,
 } from "@ysk-mint/sdk";
 import { Button } from "../../shared/ui/Button.tsx";
-import { StepRail } from "../../shared/ui/StepRail.tsx";
 import { useWizard } from "./store.ts";
 import { useNativeWallets } from "../../lib/nativeWallets.ts";
 import { lpTokenAmount } from "./presets.ts";
@@ -126,66 +125,89 @@ export function CreatePage() {
     if (w.step !== LaunchStep.Success) w.set({ step: nextFlowStep(w.step) });
   }
 
+  const idx = flowIndex(w.step);
+
   return (
     <section className="workspace">
       <div className="workspace-head">
         <div>
-          <p className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-text-muted">Launch</p>
-          <h1>{t("wizard.title")}</h1>
+          <p className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-text-muted">{t("wizard.kicker")}</p>
+          <h1>{t("nav.create")}</h1>
+          <p className="mt-1 text-[15px] text-text-sub">{t("wizard.hint")}</p>
         </div>
         <span className="badge badge-warn">{t("nav.disclaimer")}</span>
       </div>
-      <div className="workspace-body">
-        <aside className="workspace-rail">
-          <StepRail
-            current={flowIndex(w.step)}
-            onJump={(i) => {
-              if (i <= flowIndex(w.step)) w.set({ step: STEP_FLOW[i]! });
-            }}
-            steps={STEP_FLOW.map((id, i) => ({ id: i, label: t(`wizard.steps.${id}`) }))}
-          />
-        </aside>
-        <div className="workspace-main">
-          <div className="workspace-scroll">{panel}</div>
+      <div className="workspace-scroll">
+        <div className="me-desk">
+          <div className="me-chips" role="tablist" aria-label="wizard">
+            {STEP_FLOW.filter((id) => id !== LaunchStep.Success).map((id) => {
+              const i = flowIndex(id);
+              const on = i === idx;
+              const done = i < idx;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  className={`me-chip ${on ? "me-chip-on" : ""}`}
+                  disabled={i > idx}
+                  onClick={() => {
+                    if (i <= idx) w.set({ step: id });
+                  }}
+                >
+                  {done ? "✓ " : ""}
+                  {t(`wizard.steps.${id}`)}
+                </button>
+              );
+            })}
+          </div>
+          {w.step === LaunchStep.Wallet ? (
+            panel
+          ) : w.step === LaunchStep.Success ? (
+            <section className="me-card">{panel}</section>
+          ) : (
+            <section className="me-card">
+              <div className="me-card-body">{panel}</div>
+            </section>
+          )}
           {errors.length ? (
-            <div className="mx-8 mb-0 rounded-xl border border-red-200 bg-red-50 p-3 text-[15px] text-red-800">
-              <p className="font-bold">{t("wizard.errors")}</p>
-              <ul className="mt-1 space-y-1">
+            <div className="me-errors">
+              <b>{t("wizard.errors")}</b>
+              <ul>
                 {errors.map((e) => (
                   <li key={e.code}>{e.message ?? e.code}</li>
                 ))}
               </ul>
             </div>
           ) : null}
-          {w.step < LaunchStep.Success ? (
-            <div className="workspace-actions">
-              {w.step === LaunchStep.Wallet ? (
-                <div className="wallet-action-status">
-                  <span className={isConnected ? "on" : ""}>EVM</span>
-                  <span className={native.nearAccount ? "on" : ""}>NEAR</span>
-                  <span className={native.cardanoAddress ? "on" : ""}>ADA</span>
-                  <span className={native.solanaAddress ? "on" : ""}>SOL</span>
-                </div>
-              ) : null}
-              {w.step !== LaunchStep.Wallet ? (
-                <Button variant="ghost" type="button" onClick={() => w.set({ step: prevFlowStep(w.step) })}>
-                  {t("wizard.back")}
-                </Button>
-              ) : null}
-              {w.step < LaunchStep.Execute ? (
-                <Button
-                  variant="grad"
-                  type="button"
-                  onClick={next}
-                  disabled={w.step === LaunchStep.Wallet && !address && !native.nearAccount && !native.cardanoAddress && !native.solanaAddress}
-                >
-                  {t("wizard.next")}
-                </Button>
-              ) : null}
-            </div>
-          ) : null}
         </div>
       </div>
+      {w.step < LaunchStep.Success ? (
+        <div className="workspace-actions">
+          {w.step === LaunchStep.Wallet ? (
+            <div className="wallet-action-status">
+              <span className={isConnected ? "on" : ""}>EVM</span>
+              <span className={native.nearAccount ? "on" : ""}>NEAR</span>
+              <span className={native.cardanoAddress ? "on" : ""}>ADA</span>
+              <span className={native.solanaAddress ? "on" : ""}>SOL</span>
+            </div>
+          ) : null}
+          {w.step !== LaunchStep.Wallet ? (
+            <Button variant="ghost" type="button" onClick={() => w.set({ step: prevFlowStep(w.step) })}>
+              {t("wizard.back")}
+            </Button>
+          ) : null}
+          {w.step < LaunchStep.Execute ? (
+            <Button
+              variant="grad"
+              type="button"
+              onClick={next}
+              disabled={w.step === LaunchStep.Wallet && !address && !native.nearAccount && !native.cardanoAddress && !native.solanaAddress}
+            >
+              {t("wizard.next")}
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
     </section>
   );
 }

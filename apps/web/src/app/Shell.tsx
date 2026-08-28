@@ -54,6 +54,7 @@ export function Shell() {
         <Link to="/">{t("nav.lp")}</Link>
         <Link to="/lend">{t("nav.lend")}</Link>
         <Link to="/create">{t("nav.create")}</Link>
+        <Link to="/transfer">{t("nav.transfer")}</Link>
         <span className="bot-session">
           {isConnected ? (
             <span>

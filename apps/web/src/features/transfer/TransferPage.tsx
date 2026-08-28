@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { zeroAddress } from "viem";
+import { formatEther, zeroAddress } from "viem";
 import { useAccount, useChainId, useConfig, useSwitchChain } from "wagmi";
 import { getPublicClient, getWalletClient } from "wagmi/actions";
 import {
@@ -16,10 +16,24 @@ import { Button } from "../../shared/ui/Button.tsx";
 import { ChipGroup } from "../../shared/ui/ChipGroup.tsx";
 import { useEvmHoldings, type HoldingRow } from "../../lib/useHoldings.ts";
 import { chainIcon } from "../../lib/chainIcon.ts";
-import { ISSUANCE_GROUP_TITLE, issuanceGroups } from "../../lib/launchTargets.ts";
+import { issuanceGroups } from "../../lib/launchTargets.ts";
 import { useWizard } from "../wizard/store.ts";
 import { cacheGet, cacheInvalidateAccount, cacheKey, POLICIES } from "../../lib/defi/cache.ts";
 import { lzExecutorLzReceiveOption } from "../../lib/lzOptions.ts";
+import { shortAddr } from "../../lib/lendFormat.ts";
+
+const PRIMARY_XFER = new Set([1, 8453, 42161, 43114, 56, 137, 10, 999]);
+
+function fmtFee(wei: string) {
+  try {
+    const n = Number(formatEther(BigInt(wei)));
+    if (!Number.isFinite(n) || n <= 0) return "—";
+    if (n < 0.000001) return "<0.000001 ETH";
+    return `${n.toLocaleString(undefined, { maximumFractionDigits: 6 })} ETH`;
+  } catch {
+    return "—";
+  }
+}
 
 const PCT = [10, 25, 50, 75, 100] as const;
 const ZERO_PEER = `0x${"00".repeat(32)}` as const;
@@ -63,6 +77,8 @@ export function TransferPage() {
   const [busy, setBusy] = useState(false);
   const [paste, setPaste] = useState(false);
   const [pasted, setPasted] = useState("");
+  const [moreChains, setMoreChains] = useState(false);
+  const [sentHash, setSentHash] = useState<`0x${string}` | null>(null);
 
   const srcChainId = pick?.chainId ?? chainId;
   const dst = CHAINS[dstKey as keyof typeof CHAINS];
@@ -107,7 +123,14 @@ export function TransferPage() {
     return [...launched, ...fromHold];
   }, [evmHold.rows, w.name, w.perChain, w.symbol]);
 
-  const groups = issuanceGroups().filter((g) => g.vm === "evm");
+  const evmGroup = issuanceGroups().find((g) => g.vm === "evm");
+  const destMain = (evmGroup?.main ?? []).filter((c) => c.eid > 0);
+  const destTest = (evmGroup?.test ?? []).filter((c) => c.eid > 0);
+  const destPrimary = destMain.filter((c) => PRIMARY_XFER.has(c.chainId));
+  const destExtra = [...destMain.filter((c) => !PRIMARY_XFER.has(c.chainId)), ...destTest];
+  const destVisible = moreChains
+    ? [...destPrimary, ...destExtra]
+    : destPrimary.concat(destExtra.filter((c) => c.key === dstKey));
   const canAct = Boolean(address && token && token.toLowerCase() !== zeroAddress && !destBlocked && dst?.eid);
 
   const quoteNow = useCallback(async () => {
@@ -235,6 +258,7 @@ export function TransferPage() {
       await client.waitForTransactionReceipt({ hash });
       cacheInvalidateAccount(address);
       setQuote(fee.nativeFee.toString());
+      setSentHash(hash);
     } catch (e) {
       setErrors([errorFromCatch(e, locale, t("transfer.notOft"))]);
     } finally {
@@ -246,8 +270,9 @@ export function TransferPage() {
     setPick(p);
     setPaste(false);
     setQuote("");
+    setSentHash(null);
     if (dst.chainId === p.chainId) {
-      const other = groups[0]?.main.find((c) => c.evm && c.chainId !== p.chainId && c.eid > 0);
+      const other = [...destMain, ...destTest].find((c) => c.chainId !== p.chainId && c.eid > 0);
       if (other) setDstKey(other.key);
     }
     void switchChainAsync({ chainId: p.chainId }).catch(() => undefined);
@@ -257,146 +282,158 @@ export function TransferPage() {
     <section className="workspace">
       <div className="workspace-head">
         <div>
-          <p className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-text-muted">Bridge</p>
+          <p className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-text-muted">{t("transfer.kicker")}</p>
           <h1>{t("transfer.title")}</h1>
           <p className="mt-1 text-[15px] text-text-sub">{t("transfer.body")}</p>
         </div>
       </div>
-      <div className="workspace-body">
-        <div className="workspace-main">
-          <div className="workspace-scroll">
-            <div className="transfer-desk">
-              <section className="chain-group">
-                <p className="chain-group-title">{t("transfer.walletTokens")}</p>
-                {!isConnected ? (
-                  <p className="field-note">{t("transfer.needWallet")}</p>
-                ) : walletPicks.length === 0 ? (
-                  <p className="field-note">{t("transfer.noTokens")}</p>
-                ) : (
-                  <div className="chain-row">
-                    {walletPicks.map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        className={`oft-chain transfer-pick ${pick?.id === p.id ? "transfer-pick-on" : ""}`}
-                        onClick={() => selectPick(p)}
-                      >
-                        <img src={p.icon} alt="" width={32} height={32} />
-                        <div>
-                          <b>
-                            {p.symbol} <span className="transfer-tag">{p.chainTag}</span>
-                          </b>
-                          <span className="num">{p.amount || p.contract.slice(0, 8) + "…"}</span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <button type="button" className="transfer-paste" onClick={() => setPaste((v) => !v)}>
-                  {t("transfer.paste")}
-                </button>
-                {paste ? (
-                  <input
-                    className="field-text num"
-                    value={pasted}
-                    placeholder="0x…"
-                    onChange={(e) => {
-                      setPasted(e.target.value);
-                      setPick(null);
-                      setQuote("");
-                    }}
-                  />
-                ) : null}
-              </section>
+      <div className="workspace-scroll">
+        <div className="me-desk">
+          <section className="me-card">
+            <div className="me-card-head">
+              <b>{t("transfer.walletTokens")}</b>
+              <button type="button" className="transfer-paste" onClick={() => setPaste((v) => !v)}>
+                {t("transfer.paste")}
+              </button>
+            </div>
+            {paste ? (
+              <input
+                className="me-filter"
+                value={pasted}
+                placeholder="0x…"
+                onChange={(e) => {
+                  setPasted(e.target.value);
+                  setPick(null);
+                  setQuote("");
+                  setSentHash(null);
+                }}
+              />
+            ) : null}
+            {!isConnected ? (
+              <p className="me-card-empty">{t("transfer.needWallet")}</p>
+            ) : walletPicks.length === 0 && !pasted ? (
+              <p className="me-card-empty">{t("transfer.noTokens")}</p>
+            ) : (
+              <div className="me-list">
+                {walletPicks.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className={`me-token me-token-5 ${pick?.id === p.id ? "transfer-pick-on" : ""}`}
+                    onClick={() => selectPick(p)}
+                  >
+                    <span className="holding-ico-wrap">
+                      <img src={p.icon} alt="" className="holding-ico" />
+                      {p.chainTag ? <span className="holding-chain-tag">{p.chainTag}</span> : null}
+                    </span>
+                    <div className="holding-meta">
+                      <b>{p.symbol}</b>
+                      <span className="num">{shortAddr(p.contract)}</span>
+                    </div>
+                    <span />
+                    <span />
+                    <span className="num me-value">{p.amount || "—"}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
 
-              <section className="chain-group">
-                <p className="chain-group-title">{t("transfer.amount")}</p>
-                <ChipGroup
-                  ariaLabel="pct"
-                  value={pct}
-                  onChange={setPct}
-                  options={PCT.map((p) => ({ value: p, label: p === 100 ? "Max" : `${p}%` }))}
-                />
-              </section>
-
-              {groups.map((g) => {
-                const destBtn = (c: (typeof g.main)[number]) => {
-                  const off = c.vm !== "evm" || !c.eid || c.chainId === srcChainId;
-                  const on = dstKey === c.key && !off;
+          <section className="me-card">
+            <div className="me-card-head">
+              <b>{t("transfer.dest")}</b>
+            </div>
+            <div className="me-card-body">
+              <div className="me-chips">
+                {destVisible.map((c) => {
+                  const off = c.chainId === srcChainId;
                   return (
                     <button
                       key={c.key}
                       type="button"
                       disabled={off}
-                      className={`oft-chain transfer-pick ${on ? "transfer-pick-on" : ""}`}
+                      className={`me-chip ${dstKey === c.key && !off ? "me-chip-on" : ""}`}
                       onClick={() => {
                         setDstKey(c.key);
                         setQuote("");
+                        setSentHash(null);
                       }}
                     >
-                      <img src={chainIcon(c)} alt="" width={32} height={32} />
-                      <div>
-                        <b>{c.name}</b>
-                        <span>
-                          {c.evm && c.eid
-                            ? c.chainId === srcChainId
-                              ? t("transfer.sameChain")
-                              : `EID ${c.eid}`
-                            : t("transfer.nativeDest")}
-                        </span>
-                      </div>
+                      <img src={chainIcon(c)} alt="" width={20} height={20} />
+                      {c.short}
+                      {off ? <span className="me-count">{t("transfer.sameChain")}</span> : null}
                     </button>
                   );
-                };
-                return (
-                  <section key={g.vm} className="chain-group">
-                    <p className="chain-group-title">
-                      {g.vm === "evm" ? `${t("transfer.dest")} · ` : ""}
-                      {t(ISSUANCE_GROUP_TITLE[g.vm] ?? "wizard.chains.groupEvm")}
-                    </p>
-                    {g.vm === "evm" ? (
-                      <>
-                        <div className="chain-row">{g.main.map(destBtn)}</div>
-                        {g.test.length ? (
-                          <>
-                            <p className="chain-sub">{t("wizard.chains.testnets")}</p>
-                            <div className="chain-row">{g.test.map(destBtn)}</div>
-                          </>
-                        ) : null}
-                      </>
-                    ) : (
-                      <div className="chain-row">
-                        {g.main.map(destBtn)}
-                        {g.test.map(destBtn)}
-                      </div>
-                    )}
-                  </section>
-                );
-              })}
-
-              <section className="chain-group">
-                <p className="chain-group-title">{t("transfer.quote")}</p>
-                <div className="review-stat">
-                  <span className="review-k">{t("transfer.fee")}</span>
-                  <span className="review-v num">{quote || "—"}</span>
-                </div>
-                {errors.map((e) => (
-                  <p key={e.code} className="text-[15px] text-red-700">
-                    {e.message}
-                  </p>
-                ))}
-              </section>
+                })}
+                {destExtra.length ? (
+                  <button type="button" className={`me-chip ${moreChains ? "me-chip-on" : ""}`} onClick={() => setMoreChains((v) => !v)}>
+                    {moreChains ? t("transfer.lessChains") : t("transfer.moreChains")}
+                    <span className="me-count">{destExtra.length}</span>
+                  </button>
+                ) : null}
+              </div>
+              <p className="field-note" style={{ marginTop: 10 }}>
+                {t("transfer.nativeDest")}
+              </p>
             </div>
-          </div>
-          <div className="workspace-actions">
-            <Button type="button" variant="ghost" disabled={!canAct} onClick={() => void quoteNow()}>
-              {t("transfer.quote")}
-            </Button>
-            <Button type="button" variant="grad" disabled={!canAct || busy || !quote} onClick={() => void doSend()}>
-              {t("transfer.send")}
-            </Button>
-          </div>
+          </section>
+
+          <section className="me-card">
+            <div className="me-card-head">
+              <b>{t("transfer.amount")}</b>
+            </div>
+            <div className="me-card-body">
+              <ChipGroup
+                ariaLabel="pct"
+                value={pct}
+                onChange={(v) => {
+                  setPct(v);
+                  setSentHash(null);
+                }}
+                options={PCT.map((p) => ({ value: p, label: p === 100 ? "Max" : `${p}%` }))}
+              />
+            </div>
+          </section>
+
+          <section className="me-card">
+            <div className="me-card-head">
+              <b>{t("transfer.quote")}</b>
+            </div>
+            <div className="lend-stats" style={{ padding: "12px 16px 0" }}>
+              <div className="lend-stat">
+                <b className="num">{quote ? fmtFee(quote) : "—"}</b>
+                <span>{t("transfer.fee")}</span>
+              </div>
+            </div>
+            {errors.length ? (
+              <ul className="me-errors">
+                {errors.map((e) => (
+                  <li key={e.code}>{e.message}</li>
+                ))}
+              </ul>
+            ) : null}
+            {sentHash && dst ? (
+              <div className="xfer-acts">
+                <a
+                  className="me-pool-btn me-pool-btn-explore"
+                  href={`${(Object.values(CHAINS).find((c) => c.chainId === srcChainId)?.explorer ?? "").replace(/\/$/, "")}/tx/${sentHash}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {t("transfer.sent")} {shortAddr(sentHash)}
+                </a>
+              </div>
+            ) : null}
+          </section>
         </div>
+      </div>
+      <div className="workspace-actions">
+        <Button type="button" variant="ghost" disabled={!canAct} onClick={() => void quoteNow()}>
+          {t("transfer.quote")}
+        </Button>
+        <Button type="button" variant="grad" disabled={!canAct || busy || !quote} onClick={() => void doSend()}>
+          {busy ? t("wizard.execute.sending") : t("transfer.send")}
+        </Button>
       </div>
     </section>
   );

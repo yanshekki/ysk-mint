@@ -21,7 +21,7 @@ export function ChipGroup<T extends string | number>({
           aria-checked={value === o.value}
           disabled={o.disabled}
           title={o.hint}
-          className={`chip ${value === o.value ? "chip-on" : ""}`}
+          className={`me-chip ${value === o.value ? "me-chip-on" : ""}`}
           onClick={() => onChange(o.value)}
         >
           {o.label}
@@ -53,7 +53,7 @@ export function ChipMulti<T extends string | number>({
             role="checkbox"
             aria-checked={on}
             disabled={o.disabled}
-            className={`chip ${on ? "chip-on" : ""} ${o.disabled ? "chip-off" : ""}`}
+            className={`me-chip ${on ? "me-chip-on" : ""}`}
             onClick={() => {
               if (o.disabled) return;
               onChange(on ? value.filter((x) => x !== o.value) : [...value, o.value]);
