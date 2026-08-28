@@ -46,6 +46,8 @@ import { DEX, isLst, SOL_NATIVE_MINT } from "../../lib/defiAddresses.ts";
 import { fmtUsdc, quoteKey, quoteSolMints, type Quote } from "../../lib/defiQuotes.ts";
 import { oracleTokenUsdc } from "../../lib/oracle.ts";
 import { readAave, readUniV3, type AaveCard, type ProtocolLine, type UniCard } from "../../lib/defiPositions.ts";
+import { dexBrandHref } from "../../lib/dexApp.ts";
+import { lendAppHref, stakeAppHref, stakeBrandName } from "../../lib/lendApp.ts";
 import { readExtraLending, type LendCard } from "../../lib/lendingExtra.ts";
 import { readNativeLending } from "../../lib/lendingNative.ts";
 import { SortHead, useSort, type SortDir } from "../../shared/ui/SortTable.tsx";
@@ -209,37 +211,79 @@ type LineProps = {
   internal?: boolean;
   badge?: string;
   note?: boolean;
+  brand?: string;
+  brandHref?: string;
 };
 
 function Line(p: LineProps) {
-  const inner = (
-    <>
+  const cls = `me-token me-token-5${p.zero ? " me-token-zero" : ""}`;
+  const title =
+    p.href && p.internal ? (
+      <Link to={p.href}>{p.title}</Link>
+    ) : p.href ? (
+      <a href={p.href} target="_blank" rel="noreferrer">
+        {p.title}
+      </a>
+    ) : (
+      p.title
+    );
+  return (
+    <div className={cls}>
       <span className="holding-ico-wrap">
         {p.icon.startsWith("/") ? <img src={p.icon} alt="" width={36} height={36} className="holding-ico" /> : <span className="holding-ico me-oft-mark">{p.icon}</span>}
         {p.tag ? <span className="holding-chain-tag">{p.tag}</span> : null}
       </span>
       <div className="holding-meta">
         <b>
-          {p.title}
+          {title}
           {p.badge ? <Badge kind="info">{p.badge}</Badge> : null}
+          {p.brandHref ? (
+            <a className="me-brand-link" href={p.brandHref} target="_blank" rel="noreferrer">
+              {p.brand}
+            </a>
+          ) : p.brand ? (
+            <span className="me-brand-link">{p.brand}</span>
+          ) : null}
         </b>
         <span className={`num${p.note ? " me-note" : ""}`}>{p.subtitle}</span>
       </div>
       <span className="num me-price">{p.price ?? "—"}</span>
       <span className="num holding-amt">{p.amount}</span>
       <span className="num me-value">{p.value ?? "—"}</span>
-    </>
+    </div>
   );
-  const cls = `me-token me-token-5${p.zero ? " me-token-zero" : ""}`;
-  if (p.internal && p.href) return <Link to={p.href} className={cls}>{inner}</Link>;
-  if (p.href) {
-    return (
-      <a href={p.href} target="_blank" rel="noreferrer" className={cls}>
-        {inner}
-      </a>
-    );
-  }
-  return <div className={cls}>{inner}</div>;
+}
+
+type ProtoGroup = {
+  key: string;
+  protocol: string;
+  chain: string;
+  chainId: number;
+  health?: string;
+  href?: string;
+  lines: ProtocolLine[];
+};
+
+function groupValue(g: ProtoGroup) {
+  return g.lines.reduce((n, l) => n + (l.valueUsdc ?? 0), 0);
+}
+
+function BrandHead({ name, chain, href, right }: { name: string; chain?: string; href?: string; right?: ReactNode }) {
+  return (
+    <div className="lend-group-head">
+      <span>
+        {href ? (
+          <a className="me-brand-link" href={href} target="_blank" rel="noreferrer">
+            {name}
+          </a>
+        ) : (
+          name
+        )}
+        {chain ? ` · ${chain}` : ""}
+      </span>
+      {right ? <span>{right}</span> : null}
+    </div>
+  );
 }
 
 function ValueHeads({ sort }: { sort: { key: string; dir: SortDir; toggle: (id: string) => void } }) {
@@ -791,13 +835,111 @@ export function MePage() {
     [quotes],
   );
   const walletSort = useSort(walletRows, "value", walletGet);
-  const stakeSort = useSort(stake, "value", protocolSortGet);
 
   const aaveCards = filter === "all" ? aave : aave.filter((c) => c.chainId === filter);
   const burrowCards = filter === "all" ? burrow : burrow.filter((c) => c.chainId === filter);
   const benqiCards = filter === "all" ? benqi : benqi.filter((c) => c.chainId === filter);
   const uniCards = filter === "all" ? uni : uni.filter((c) => c.chainId === filter);
   const extraLendCards = filter === "all" ? lendExtra : lendExtra.filter((c) => c.chainId === filter);
+  const lendGroups = useMemo(() => {
+    const out: ProtoGroup[] = [];
+    const push = (g: ProtoGroup) => {
+      const lines = g.lines.filter((l) => l.side !== "lp");
+      if (lines.length) out.push({ ...g, lines });
+    };
+    for (const c of aaveCards) {
+      push({
+        key: `aave-${c.chainId}`,
+        protocol: t("me.aave"),
+        chain: c.chain,
+        chainId: c.chainId,
+        health: c.health,
+        href: lendAppHref("Aave", c.chainId),
+        lines: c.lines,
+      });
+    }
+    for (const c of extraLendCards) {
+      push({
+        key: `lend-${c.protocol}-${c.chainId}`,
+        protocol: c.protocol,
+        chain: c.chain,
+        chainId: c.chainId,
+        health: c.health,
+        href: lendAppHref(c.protocol, c.chainId),
+        lines: c.lines,
+      });
+    }
+    for (const c of benqiCards) {
+      push({
+        key: `benqi-${c.chainId}`,
+        protocol: t("me.benqi"),
+        chain: c.chain,
+        chainId: c.chainId,
+        href: lendAppHref("BENQI", c.chainId),
+        lines: c.lines,
+      });
+    }
+    for (const c of burrowCards) {
+      push({
+        key: `burrow-${c.chainId}`,
+        protocol: t("me.burrow"),
+        chain: c.chain,
+        chainId: c.chainId,
+        health: c.health,
+        href: lendAppHref("Burrow", c.chainId),
+        lines: c.lines,
+      });
+    }
+    out.sort((a, b) => groupValue(b) - groupValue(a));
+    return out;
+  }, [aaveCards, extraLendCards, benqiCards, burrowCards, t]);
+  const lpGroups = useMemo(() => {
+    const out: ProtoGroup[] = [];
+    for (const c of uniCards) {
+      if (!c.lines.length) continue;
+      out.push({
+        key: `uni-${c.protocol}-${c.chainId}`,
+        protocol: c.protocol,
+        chain: c.chain,
+        chainId: c.chainId,
+        href: dexBrandHref(c.protocol, c.chainId),
+        lines: c.lines,
+      });
+    }
+    for (const c of benqiCards) {
+      const lines = c.lines.filter((l) => l.side === "lp");
+      if (!lines.length) continue;
+      out.push({
+        key: `benqi-lp-${c.chainId}`,
+        protocol: t("me.benqi"),
+        chain: c.chain,
+        chainId: c.chainId,
+        href: lendAppHref("BENQI", c.chainId),
+        lines,
+      });
+    }
+    out.sort((a, b) => groupValue(b) - groupValue(a));
+    return out;
+  }, [uniCards, benqiCards, t]);
+  const stakeGroups = useMemo(() => {
+    const by = new Map<string, ProtoGroup>();
+    for (const l of stake) {
+      const protocol = stakeBrandName(l);
+      const key = `${protocol}:${l.chainId}`;
+      const prev = by.get(key);
+      if (prev) prev.lines.push(l);
+      else
+        by.set(key, {
+          key,
+          protocol,
+          chain: l.chain,
+          chainId: l.chainId,
+          href: stakeAppHref(l),
+          lines: [l],
+        });
+    }
+    return [...by.values()].sort((a, b) => groupValue(b) - groupValue(a));
+  }, [stake]);
   const visibleLaunched = filter === "all" ? launched : launched.filter((r) => r.chainId === filter);
   const launchedGet = useCallback((r: LaunchRow, k: string) => (k === "name" ? r.symbol : r.chain), []);
   const launchedSort = useSort(visibleLaunched, "name", launchedGet, "asc");
@@ -1040,179 +1182,117 @@ export function MePage() {
                 )}
               </section>
 
-              {burrowCards.map((c) => (
-                <section key={`burrow-${c.chainId}`} className="me-card">
-                  <div className="me-card-head">
-                    <b>
-                      {t("me.burrow")} · {c.chain}
-                    </b>
-                    <span className="me-count">
-                      {t("me.health")} {c.health}
-                    </span>
-                  </div>
-                  <ProtocolTable
-                    lines={c.lines}
-                    render={(l) => (
-                      <Line
-                        key={l.id}
-                        icon={l.icon}
-                        tag={l.chain}
-                        title={`${l.symbol}`}
-                        subtitle={l.side === "borrow" ? t("me.borrowed") : t("me.supplied")}
-                        amount={l.amount}
-                        price={l.quote ? fmtUsdc(l.quote.usdc) : "—"}
-                        value={l.valueUsdc == null ? "—" : fmtUsdc(l.valueUsdc)}
-                        href={explorerFor(l.chainId, l.contract)}
-                      />
-                    )}
-                  />
-                </section>
-              ))}
-
-              {benqiCards.map((c) => (
-                <section key={`benqi-${c.chainId}`} className="me-card">
-                  <div className="me-card-head">
-                    <b>
-                      {t("me.benqi")} · {c.chain}
-                    </b>
-                    <span className="me-count">{fmtUsdc(c.lines.reduce((n, l) => n + (l.valueUsdc ?? 0), 0))}</span>
-                  </div>
-                  <ProtocolTable
-                    lines={c.lines}
-                    render={(l) => (
-                      <Line
-                        key={l.id}
-                        icon={l.icon}
-                        tag={l.chain}
-                        title={l.symbol}
-                        subtitle={l.side === "borrow" ? t("me.borrowed") : l.side === "lp" ? l.extra ?? t("me.staking") : t("me.supplied")}
-                        amount={l.amount}
-                        price={l.quote ? fmtUsdc(l.quote.usdc) : "—"}
-                        value={l.valueUsdc == null ? "—" : fmtUsdc(l.valueUsdc)}
-                        href={explorerFor(l.chainId, l.contract)}
-                      />
-                    )}
-                  />
-                </section>
-              ))}
-
-              {extraLendCards.map((c) => (
-                <section key={`lend-${c.protocol}-${c.chainId}`} className="me-card">
-                  <div className="me-card-head">
-                    <b>
-                      {c.protocol} · {c.chain}
-                    </b>
-                    <span className="me-count">
-                      {c.health !== "—" ? `${t("me.health")} ${c.health}` : fmtUsdc(c.lines.reduce((n, l) => n + (l.valueUsdc ?? 0), 0))}
-                    </span>
-                  </div>
-                  <ProtocolTable
-                    lines={c.lines}
-                    render={(l) => (
-                      <Line
-                        key={l.id}
-                        icon={l.icon}
-                        tag={l.chain}
-                        title={l.symbol}
-                        subtitle={l.side === "borrow" ? t("me.borrowed") : t("me.supplied")}
-                        amount={l.amount}
-                        price={l.quote ? fmtUsdc(l.quote.usdc) : "—"}
-                        value={l.valueUsdc == null ? "—" : fmtUsdc(l.valueUsdc)}
-                        href={explorerFor(l.chainId, l.contract)}
-                      />
-                    )}
-                  />
-                </section>
-              ))}
-
-              {aaveCards.map((c) => (
-                <section key={`aave-${c.chainId}`} className="me-card">
-                  <div className="me-card-head">
-                    <b>
-                      {t("me.aave")} · {c.chain}
-                    </b>
-                    <span className="me-count">
-                      {t("me.health")} {c.health}
-                    </span>
-                  </div>
-                  <ProtocolTable
-                    lines={c.lines}
-                    render={(l) => (
-                      <Line
-                        key={l.id}
-                        icon={l.icon}
-                        tag={l.chain}
-                        title={`${l.symbol}`}
-                        subtitle={l.side === "borrow" ? t("me.borrowed") : t("me.supplied")}
-                        amount={l.amount}
-                        price={l.quote ? fmtUsdc(l.quote.usdc) : "—"}
-                        value={l.valueUsdc == null ? "—" : fmtUsdc(l.valueUsdc)}
-                        href={explorerFor(l.chainId, l.contract)}
-                      />
-                    )}
-                  />
-                </section>
-              ))}
-
-              {uniCards.map((c) => (
-                <section key={`uni-${c.protocol}-${c.chainId}`} className="me-card">
-                  <div className="me-card-head">
-                    <b>
-                      {c.protocol} · {c.chain}
-                    </b>
-                    <span className="me-count">{fmtUsdc(c.lines.reduce((n, l) => n + (l.valueUsdc ?? 0), 0))}</span>
-                  </div>
-                  <ProtocolTable
-                    lines={c.lines}
-                    render={(l) => (
-                      <Line
-                        key={l.id}
-                        icon={l.icon}
-                        tag={l.chain}
-                        title={l.symbol}
-                        subtitle={l.extra ?? l.name}
-                        amount={l.amount}
-                        price="—"
-                        value={l.valueUsdc == null ? "—" : fmtUsdc(l.valueUsdc)}
-                        href={explorerFor(l.chainId, l.contract)}
-                      />
-                    )}
-                  />
-                </section>
-              ))}
-
-              {stake.length ? (
+              {lendGroups.length ? (
                 <section className="me-card">
                   <div className="me-card-head">
-                    <b>{t("me.staking")}</b>
-                    <span className="me-count">{fmtUsdc(stake.reduce((n, l) => n + (l.valueUsdc ?? 0), 0))}</span>
+                    <b>{t("me.catLend")}</b>
+                    <span className="me-count">{fmtUsdc(lendGroups.reduce((n, g) => n + groupValue(g), 0))}</span>
                   </div>
-                  <ValueHeads sort={stakeSort} />
-                  <div className="me-list">
-                    {stakeSort.sorted.map((l) => (
-                      <Line
-                        key={l.id}
-                        icon={l.icon}
-                        tag={l.chain}
-                        title={l.symbol}
-                        subtitle={stakeSubtitle(l)}
-                        amount={l.amount}
-                        price={l.quote ? fmtUsdc(l.quote.usdc) : "—"}
-                        value={l.valueUsdc == null ? "—" : fmtUsdc(l.valueUsdc)}
-                        href={
-                          l.chainId === 101
-                            ? `https://solscan.io/account/${l.contract}`
-                            : l.chainId === 397
-                              ? `https://nearblocks.io/address/${l.contract}`
-                              : l.chainId === 1815 && l.contract?.startsWith("pool")
-                                ? `https://cardanoscan.io/pool/${l.contract}`
-                                : explorerFor(l.chainId, l.contract)
-                        }
-                        badge={stakeBadge(l)}
-                        note
+                  {lendGroups.map((g) => (
+                    <div key={g.key}>
+                      <BrandHead
+                        name={g.protocol}
+                        chain={g.chain}
+                        href={g.href}
+                        right={g.health && g.health !== "—" ? `${t("me.health")} ${g.health}` : fmtUsdc(groupValue(g))}
                       />
-                    ))}
+                      <ProtocolTable
+                        lines={g.lines}
+                        render={(l) => (
+                          <Line
+                            key={l.id}
+                            icon={l.icon}
+                            tag={l.chain}
+                            title={l.symbol}
+                            subtitle={l.side === "borrow" ? t("me.borrowed") : t("me.supplied")}
+                            amount={l.amount}
+                            price={l.quote ? fmtUsdc(l.quote.usdc) : "—"}
+                            value={l.valueUsdc == null ? "—" : fmtUsdc(l.valueUsdc)}
+                            href={explorerFor(l.chainId, l.contract)}
+                            brand={g.protocol}
+                            brandHref={g.href}
+                          />
+                        )}
+                      />
+                    </div>
+                  ))}
+                </section>
+              ) : null}
+
+              {lpGroups.length ? (
+                <section className="me-card">
+                  <div className="me-card-head">
+                    <b>{t("me.catLp")}</b>
+                    <span className="me-count">{fmtUsdc(lpGroups.reduce((n, g) => n + groupValue(g), 0))}</span>
                   </div>
+                  {lpGroups.map((g) => (
+                    <div key={g.key}>
+                      <BrandHead name={g.protocol} chain={g.chain} href={g.href} right={fmtUsdc(groupValue(g))} />
+                      <ProtocolTable
+                        lines={g.lines}
+                        render={(l) => (
+                          <Line
+                            key={l.id}
+                            icon={l.icon}
+                            tag={l.chain}
+                            title={l.symbol}
+                            subtitle={l.extra ?? l.name}
+                            amount={l.amount}
+                            price="—"
+                            value={l.valueUsdc == null ? "—" : fmtUsdc(l.valueUsdc)}
+                            href={explorerFor(l.chainId, l.contract)}
+                            brand={g.protocol}
+                            brandHref={g.href}
+                          />
+                        )}
+                      />
+                    </div>
+                  ))}
+                </section>
+              ) : null}
+
+              {stakeGroups.length ? (
+                <section className="me-card">
+                  <div className="me-card-head">
+                    <b>{t("me.catStake")}</b>
+                    <span className="me-count">{fmtUsdc(stakeGroups.reduce((n, g) => n + groupValue(g), 0))}</span>
+                  </div>
+                  {stakeGroups.map((g) => (
+                    <div key={g.key}>
+                      <BrandHead name={g.protocol} chain={g.chain} href={g.href} right={fmtUsdc(groupValue(g))} />
+                      <ProtocolTable
+                        lines={g.lines}
+                        render={(l) => {
+                          const sl = l as StakeLine;
+                          return (
+                            <Line
+                              key={l.id}
+                              icon={l.icon}
+                              tag={l.chain}
+                              title={l.symbol}
+                              subtitle={stakeSubtitle(sl)}
+                              amount={l.amount}
+                              price={l.quote ? fmtUsdc(l.quote.usdc) : "—"}
+                              value={l.valueUsdc == null ? "—" : fmtUsdc(l.valueUsdc)}
+                              href={
+                                l.chainId === 101
+                                  ? `https://solscan.io/account/${l.contract}`
+                                  : l.chainId === 397
+                                    ? `https://nearblocks.io/address/${l.contract}`
+                                    : l.chainId === 1815 && l.contract?.startsWith("pool")
+                                      ? `https://cardanoscan.io/pool/${l.contract}`
+                                      : explorerFor(l.chainId, l.contract)
+                              }
+                              brand={g.protocol}
+                              brandHref={g.href}
+                              badge={stakeBadge(sl)}
+                              note
+                            />
+                          );
+                        }}
+                      />
+                    </div>
+                  ))}
                 </section>
               ) : null}
 

@@ -1476,6 +1476,25 @@ button.oft-chain:disabled {
 .lend-group-link:hover {
   text-decoration: underline;
 }
+.me-brand-link {
+  color: var(--brand-blue);
+  text-decoration: none;
+  font-weight: 800;
+}
+.me-brand-link:hover {
+  text-decoration: underline;
+}
+.holding-meta b > a:not(.me-brand-link) {
+  color: inherit;
+  text-decoration: none;
+}
+.holding-meta b > a:not(.me-brand-link):hover {
+  color: var(--brand-blue);
+}
+.holding-meta b .me-brand-link {
+  margin-left: 8px;
+  font-size: 11px;
+}
 .lend-apy-in {
   color: var(--trade-buy);
   font-weight: 800;

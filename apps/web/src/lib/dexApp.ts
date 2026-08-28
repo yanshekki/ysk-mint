@@ -131,3 +131,22 @@ export function dexAppHref(args: DexAppArgs): string | undefined {
   if (h.includes("jupiter")) return "https://jup.ag/";
   return undefined;
 }
+
+export function dexBrandHref(name: string, _chainId = 1): string | undefined {
+  const h = name.toLowerCase();
+  if (h.includes("uniswap")) return "https://app.uniswap.org/positions";
+  if (h.includes("pancake")) return "https://pancakeswap.finance/liquidity/pools";
+  if (h.includes("trader joe") || h.includes("lfj") || h.includes(" joe")) return "https://lfj.gg/";
+  if (h.includes("pangolin")) return "https://app.pangolin.exchange/#/pool";
+  if (h.includes("sush")) return "https://www.sushi.com/pool";
+  if (h.includes("curve")) return "https://www.curve.finance/";
+  if (h.includes("balancer")) return "https://balancer.fi/pools";
+  if (h.includes("aerodrome")) return "https://aerodrome.finance/";
+  if (h.includes("velodrome")) return "https://velodrome.finance/";
+  if (h.includes("camelot")) return "https://app.camelot.exchange/liquidity";
+  if (h.includes("raydium")) return "https://raydium.io/portfolio/";
+  if (h.includes("orca")) return "https://www.orca.so/portfolio";
+  if (h.includes("cetus")) return "https://app.cetus.zone/portfolio";
+  if (h.includes("minswap")) return "https://app.minswap.org/liquidity";
+  return undefined;
+}

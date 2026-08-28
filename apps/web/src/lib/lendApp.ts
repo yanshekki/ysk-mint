@@ -63,3 +63,39 @@ export function lendAppHref(protocol: string, chainId: number, token?: string): 
   if (p === "burrow") return "https://app.burrow.finance/";
   return undefined;
 }
+
+export function stakeBrandName(opts: { symbol?: string; extra?: string; name?: string; chainId?: number; contract?: string }): string {
+  const hay = `${opts.symbol ?? ""} ${opts.extra ?? ""} ${opts.name ?? ""} ${opts.contract ?? ""}`.toLowerCase();
+  if (hay.includes("steth") || hay.includes("wsteth") || hay.includes("lido")) return "Lido";
+  if (hay.includes("reth") || hay.includes("rocket")) return "Rocket Pool";
+  if (hay.includes("cbeth")) return "Coinbase";
+  if (hay.includes("weeth") || hay.includes("ether.fi")) return "ether.fi";
+  if (hay.includes("savax") || (hay.includes("benqi") && (opts.chainId ?? 0) === 43114)) return "BENQI";
+  if (hay.includes("linear") || hay.includes("linear-protocol") || (opts.chainId === 397 && /\blst\b/i.test(opts.symbol ?? ""))) return "LiNEAR";
+  if (hay.includes("stnear") || hay.includes("meta-pool") || hay.includes("meta pool")) return "Meta Pool";
+  if (hay.includes("msol") || hay.includes("marinade")) return "Marinade";
+  if (hay.includes("jitosol") || hay.includes("jito")) return "Jito";
+  if (hay.includes("bsol") || hay.includes("blaze")) return "Blaze";
+  if (opts.chainId === 397) return "NEAR";
+  if (opts.chainId === 1815) return "Cardano";
+  if (opts.chainId === 101) return "Solana";
+  return opts.extra?.split(" ")[0] || opts.name || "Stake";
+}
+
+export function stakeAppHref(opts: { symbol?: string; extra?: string; name?: string; chainId?: number; contract?: string }): string | undefined {
+  const hay = `${opts.symbol ?? ""} ${opts.extra ?? ""} ${opts.name ?? ""} ${opts.contract ?? ""}`.toLowerCase();
+  if (hay.includes("steth") || hay.includes("wsteth") || hay.includes("lido")) return "https://stake.lido.fi/";
+  if (hay.includes("reth") || hay.includes("rocket")) return "https://stake.rocketpool.net/";
+  if (hay.includes("cbeth")) return "https://www.coinbase.com/earn";
+  if (hay.includes("weeth") || hay.includes("ether.fi")) return "https://app.ether.fi/";
+  if (hay.includes("savax") || hay.includes("benqi")) return "https://staking.benqi.fi/";
+  if (hay.includes("linear") || hay.includes("linear-protocol") || (opts.chainId === 397 && /\blst\b/i.test(opts.symbol ?? ""))) return "https://app.linearprotocol.org/";
+  if (hay.includes("stnear") || hay.includes("meta-pool") || hay.includes("meta pool")) return "https://app.metapool.app/";
+  if (hay.includes("msol") || hay.includes("marinade")) return "https://marinade.finance/app/staking";
+  if (hay.includes("jitosol") || hay.includes("jito")) return "https://www.jito.network/staking/";
+  if (hay.includes("bsol") || hay.includes("blaze")) return "https://stake.solblaze.org/";
+  if (opts.chainId === 397 && opts.contract) return `https://nearblocks.io/address/${opts.contract}`;
+  if (opts.chainId === 1815 && opts.contract?.startsWith("pool")) return `https://cardanoscan.io/pool/${opts.contract}`;
+  if (opts.chainId === 101 && opts.contract) return `https://solscan.io/account/${opts.contract}`;
+  return undefined;
+}
