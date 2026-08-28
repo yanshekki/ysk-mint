@@ -525,6 +525,78 @@
       "note": "官方 GraphQL alcove 404；/ 用 GeckoTerminal hyperion pools reserve_in_usd"
     },
     {
+      "id": "bluefin",
+      "name": "Bluefin",
+      "sector": "dex",
+      "family": "sui-amm",
+      "status": "wired",
+      "chains": [784],
+      "note": "Spot CLMM via GeckoTerminal bluefin reserve_in_usd；perp 唔當現貨 pair"
+    },
+    {
+      "id": "turbos",
+      "name": "Turbos Finance",
+      "sector": "dex",
+      "family": "sui-amm",
+      "status": "wired",
+      "chains": [784],
+      "note": "GeckoTerminal turbos-finance"
+    },
+    {
+      "id": "momentum",
+      "name": "Momentum",
+      "sector": "dex",
+      "family": "sui-amm",
+      "status": "wired",
+      "chains": [784],
+      "note": "GeckoTerminal momentum"
+    },
+    {
+      "id": "magma",
+      "name": "Magma Finance",
+      "sector": "dex",
+      "family": "sui-amm",
+      "status": "wired",
+      "chains": [784],
+      "note": "GeckoTerminal magma-finance"
+    },
+    {
+      "id": "kriya",
+      "name": "KriyaDEX",
+      "sector": "dex",
+      "family": "sui-amm",
+      "status": "wired",
+      "chains": [784],
+      "note": "GeckoTerminal kriya-dex"
+    },
+    {
+      "id": "thala",
+      "name": "Thala",
+      "sector": "dex",
+      "family": "aptos-amm",
+      "status": "wired",
+      "chains": [637],
+      "note": "GeckoTerminal thalaswap-v1/v2/cl"
+    },
+    {
+      "id": "tapp",
+      "name": "Tapp Exchange",
+      "sector": "dex",
+      "family": "aptos-amm",
+      "status": "wired",
+      "chains": [637],
+      "note": "GeckoTerminal tapp-exchange"
+    },
+    {
+      "id": "liquidswap",
+      "name": "Liquidswap",
+      "sector": "dex",
+      "family": "aptos-amm",
+      "status": "wired",
+      "chains": [637],
+      "note": "GeckoTerminal liquidswap + liquidswap-v0-5"
+    },
+    {
       "id": "pendle",
       "name": "Pendle Yield Tokenization",
       "sector": "dex",

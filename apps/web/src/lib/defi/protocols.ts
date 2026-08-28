@@ -11,9 +11,11 @@ import { nearRefProtocol } from "./near/ref.ts";
 import { register } from "./registry.ts";
 import { meteoraProtocol, orcaProtocol, raydiumProtocol } from "./sol/amm.ts";
 import { jupiterProtocol } from "./sol/jupiter.ts";
+import { aptosGeckoProtocols } from "./aptos/aptosGecko.ts";
 import { hyperionProtocol } from "./aptos/hyperion.ts";
 import { cetusProtocol } from "./sui/cetus.ts";
 import { flowxProtocol } from "./sui/flowx.ts";
+import { suiGeckoProtocols } from "./sui/suiGecko.ts";
 import { stonProtocol } from "./ton/ston.ts";
 
 let ready = false;
@@ -39,5 +41,7 @@ export function ensureProtocols() {
   register(cetusProtocol);
   register(flowxProtocol);
   register(hyperionProtocol);
+  for (const p of suiGeckoProtocols) register(p);
+  for (const p of aptosGeckoProtocols) register(p);
   register(stonProtocol);
 }

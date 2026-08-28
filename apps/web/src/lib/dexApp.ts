@@ -132,6 +132,14 @@ export function dexAppHref(args: DexAppArgs): string | undefined {
   if (h.includes("cetus")) return "https://app.cetus.zone/pools";
   if (h.includes("flowx")) return "https://flowx.finance/";
   if (h.includes("hyperion")) return "https://hyperion.xyz/pools";
+  if (h.includes("bluefin")) return "https://trade.bluefin.io/liquidity-pools";
+  if (h.includes("turbos")) return "https://app.turbos.finance/";
+  if (h.includes("momentum")) return "https://app.mmt.finance/";
+  if (h.includes("magma")) return "https://app.magma.finance/";
+  if (h.includes("kriya")) return "https://app.kriya.finance/";
+  if (h.includes("thala")) return "https://app.thala.fi/";
+  if (h.includes("tapp")) return "https://tapp.exchange/";
+  if (h.includes("liquidswap")) return "https://liquidswap.com/";
   if (h.includes("ston")) return "https://app.ston.fi/pools";
   if (h.includes("raydium")) return "https://raydium.io/liquidity-pools/";
   if (h.includes("orca")) return "https://www.orca.so/pools";
@@ -157,6 +165,14 @@ export function dexBrandHref(name: string, _chainId = 1): string | undefined {
   if (h.includes("cetus")) return "https://app.cetus.zone/portfolio";
   if (h.includes("flowx")) return "https://flowx.finance/";
   if (h.includes("hyperion")) return "https://hyperion.xyz/pools";
+  if (h.includes("bluefin")) return "https://trade.bluefin.io/liquidity-pools";
+  if (h.includes("turbos")) return "https://app.turbos.finance/";
+  if (h.includes("momentum")) return "https://app.mmt.finance/";
+  if (h.includes("magma")) return "https://app.magma.finance/";
+  if (h.includes("kriya")) return "https://app.kriya.finance/";
+  if (h.includes("thala")) return "https://app.thala.fi/";
+  if (h.includes("tapp")) return "https://tapp.exchange/";
+  if (h.includes("liquidswap")) return "https://liquidswap.com/";
   if (h.includes("minswap")) return "https://app.minswap.org/liquidity";
   return undefined;
 }

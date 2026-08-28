@@ -1,6 +1,6 @@
 import { pairId } from "../../pairKey.ts";
 import { cacheGet, cacheHash, cacheKey, POLICIES } from "../cache.ts";
-import type { MarketRow, VenueQuote } from "../types.ts";
+import type { DefiProtocol, MarketRow, VenueQuote } from "../types.ts";
 
 const PAGE = 20;
 const PAGE_CAP = 80;
@@ -58,25 +58,45 @@ function iconOf(symbol: string, chainShort: string) {
   return chainShort === "APT" ? "/tokens/apt.png" : "/tokens/sui.png";
 }
 
+let geckoQ: Promise<void> = Promise.resolve();
+
+function geckoEnqueue<T>(fn: () => Promise<T>): Promise<T> {
+  const run = geckoQ.then(fn, fn);
+  geckoQ = run.then(
+    () => new Promise<void>((r) => setTimeout(r, 350)),
+    () => new Promise<void>((r) => setTimeout(r, 350)),
+  );
+  return run;
+}
+
+async function fetchJson<T>(url: string, ms: number): Promise<T | null> {
+  for (let i = 0; i < 3; i++) {
+    const ac = new AbortController();
+    const t = setTimeout(() => ac.abort(), ms);
+    try {
+      const res = await fetch(url, { signal: ac.signal, headers: { accept: "application/json" } });
+      if (res.status === 429) {
+        await new Promise((r) => setTimeout(r, 1200 * (i + 1)));
+        continue;
+      }
+      if (!res.ok) return null;
+      return (await res.json()) as T;
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(t);
+    }
+  }
+  return null;
+}
+
 async function getJson<T>(url: string, ms = 15000): Promise<T | null> {
   return cacheGet(
     {
       key: cacheKey("http.gecko", 0, cacheHash(url)),
       policy: { ...POLICIES.catalog, keep: (v: T | null) => v != null },
     },
-    async () => {
-      const ac = new AbortController();
-      const t = setTimeout(() => ac.abort(), ms);
-      try {
-        const res = await fetch(url, { signal: ac.signal, headers: { accept: "application/json" } });
-        if (!res.ok) return null;
-        return (await res.json()) as T;
-      } catch {
-        return null;
-      } finally {
-        clearTimeout(t);
-      }
-    },
+    () => geckoEnqueue(() => fetchJson<T>(url, ms)),
   );
 }
 
@@ -95,7 +115,7 @@ function parseName(name: string): [string, string] {
 }
 
 export async function geckoDexMarkets(spec: GeckoDexSpec): Promise<MarketRow[]> {
-  const pages = spec.pages ?? 2;
+  const pages = spec.pages ?? 1;
   const included = new Map<string, GeckoToken>();
   const pools: GeckoPool[] = [];
   for (let page = 1; page <= pages && pools.length < PAGE_CAP; page++) {
@@ -184,4 +204,18 @@ export function mergeMarketRows(parts: MarketRow[][]): MarketRow[] {
     }
   }
   return [...by.values()].sort((a, b) => b.depth - a.depth);
+}
+
+export function makeGeckoProtocol(p: { id: string; name: string; chainId: number; specs: GeckoDexSpec[] }): DefiProtocol {
+  return {
+    id: p.id,
+    name: p.name,
+    chainId: p.chainId,
+    caps: ["markets"],
+    async markets() {
+      const parts: MarketRow[][] = [];
+      for (const spec of p.specs) parts.push(await geckoDexMarkets(spec).catch(() => []));
+      return mergeMarketRows(parts);
+    },
+  };
 }

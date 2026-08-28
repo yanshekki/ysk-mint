@@ -15,6 +15,7 @@ export const hyperionProtocol: DefiProtocol = {
       protocolId: "hyperion-637",
       protocolName: "Hyperion",
       feeLabel: "CLMM",
+      pages: 1,
     });
   },
 };
