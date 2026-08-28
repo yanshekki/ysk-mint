@@ -1,15 +1,11 @@
 import { useCallback, useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useAccount } from "wagmi";
 import { CHAINS } from "@ysk-mint/config";
-import { fmtUsdc } from "../../lib/defiQuotes.ts";
 import { lendAppHref, lendExplorerHref } from "../../lib/lendApp.ts";
 import { fmtApy, fmtApyRange, fmtUsd, sameLendToken, shortAddr, utilOf } from "../../lib/lendFormat.ts";
 import { groupLendAssets, type LendMarketRow } from "../../lib/lendMarkets.ts";
 import { useLendMarkets } from "../../lib/useLendMarkets.ts";
-import { useMyLending } from "../../lib/useMyLending.ts";
-import { useNativeWallets } from "../../lib/nativeWallets.ts";
 import { SortHead, useSort } from "../../shared/ui/SortTable.tsx";
 import { lendHref } from "./LendPage.tsx";
 
@@ -19,26 +15,13 @@ export function LendAssetPage() {
   const chainId = Number(cid);
   const token = decodeURIComponent(rawToken || "");
   const chain = Object.values(CHAINS).find((c) => c.chainId === chainId);
-  const { address } = useAccount();
-  const native = useNativeWallets();
   const markets = useLendMarkets(Number.isFinite(chainId) ? chainId : "all");
-  const mine = useMyLending(Number.isFinite(chainId) ? chainId : "all");
-  const hasWallet = Boolean(
-    address || native.nearAccount || native.solanaAddress || native.suiAddress || native.tronAddress || native.aptosAddress,
-  );
 
   const venues = useMemo(
     () => markets.rows.filter((r) => sameLendToken(r.token, token)).sort((a, b) => (b.supplyUsd ?? 0) - (a.supplyUsd ?? 0)),
     [markets.rows, token],
   );
   const asset = useMemo(() => groupLendAssets(venues)[0], [venues]);
-  const mineRows = useMemo(
-    () =>
-      mine.rows.filter(
-        (r) => r.chainId === chainId && (r.contract ? sameLendToken(r.contract, token) : r.symbol.toLowerCase() === (asset?.symbol ?? "").toLowerCase()),
-      ),
-    [asset?.symbol, chainId, mine.rows, token],
-  );
 
   const venueGet = useCallback((r: LendMarketRow, k: string) => {
     if (k === "name") return r.protocol;
@@ -106,54 +89,6 @@ export function LendAssetPage() {
       </div>
       <div className="workspace-scroll">
         <div className="me-desk">
-          {hasWallet && (mine.loading || mineRows.length) ? (
-            <section className="me-card">
-              <div className="me-card-head">
-                <b>{t("lend.my")}</b>
-                <span className="me-count">{mine.loading && !mineRows.length ? "…" : mineRows.length}</span>
-              </div>
-              {mine.loading && !mineRows.length ? (
-                <p className="me-card-empty">{t("lend.loadingMine")}</p>
-              ) : (
-                mineRows.map((r) => {
-                  const href = lendExplorerHref(r.chainId, r.contract);
-                  const app = lendAppHref(r.protocol, r.chainId, r.contract);
-                  return (
-                    <div key={r.id} className="me-token me-token-5 me-token-lend">
-                      <span className="holding-ico-wrap">
-                        <img src={r.icon} alt="" className="holding-ico" />
-                      </span>
-                      <div className="holding-meta">
-                        <b>{r.protocol}</b>
-                        <span>
-                          <em className={`lend-side ${r.side === "borrow" ? "lend-side-out" : "lend-side-in"}`}>
-                            {r.side === "borrow" ? t("lend.sideBorrow") : t("lend.sideSupply")}
-                          </em>
-                          {r.extra ? ` · ${r.extra}` : ""}
-                        </span>
-                      </div>
-                      <span className="num me-price">{r.amount}</span>
-                      <span className="num holding-amt me-lend-borrow" />
-                      <span className="num me-value">{r.valueUsdc == null ? "—" : fmtUsdc(r.valueUsdc)}</span>
-                      <span className="me-pool-acts">
-                        {href ? (
-                          <a className="me-pool-btn me-pool-btn-explore" href={href} target="_blank" rel="noreferrer">
-                            {t("lend.explorer")}
-                          </a>
-                        ) : null}
-                        {app ? (
-                          <a className="me-pool-btn me-pool-btn-dex" href={app} target="_blank" rel="noreferrer">
-                            {t("lend.openApp")}
-                          </a>
-                        ) : null}
-                      </span>
-                    </div>
-                  );
-                })
-              )}
-            </section>
-          ) : null}
-
           <section className="me-card">
             <div className="me-card-head">
               <b>{t("lend.venues")}</b>

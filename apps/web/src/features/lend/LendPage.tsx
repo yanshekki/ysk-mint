@@ -1,18 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useAccount } from "wagmi";
 import { CHAINS, featuredChains, type ChainDefinition } from "@ysk-mint/config";
 import { chainIcon } from "../../lib/chainIcon.ts";
-import { fmtUsdc } from "../../lib/defiQuotes.ts";
 import { ttCoverage } from "../../lib/defi/coverage.ts";
-import { lendAppHref, lendExplorerHref } from "../../lib/lendApp.ts";
 import { fmtApyRange, fmtUsd, utilOf } from "../../lib/lendFormat.ts";
 import { groupLendAssets, lendChainIds, type LendAssetRow } from "../../lib/lendMarkets.ts";
 import { useLiveStatus } from "../../lib/liveStatus.ts";
 import { useLendMarkets } from "../../lib/useLendMarkets.ts";
-import { useMyLending, type MyLendRow } from "../../lib/useMyLending.ts";
-import { useNativeWallets } from "../../lib/nativeWallets.ts";
 import { useUserSettings } from "../../lib/userSettings.ts";
 import { ChipBusy } from "../../shared/ui/LiveDock.tsx";
 import { SortHead, useSort } from "../../shared/ui/SortTable.tsx";
@@ -52,12 +47,8 @@ export function lendHref() {
   }
 }
 
-type MineGroup = { key: string; protocol: string; chain: string; chainId: number; health: string; rows: MyLendRow[] };
-
 export function LendPage() {
   const { t } = useTranslation();
-  const { address } = useAccount();
-  const native = useNativeWallets();
   const disabledChains = useUserSettings((s) => s.disabledChains);
   const [params, setParams] = useSearchParams();
   const filter = parseChain(params.get("chain"));
@@ -96,10 +87,6 @@ export function LendPage() {
   }, [extraChains, filter, lendChains, moreChains, primaryChains]);
 
   const markets = useLendMarkets(filter);
-  const mine = useMyLending(filter);
-  const hasWallet = Boolean(
-    address || native.nearAccount || native.solanaAddress || native.suiAddress || native.tronAddress || native.aptosAddress,
-  );
   const jobs = useLiveStatus((s) => s.jobs);
   const reading = useMemo(() => {
     const lendJobs = jobs.filter((j) => j.kind === "lend" && j.phase !== "fail");
@@ -157,17 +144,6 @@ export function LendPage() {
     }
     return { tvl: tvlN ? tvl : null, markets: marketFiltered.length, protocols: protos.size };
   }, [marketFiltered]);
-
-  const mineGroups = useMemo(() => {
-    const m = new Map<string, MineGroup>();
-    for (const r of mine.rows) {
-      const key = `${r.protocol}:${r.chainId}`;
-      const g = m.get(key);
-      if (g) g.rows.push(r);
-      else m.set(key, { key, protocol: r.protocol, chain: r.chain, chainId: r.chainId, health: r.health, rows: [r] });
-    }
-    return [...m.values()];
-  }, [mine.rows]);
 
   useEffect(() => {
     if (filter !== "all" && !PRIMARY_LEND_IDS.has(filter)) setMoreChains(true);
@@ -304,70 +280,6 @@ export function LendPage() {
                 </button>
               ))}
             </div>
-          ) : null}
-
-          {hasWallet && (mine.loading || mine.rows.length) ? (
-            <section className="me-card">
-              <div className="me-card-head">
-                <b>{t("lend.my")}</b>
-                <span className="me-count">{mine.loading && !mine.rows.length ? "…" : mine.rows.length}</span>
-              </div>
-              {mine.loading && !mine.rows.length ? (
-                <p className="me-card-empty">{t("lend.loadingMine")}</p>
-              ) : (
-                mineGroups.map((g) => {
-                  const net = g.rows.reduce((n, r) => n + (r.valueUsdc ?? 0), 0);
-                  const app = lendAppHref(g.protocol, g.chainId);
-                  return (
-                    <div key={g.key}>
-                      <div className="lend-group-head">
-                        <span>
-                          {g.protocol} · {g.chain}
-                          {g.health !== "—" ? ` · ${t("lend.health")} ${g.health}` : ""}
-                        </span>
-                        <span>
-                          {fmtUsdc(net)}
-                          {app ? (
-                            <a className="lend-group-link" href={app} target="_blank" rel="noreferrer">
-                              {t("lend.openApp")}
-                            </a>
-                          ) : null}
-                        </span>
-                      </div>
-                      {g.rows.map((r) => {
-                        const explore = lendExplorerHref(r.chainId, r.contract);
-                        return (
-                          <div key={r.id} className="me-token me-token-5">
-                            <span className="holding-ico-wrap">
-                              <img src={r.icon} alt="" className="holding-ico" />
-                              <span className="holding-chain-tag">{r.chain.slice(0, 3)}</span>
-                            </span>
-                            <div className="holding-meta">
-                              <b>{r.symbol}</b>
-                              <span>
-                                <em className={`lend-side ${r.side === "borrow" ? "lend-side-out" : "lend-side-in"}`}>
-                                  {r.side === "borrow" ? t("lend.sideBorrow") : t("lend.sideSupply")}
-                                </em>
-                                {r.extra ? ` · ${r.extra}` : ""}
-                              </span>
-                            </div>
-                            <span className="num me-price">{r.amount}</span>
-                            <span className="num holding-amt">{r.valueUsdc == null ? "—" : fmtUsdc(r.valueUsdc)}</span>
-                            <span className="num me-value">
-                              {explore ? (
-                                <a href={explore} target="_blank" rel="noreferrer">
-                                  {t("lend.explorer")}
-                                </a>
-                              ) : null}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })
-              )}
-            </section>
           ) : null}
 
           <section className="me-card">
