@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { AddrIdCard } from "../settings/AddrFields.tsx";
 import { PeekDialog } from "./PeekDialog.tsx";
 import { TxDesk } from "./TxDesk.tsx";
@@ -254,24 +254,88 @@ function Line(p: LineProps) {
   );
 }
 
-type ProtoGroup = {
-  key: string;
-  protocol: string;
+type ProtoChain = {
   chain: string;
   chainId: number;
   health?: string;
-  href?: string;
   lines: ProtocolLine[];
 };
 
-function groupValue(g: ProtoGroup) {
-  return g.lines.reduce((n, l) => n + (l.valueUsdc ?? 0), 0);
+type ProtoBrand = {
+  slug: string;
+  protocol: string;
+  href?: string;
+  chains: ProtoChain[];
+};
+
+function protoSlug(name: string) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "x";
 }
 
-function BrandHead({ name, chain, href, right }: { name: string; chain?: string; href?: string; right?: ReactNode }) {
+function chainValue(c: ProtoChain) {
+  return c.lines.reduce((n, l) => n + (l.valueUsdc ?? 0), 0);
+}
+
+function brandValue(b: ProtoBrand) {
+  return b.chains.reduce((n, c) => n + chainValue(c), 0);
+}
+
+function addBrand(
+  by: Map<string, ProtoBrand>,
+  protocol: string,
+  chain: string,
+  chainId: number,
+  href: string | undefined,
+  lines: ProtocolLine[],
+  health?: string,
+) {
+  if (!lines.length) return;
+  const slug = protoSlug(protocol);
+  const prev = by.get(slug);
+  if (!prev) {
+    by.set(slug, { slug, protocol, href, chains: [{ chain, chainId, health, lines }] });
+    return;
+  }
+  const hit = prev.chains.find((c) => c.chainId === chainId);
+  if (hit) {
+    hit.lines = mergeLines(hit.lines, lines);
+    hit.health = minHealth(hit.health, health);
+  } else prev.chains.push({ chain, chainId, health, lines });
+  if (!prev.href) prev.href = href;
+}
+
+function sortBrands(by: Map<string, ProtoBrand>) {
+  const out = [...by.values()];
+  for (const b of out) b.chains.sort((a, c) => chainValue(c) - chainValue(a));
+  out.sort((a, b) => brandValue(b) - brandValue(a));
+  return out;
+}
+
+function filterBrands(brands: ProtoBrand[], filter: number | "all") {
+  if (filter === "all") return brands;
+  return brands
+    .map((b) => ({ ...b, chains: b.chains.filter((c) => c.chainId === filter) }))
+    .filter((b) => b.chains.length);
+}
+
+const ME_CHAIN = "ysk-me.chain";
+
+function loadMeChain(): number | "all" {
+  try {
+    const v = sessionStorage.getItem(ME_CHAIN);
+    if (!v || v === "all") return "all";
+    const n = Number(v);
+    return Number.isFinite(n) ? n : "all";
+  } catch {
+    return "all";
+  }
+}
+
+function BrandHead({ name, chain, href, icon, right }: { name: string; chain?: string; href?: string; icon?: string; right?: ReactNode }) {
   return (
     <div className="lend-group-head">
       <span>
+        {icon ? <img src={icon} alt="" width={16} height={16} /> : null}
         {href ? (
           <a className="me-brand-link" href={href} target="_blank" rel="noreferrer">
             {name}
@@ -282,6 +346,33 @@ function BrandHead({ name, chain, href, right }: { name: string; chain?: string;
         {chain ? ` · ${chain}` : ""}
       </span>
       {right ? <span>{right}</span> : null}
+    </div>
+  );
+}
+
+function ProtoSumRow({ kind, brand }: { kind: "lend" | "lp" | "stake"; brand: ProtoBrand }) {
+  const to = `/me/${kind}/${brand.slug}`;
+  const icon = brand.chains[0]?.lines[0]?.icon ?? "/tokens/eth.png";
+  const chains = brand.chains.map((c) => c.chain).join(" · ");
+  return (
+    <div className="me-token me-token-5 me-token-proto">
+      <Link to={to} className="me-proto-hit" aria-label={brand.protocol} />
+      <span className="holding-ico-wrap">
+        <img src={icon} alt="" className="holding-ico" />
+      </span>
+      <div className="holding-meta">
+        <b>
+          {brand.href ? (
+            <a className="me-brand-link" href={brand.href} target="_blank" rel="noreferrer">
+              {brand.protocol}
+            </a>
+          ) : (
+            brand.protocol
+          )}
+        </b>
+        <span className="me-proto-sub">{chains}</span>
+      </div>
+      <span className="num me-value me-proto-go">{fmtUsdc(brandValue(brand))}</span>
     </div>
   );
 }
@@ -369,7 +460,18 @@ export function MePage() {
   const tia = useCelestiaHoldings(snap.byKind.celestia);
   const strk = useStarknetHoldings(snap.byKind.starknet);
   const hyper = useHyperCoreHoldings(evmAddrs);
-  const [filter, setFilter] = useState<number | "all">("all");
+  const [filter, setFilterState] = useState<number | "all">(loadMeChain);
+  function setFilter(next: number | "all") {
+    setFilterState(next);
+    try {
+      sessionStorage.setItem(ME_CHAIN, String(next));
+    } catch {
+      /* ignore */
+    }
+  }
+  const route = useParams();
+  const protoKind = route.kind === "lend" || route.kind === "lp" || route.kind === "stake" ? route.kind : undefined;
+  const protoSlugParam = route.protocol;
   const hideZero = useUserSettings((s) => s.hideZero);
   const txs = useAddressTxs(deskTab === "txs" ? snap.addrs : []);
   const patchSettings = useUserSettings((s) => s.patch);
@@ -841,105 +943,50 @@ export function MePage() {
   const benqiCards = filter === "all" ? benqi : benqi.filter((c) => c.chainId === filter);
   const uniCards = filter === "all" ? uni : uni.filter((c) => c.chainId === filter);
   const extraLendCards = filter === "all" ? lendExtra : lendExtra.filter((c) => c.chainId === filter);
-  const lendGroups = useMemo(() => {
-    const out: ProtoGroup[] = [];
-    const push = (g: ProtoGroup) => {
-      const lines = g.lines.filter((l) => l.side !== "lp");
-      if (lines.length) out.push({ ...g, lines });
-    };
-    for (const c of aaveCards) {
-      push({
-        key: `aave-${c.chainId}`,
-        protocol: t("me.aave"),
-        chain: c.chain,
-        chainId: c.chainId,
-        health: c.health,
-        href: lendAppHref("Aave", c.chainId),
-        lines: c.lines,
-      });
+  const lendBrandsAll = useMemo(() => {
+    const by = new Map<string, ProtoBrand>();
+    for (const c of aave) {
+      addBrand(by, t("me.aave"), c.chain, c.chainId, lendAppHref("Aave", c.chainId), c.lines.filter((l) => l.side !== "lp"), c.health);
     }
-    for (const c of extraLendCards) {
-      push({
-        key: `lend-${c.protocol}-${c.chainId}`,
-        protocol: c.protocol,
-        chain: c.chain,
-        chainId: c.chainId,
-        health: c.health,
-        href: lendAppHref(c.protocol, c.chainId),
-        lines: c.lines,
-      });
+    for (const c of lendExtra) {
+      addBrand(by, c.protocol, c.chain, c.chainId, lendAppHref(c.protocol, c.chainId), c.lines.filter((l) => l.side !== "lp"), c.health);
     }
-    for (const c of benqiCards) {
-      push({
-        key: `benqi-${c.chainId}`,
-        protocol: t("me.benqi"),
-        chain: c.chain,
-        chainId: c.chainId,
-        href: lendAppHref("BENQI", c.chainId),
-        lines: c.lines,
-      });
+    for (const c of benqi) {
+      addBrand(by, t("me.benqi"), c.chain, c.chainId, lendAppHref("BENQI", c.chainId), c.lines.filter((l) => l.side !== "lp"));
     }
-    for (const c of burrowCards) {
-      push({
-        key: `burrow-${c.chainId}`,
-        protocol: t("me.burrow"),
-        chain: c.chain,
-        chainId: c.chainId,
-        health: c.health,
-        href: lendAppHref("Burrow", c.chainId),
-        lines: c.lines,
-      });
+    for (const c of burrow) {
+      addBrand(by, t("me.burrow"), c.chain, c.chainId, lendAppHref("Burrow", c.chainId), c.lines.filter((l) => l.side !== "lp"), c.health);
     }
-    out.sort((a, b) => groupValue(b) - groupValue(a));
-    return out;
-  }, [aaveCards, extraLendCards, benqiCards, burrowCards, t]);
-  const lpGroups = useMemo(() => {
-    const out: ProtoGroup[] = [];
-    for (const c of uniCards) {
-      if (!c.lines.length) continue;
-      out.push({
-        key: `uni-${c.protocol}-${c.chainId}`,
-        protocol: c.protocol,
-        chain: c.chain,
-        chainId: c.chainId,
-        href: dexBrandHref(c.protocol, c.chainId),
-        lines: c.lines,
-      });
+    return sortBrands(by);
+  }, [aave, lendExtra, benqi, burrow, t]);
+  const lpBrandsAll = useMemo(() => {
+    const by = new Map<string, ProtoBrand>();
+    for (const c of uni) {
+      addBrand(by, c.protocol, c.chain, c.chainId, dexBrandHref(c.protocol, c.chainId), c.lines);
     }
-    for (const c of benqiCards) {
-      const lines = c.lines.filter((l) => l.side === "lp");
-      if (!lines.length) continue;
-      out.push({
-        key: `benqi-lp-${c.chainId}`,
-        protocol: t("me.benqi"),
-        chain: c.chain,
-        chainId: c.chainId,
-        href: lendAppHref("BENQI", c.chainId),
-        lines,
-      });
+    for (const c of benqi) {
+      addBrand(by, t("me.benqi"), c.chain, c.chainId, lendAppHref("BENQI", c.chainId), c.lines.filter((l) => l.side === "lp"));
     }
-    out.sort((a, b) => groupValue(b) - groupValue(a));
-    return out;
-  }, [uniCards, benqiCards, t]);
-  const stakeGroups = useMemo(() => {
-    const by = new Map<string, ProtoGroup>();
-    for (const l of stake) {
-      const protocol = stakeBrandName(l);
-      const key = `${protocol}:${l.chainId}`;
-      const prev = by.get(key);
-      if (prev) prev.lines.push(l);
-      else
-        by.set(key, {
-          key,
-          protocol,
-          chain: l.chain,
-          chainId: l.chainId,
-          href: stakeAppHref(l),
-          lines: [l],
-        });
+    return sortBrands(by);
+  }, [uni, benqi, t]);
+  const stakeBrandsAll = useMemo(() => {
+    const by = new Map<string, ProtoBrand>();
+    for (const l of stakeAll) {
+      addBrand(by, stakeBrandName(l), l.chain, l.chainId, stakeAppHref(l), [l]);
     }
-    return [...by.values()].sort((a, b) => groupValue(b) - groupValue(a));
-  }, [stake]);
+    return sortBrands(by);
+  }, [stakeAll]);
+  const lendBrands = filterBrands(lendBrandsAll, filter);
+  const lpBrands = filterBrands(lpBrandsAll, filter);
+  const stakeBrands = filterBrands(stakeBrandsAll, filter);
+  const protoBrand = useMemo(() => {
+    if (!protoKind || !protoSlugParam) return undefined;
+    const list = protoKind === "lend" ? lendBrandsAll : protoKind === "lp" ? lpBrandsAll : stakeBrandsAll;
+    const found = list.find((b) => b.slug === protoSlugParam);
+    if (!found) return undefined;
+    if (filter === "all") return found;
+    return { ...found, chains: found.chains.filter((c) => c.chainId === filter) };
+  }, [filter, lendBrandsAll, lpBrandsAll, protoKind, protoSlugParam, stakeBrandsAll]);
   const visibleLaunched = filter === "all" ? launched : launched.filter((r) => r.chainId === filter);
   const launchedGet = useCallback((r: LaunchRow, k: string) => (k === "name" ? r.symbol : r.chain), []);
   const launchedSort = useSort(visibleLaunched, "name", launchedGet, "asc");
@@ -1146,6 +1193,92 @@ export function MePage() {
 
               {deskTab === "txs" ? (
                 <TxDesk rows={txs.rows} loading={txs.loading} failed={txs.failed} chainFilter={filter} />
+              ) : protoKind ? (
+              <section className="me-card">
+                <div className="me-card-head">
+                  <div>
+                    <p className="me-proto-kicker">
+                      <Link to="/me">{t("nav.me")}</Link>
+                      {" · "}
+                      {protoKind === "lend" ? t("me.catLend") : protoKind === "lp" ? t("me.catLp") : t("me.catStake")}
+                    </p>
+                    <b>
+                      {protoBrand?.href ? (
+                        <a className="me-brand-link" href={protoBrand.href} target="_blank" rel="noreferrer">
+                          {protoBrand.protocol}
+                        </a>
+                      ) : (
+                        protoBrand?.protocol ?? protoSlugParam
+                      )}
+                    </b>
+                  </div>
+                  <span className="me-count">{protoBrand ? fmtUsdc(brandValue(protoBrand)) : "—"}</span>
+                </div>
+                {!protoBrand || !protoBrand.chains.length ? (
+                  <p className="me-card-empty">{t("me.emptyChain")}</p>
+                ) : (
+                  protoBrand.chains.map((c) => {
+                    const ch = chainOf(c.chainId);
+                    return (
+                      <div key={c.chainId}>
+                        <BrandHead
+                          name={c.chain}
+                          icon={ch ? chainIcon(ch) : undefined}
+                          right={
+                            <>
+                              {c.health && c.health !== "—" ? (
+                                <span className="me-proto-health">
+                                  {t("me.health")} {c.health}
+                                </span>
+                              ) : null}
+                              <span>{fmtUsdc(chainValue(c))}</span>
+                            </>
+                          }
+                        />
+                        <ProtocolTable
+                          lines={c.lines}
+                          render={(l) => {
+                            const sl = l as StakeLine;
+                            return (
+                              <Line
+                                key={l.id}
+                                icon={l.icon}
+                                tag={l.chain}
+                                title={l.symbol}
+                                subtitle={
+                                  protoKind === "lend"
+                                    ? l.side === "borrow"
+                                      ? t("me.borrowed")
+                                      : t("me.supplied")
+                                    : protoKind === "stake"
+                                      ? stakeSubtitle(sl)
+                                      : (l.extra ?? l.name)
+                                }
+                                amount={l.amount}
+                                price={l.quote ? fmtUsdc(l.quote.usdc) : "—"}
+                                value={l.valueUsdc == null ? "—" : fmtUsdc(l.valueUsdc)}
+                                href={
+                                  protoKind === "stake"
+                                    ? l.chainId === 101
+                                      ? `https://solscan.io/account/${l.contract}`
+                                      : l.chainId === 397
+                                        ? `https://nearblocks.io/address/${l.contract}`
+                                        : l.chainId === 1815 && l.contract?.startsWith("pool")
+                                          ? `https://cardanoscan.io/pool/${l.contract}`
+                                          : explorerFor(l.chainId, l.contract)
+                                    : explorerFor(l.chainId, l.contract)
+                                }
+                                badge={protoKind === "stake" ? stakeBadge(sl) : undefined}
+                                note={protoKind === "stake"}
+                              />
+                            );
+                          }}
+                        />
+                      </div>
+                    );
+                  })
+                )}
+              </section>
               ) : (
               <>
               <section className="me-card">
@@ -1182,117 +1315,45 @@ export function MePage() {
                 )}
               </section>
 
-              {lendGroups.length ? (
+              {lendBrands.length ? (
                 <section className="me-card">
                   <div className="me-card-head">
                     <b>{t("me.catLend")}</b>
-                    <span className="me-count">{fmtUsdc(lendGroups.reduce((n, g) => n + groupValue(g), 0))}</span>
+                    <span className="me-count">{fmtUsdc(lendBrands.reduce((n, b) => n + brandValue(b), 0))}</span>
                   </div>
-                  {lendGroups.map((g) => (
-                    <div key={g.key}>
-                      <BrandHead
-                        name={g.protocol}
-                        chain={g.chain}
-                        href={g.href}
-                        right={g.health && g.health !== "—" ? `${t("me.health")} ${g.health}` : fmtUsdc(groupValue(g))}
-                      />
-                      <ProtocolTable
-                        lines={g.lines}
-                        render={(l) => (
-                          <Line
-                            key={l.id}
-                            icon={l.icon}
-                            tag={l.chain}
-                            title={l.symbol}
-                            subtitle={l.side === "borrow" ? t("me.borrowed") : t("me.supplied")}
-                            amount={l.amount}
-                            price={l.quote ? fmtUsdc(l.quote.usdc) : "—"}
-                            value={l.valueUsdc == null ? "—" : fmtUsdc(l.valueUsdc)}
-                            href={explorerFor(l.chainId, l.contract)}
-                            brand={g.protocol}
-                            brandHref={g.href}
-                          />
-                        )}
-                      />
-                    </div>
-                  ))}
+                  <div className="me-list">
+                    {lendBrands.map((b) => (
+                      <ProtoSumRow key={b.slug} kind="lend" brand={b} />
+                    ))}
+                  </div>
                 </section>
               ) : null}
 
-              {lpGroups.length ? (
+              {lpBrands.length ? (
                 <section className="me-card">
                   <div className="me-card-head">
                     <b>{t("me.catLp")}</b>
-                    <span className="me-count">{fmtUsdc(lpGroups.reduce((n, g) => n + groupValue(g), 0))}</span>
+                    <span className="me-count">{fmtUsdc(lpBrands.reduce((n, b) => n + brandValue(b), 0))}</span>
                   </div>
-                  {lpGroups.map((g) => (
-                    <div key={g.key}>
-                      <BrandHead name={g.protocol} chain={g.chain} href={g.href} right={fmtUsdc(groupValue(g))} />
-                      <ProtocolTable
-                        lines={g.lines}
-                        render={(l) => (
-                          <Line
-                            key={l.id}
-                            icon={l.icon}
-                            tag={l.chain}
-                            title={l.symbol}
-                            subtitle={l.extra ?? l.name}
-                            amount={l.amount}
-                            price="—"
-                            value={l.valueUsdc == null ? "—" : fmtUsdc(l.valueUsdc)}
-                            href={explorerFor(l.chainId, l.contract)}
-                            brand={g.protocol}
-                            brandHref={g.href}
-                          />
-                        )}
-                      />
-                    </div>
-                  ))}
+                  <div className="me-list">
+                    {lpBrands.map((b) => (
+                      <ProtoSumRow key={b.slug} kind="lp" brand={b} />
+                    ))}
+                  </div>
                 </section>
               ) : null}
 
-              {stakeGroups.length ? (
+              {stakeBrands.length ? (
                 <section className="me-card">
                   <div className="me-card-head">
                     <b>{t("me.catStake")}</b>
-                    <span className="me-count">{fmtUsdc(stakeGroups.reduce((n, g) => n + groupValue(g), 0))}</span>
+                    <span className="me-count">{fmtUsdc(stakeBrands.reduce((n, b) => n + brandValue(b), 0))}</span>
                   </div>
-                  {stakeGroups.map((g) => (
-                    <div key={g.key}>
-                      <BrandHead name={g.protocol} chain={g.chain} href={g.href} right={fmtUsdc(groupValue(g))} />
-                      <ProtocolTable
-                        lines={g.lines}
-                        render={(l) => {
-                          const sl = l as StakeLine;
-                          return (
-                            <Line
-                              key={l.id}
-                              icon={l.icon}
-                              tag={l.chain}
-                              title={l.symbol}
-                              subtitle={stakeSubtitle(sl)}
-                              amount={l.amount}
-                              price={l.quote ? fmtUsdc(l.quote.usdc) : "—"}
-                              value={l.valueUsdc == null ? "—" : fmtUsdc(l.valueUsdc)}
-                              href={
-                                l.chainId === 101
-                                  ? `https://solscan.io/account/${l.contract}`
-                                  : l.chainId === 397
-                                    ? `https://nearblocks.io/address/${l.contract}`
-                                    : l.chainId === 1815 && l.contract?.startsWith("pool")
-                                      ? `https://cardanoscan.io/pool/${l.contract}`
-                                      : explorerFor(l.chainId, l.contract)
-                              }
-                              brand={g.protocol}
-                              brandHref={g.href}
-                              badge={stakeBadge(sl)}
-                              note
-                            />
-                          );
-                        }}
-                      />
-                    </div>
-                  ))}
+                  <div className="me-list">
+                    {stakeBrands.map((b) => (
+                      <ProtoSumRow key={b.slug} kind="stake" brand={b} />
+                    ))}
+                  </div>
                 </section>
               ) : null}
 

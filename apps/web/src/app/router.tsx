@@ -60,6 +60,13 @@ export const router = createBrowserRouter([
         },
       },
       {
+        path: "me/:kind/:protocol",
+        lazy: async () => {
+          const { MePage } = await import("../features/me/MePage.tsx");
+          return { Component: MePage };
+        },
+      },
+      {
         path: "me",
         lazy: async () => {
           const { MePage } = await import("../features/me/MePage.tsx");
