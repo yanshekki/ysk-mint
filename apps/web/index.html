@@ -1,19 +1,100 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-HK">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>YSK Mint</title>
+    <title>市場 · YSK Mint</title>
+    <meta
+      name="description"
+      content="鏈上市場、持倉與發幣。無後端伺服器。不託管資產。合約未經審計。"
+    />
+    <meta name="theme-color" content="#3b82f6" />
+    <meta name="robots" content="index,follow" />
+    <link rel="canonical" href="https://mint.ysk.hk/" />
     <link rel="icon" href="/logo.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/logo.svg" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="YSK Mint" />
+    <meta property="og:title" content="市場 · YSK Mint" />
+    <meta
+      property="og:description"
+      content="鏈上市場、持倉與發幣。無後端伺服器。不託管資產。合約未經審計。"
+    />
+    <meta property="og:url" content="https://mint.ysk.hk/" />
+    <meta property="og:image" content="https://mint.ysk.hk/og.png" />
+    <meta property="og:locale" content="zh_HK" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="市場 · YSK Mint" />
+    <meta
+      name="twitter:description"
+      content="鏈上市場、持倉與發幣。無後端伺服器。不託管資產。合約未經審計。"
+    />
+    <meta name="twitter:image" content="https://mint.ysk.hk/og.png" />
+    <link rel="alternate" hreflang="zh-HK" href="https://mint.ysk.hk/" />
+    <link rel="alternate" hreflang="zh-CN" href="https://mint.ysk.hk/zh-CN" />
+    <link rel="alternate" hreflang="en" href="https://mint.ysk.hk/en" />
+    <link rel="alternate" hreflang="es" href="https://mint.ysk.hk/es" />
+    <link rel="alternate" hreflang="ar" href="https://mint.ysk.hk/ar" />
+    <link rel="alternate" hreflang="pt" href="https://mint.ysk.hk/pt" />
+    <link rel="alternate" hreflang="id" href="https://mint.ysk.hk/id" />
+    <link rel="alternate" hreflang="ja" href="https://mint.ysk.hk/ja" />
+    <link rel="alternate" hreflang="ru" href="https://mint.ysk.hk/ru" />
+    <link rel="alternate" hreflang="fr" href="https://mint.ysk.hk/fr" />
+    <link rel="alternate" hreflang="de" href="https://mint.ysk.hk/de" />
+    <link rel="alternate" hreflang="x-default" href="https://mint.ysk.hk/" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Noto+Sans+TC:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
+    <script type="application/ld+json" id="ysk-jsonld-org">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://ysk.hk/#organization",
+            "name": "YSK Limited",
+            "url": "https://ysk.hk",
+            "email": "email@ysk.hk",
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "Hong Kong",
+              "addressCountry": "HK"
+            }
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://mint.ysk.hk/#website",
+            "name": "YSK Mint",
+            "url": "https://mint.ysk.hk",
+            "publisher": { "@id": "https://ysk.hk/#organization" }
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <p>YSK Mint — 鏈上市場、持倉與發幣。無後端伺服器。不託管資產。合約未經審計。</p>
+      <p>On-chain markets, holdings, and token launch. No backend. No custody. Contracts are not audited.</p>
+      <p>YSK Limited · Hong Kong · <a href="mailto:email@ysk.hk">email@ysk.hk</a></p>
+      <nav>
+        <a href="/">市場</a>
+        <a href="/lend">借貸</a>
+        <a href="/create">發幣</a>
+        <a href="/transfer">跨鏈</a>
+        <a href="/about">關於</a>
+        <a href="/donate">捐助</a>
+        <a href="/terms">使用條款</a>
+        <a href="/disclaimer">免責聲明</a>
+        <a href="/en">English</a>
+        <a href="/zh-CN">简体中文</a>
+      </nav>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
+import { LocaleLink as Link } from "../../app/LocaleLink.tsx";
+import { localePath } from "../../lib/locale.ts";
 import { useTranslation } from "react-i18next";
 import { CHAINS, featuredChains, type ChainDefinition } from "@ysk-mint/config";
 import { chainIcon } from "../../lib/chainIcon.ts";
@@ -32,7 +34,7 @@ export function persistLendQuery(q: string, chain: number | "all", n: number, p:
 export function lendHref() {
   try {
     const raw = sessionStorage.getItem(LEND_KEY);
-    if (!raw) return "/lend";
+    if (!raw) return localePath("/lend");
     const saved = JSON.parse(raw) as { q?: string; chain?: number | "all"; n?: number; p?: string };
     const next = new URLSearchParams();
     if (saved.q) next.set("q", saved.q);
@@ -40,9 +42,9 @@ export function lendHref() {
     if (saved.n && saved.n !== PAGE) next.set("n", String(saved.n));
     if (saved.p && saved.p !== "all") next.set("p", saved.p);
     const s = next.toString();
-    return s ? `/lend?${s}` : "/lend";
+    return localePath(s ? `/lend?${s}` : "/lend");
   } catch {
-    return "/lend";
+    return localePath("/lend");
   }
 }
 

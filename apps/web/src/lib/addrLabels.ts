@@ -2,6 +2,7 @@ import cex from "./labels/cex.json";
 import { DEX, LST } from "./defiAddresses.ts";
 import { TOKEN_CATALOG } from "./tokenRegistry.ts";
 import { isZeroAddr, protocolName, type AddrTag, type TxRow } from "./txIndex.ts";
+import i18n from "./i18n.ts";
 
 const CEX = new Map<string, string>();
 for (const row of cex as Array<{ chainId: number; address: string; name: string }>) {
@@ -45,14 +46,14 @@ export function tagCounterparty(chainId: number, addr: string | undefined, ours:
   if (cexHit) return { kind: "cex", name: cexHit };
   const proto = protocolName(chainId, addr);
   if (proto) return { kind: "dex", name: proto };
-  return { kind: "outside", name: "系統外" };
+  return { kind: "outside", name: i18n.t("me.txOutside") };
 }
 
 export function tagToken(chainId: number, token: string | undefined, mint: boolean): AddrTag {
   if (!token) return { kind: "token", name: "native" };
   if (tokenKnown(chainId, token)) return { kind: "token", name: "catalog" };
-  if (mint) return { kind: "airdrop", name: "空投" };
-  return { kind: "outside", name: "系統外" };
+  if (mint) return { kind: "airdrop", name: i18n.t("me.txAirdrop") };
+  return { kind: "outside", name: i18n.t("me.txOutside") };
 }
 
 export function applyTags(row: TxRow): TxRow {

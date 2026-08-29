@@ -6,13 +6,15 @@ import { fileURLToPath } from "node:url";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 const pairs = [
-  ["README.md", "README-ZH.md"],
-  ["docs/architecture.md", "docs/architecture-ZH.md"],
-  ["docs/errors.md", "docs/errors-ZH.md"],
-  ["docs/phases.md", "docs/phases-ZH.md"],
-  ["docs/security-checklist.md", "docs/security-checklist-ZH.md"],
-  ["docs/audit-prep.md", "docs/audit-prep-ZH.md"],
-  ["docs/testnet-proof.md", "docs/testnet-proof-ZH.md"],
+  ["README.md", "README.zh.md"],
+  ["docs/architecture.md", "docs/architecture.zh.md"],
+  ["docs/errors.md", "docs/errors.zh.md"],
+  ["docs/phases.md", "docs/phases.zh.md"],
+  ["docs/security-checklist.md", "docs/security-checklist.zh.md"],
+  ["docs/audit-prep.md", "docs/audit-prep.zh.md"],
+  ["docs/testnet-proof.md", "docs/testnet-proof.zh.md"],
+  ["docs/product.md", "docs/product.zh.md"],
+  ["docs/blueprint.md", "docs/blueprint.zh.md"],
 ];
 
 function headings(path) {

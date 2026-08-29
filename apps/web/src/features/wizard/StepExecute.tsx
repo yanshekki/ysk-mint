@@ -23,6 +23,7 @@ import {
 import { lpTokenAmount } from "./presets.ts";
 import { packFlags } from "./flags.ts";
 import { Button } from "../../shared/ui/Button.tsx";
+import { sdkLocale } from "../../lib/locale.ts";
 import { useWizard } from "./store.ts";
 import { chainIcon } from "../../lib/chainIcon.ts";
 import { canWalletDeploy, ensureStack, needsMockRouter, resolvedContracts } from "../../lib/launchStack.ts";
@@ -37,7 +38,7 @@ import {
 
 export function StepExecute() {
   const { t, i18n } = useTranslation();
-  const locale = i18n.language === "zh-HK" ? "zh-HK" : "en";
+  const locale = sdkLocale(i18n.language);
   const w = useWizard();
   const { address } = useAccount();
   const config = useConfig();

@@ -1,0 +1,17 @@
+{
+  "name": "YSK Mint",
+  "short_name": "YSK Mint",
+  "lang": "zh-HK",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fafbfc",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 import { formatUnits, type Address, type PublicClient } from "viem";
 import { accountCache } from "../defi/cache.ts";
 import { fmtAmt, utc, type StakeLine, type StakeStatus } from "./shared.ts";
+import i18n from "../i18n.ts";
 
 const LIDO_WQ = "0x889edC2eDab5f40e902b864aD4d7AdE8E412F9B1" as Address;
 
@@ -58,7 +59,7 @@ async function readLidoQueueWork(client: PublicClient, user: Address, ethUsd?: n
         status,
         inWallet: false,
         stakedSince: ts ? utc(ts) : undefined,
-        unstakeNote: s.isFinalized ? "可領 ETH" : "隊列中，尚未 finalized",
+        unstakeNote: s.isFinalized ? i18n.t("stake.lidoClaim") : i18n.t("stake.lidoQueue"),
       });
     });
     return out;

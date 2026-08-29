@@ -4,6 +4,7 @@ import { nearView } from "../nearRpc.ts";
 import { quoteNearToken } from "../nearDex.ts";
 import { outboundFetch } from "../outbound.ts";
 import { fmtAmt, type StakeLine } from "./shared.ts";
+import i18n from "../i18n.ts";
 
 const NEAR_POOL_SEEDS = [
   "here.poolv1.near",
@@ -107,7 +108,7 @@ async function readNearStakeWork(account: string): Promise<StakeLine[]> {
           valueUsdc: q && Number.isFinite(n) ? n * q.usdc : null,
           status: "active",
           inWallet: false,
-          unstakeNote: "解押後約 4 個 epoch（約 2 日）可領",
+          unstakeNote: i18n.t("stake.nearUnstakeWait"),
         });
       }
       if (bal.unstaked >= minNear) {
@@ -128,12 +129,12 @@ async function readNearStakeWork(account: string): Promise<StakeLine[]> {
           valueUsdc: q && Number.isFinite(n) ? n * q.usdc : null,
           status: bal.canWithdraw ? "claimable" : "unstaking",
           inWallet: false,
-          unstakeNote: bal.canWithdraw ? "可領" : "解押中，約 4 個 epoch 後可領",
+          unstakeNote: bal.canWithdraw ? i18n.t("stake.claimable") : i18n.t("stake.nearUnstaking"),
         });
       }
     }),
   );
-  const liquidNote = "流動性質押，可隨時經協議兌換。首次質押時間不在本站。";
+  const liquidNote = i18n.t("stake.liquidNote");
   for (const [id, meta] of [
     ["linear-protocol.near", { symbol: "LINEAR", name: "LiNEAR" }],
     ["meta-pool.near", { symbol: "stNEAR", name: "Meta Pool stNEAR" }],

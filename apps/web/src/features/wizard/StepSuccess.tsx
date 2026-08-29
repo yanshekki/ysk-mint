@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useReadContract } from "wagmi";
 import { CHAINS, liquidityLockerAbi, yskOftAbi, launchContracts } from "@ysk-mint/sdk";
-import { Link } from "react-router-dom";
+import { LocaleLink as Link } from "../../app/LocaleLink.tsx";
 import { useWizard } from "./store.ts";
 import { homeEvm } from "../../lib/launchTargets.ts";
 import { shortAddr } from "../../lib/lendFormat.ts";

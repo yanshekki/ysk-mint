@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && node scripts/seo-static.mjs",
     "typecheck": "tsc --noEmit",
+    "i18n:check": "node scripts/i18n-check.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

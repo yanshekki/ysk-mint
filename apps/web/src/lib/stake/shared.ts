@@ -1,5 +1,6 @@
 import { formatUnits } from "viem";
 import type { ProtocolLine } from "../defiPositions.ts";
+import i18n from "../i18n.ts";
 
 export type StakeStatus = "liquid" | "active" | "unstaking" | "claimable";
 
@@ -31,12 +32,12 @@ export function fmtAmt(raw: bigint, decimals: number) {
 }
 
 export function stakeSubtitle(l: StakeLine) {
-  return [l.extra, l.stakedSince ? `質押自 ${l.stakedSince}` : "", l.unstakeNote].filter(Boolean).join(" · ");
+  return [l.extra, l.stakedSince ? i18n.t("stake.since", { when: l.stakedSince }) : "", l.unstakeNote].filter(Boolean).join(" · ");
 }
 
 export function stakeBadge(l: StakeLine) {
-  if (l.status === "claimable") return "可領";
-  if (l.status === "unstaking") return "解押中";
-  if (l.status === "active") return "委託中";
-  return "流動";
+  if (l.status === "claimable") return i18n.t("stake.claimable");
+  if (l.status === "unstaking") return i18n.t("stake.unstaking");
+  if (l.status === "active") return i18n.t("stake.active");
+  return i18n.t("stake.liquid");
 }

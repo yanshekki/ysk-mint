@@ -1,0 +1,28 @@
+# YSK Mint
+
+YSK Mint is a browser app at https://mint.ysk.hk operated in connection with YSK Limited, a company in Hong Kong.
+
+It reads public chain data, holds no keys, and runs with no YSK backend server. It does not take custody of assets and does not create wallets. Launch, lock, and related contracts may be unaudited. Nothing on the site is investment, legal, or tax advice. Figures come from public nodes and third-party protocols and may be wrong or delayed.
+
+Contact: email@ysk.hk · privacy@ysk.hk · https://ysk.hk
+
+## Languages
+
+Unprefixed paths are Hong Kong written Chinese (zh-HK). Simplified Chinese is /zh-CN. Other languages use a prefix: /en /es /ar /pt /id /ja /ru /fr /de
+
+## Public pages
+
+- / — DEX markets
+- /lend — lending markets (read-only)
+- /create — token launch guide
+- /transfer — OFT bridge
+- /about — company
+- /donate — voluntary gifts (not a sale)
+- /terms — Terms of Use
+- /disclaimer — Disclaimer
+
+Private tool pages (/me, /settings) are not for indexing.
+
+## Optional locale prefixes
+
+The same paths exist under /zh-CN, /en, /es, /ar, /pt, /id, /ja, /ru, /fr, /de.

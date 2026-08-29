@@ -1,17 +1,33 @@
 # Architecture
 
-> Language: English | [中文](./architecture-ZH.md)
+> Language: English | [中文](./architecture.zh.md)
 
 ## Goal
 
-A static React app talks to wallets and RPC. Smart contracts hold all launch state. The TypeScript SDK mirrors Solidity enums, custom errors, and validation bounds.
+A static React SPA talks to wallets and public RPC (and a few protocol HTTP endpoints). Smart contracts hold launch state. Market, lending, and holdings figures are read from public nodes. The TypeScript SDK mirrors Solidity enums, custom errors, and validation bounds. There is no YSK application server and no custody.
 
 ## Layers
 
-1. `packages/contracts` — enums, errors, validation library, OFT, factory.
-2. `packages/config` — chain list, LayerZero endpoints, numeric constants, enum lock file.
-3. `packages/sdk` — decode reverts, validate drafts, later encode calldata.
-4. `apps/web` — wallet, i18n, wizard (Phase 1+). No HTTP API.
+1. `packages/contracts` — enums, errors, validation library, OFT, factory, LP manager, locker.
+2. `packages/config` — chain list, LayerZero endpoints, numeric constants, enum lock file, contract address slots (mainnet factories remain zero).
+3. `packages/sdk` — decode reverts, validate drafts, encode calldata.
+4. `apps/web` — locale router, document head, wallet, markets, lending, holdings, launch wizard, settings. No product HTTP API.
+
+## Web app
+
+Vite + React. Routes live under an optional locale prefix. Unprefixed paths are zh-HK; `/zh-CN`, `/en`, `/ja`, and the other prefix locales wrap the same child routes. `/zh-HK/…` redirects to the unprefixed path. `/zh/…` redirects to `/zh-CN/…`.
+
+### Locale and document head
+
+`locale.ts` parses the prefix, canonicalizes tags, and skips language redirects for crawlers. `DocumentHead` writes `html lang`, canonical, hreflang, Open Graph, and JSON-LD. UI copy is i18n JSON (zh-HK and en bundled; other locales lazy-loaded).
+
+### On-chain reads
+
+DEX markets and pair pages read reserves and logs. Lending pages read protocol rate views. Holdings merge wallet sessions and watch sets, then read balances, lending, LP, and staking. Token and lock pages call `view`. Launch execution and OFT `send` are the signed paths.
+
+### RPC and outbound
+
+`rpcPool.ts` rotates public endpoints (official, PublicNode, 1RPC, dRPC, plus optional custom URLs in `localStorage`). `outbound.ts` caps concurrent fetches (default 10 global, 2 per host; user-adjustable 1–32) and backs off on 429. Failures surface in the live dock; they are not retried as a hidden backend.
 
 ## Token deploy
 
@@ -19,12 +35,12 @@ A static React app talks to wallets and RPC. Smart contracts hold all launch sta
 
 ## Cross-chain
 
-`YskOFT.send` burns on the source chain and calls EndpointV2. `lzReceive` mints on the destination. Tax modules (Phase 3) must skip this path.
+`YskOFT.send` burns on the source chain and calls EndpointV2. `lzReceive` mints on the destination. Tax modules must skip this path.
 
 Peer wiring is `setPeer(dstEid, bytes32(peer))` in both directions. CREATE2 clone addresses **differ across chains** because each factory’s implementation is constructed with that chain’s endpoint.
 
-Cardano, NEAR, and Solana are independent native issuance (native asset / NEP-141 / SPL). They are not LayerZero OFT peers. Quote and send stay off on those VMs.
+Cardano, NEAR, Solana, and other non-EVM listings are independent native issuance. They are not LayerZero OFT peers. Quote and send stay off on those VMs.
 
 ## No backend
 
-Drafts may sit in `localStorage`. Token pages, locks, and “my tokens” read `view` functions and `eth_getLogs`.
+Drafts, RPC picks, address sets, and display settings sit in `localStorage`. Token pages, locks, markets, lending, and holdings use `view`, logs, and public RPC. Share links encode watch addresses in the URL; they do not hit a YSK server.

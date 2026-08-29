@@ -32,4 +32,5 @@ jobs:
       - run: pnpm --filter @ysk-mint/sdk typecheck
       - run: pnpm --filter @ysk-mint/config typecheck
       - run: pnpm --filter @ysk-mint/web typecheck
+      - run: pnpm --filter @ysk-mint/web i18n:check
       - run: node scripts/docs-bilingual-check.mjs

@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { launchContracts, liquidityLockerAbi } from "@ysk-mint/sdk";
 import { Badge, Metric } from "../../shared/ui/TokenRow.tsx";
 import { chainByEvmId } from "../../lib/launchTargets.ts";
+import { useSeoExtra } from "../../lib/seo.ts";
 
 export function LockPage() {
   const { t } = useTranslation();
@@ -24,6 +25,10 @@ export function LockPage() {
         id !== undefined &&
         Number.isFinite(cid),
     },
+  });
+  useSeoExtra({
+    title: lockId ? t("seo.lockTitle", { id: lockId }) : undefined,
+    description: t("seo.lockDesc"),
   });
 
   if (!lockId) return <p className="workspace-scroll">{t("lock.missing")}</p>;

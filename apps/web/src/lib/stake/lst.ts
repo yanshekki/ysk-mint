@@ -4,6 +4,7 @@ import { LST } from "../defiAddresses.ts";
 import { type Quote } from "../defiQuotes.ts";
 import { SOL_LST, fmtAmt, type StakeLine } from "./shared.ts";
 import { SAVAX, savaxAbi } from "./savax.ts";
+import i18n from "../i18n.ts";
 
 export function lstStakeLines(
   chainId: number,
@@ -93,7 +94,7 @@ async function readPinnedLstWork(client: PublicClient, chainId: number, user: Ad
           valueUsdc: q && Number.isFinite(n) ? n * q.usdc : null,
           status: "liquid",
           inWallet: true,
-          unstakeNote: addr.toLowerCase() === SAVAX.toLowerCase() ? "解押冷卻 15 日，其後 2 日可領。首次質押時間不在本站。" : liquidNote,
+          unstakeNote: addr.toLowerCase() === SAVAX.toLowerCase() ? i18n.t("stake.lstSavax") : liquidNote,
         });
       } catch {
         /* skip */

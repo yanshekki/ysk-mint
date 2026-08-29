@@ -1,6 +1,6 @@
 # Error codes
 
-> Language: English | [中文](./errors-ZH.md)
+> Language: English | [中文](./errors.zh.md)
 
 ## Rule
 

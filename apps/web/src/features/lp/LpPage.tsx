@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
+import { LocaleLink as Link } from "../../app/LocaleLink.tsx";
+import { localePath } from "../../lib/locale.ts";
 import { useTranslation } from "react-i18next";
 import { useAccount } from "wagmi";
 import { featuredChains, isConfigured, launchContracts } from "@ysk-mint/config";
@@ -59,16 +61,16 @@ export function persistMarketsQuery(q: string, chain: number | "all", n: number)
 export function marketsHref() {
   try {
     const raw = sessionStorage.getItem(MARKETS_KEY);
-    if (!raw) return "/";
+    if (!raw) return localePath("/");
     const saved = JSON.parse(raw) as { q?: string; chain?: number | "all"; n?: number };
     const p = new URLSearchParams();
     if (saved.q) p.set("q", saved.q);
     if (saved.chain && saved.chain !== "all") p.set("chain", String(saved.chain));
     if (saved.n && saved.n !== MARKET_PAGE) p.set("n", String(saved.n));
     const s = p.toString();
-    return s ? `/?${s}` : "/";
+    return localePath(s ? `/?${s}` : "/");
   } catch {
-    return "/";
+    return localePath("/");
   }
 }
 

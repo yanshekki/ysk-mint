@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { LocaleLink as Link } from "../../app/LocaleLink.tsx";
+import { localePath } from "../../lib/locale.ts";
+import { useSeoExtra } from "../../lib/seo.ts";
 import { useTranslation } from "react-i18next";
 import { type PublicClient } from "viem";
 import { useAccount } from "wagmi";
@@ -104,7 +107,7 @@ export function PairPage() {
 
   useEffect(() => {
     if (!oriented.flipped || !base || !quote || !Number.isFinite(chainId)) return;
-    nav(`/pair/${chainId}/${encodeURIComponent(base)}/${encodeURIComponent(quote)}`, { replace: true });
+    nav(localePath(`/pair/${chainId}/${encodeURIComponent(base)}/${encodeURIComponent(quote)}`), { replace: true });
   }, [base, chainId, nav, oriented.flipped, quote]);
 
   useEffect(() => {
@@ -203,6 +206,13 @@ export function PairPage() {
   }, []);
   const tradeSort = useSort(swaps.rows, "time", tradeGet);
   const quoteIsStable = isStable(metaB.symbol);
+  const title = `${metaA.symbol} / ${metaB.symbol}`;
+  const chainName = chain?.name ?? chain?.short ?? String(chainId);
+  const pairReady = Boolean(base && quote && Number.isFinite(chainId) && metaA.symbol && metaB.symbol && metaA.symbol !== "…" && metaB.symbol !== "…");
+  useSeoExtra({
+    title: pairReady ? t("seo.pairTitle", { pair: title, chain: chainName }) : undefined,
+    description: pairReady ? t("seo.pairDesc", { pair: title, chain: chainName }) : undefined,
+  });
 
   function venueHref(pool: string) {
     if (chain?.vm === "near") return "https://nearblocks.io/address/v2.ref-finance.near";
@@ -215,8 +225,6 @@ export function PairPage() {
   }
 
   if (!base || !quote || !Number.isFinite(chainId)) return <p className="workspace-scroll">{t("lp.pairMissing")}</p>;
-
-  const title = `${metaA.symbol} / ${metaB.symbol}`;
 
   return (
     <section className="workspace">

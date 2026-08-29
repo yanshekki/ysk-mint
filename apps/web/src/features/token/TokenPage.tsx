@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { yskOftAbi } from "@ysk-mint/sdk";
 import { ShareCard } from "./ShareCard.tsx";
 import { Badge, Metric } from "../../shared/ui/TokenRow.tsx";
+import { useSeoExtra } from "../../lib/seo.ts";
 
 export function TokenPage() {
   const { t } = useTranslation();
@@ -22,9 +23,16 @@ export function TokenPage() {
       : [],
     query: { enabled: Boolean(token) && Number.isFinite(cid) },
   });
+  const [name, symbol, decimals, supply, owner] = reads.data ?? [];
+  const tokenName = name?.result ? String(name.result) : "";
+  const tokenSym = symbol?.result ? String(symbol.result) : "";
+  const label = [tokenName, tokenSym].filter(Boolean).join(" ");
+  useSeoExtra({
+    title: label ? t("seo.tokenTitle", { name: label }) : undefined,
+    description: label ? t("seo.tokenDesc", { name: label }) : undefined,
+  });
 
   if (!token || !chainId) return <p className="workspace-scroll">{t("token.missing")}</p>;
-  const [name, symbol, decimals, supply, owner] = reads.data ?? [];
 
   return (
     <section className="workspace">

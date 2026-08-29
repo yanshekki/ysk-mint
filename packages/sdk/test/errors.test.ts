@@ -25,6 +25,17 @@ describe("decodeLaunchError", () => {
     expect(decoded.message).toMatch(/Decimals/);
   });
 
+  it("decodes messages in zh-CN", () => {
+    const data = encodeErrorResult({
+      abi: launchErrorAbi,
+      errorName: "DecimalsOutOfRange",
+      args: [5],
+    });
+    const decoded = decodeLaunchError(data, "zh-CN");
+    expect(decoded.code).toBe(ErrorCode.DecimalsOutOfRange);
+    expect(decoded.message).toMatch(/介于/);
+  });
+
   it("returns Unknown for garbage", () => {
     const decoded = decodeLaunchError("0xdeadbeef", "en");
     expect(decoded.code).toBe(ErrorCode.Unknown);

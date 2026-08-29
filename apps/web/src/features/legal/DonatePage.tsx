@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { LocaleLink as Link } from "../../app/LocaleLink.tsx";
 import { useTranslation } from "react-i18next";
 import { ProsePage } from "./LegalDoc.tsx";
 

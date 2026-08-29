@@ -2,6 +2,7 @@ import { formatUnits } from "viem";
 import { accountCache } from "../defi/cache.ts";
 import { rpcJsonRpc } from "../rpcPool.ts";
 import { fmtAmt, type StakeLine, type StakeStatus } from "./shared.ts";
+import i18n from "../i18n.ts";
 
 const SOL_STAKE = "Stake11111111111111111111111111111111111111";
 async function solRpc(method: string, params: unknown[]) {
@@ -40,10 +41,13 @@ async function readSolStakeWork(pubkey: string, solUsd?: number | null): Promise
     const deactivating = Number.isFinite(deact) && deact < 1e18;
     const n = Number(formatUnits(lamports, 9));
     let status: StakeStatus = "active";
-    let unstakeNote = `解除委託後下個 epoch 生效（本 epoch ${epoch}${remainHrs ? `，約 ${remainHrs} 小時結束` : ""}）`;
+    let unstakeNote = i18n.t("stake.solUnstakeNext", {
+      epoch,
+      remain: remainHrs ? i18n.t("stake.solEpochRemain", { hrs: remainHrs }) : "",
+    });
     if (deactivating) {
       status = deact <= epoch ? "claimable" : "unstaking";
-      unstakeNote = deact <= epoch ? "可領" : `解押中，deactivation epoch ${deact}`;
+      unstakeNote = deact <= epoch ? i18n.t("stake.claimable") : i18n.t("stake.solUnstaking", { epoch: deact });
     }
     out.push({
       id: `sol-stk-${pk}`,

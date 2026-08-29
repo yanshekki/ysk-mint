@@ -4,6 +4,7 @@ import { type Quote } from "../defiQuotes.ts";
 import type { AaveCard, ProtocolLine } from "../defiPositions.ts";
 import { fmtAmt } from "./shared.ts";
 import { SAVAX } from "./savax.ts";
+import i18n from "../i18n.ts";
 
 const erc20Bal = [
   { type: "function", name: "balanceOf", stateMutability: "view", inputs: [{ type: "address" }], outputs: [{ type: "uint256" }] },
@@ -110,7 +111,7 @@ async function readBenqiMarketsWork(client: PublicClient, user: Address, quotes:
         raw: amt,
         contract: BENQI_LP,
         side: "lp",
-        extra: "LP 質押，可隨時退出（協議）",
+        extra: i18n.t("stake.benqiLp"),
       });
     }
   } catch {

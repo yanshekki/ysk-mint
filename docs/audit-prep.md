@@ -1,6 +1,6 @@
 # Audit prep
 
-> Language: English | [中文](./audit-prep-ZH.md)
+> Language: English | [中文](./audit-prep.zh.md)
 
 ## Scope
 

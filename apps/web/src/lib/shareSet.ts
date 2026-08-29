@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { AddrKind } from "./addrKind.ts";
+import { localePath } from "./locale.ts";
 
 export const SHARE_SOFT = 1800;
 
@@ -85,7 +86,7 @@ export function decodeWatch(raw: string): SharePayload | null {
 }
 
 export function shareUrl(payload: SharePayload, origin = typeof window !== "undefined" ? window.location.origin : ""): string {
-  return `${origin}/me#w=${encodeWatch(payload)}`;
+  return `${origin}${localePath("/me")}#w=${encodeWatch(payload)}`;
 }
 
 export function applyPeekHash(payload: SharePayload | null, opts?: { push?: boolean }) {

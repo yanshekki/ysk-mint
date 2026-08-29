@@ -5,6 +5,7 @@ import { addressToHex, hexToBech32, stakeFromPayment } from "../cardanoCip30.ts"
 import { koiosGet, koiosPost } from "../koios.ts";
 import { outboundFetch } from "../outbound.ts";
 import { fmtAmt, utc, type StakeLine } from "./shared.ts";
+import i18n from "../i18n.ts";
 
 type AdaAccount = {
   stake_address?: string;
@@ -163,7 +164,7 @@ async function readAdaStakeWork(stakeAddr: string, payments: string[] = []): Pro
     } catch {
       /* optional */
     }
-    let epochNote = "取消委託後約 2 個 epoch（約 10 日）生效";
+    let epochNote = i18n.t("stake.adaUnstake");
     try {
       const tip = (await koiosGet("tip")) as Array<{
         epoch_no?: number;
@@ -171,7 +172,7 @@ async function readAdaStakeWork(stakeAddr: string, payments: string[] = []): Pro
         block_time?: number;
       }>;
       const ep = tip[0]?.epoch_no;
-      if (ep) epochNote = `當前 epoch ${ep} · 取消委託後約 2 個 epoch（約 10 日）生效`;
+      if (ep) epochNote = i18n.t("stake.adaUnstakeEpoch", { epoch: ep });
     } catch {
       /* keep default */
     }
@@ -184,7 +185,7 @@ async function readAdaStakeWork(stakeAddr: string, payments: string[] = []): Pro
         chainId: 1815,
         chain: "ADA",
         symbol: "ADA",
-        name: ticker ? `委託 ${ticker}` : "Cardano 委託",
+        name: ticker ? i18n.t("stake.adaDelegateNamed", { ticker }) : i18n.t("stake.adaDelegate"),
         icon: "/tokens/ada.png",
         amount: fmtAmt(ada, 6),
         raw: ada,
@@ -206,17 +207,17 @@ async function readAdaStakeWork(stakeAddr: string, payments: string[] = []): Pro
         chainId: 1815,
         chain: "ADA",
         symbol: "ADA",
-        name: "未領取 ADA",
+        name: i18n.t("stake.adaUnclaimed"),
         icon: "/tokens/ada.png",
         amount: fmtAmt(rewards, 6),
         raw: rewards,
         side: "stake",
-        extra: ticker ? `${ticker} 質押獎勵` : "質押獎勵",
+        extra: ticker ? i18n.t("stake.adaRewardNamed", { ticker }) : i18n.t("stake.adaReward"),
         quote: q,
         valueUsdc: q && Number.isFinite(n) ? n * q.usdc : null,
         status: "claimable",
         inWallet: false,
-        unstakeNote: "可在連接的 Cardano 錢包領取",
+        unstakeNote: i18n.t("stake.adaWalletClaim"),
       });
     }
     if (pending > 0n) {
@@ -226,17 +227,17 @@ async function readAdaStakeWork(stakeAddr: string, payments: string[] = []): Pro
         chainId: 1815,
         chain: "ADA",
         symbol: "ADA",
-        name: "待發放 ADA",
+        name: i18n.t("stake.adaPending"),
         icon: "/tokens/ada.png",
         amount: fmtAmt(pending, 6),
         raw: pending,
         side: "stake",
-        extra: ticker ? `${ticker} 已賺取` : "已賺取",
+        extra: ticker ? i18n.t("stake.adaEarnedNamed", { ticker }) : i18n.t("stake.adaEarned"),
         quote: q,
         valueUsdc: q && Number.isFinite(n) ? n * q.usdc : null,
         status: "unstaking",
         inWallet: false,
-        unstakeNote: "約 2 個 epoch 後可領",
+        unstakeNote: i18n.t("stake.adaPendingWait"),
       });
     }
     return lines;

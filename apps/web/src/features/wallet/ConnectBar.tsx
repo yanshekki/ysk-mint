@@ -5,6 +5,8 @@ import { useTranslation } from "react-i18next";
 import { useAccount, useChainId, useDisconnect } from "wagmi";
 import { evmEnabledChains } from "@ysk-mint/config";
 import { LOCALES } from "../../lib/i18n.ts";
+import { useSwitchLocale } from "../../app/LocaleLink.tsx";
+import { canonicalLocale } from "../../lib/locale.ts";
 import {
   connectAptos,
   connectBitcoin,
@@ -63,6 +65,7 @@ function chipLabel(name: string | undefined, address?: string) {
 
 export function ConnectBar() {
   const { t, i18n } = useTranslation();
+  const switchLocale = useSwitchLocale();
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const chainId = useChainId();
@@ -177,8 +180,8 @@ export function ConnectBar() {
         <span className="sr-only">{t("nav.lang")}</span>
         <select
           className="lang-dd"
-          value={LOCALES.some((l) => l.id === i18n.language) ? i18n.language : "zh-HK"}
-          onChange={(e) => void i18n.changeLanguage(e.target.value)}
+          value={LOCALES.some((l) => l.id === canonicalLocale(i18n.language)) ? canonicalLocale(i18n.language) : "zh-HK"}
+          onChange={(e) => switchLocale(e.target.value as (typeof LOCALES)[number]["id"])}
         >
           {LOCALES.map((l) => (
             <option key={l.id} value={l.id}>

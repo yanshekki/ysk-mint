@@ -1,6 +1,6 @@
 # Testnet OFT proof
 
-> Language: English | [中文](./testnet-proof-ZH.md)
+> Language: English | [中文](./testnet-proof.zh.md)
 
 2026-08-28 UTC. **Not an audit. Mainnet factories stay zero.** This run only proves that YskOFT can burn on live LayerZero testnet Base Sepolia and mint on Arb Sepolia.
 

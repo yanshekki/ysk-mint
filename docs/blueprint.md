@@ -1,51 +1,51 @@
-# ysk-mint 開發藍圖
+# Product intent
 
-> 原文規格（2026-08-24）。實施以倉庫內 architecture／phases 為準；本檔保留產品意圖。
+> Language: English | [中文](./blueprint.zh.md)
 
-## 1. 專案定位
+## Status of this document
 
-ysk-mint 係一個無代碼／低代碼多鏈 Token 發幣平台，引導用戶完成：
+Intent note dated **2026-08-24**. It records what the launch product was meant to cover. **Current behavior is defined by** [product.md](./product.md) and [architecture.md](./architecture.md). Phases after that date (holdings, lending, RPC, locales) are not restated here.
 
-1. 喺一條或多條鏈部署 Token
-2. 創建同鎖定 LP
-3. 原生 omnichain（LayerZero OFT），持有人可直接跨鏈轉帳，唔使 wrapped
+## Positioning
 
-域名：mint.ysk.hk。GitHub：https://github.com/yanshekki/ysk-mint。
+A low-code multi-chain token launch path: deploy on one or more networks, create and lock LP, and use native omnichain (LayerZero OFT) so holders can send without a wrapped IOU.
 
-## 2. 必須覆蓋嘅功能
+Domain: [mint.ysk.hk](https://mint.ysk.hk). Source: [github.com/yanshekki/ysk-mint](https://github.com/yanshekki/ysk-mint).
 
-### 基礎發幣
+## Intended capabilities
 
-無代碼引導式創建（Name、Symbol、總供應量、Decimals、Logo、Description、社群連結）；固定供應 vs Mintable；所有權保留／放棄／轉 Timelock 或 Safe；合約驗證；CREATE2 預測地址。
+### Token launch
 
-### 流動性
+Guided create (name, symbol, supply, decimals, logo, description, social links); fixed supply vs mintable; keep, renounce, or transfer ownership to Timelock or Safe; contract verification; CREATE2 address prediction.
 
-引導式創建 LP；Token + Native 數量；鎖定（銷毀／30/90/180/365 日）；盡量原子操作；鏈上可驗證鎖定證明。
+### Liquidity
 
-### 多鏈
+Guided LP; token + native amounts; lock (burn / 30 / 90 / 180 / 365 days); prefer atomic flow; on-chain lock proof.
 
-一次過選擇多條鏈；OFT burn/mint；初始供應分配；跨鏈轉帳介面；之後可再加鏈。
+### Multi-chain
+
+Select several chains in one pass; OFT burn/mint; initial supply split; cross-chain send UI; add chains later.
 
 ### Tokenomics
 
-交易稅／Reflection、Max Wallet／Max Transaction、黑白名單、暫停、Anti-Bot、放棄 mint。
+Transfer tax / reflection, max wallet / max transaction, lists, pause, anti-bot, renounce mint.
 
-### 啟動模式
+### Launch modes
 
-直接發幣 + 即時 LP；Fair Launch／Bonding Curve（後期）；Presale。
+Direct launch with immediate LP; fair launch / bonding curve (later); presale.
 
-### 體驗
+### Experience
 
-分步 Wizard；成本預估；Dashboard；分享卡片；我的代幣；中英雙語。無後端，數據上鏈。
+Step wizard; cost estimate; dashboard; share card; my tokens; bilingual UI. No backend; launch data on-chain.
 
-## 3. Wizard 步驟
+## Wizard steps
 
-0 連接錢包 → 1 基本資料 → 2 Tokenomics → 3 選鏈 → 4 流動性 → 5 Omnichain → 6 總覽 → 7 執行 → 8 成功頁。
+Historical intent order: 0 wallet → 1 basics → 2 tokenomics → 3 chains → 4 liquidity → 5 omnichain → 6 review → 7 execute → 8 success. The live UI order is documented in [product.md](./product.md) (wallet → chains → token → rules → LP → omni → review → sign → live).
 
-## 4. 技術棧
+## Stack
 
-前端 Vite + React + TypeScript；wagmi + viem + RainbowKit；合約 Solidity 0.8.22、OpenZeppelin 5.x、官方 OFT 介面；Foundry 測試。ENUM、custom error、雙層校驗為強制項。
+Frontend Vite + React + TypeScript; wagmi + viem + RainbowKit; contracts Solidity 0.8.22, OpenZeppelin 5.x, official OFT interfaces; Foundry tests. Enums, custom errors, and dual validation are required.
 
-## 5. 開發階段
+## Phased delivery
 
-Phase 0 基礎；Phase 1 單鏈 MVP；Phase 2 多鏈；Phase 3 完整 LP／安全模組；Phase 4 轉帳＋Dashboard；Phase 5 進階與上線準備。
+Phase 0 foundation; Phase 1 single-chain MVP; Phase 2 multi-chain; Phase 3 full LP / safety modules; Phase 4 transfer + dashboard; Phase 5 advanced and launch prep. Later history: [phases.md](./phases.md).

@@ -1,0 +1,46 @@
+# 架構
+
+> 語言：中文（香港書面語）| [English](./architecture.md)
+
+## 目標
+
+靜態 React SPA 對錢包及公開 RPC（以及少數協議 HTTP 端點）通訊。發幣狀態在智能合約。市場、借貸及持倉數字取自公開節點。TypeScript SDK 鏡像 Solidity 的列舉、自訂錯誤與校驗上限。並無 YSK 應用伺服器，亦不託管資產。
+
+## 分層
+
+1. `packages/contracts` — 列舉、錯誤、校驗庫、OFT、factory、流動性管理、鎖倉。
+2. `packages/config` — 鏈清單、LayerZero endpoint、數值常數、列舉鎖定檔、合約地址欄位（主網 factory 仍為零）。
+3. `packages/sdk` — 解碼 revert、校驗草稿、編碼 calldata。
+4. `apps/web` — 語言路由、文件標頭、錢包、市場、借貸、持倉、發幣引導、設定。沒有產品 HTTP API。
+
+## 網頁應用
+
+Vite + React。路由可帶語言前綴。無前綴路徑為 zh-HK；`/zh-CN`、`/en`、`/ja` 及其他前綴語言包覆同一組子路由。`/zh-HK/…` 轉到無前綴路徑。`/zh/…` 轉到 `/zh-CN/…`。
+
+### 語言與文件標頭
+
+`locale.ts` 解析前綴、規範語言標籤，並對爬蟲略過語言跳轉。`DocumentHead` 寫入 `html lang`、canonical、hreflang、Open Graph 及 JSON-LD。介面文案為 i18n JSON（zh-HK 與 en 隨包；其餘語言延遲載入）。
+
+### 鏈上讀取
+
+去中心化交易所市場及交易對頁讀取儲備與日誌。借貸頁讀取協議利率視圖。持倉合併錢包工作階段與觀察組，再讀取結餘、借貸、流動性及質押。代幣頁與鎖倉頁呼叫 `view`。發幣執行及 OFT `send` 為須簽署的路徑。
+
+### RPC 與外連排隊
+
+`rpcPool.ts` 輪詢公開端點（官方、PublicNode、1RPC、dRPC，以及可選的、存於 `localStorage` 的自訂網址）。`outbound.ts` 限制並行請求（預設全域 10、每主機 2；使用者可調 1–32），並在 429 時退避。失敗顯示於即時狀態列，不會當作隱藏後端重試。
+
+## 代幣部署
+
+`TokenFactory` 每條鏈部署一份 `YskOFT` implementation（endpoint 為 immutable）。用戶代幣是 EIP-1167 clone，初始化時寫入名稱、代號、decimals、供應、擁有人、供應模式與模組旗標。
+
+## 跨鏈
+
+`YskOFT.send` 在源鏈銷毀並呼叫 EndpointV2。`lzReceive` 在目的鏈增發。稅務模組必須跳過這條路徑。
+
+Peer 接線是雙向 `setPeer(dstEid, bytes32(peer))`。CREATE2 clone 地址**在不同鏈上並不相同**，因為每條鏈的 implementation 在 constructor 寫入該鏈 endpoint。
+
+Cardano、NEAR、Solana 及其他非 EVM 項目為獨立原生發行，並非 LayerZero OFT peer。該等虛擬機不報價、不 OFT send。
+
+## 無後端
+
+草稿、RPC 選擇、地址組及顯示設定存於 `localStorage`。代幣頁、鎖倉、市場、借貸及持倉使用 `view`、日誌及公開 RPC。分享連結把觀察地址編碼入網址，並不請求 YSK 伺服器。

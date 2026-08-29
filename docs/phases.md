@@ -1,8 +1,8 @@
 # Phases
 
-> Language: English | [中文](./phases-ZH.md)
+> Language: English | [中文](./phases.zh.md)
 
-Work lives in `/home/ki/文件/ysk-mint`. Each finished phase is merged to `origin/main`.
+Work lives in this repository. Each finished phase below was merged to `origin/main`. Later product work is listed after Phase 6 so this page does not pretend the app stopped at the wizard.
 
 ## Phase 0 — Foundation
 
@@ -24,10 +24,21 @@ Tax, limits, anti-bot, ownership actions, extra DEX kinds.
 
 On-chain transfer UI quotes on the connected EVM. Native VMs and the same chain are not OFT destinations. My tokens scan every configured factory. Share card is canvas-only.
 
-## Phase 5 — Fees, presale, audit prep (this release)
+## Phase 5 — Fees, presale, audit prep
 
 Default platform fee is 0. No HTTP API. Solana is a native SPL path (not OFT); the program is undeployed.
 
 ## Phase 6 — Testnet OFT loop
 
 2026-08-28: a script burned on live LayerZero testnet Base Sepolia and minted on Arb Sepolia. Links: [testnet-proof.md](./testnet-proof.md). Mainnet factories stay zero. Not audited. Wizard LP and browser signatures are not part of this proof.
+
+## Later product work
+
+After Phase 6 the SPA grew beyond launch:
+
+- **Holdings** — merged wallets and watch sets; lending, LP, staking, activity tags, share URLs.
+- **Markets and lending** — on-chain DEX boards, pair pages, read-only APY; deposit/borrow/swap stay on protocol sites.
+- **RPC and outbound** — public node rotation, custom RPC in the browser, connection caps.
+- **Locales and SEO** — URL prefixes (including zh-CN), crawler-safe language, document head, sitemap, prerendered legal pages.
+
+Authoritative surface: [product.md](./product.md). Authoritative layers: [architecture.md](./architecture.md).

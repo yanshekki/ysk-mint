@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { LocaleLink as Link } from "../../app/LocaleLink.tsx";
+import { localePath } from "../../lib/locale.ts";
 import { AddrIdCard } from "../settings/AddrFields.tsx";
 import { PeekDialog } from "./PeekDialog.tsx";
 import { TxDesk } from "./TxDesk.tsx";
@@ -351,7 +353,7 @@ function BrandHead({ name, chain, href, icon, right }: { name: string; chain?: s
 }
 
 function ProtoSumRow({ kind, brand }: { kind: "lend" | "lp" | "stake"; brand: ProtoBrand }) {
-  const to = `/me/${kind}/${brand.slug}`;
+  const to = localePath(`/me/${kind}/${brand.slug}`);
   const icon = brand.chains[0]?.lines[0]?.icon ?? "/tokens/eth.png";
   const chains = brand.chains.map((c) => c.chain).join(" · ");
   return (
@@ -1381,7 +1383,7 @@ export function MePage() {
                         amount={r.name}
                         badge="OFT"
                         internal
-                        href={`/token/${r.chainId}/${r.token}`}
+                        href={localePath(`/token/${r.chainId}/${r.token}`)}
                       />
                     ))}
                   </div>

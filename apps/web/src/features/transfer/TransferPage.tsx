@@ -18,6 +18,7 @@ import { useEvmHoldings, type HoldingRow } from "../../lib/useHoldings.ts";
 import { chainIcon } from "../../lib/chainIcon.ts";
 import { issuanceGroups } from "../../lib/launchTargets.ts";
 import { useWizard } from "../wizard/store.ts";
+import { sdkLocale } from "../../lib/locale.ts";
 import { cacheGet, cacheInvalidateAccount, cacheKey, POLICIES } from "../../lib/defi/cache.ts";
 import { lzExecutorLzReceiveOption } from "../../lib/lzOptions.ts";
 import { shortAddr } from "../../lib/lendFormat.ts";
@@ -64,7 +65,7 @@ type DestWait = {
   destToken: Address;
 };
 
-function errorFromCatch(e: unknown, locale: "en" | "zh-HK", notOft: string): LaunchError {
+function errorFromCatch(e: unknown, locale: "en" | "zh-HK" | "zh-CN", notOft: string): LaunchError {
   const err = e as { data?: `0x${string}`; cause?: { data?: `0x${string}` }; message?: string };
   const data = err.data ?? err.cause?.data;
   if (data && data !== "0x") return decodeLaunchError(data, locale);
@@ -88,7 +89,7 @@ type Pick = {
 
 export function TransferPage() {
   const { t, i18n } = useTranslation();
-  const locale = i18n.language === "zh-HK" ? "zh-HK" : "en";
+  const locale = sdkLocale(i18n.language);
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const config = useConfig();

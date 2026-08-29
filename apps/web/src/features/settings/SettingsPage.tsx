@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAccount } from "wagmi";
 import { LOCALES } from "../../lib/i18n.ts";
+import { useSwitchLocale } from "../../app/LocaleLink.tsx";
+import { canonicalLocale } from "../../lib/locale.ts";
 import { cacheWipe } from "../../lib/defi/cache.ts";
 import { listConnected, MAX_ADDRS, MAX_WATCH, useAddressSets } from "../../lib/addressSets.ts";
 import { useNativeWallets } from "../../lib/nativeWallets.ts";
@@ -37,6 +39,7 @@ const DEMO_ICO: Record<string, string> = {
 
 export function SettingsPage() {
   const { t, i18n } = useTranslation();
+  const switchLocale = useSwitchLocale();
   const loc = useLocation();
   const navigate = useNavigate();
   const tab = parseTab(loc.hash);
@@ -55,7 +58,7 @@ export function SettingsPage() {
     navigate({ pathname: loc.pathname, search: loc.search, hash }, { replace: true });
   }
 
-  const lng = LOCALES.some((l) => l.id === i18n.language) ? i18n.language : "zh-HK";
+  const lng = LOCALES.some((l) => l.id === canonicalLocale(i18n.language)) ? canonicalLocale(i18n.language) : "zh-HK";
 
   const quoteIsStable = s.quotePriority !== "gas-stable";
   const quoteSym = quoteIsStable ? "USDC" : "WAVAX";
@@ -125,7 +128,7 @@ export function SettingsPage() {
                       key={l.id}
                       type="button"
                       className={`me-chip ${lng === l.id ? "me-chip-on" : ""}`}
-                      onClick={() => void i18n.changeLanguage(l.id)}
+                      onClick={() => switchLocale(l.id)}
                     >
                       {l.label}
                     </button>

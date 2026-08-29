@@ -1,5 +1,7 @@
 import { useCallback, useMemo, type ReactNode } from "react";
-import { Link, Navigate, useLocation, useParams, useSearchParams } from "react-router-dom";
+import { useLocation, useParams, useSearchParams } from "react-router-dom";
+import { LocaleLink as Link, LocaleNavigate as Navigate } from "../../app/LocaleLink.tsx";
+import { useSeoExtra } from "../../lib/seo.ts";
 import { useTranslation } from "react-i18next";
 import { CHAINS } from "@ysk-mint/config";
 import { chainIcon } from "../../lib/chainIcon.ts";
@@ -88,6 +90,14 @@ export function LendAssetPage() {
     });
   }
 
+  const symbol = asset?.symbol ?? rawSymbol?.toUpperCase() ?? slug;
+  const icon = asset?.icon ?? "/tokens/eth.png";
+  useSeoExtra(
+    slug && slug !== "x"
+      ? { title: t("seo.lendAssetTitle", { symbol }), description: t("seo.lendAssetDesc", { symbol }) }
+      : {},
+  );
+
   if (!slug || slug === "x") {
     return (
       <section className="workspace">
@@ -95,9 +105,6 @@ export function LendAssetPage() {
       </section>
     );
   }
-
-  const symbol = asset?.symbol ?? rawSymbol?.toUpperCase() ?? slug;
-  const icon = asset?.icon ?? "/tokens/eth.png";
 
   return (
     <section className="workspace">

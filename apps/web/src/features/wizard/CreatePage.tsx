@@ -17,6 +17,7 @@ import {
 } from "@ysk-mint/sdk";
 import { Button } from "../../shared/ui/Button.tsx";
 import { useWizard } from "./store.ts";
+import { sdkLocale } from "../../lib/locale.ts";
 import { useNativeWallets } from "../../lib/nativeWallets.ts";
 import { lpTokenAmount } from "./presets.ts";
 import { STEP_FLOW, flowIndex, hasEvm, nextFlowStep, prevFlowStep } from "../../lib/wizardFlow.ts";
@@ -34,7 +35,7 @@ import { StepSuccess } from "./StepSuccess.tsx";
 
 export function CreatePage() {
   const { t, i18n } = useTranslation();
-  const locale = i18n.language === "zh-HK" ? "zh-HK" : "en";
+  const locale = sdkLocale(i18n.language);
   const w = useWizard();
   const { address, isConnected } = useAccount();
   const native = useNativeWallets();
