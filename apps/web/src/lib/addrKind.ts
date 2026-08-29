@@ -1,5 +1,5 @@
 import { getAddress, isAddress } from "viem";
-import { isCardanoAddress, isSolanaAddress } from "@ysk-mint/sdk";
+import { isCardanoAddress, isNearAccountId, isSolanaAddress } from "@ysk-mint/sdk";
 
 export type AddrKind =
   | "evm"
@@ -132,9 +132,9 @@ export function detectAddrKind(raw: string): DetectHit {
     return { ok: false, error: "invalid" };
   }
 
-  if (HEX64.test(s.toLowerCase())) return { ok: true, kind: "near", value: s.toLowerCase() };
-  if (/\.(near|tg|testnet|mainnet)$/i.test(s) && s.length <= 64) {
-    return { ok: true, kind: "near", value: s.toLowerCase() };
+  const near = s.toLowerCase();
+  if (HEX64.test(near) || (/\.(near|tg|testnet|mainnet)$/.test(near) && isNearAccountId(near))) {
+    return { ok: true, kind: "near", value: near };
   }
   if (isSolanaAddress(s) && B58.test(s)) return { ok: true, kind: "solana", value: s };
 

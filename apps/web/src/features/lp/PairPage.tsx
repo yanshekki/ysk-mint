@@ -9,7 +9,7 @@ import { evmPublicClient } from "../../lib/defi/evm/client.ts";
 import { erc20MetaAbi } from "../../lib/defi/evm/abis.ts";
 import { readVenuesForPair, venueQuotesToPools, weightedPrice, type VenuePool } from "../../lib/dexPools.ts";
 import { cacheGet, cacheKey, cacheLastGood, cacheReady, onVisibleInterval, POLICIES } from "../../lib/defi/cache.ts";
-import { VENUES_CACHE } from "../../lib/defi/quote.ts";
+import { venueDisplayDepth, pairPriceUsd, VENUES_CACHE } from "../../lib/defi/quote.ts";
 import type { VenueQuote } from "../../lib/defi/types.ts";
 import { usePairSwaps, type SwapRow } from "../../lib/usePairSwaps.ts";
 import { cancelLive, trackLive } from "../../lib/liveStatus.ts";
@@ -17,13 +17,12 @@ import { fmtCompact, fmtUsdc } from "../../lib/defiQuotes.ts";
 import { asAddr, canonAddr, pairId } from "../../lib/pairKey.ts";
 import { displayStableSymbol, orientPair } from "../../lib/pairOrient.ts";
 import { TOKEN_CATALOG } from "../../lib/tokenRegistry.ts";
-import { nearToken } from "../../lib/nearDex.ts";
+import { nearFtMeta, nearToken } from "../../lib/nearDex.ts";
 import { adaTokenMeta } from "../../lib/adaDex.ts";
 import { cachedMarketPairQuotes, nativePairVenues } from "../../lib/nativePairVenues.ts";
 import { SortHead, useSort } from "../../shared/ui/SortTable.tsx";
 import { marketsHref } from "./LpPage.tsx";
 import { dexAppHref } from "../../lib/dexApp.ts";
-import { venueTvlInQuote } from "../../lib/defi/quote.ts";
 
 type TokenMeta = { symbol: string; decimals: number; icon: string };
 
@@ -133,6 +132,13 @@ export function PairPage() {
 
       if (chain?.vm && chain.vm !== "evm") {
         setClient(undefined);
+        if (chain.vm === "near") {
+          const [ma, mb] = await Promise.all([nearFtMeta(base), nearFtMeta(quote)]);
+          if (!cancelled) {
+            setMetaA({ symbol: ma.symbol, decimals: ma.decimals, icon: ma.icon });
+            setMetaB({ symbol: mb.symbol, decimals: mb.decimals, icon: mb.icon });
+          }
+        }
         return nativePairVenues(chainId, chain.vm, base, quote, leftSeed?.decimals ?? 6, rightSeed?.decimals ?? 6);
       }
       const c = evmPublicClient(chainId);
@@ -150,7 +156,9 @@ export function PairPage() {
     };
     void trackLive(`pair:${chainId}`, chainId, "markets", run)
       .then((v) => {
-        if (!cancelled && v.length) setVenues(v);
+        if (!cancelled && v.length) {
+          setVenues(v);
+        }
       })
       .catch(() => {
         if (!cancelled && !seed?.length) setVenues([]);
@@ -173,15 +181,18 @@ export function PairPage() {
     };
   }, [base, chain, chainId, quote]);
 
-  const price = useMemo(() => weightedPrice(venues), [venues]);
+  const price = useMemo(() => {
+    const px = weightedPrice(venues);
+    return px == null ? null : pairPriceUsd(px, base, quote, chainId);
+  }, [venues, base, quote, chainId]);
   const evm = chain?.vm === "evm" || chain?.evm;
   const swaps = usePairSwaps(evm ? client : undefined, evm ? venues : [], base, metaA.decimals, metaB.decimals, chainId);
   const venueGet = useCallback((v: VenuePool, k: string) => {
     if (k === "name") return v.venue.name;
-    if (k === "quote") return v.priceAinB;
+    if (k === "quote") return pairPriceUsd(v.priceAinB, base, quote, chainId) ?? 0;
     if (k === "amount") return v.reserveA;
-    return venueTvlInQuote(v);
-  }, []);
+    return venueDisplayDepth(v, isStable(metaB.symbol));
+  }, [base, chainId, metaB.symbol, quote]);
   const venueSort = useSort(venues, "depth", venueGet);
   const tradeGet = useCallback((s: SwapRow, k: string) => {
     if (k === "name") return s.venue;
@@ -220,7 +231,7 @@ export function PairPage() {
           <p className="mt-1 text-[15px] text-text-sub">{t("lp.oracleNote")}</p>
         </div>
         <div className="me-summary">
-          <b>{price == null ? "—" : `${fmtUsdc(price)} ${quoteIsStable ? metaB.symbol : ""}`}</b>
+          <b>{price == null ? "—" : fmtUsdc(price)}</b>
           <span>{t("lp.oracle", { n: venues.length })}</span>
         </div>
       </div>
@@ -268,9 +279,9 @@ export function PairPage() {
                         </span>
                         <span className="num">{short(v.pool)}</span>
                       </div>
-                      <span className="num me-price">{fmtCompact(v.priceAinB)}</span>
+                      <span className="num me-price">{fmtUsdc(pairPriceUsd(v.priceAinB, base, quote, chainId))}</span>
                       <span className="num holding-amt">{v.reserveA > 0 ? fmtCompact(v.reserveA) : "—"}</span>
-                      <span className="num me-value">{venueTvlInQuote(v) > 0 ? fmtCompact(venueTvlInQuote(v)) : "—"}</span>
+                      <span className="num me-value">{venueDisplayDepth(v, quoteIsStable) > 0 ? fmtCompact(venueDisplayDepth(v, quoteIsStable)) : "—"}</span>
                       <span className="me-pool-acts">
                         {explore ? (
                           <a className="me-pool-btn me-pool-btn-explore" href={explore} target="_blank" rel="noreferrer">

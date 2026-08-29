@@ -1,5 +1,6 @@
 import { SOL_NATIVE_MINT } from "../../defiAddresses.ts";
 import { cacheFresh, cacheKey, cacheLastGood, cacheWrite, POLICIES } from "../cache.ts";
+import { outboundFetch } from "../../outbound.ts";
 import type { DefiProtocol, Quote } from "../types.ts";
 
 const jupPolicy = { ...POLICIES.quote, keep: (q: Quote | null) => Boolean(q && q.usdc > 0) };
@@ -8,7 +9,7 @@ async function fetchJupChunk(ids: string[]): Promise<Map<string, Quote>> {
   const out = new Map<string, Quote>();
   if (!ids.length) return out;
   try {
-    const res = await fetch(`https://lite-api.jup.ag/price/v2?ids=${ids.join(",")}`);
+    const res = await outboundFetch(`https://lite-api.jup.ag/price/v2?ids=${ids.join(",")}`);
     if (!res.ok) return out;
     const json = (await res.json()) as { data?: Record<string, { price?: string | number } | null> };
     for (const [mint, row] of Object.entries(json.data ?? {})) {

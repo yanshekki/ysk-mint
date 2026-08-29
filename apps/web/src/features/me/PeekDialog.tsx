@@ -17,14 +17,14 @@ function chunksOf(raw: string) {
 async function parseOne(raw: string): Promise<Pending | null> {
   const s = raw.trim();
   if (!s) return null;
-  if (domainNames.looksLikeName(s)) {
-    const hit = await domainNames.resolve(s).catch(() => null);
-    if (!hit) return null;
-    return { kind: hit.kind, value: hit.address, label: hit.name };
-  }
   const hit = detectAddrKind(s);
-  if (!hit.ok || !hit.kind) return null;
-  return { kind: hit.kind, value: hit.value };
+  if (hit.ok && hit.kind) return { kind: hit.kind, value: hit.value };
+  if (domainNames.looksLikeName(s)) {
+    const name = await domainNames.resolve(s).catch(() => null);
+    if (!name) return null;
+    return { kind: name.kind, value: name.address, label: name.name };
+  }
+  return null;
 }
 
 export function PeekDialog({

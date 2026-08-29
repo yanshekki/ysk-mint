@@ -1,33 +1,9 @@
 import { cacheGet, cacheHash, cacheKey, POLICIES } from "./defi/cache.ts";
-
-const RPCS = [
-  "https://free.rpc.fastnear.com",
-  "https://near.lava.build",
-  "https://near.drpc.org",
-  "https://rpc.mainnet.near.org",
-];
+import { rpcJsonRpc } from "./rpcPool.ts";
 
 async function nearRpcRaw(method: string, params: unknown) {
-  let last: unknown;
-  for (const url of RPCS) {
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ jsonrpc: "2.0", id: "ysk", method, params }),
-      });
-      if (!res.ok) continue;
-      const json = (await res.json()) as { result?: unknown; error?: unknown };
-      if (json.error) {
-        last = (json.error as { message?: string }).message ?? json.error;
-        continue;
-      }
-      return json;
-    } catch (e) {
-      last = e;
-    }
-  }
-  throw new Error(typeof last === "string" ? last : "near rpc");
+  const result = await rpcJsonRpc<unknown>(397, method, params);
+  return { result };
 }
 
 export async function nearRpc(method: string, params: unknown) {

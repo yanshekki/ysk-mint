@@ -6,7 +6,7 @@ import { ensureProtocols } from "./protocols.ts";
 import { protocolById, protocolsOn } from "./registry.ts";
 import type { DefiCtx, MarketRow, Quote, QuoteSource, TokenRef, VenueQuote } from "./types.ts";
 
-export const VENUES_CACHE = "venues2";
+export const VENUES_CACHE = "venues5";
 
 const OUTLIER = 0.15;
 const quotePolicy = { ...POLICIES.quote, keep: (q: Quote | null) => Boolean(q && q.usdc > 0) };
@@ -169,10 +169,25 @@ function mergeQuotes(parts: VenueQuote[][]): VenueQuote[] {
   return [...by.values()];
 }
 
+function faceQuotes(venues: VenueQuote[], rowA: string, wantA: string): VenueQuote[] {
+  if (rowA.toLowerCase() === wantA.toLowerCase()) return venues;
+  return venues.map((v) => {
+    const priceAinB = v.priceAinB && Number.isFinite(v.priceAinB) ? 1 / v.priceAinB : v.priceAinB;
+    const reserveA = v.reserveB;
+    const reserveB = v.reserveA;
+    const tvlQuote =
+      reserveA > 0 && priceAinB > 0 && Number.isFinite(priceAinB)
+        ? reserveA * priceAinB + Math.max(reserveB, 0)
+        : Math.max(reserveB, 0) * 2;
+    return { ...v, priceAinB, reserveA, reserveB, tvlQuote };
+  });
+}
+
 function quotesFromMarketList(chainId: number, tokenA: string, tokenB: string): VenueQuote[] {
+  const g4 = cacheLastGood<MarketRow[]>(cacheKey("markets", chainId, "g4"));
+  const usd4 = cacheLastGood<MarketRow[]>(cacheKey("markets", chainId, "usd4"));
   const native = cacheLastGood<MarketRow[]>(cacheKey("markets", chainId));
-  const evm = cacheLastGood<MarketRow[]>(cacheKey("markets", chainId, "usd1"));
-  const rows = (evm?.length ? evm : native) ?? [];
+  const rows = (g4?.length ? g4 : usd4?.length ? usd4 : native) ?? [];
   if (!rows.length) return [];
   const id = pairId(chainId, tokenA, tokenB);
   const xa = tokenA.toLowerCase();
@@ -183,7 +198,8 @@ function quotesFromMarketList(chainId: number, tokenA: string, tokenB: string): 
     const tb = r.tokenB.toLowerCase();
     return (ta === xa && tb === xb) || (ta === xb && tb === xa);
   });
-  return row?.venues?.length ? row.venues : [];
+  if (!row?.venues?.length) return [];
+  return faceQuotes(row.venues, row.tokenA, tokenA);
 }
 
 export async function readPairVenues(
@@ -234,19 +250,25 @@ export async function readPairVenues(
     seen.add(key);
     out.push(row);
   }
-  return mergeQuotes([fromList, out]);
+  return mergeQuotes([out, fromList]);
     },
   );
 }
 
-export type TvlLike = { priceAinB: number; reserveA: number; reserveB: number; tvlQuote?: number };
+export type TvlLike = { priceAinB: number; reserveA: number; reserveB: number; tvlQuote?: number; pool?: string; chainId?: number };
 
 export function venueTvlInQuote(v: TvlLike): number {
+  const indexed = Math.max(v.tvlQuote ?? 0, 0);
+  // Rhea depth is only USD from stables / wrap.NEAR. Never recompute from meme reserves or indexer TVL.
+  if (v.pool && /^(ref|sauce):/i.test(v.pool)) return indexed;
+  if (v.chainId != null && NATIVE_USD.has(v.chainId)) return indexed;
+  let fromReserves = 0;
   if (v.reserveA > 0 && v.priceAinB > 0 && Number.isFinite(v.reserveB)) {
     const tvl = v.reserveA * v.priceAinB + Math.max(v.reserveB, 0);
-    if (Number.isFinite(tvl) && tvl > 0) return tvl;
+    if (Number.isFinite(tvl) && tvl > 0) fromReserves = tvl;
   }
-  return Math.max(v.tvlQuote ?? 0, 0);
+  if (indexed > 0 && fromReserves > 0) return fromReserves;
+  return fromReserves > 0 ? fromReserves : indexed;
 }
 
 export function quoteAmountUsd(amount: number, quoteAddr: string, chainId: number, wrapUsd: number | null): number | null {
@@ -258,20 +280,78 @@ export function quoteAmountUsd(amount: number, quoteAddr: string, chainId: numbe
   return null;
 }
 
+/** USD of the volatile leg when one side is a stable; otherwise base in USD via wrap. */
+export function pairPriceUsd(
+  priceAinB: number,
+  tokenA: string,
+  tokenB: string,
+  chainId: number,
+  wrapUsd: number | null = null,
+): number | null {
+  if (!(priceAinB > 0) || !Number.isFinite(priceAinB)) return null;
+  const d = DEX[chainId];
+  if (!d) return priceAinB;
+  if (isUsdStableAddress(d, tokenB)) return priceAinB;
+  if (isUsdStableAddress(d, tokenA)) {
+    const inv = 1 / priceAinB;
+    return Number.isFinite(inv) && inv > 0 ? inv : null;
+  }
+  return quoteAmountUsd(priceAinB, tokenB, chainId, wrapUsd ?? cacheLastGood<number>(cacheKey("quote.wrap", chainId)) ?? null);
+}
+
 export function consensusPairPrice(venues: TvlLike[]): number | null {
   const rows = venues.map((v) => ({ usdc: v.priceAinB, depth: venueTvlInQuote(v) }));
   return weightedUsd(rejectOutliers(rows));
 }
 
-export function venuesPriceUsd(venues: TvlLike[], quoteAddr: string, chainId: number, wrapUsd: number | null): number | null {
+export function venuesPriceUsd(venues: TvlLike[], quoteAddr: string, chainId: number, wrapUsd: number | null, baseAddr?: string): number | null {
   const px = consensusPairPrice(venues);
   if (px == null) return null;
+  if (baseAddr) return pairPriceUsd(px, baseAddr, quoteAddr, chainId, wrapUsd);
   return quoteAmountUsd(px, quoteAddr, chainId, wrapUsd);
 }
 
 export function venuesTvlUsd(venues: TvlLike[], quoteAddr: string, chainId: number, wrapUsd: number | null): number {
   const tvlQ = venues.reduce((n, v) => n + venueTvlInQuote(v), 0);
   return quoteAmountUsd(tvlQ, quoteAddr, chainId, wrapUsd) ?? 0;
+}
+
+/** Native/Gecko adapters already store USD in tvlQuote. Do not treat quote-token reserves as dollars. */
+export const NATIVE_USD = new Set([101, 397, 1815, 784, 607, 637]);
+
+export function marketDepthUsd(venues: TvlLike[], quoteAddr: string, chainId: number, wrapUsd: number | null, prevUsd = 0): number {
+  const indexed = venues.reduce((n, v) => n + Math.max(v.tvlQuote ?? 0, 0), 0);
+  if (NATIVE_USD.has(chainId)) return indexed;
+  const converted = venuesTvlUsd(venues, quoteAddr, chainId, wrapUsd);
+  if (converted > 0) return converted;
+  let fromRes = 0;
+  for (const v of venues) {
+    if (v.reserveA > 0 && v.priceAinB > 0 && Number.isFinite(v.reserveB)) {
+      const tvl = v.reserveA * v.priceAinB + Math.max(v.reserveB, 0);
+      if (Number.isFinite(tvl) && tvl > 0) fromRes += tvl;
+    }
+  }
+  if (!(fromRes > 0) && indexed > 0) return indexed;
+  if (prevUsd > 0) return prevUsd;
+  return 0;
+}
+
+export function venueDisplayDepth(v: TvlLike, asUsd: boolean): number {
+  const indexed = Math.max(v.tvlQuote ?? 0, 0);
+  let fromReserves = 0;
+  if (v.reserveA > 0 && v.priceAinB > 0 && Number.isFinite(v.reserveB)) {
+    const tvl = v.reserveA * v.priceAinB + Math.max(v.reserveB, 0);
+    if (Number.isFinite(tvl) && tvl > 0) fromReserves = tvl;
+  }
+  if (v.pool && /^(ref|sauce):/i.test(v.pool)) return indexed;
+  if (asUsd) {
+    if (indexed > 0 && fromReserves > 0) {
+      const ratio = fromReserves > indexed ? fromReserves / indexed : indexed / fromReserves;
+      return ratio > 2 ? indexed : fromReserves;
+    }
+    return indexed || fromReserves;
+  }
+  return fromReserves || indexed;
 }
 
 export function venueDepthUsd(venues: TvlLike[]): number {

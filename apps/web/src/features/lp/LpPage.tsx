@@ -6,14 +6,13 @@ import { featuredChains, isConfigured, launchContracts } from "@ysk-mint/config"
 import { useLpFeed, type LpFilter, type LpRow } from "../../lib/useLpFeed.ts";
 import { useDexMarkets, type MarketRow } from "../../lib/useDexMarkets.ts";
 import { useDexLp, type MyLpRow } from "../../lib/useDexLp.ts";
-import { fmtUsdc } from "../../lib/defiQuotes.ts";
+import { fmtCompact, fmtUsdc } from "../../lib/defiQuotes.ts";
 import { chainIcon } from "../../lib/chainIcon.ts";
 import { useNativeWallets } from "../../lib/nativeWallets.ts";
 import { useCardanoHoldings } from "../../lib/useHoldings.ts";
 import { ChipBusy } from "../../shared/ui/LiveDock.tsx";
 import { useLiveStatus } from "../../lib/liveStatus.ts";
 import { SortHead, useSort } from "../../shared/ui/SortTable.tsx";
-import { ttCoverageLine } from "../../lib/defi/coverage.ts";
 import { useUserSettings } from "../../lib/userSettings.ts";
 
 /** High-usage chains shown before 「更多」. Order follows featuredChains(). */
@@ -21,6 +20,14 @@ const PRIMARY_MARKET_IDS = new Set([1, 101, 56, 8453, 42161, 43114, 137, 784, 60
 const MARKET_PAGE = 50;
 const MARKETS_KEY = "ysk-markets";
 
+function tokenImgFallback(symbol: string) {
+  return (e: { currentTarget: HTMLImageElement }) => {
+    const el = e.currentTarget;
+    if (el.dataset.fb) return;
+    el.dataset.fb = "1";
+    el.src = /usd/i.test(symbol) ? "/tokens/usdc.png" : "/tokens/eth.png";
+  };
+}
 function parseChain(raw: string | null): number | "all" {
   if (!raw || raw === "all") return "all";
   const n = Number(raw);
@@ -227,7 +234,6 @@ export function LpPage() {
     return Number(r.liquidity);
   }, []);
   const lockSort = useSort(locks.rows, "amount", lockGet);
-  const tt = ttCoverageLine();
 
   return (
     <section className="workspace">
@@ -236,15 +242,6 @@ export function LpPage() {
           <p className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-text-muted">{t("lp.kicker")}</p>
           <h1>{t("nav.lp")}</h1>
           <p className="mt-1 text-[15px] text-text-sub">{t("lp.hint")}</p>
-          <p className="mt-1 text-[13px] text-text-muted">
-            {t("lp.ttCoverage", {
-              asOf: tt.dex.asOf,
-              dexWired: tt.dex.wired,
-              dexTotal: tt.dex.total,
-              lendWired: tt.lending.wired,
-              lendTotal: tt.lending.total,
-            })}
-          </p>
         </div>
       </div>
       <div className="workspace-scroll">
@@ -289,7 +286,7 @@ export function LpPage() {
                 {lpSort.sorted.map((r) => (
                   <Link key={r.pairId} to={`/pair/${r.chainId}/${encodeURIComponent(r.tokenA)}/${encodeURIComponent(r.tokenB)}`} className="me-token me-token-5">
                     <span className="holding-ico-wrap">
-                      <img src={r.iconA} alt="" className="holding-ico" />
+                      <img src={r.iconA} alt="" className="holding-ico" onError={tokenImgFallback(r.symbolA)} />
                       <span className="holding-chain-tag">{r.symbolB.slice(0, 3)}</span>
                     </span>
                     <div className="holding-meta">
@@ -340,7 +337,7 @@ export function LpPage() {
               <p className="me-card-empty">{t("lp.emptyFilter")}</p>
             ) : (
               <div className="me-list">
-                <div className="me-cols me-cols-5">
+                <div className="me-cols me-cols-5 me-cols-markets">
                   <SortHead id="name" label={t("lp.markets")} active={marketSort.key === "name"} dir={marketSort.dir} onToggle={marketSort.toggle} align="left" />
                   <SortHead id="quote" label={t("me.quote")} active={marketSort.key === "quote"} dir={marketSort.dir} onToggle={marketSort.toggle} />
                   <SortHead id="venues" label={t("lp.poolCount")} active={marketSort.key === "venues"} dir={marketSort.dir} onToggle={marketSort.toggle} />
@@ -348,9 +345,9 @@ export function LpPage() {
                 </div>
                 {markets.loading && readingShort ? <p className="me-card-empty">{t("lp.loadingChain", { chain: readingShort })}</p> : null}
                 {marketVisible.map((r) => (
-                  <Link key={r.pairId} to={`/pair/${r.chainId}/${encodeURIComponent(r.tokenA)}/${encodeURIComponent(r.tokenB)}`} className="me-token me-token-5">
+                  <Link key={r.pairId} to={`/pair/${r.chainId}/${encodeURIComponent(r.tokenA)}/${encodeURIComponent(r.tokenB)}`} className="me-token me-token-5 me-token-markets">
                     <span className="holding-ico-wrap">
-                      <img src={r.iconA} alt="" className="holding-ico" />
+                      <img src={r.iconA} alt="" className="holding-ico" onError={tokenImgFallback(r.symbolA)} />
                       <span className="holding-chain-tag">{r.chainShort}</span>
                     </span>
                     <div className="holding-meta">
@@ -361,7 +358,7 @@ export function LpPage() {
                     </div>
                     <span className="num me-price">{r.price == null ? "—" : fmtUsdc(r.price)}</span>
                     <span className="num holding-amt">{r.venues.length || r.venueNames.length}</span>
-                    <span className="num me-value">{r.depth ? fmtUsdc(r.depth) : "—"}</span>
+                    <span className="num me-value">{r.depth ? fmtCompact(r.depth) : "—"}</span>
                   </Link>
                 ))}
                 {marketMore ? (

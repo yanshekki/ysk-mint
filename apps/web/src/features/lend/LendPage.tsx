@@ -3,7 +3,6 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { CHAINS, featuredChains, type ChainDefinition } from "@ysk-mint/config";
 import { chainIcon } from "../../lib/chainIcon.ts";
-import { ttCoverage } from "../../lib/defi/coverage.ts";
 import { fmtApyRange, fmtUsd, utilOf } from "../../lib/lendFormat.ts";
 import { groupLendAssets, lendChainIds, lendSymbolSlug, type LendAssetRow } from "../../lib/lendMarkets.ts";
 import { useLiveStatus } from "../../lib/liveStatus.ts";
@@ -124,7 +123,6 @@ export function LendPage() {
     return lendJobs.find((j) => j.phase === "run") ?? lendJobs[0];
   }, [jobs]);
   const readingShort = reading ? Object.values(CHAINS).find((c) => c.chainId === reading.chainId)?.short : undefined;
-  const tt = ttCoverage("lending");
 
   const protocols = useMemo(() => {
     const c = new Map<string, number>();
@@ -256,7 +254,6 @@ export function LendPage() {
           <p className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-text-muted">{t("lend.kicker")}</p>
           <h1>{t("nav.lend")}</h1>
           <p className="mt-1 text-[15px] text-text-sub">{t("lend.hint")}</p>
-          <p className="mt-1 text-[13px] text-text-muted">{t("lend.ttCoverage", { asOf: tt.asOf, wired: tt.wired, total: tt.total })}</p>
         </div>
       </div>
       <div className="workspace-scroll">

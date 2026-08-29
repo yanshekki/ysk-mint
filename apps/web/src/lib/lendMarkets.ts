@@ -1,6 +1,7 @@
 import { erc20Abi, formatUnits, type Address, type PublicClient } from "viem";
 import { CHAINS } from "@ysk-mint/config";
 import { cacheGet, cacheKey, POLICIES } from "./defi/cache.ts";
+import { outboundFetch } from "./outbound.ts";
 import { evmPublicClient } from "./defi/evm/client.ts";
 import { quoteUsd } from "./defi/quote.ts";
 import { DEX } from "./defiAddresses.ts";
@@ -475,7 +476,7 @@ async function fetchJson<T>(url: string, init?: RequestInit, ms = 12000): Promis
   const ac = new AbortController();
   const t = setTimeout(() => ac.abort(), ms);
   try {
-    const res = await fetch(url, { ...init, signal: ac.signal });
+    const res = await outboundFetch(url, { ...init, signal: ac.signal });
     if (!res.ok) return null;
     return (await res.json()) as T;
   } catch {

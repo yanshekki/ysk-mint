@@ -1,11 +1,17 @@
-import { createPublicClient, http, isAddress } from "viem";
+import { createPublicClient, isAddress } from "viem";
 import { mainnet } from "viem/chains";
 import { getEnsAddress, getEnsName, normalize } from "viem/ens";
 import { stakeFromPayment } from "../cardanoCip30.ts";
-import { jsonGet, jsonPost, stripTld } from "./http.ts";
+import { outboundFetch } from "../outbound.ts";
+import { jsonGet, stripTld } from "./http.ts";
+import { liveTransport } from "../rpc.ts";
+import { rpcJsonRpc } from "../rpcPool.ts";
 import type { DomainResolver } from "./types.ts";
 
-const eth = createPublicClient({ chain: mainnet, transport: http("https://ethereum-rpc.publicnode.com") });
+const eth = createPublicClient({
+  chain: mainnet,
+  transport: liveTransport(1),
+});
 
 const SPACE_TLDS = [".bnb", ".arb", ".manta", ".mode", ".gno", ".taiko", ".mint", ".merlin", ".four", ".ll", ".zeta", ".alien"];
 const SPACE_CHAINS = [1, 56, 42161, 8453, 169, 100, 34443, 167000, 185, 4200];
@@ -132,32 +138,21 @@ export const suinsResolver: DomainResolver = {
   kind: "sui",
   tlds: [".sui"],
   async resolve(name) {
-    const rpc = ["https://rpc-mainnet.suiscan.xyz", "https://sui-rpc.publicnode.com"];
-    for (const url of rpc) {
-      const json = await jsonPost<{ result?: string }>(url, {
-        jsonrpc: "2.0",
-        id: 1,
-        method: "suix_resolveNameServiceAddress",
-        params: [name],
-      });
-      if (json?.result) return json.result;
+    try {
+      const result = await rpcJsonRpc<string | null>(784, "suix_resolveNameServiceAddress", [name]);
+      return result || null;
+    } catch {
+      return null;
     }
-    return null;
   },
   async reverse(address) {
-    const rpc = ["https://rpc-mainnet.suiscan.xyz", "https://sui-rpc.publicnode.com"];
-    for (const url of rpc) {
-      const json = await jsonPost<{ result?: { data?: string[] } | string[] }>(url, {
-        jsonrpc: "2.0",
-        id: 1,
-        method: "suix_resolveNameServiceNames",
-        params: [address],
-      });
-      const data = Array.isArray(json?.result) ? json.result : json?.result?.data;
-      const name = data?.[0];
-      if (name) return name;
+    try {
+      const result = await rpcJsonRpc<{ data?: string[] } | string[]>(784, "suix_resolveNameServiceNames", [address]);
+      const data = Array.isArray(result) ? result : result?.data;
+      return data?.[0] || null;
+    } catch {
+      return null;
     }
-    return null;
   },
 };
 
@@ -240,7 +235,7 @@ export const stellarFedResolver: DomainResolver = {
   async resolve(name) {
     const [user, domain] = name.split("*");
     if (!user || !domain) return null;
-    const toml = await fetch(`https://${domain}/.well-known/stellar.toml`).then((r) => (r.ok ? r.text() : "")).catch(() => "");
+    const toml = await outboundFetch(`https://${domain}/.well-known/stellar.toml`).then((r) => (r.ok ? r.text() : "")).catch(() => "");
     const m = toml.match(/FEDERATION_SERVER\s*=\s*"([^"]+)"/i);
     if (!m?.[1]) return null;
     const url = `${m[1]}${m[1].includes("?") ? "&" : "?"}q=${encodeURIComponent(name)}&type=name`;

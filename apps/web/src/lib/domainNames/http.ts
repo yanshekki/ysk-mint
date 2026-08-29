@@ -1,4 +1,5 @@
 import { cacheGet, cacheKey, POLICIES } from "../defi/cache.ts";
+import { outboundFetch } from "../outbound.ts";
 
 const ENS_POLICY = { ...POLICIES.ens, keep: () => true };
 
@@ -10,7 +11,7 @@ export async function jsonGet<T>(url: string, init?: RequestInit): Promise<T | n
   const ctrl = new AbortController();
   const timer = window.setTimeout(() => ctrl.abort(), 8000);
   try {
-    const res = await fetch(url, { ...init, signal: ctrl.signal });
+    const res = await outboundFetch(url, { ...init, signal: ctrl.signal });
     if (!res.ok) return null;
     return (await res.json()) as T;
   } catch {

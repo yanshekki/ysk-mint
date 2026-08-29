@@ -1,9 +1,12 @@
-import { useMemo } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import { CHAINS } from "@ysk-mint/config";
 import { chainIcon } from "../../lib/chainIcon.ts";
+import { getOutboundSnapshot, subscribeOutbound } from "../../lib/outbound.ts";
 import { useLiveStatus, type LiveJob, type LiveKind } from "../../lib/liveStatus.ts";
 import { useUserSettings } from "../../lib/userSettings.ts";
+
+const QUEUE_SHOW = 8;
 
 function chainOf(chainId: number) {
   return Object.values(CHAINS).find((c) => c.chainId === chainId);
@@ -13,51 +16,115 @@ function kindKey(kind: LiveKind) {
   return `live.kind.${kind}` as const;
 }
 
+function byStart(a: LiveJob, b: LiveJob) {
+  return a.at - b.at;
+}
+
+function JobRow({
+  job,
+  ord,
+  queued,
+}: {
+  job: LiveJob;
+  ord: number;
+  queued?: boolean;
+}) {
+  const { t } = useTranslation();
+  const chain = chainOf(job.chainId);
+  const short = chain?.short ?? String(job.chainId);
+  const fail = job.phase === "fail";
+  return (
+    <li className={fail ? "live-dock-fail" : queued ? "live-dock-wait" : "live-dock-run"}>
+      <span className="live-dock-ord">{ord}</span>
+      {chain ? <img src={chainIcon(chain)} alt="" width={18} height={18} /> : <span className="live-dock-dot" />}
+      <span className="live-dock-name">
+        {short}
+        <small>{t(kindKey(job.kind))}</small>
+      </span>
+      {fail ? <b>{t("live.fail")}</b> : queued ? <b>{t("live.waitTag")}</b> : <i className="live-spin" />}
+    </li>
+  );
+}
+
 export function LiveDock() {
   const { t } = useTranslation();
   const dockOn = useUserSettings((s) => s.liveDock);
   const jobs = useLiveStatus((s) => s.jobs);
+  const waveDone = useLiveStatus((s) => s.waveDone);
+  const links = useSyncExternalStore(subscribeOutbound, getOutboundSnapshot, getOutboundSnapshot);
 
-  const visible = useMemo(() => {
-    const run: LiveJob[] = [];
-    let waiting = 0;
+  const { running, queued, failed } = useMemo(() => {
+    const running: LiveJob[] = [];
+    const queued: LiveJob[] = [];
+    const failed: LiveJob[] = [];
     for (const j of jobs) {
-      if (j.phase === "wait") {
-        waiting += 1;
-        run.push(j);
-      } else if (j.phase === "fail" || j.phase === "run") run.push(j);
+      if (j.phase === "run") running.push(j);
+      else if (j.phase === "wait") queued.push(j);
+      else failed.push(j);
     }
-    return { run, waiting };
+    running.sort(byStart);
+    queued.sort(byStart);
+    return { running, queued, failed };
   }, [jobs]);
 
-  if (!dockOn || (!visible.run.length && !visible.waiting)) return null;
+  const active = running.length + queued.length;
+  const total = waveDone + active;
+  const pct = total ? Math.min(100, Math.round((waveDone / total) * 100)) : 0;
+  const queuedShow = queued.slice(0, QUEUE_SHOW);
+  const queuedRest = queued.length - queuedShow.length;
+
+  if (!dockOn || !jobs.length) return null;
 
   return (
     <aside className="live-dock" aria-live="polite" aria-label={t("live.title")}>
-      <p className="live-dock-title">{t("live.title")}</p>
-      <ul className="live-dock-list">
-        {visible.run.map((j) => {
-          const chain = chainOf(j.chainId);
-          const short = chain?.short ?? String(j.chainId);
-          return (
-            <li key={j.id} className={j.phase === "fail" ? "live-dock-fail" : undefined}>
-              {chain ? <img src={chainIcon(chain)} alt="" width={18} height={18} /> : <span className="live-dock-dot" />}
-              <span>
-                {short} {t(kindKey(j.kind))}
-              </span>
-              {j.phase === "fail" ? <em>{t("live.fail")}</em> : <i className="live-spin" />}
-            </li>
-          );
-        })}
-        {!visible.run.length && visible.waiting ? (
-          <li>
-            <span className="live-dock-dot" />
-            <span>{t("live.queued", { n: visible.waiting })}</span>
-            <i className="live-spin" />
-          </li>
+      <div className="live-dock-head">
+        <p className="live-dock-title">{t("live.title")}</p>
+        <p className="live-dock-count">{t("live.count", { done: waveDone, total })}</p>
+      </div>
+      <div
+        className="live-dock-bar"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={pct}
+        aria-label={t("live.count", { done: waveDone, total })}
+      >
+        <i style={{ width: `${pct}%` }} />
+      </div>
+      <p className="live-dock-meta">
+        {t("live.links", { n: links.inflight, max: links.global })}
+        {links.waiters ? ` · ${t("live.httpWait", { n: links.waiters })}` : null}
+      </p>
+      <div className="live-dock-body">
+        {running.length ? (
+          <>
+            <p className="live-dock-sec">{t("live.now")}</p>
+            <ul className="live-dock-list">
+              {running.map((j, i) => (
+                <JobRow key={j.id} job={j} ord={i + 1} />
+              ))}
+            </ul>
+          </>
         ) : null}
-      </ul>
-      {visible.run.length && visible.waiting ? <p className="live-dock-more">{t("live.left", { n: visible.waiting })}</p> : null}
+        {queued.length ? (
+          <>
+            <p className="live-dock-sec">{t("live.queueTitle")}</p>
+            <ul className="live-dock-list">
+              {queuedShow.map((j, i) => (
+                <JobRow key={j.id} job={j} ord={running.length + i + 1} queued />
+              ))}
+            </ul>
+          </>
+        ) : null}
+        {failed.length ? (
+          <ul className="live-dock-list">
+            {failed.map((j, i) => (
+              <JobRow key={j.id} job={j} ord={running.length + queuedShow.length + i + 1} />
+            ))}
+          </ul>
+        ) : null}
+      </div>
+      {queuedRest > 0 ? <p className="live-dock-more">{t("live.left", { n: queuedRest })}</p> : null}
     </aside>
   );
 }

@@ -4,6 +4,7 @@ import type { Quote } from "./defiQuotes.ts";
 import type { VenuePool } from "./dexPools.ts";
 import type { Venue } from "./dexVenues.ts";
 import { pairId } from "./pairKey.ts";
+import { outboundFetch } from "./outbound.ts";
 
 export type NativeMarket = {
   pairId: string;
@@ -41,8 +42,26 @@ export const N_USDC: NearTok = {
 export const N_REF: NearTok = { address: "token.v2.ref-finance.near", symbol: "REF", decimals: 18, icon: I("near") };
 export const N_STNEAR: NearTok = { address: "meta-pool.near", symbol: "stNEAR", decimals: 24, icon: I("near") };
 export const N_LINEAR: NearTok = { address: "linear-protocol.near", symbol: "LINEAR", decimals: 24, icon: I("near") };
+export const N_USDCE: NearTok = {
+  address: "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.factory.bridge.near",
+  symbol: "USDC.e",
+  decimals: 6,
+  icon: I("usdc"),
+};
+export const N_USDTE: NearTok = {
+  address: "dac17f958d2ee523a2206206994597c13d831ec7.factory.bridge.near",
+  symbol: "USDT.e",
+  decimals: 6,
+  icon: I("usdt"),
+};
+export const N_DAIE: NearTok = {
+  address: "6b175474e89094c44da98b954eedeac495271d0f.factory.bridge.near",
+  symbol: "DAI.e",
+  decimals: 18,
+  icon: I("dai"),
+};
 
-const STABLES = new Set([N_USDT.address, N_USDC.address, "dac17f958d2ee523a2206206994597c13d831ec7.factory.bridge.near"]);
+const STABLES = new Set([N_USDT.address, N_USDC.address, N_USDCE.address, N_USDTE.address, N_DAIE.address]);
 
 export const NEAR_LST = new Set([N_STNEAR.address, N_LINEAR.address]);
 
@@ -76,7 +95,7 @@ export async function fetchRefTopPools(): Promise<RefTopPool[]> {
       policy: { ...POLICIES.catalog, keep: (v: RefTopPool[] | null) => Boolean(v?.length) },
     },
     async () => {
-      const res = await fetch("https://api.ref.finance/list-top-pools");
+      const res = await outboundFetch("https://api.ref.finance/list-top-pools");
       if (!res.ok) return null;
       const data = (await res.json()) as RefTopPool[];
       return Array.isArray(data) && data.length ? data : null;
@@ -107,7 +126,7 @@ function human(raw: string, decimals: number) {
 }
 
 export function nearToken(id: string): NearTok | undefined {
-  const all = [N_WRAP, N_USDT, N_USDC, N_REF, N_STNEAR, N_LINEAR];
+  const all = [N_WRAP, N_USDT, N_USDC, N_USDCE, N_USDTE, N_DAIE, N_REF, N_STNEAR, N_LINEAR];
   return all.find((t) => t.address.toLowerCase() === id.toLowerCase());
 }
 
@@ -116,7 +135,7 @@ export function nearDecimals(id: string) {
   if (hit) return hit.decimals;
   const x = id.toLowerCase();
   if (x === "wrap.near" || x === LINEAR || x === META_POOL) return 24;
-  if (x === N_USDT.address || x === N_USDC.address) return 6;
+  if (x === N_USDT.address || x === N_USDC.address || x === N_USDCE.address || x === N_USDTE.address) return 6;
   if (x.startsWith("dac17f958d2ee523a2206206994597c13d831ec7") || x.startsWith("a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")) return 6;
   return 18;
 }
@@ -126,12 +145,83 @@ function tokenMeta(id: string): NearTok {
   if (hit) return hit;
   const parts = id.split(".");
   const raw = parts[0] || id.slice(0, 6);
-  const symbol = raw.length <= 8 ? raw.toUpperCase() : raw;
+  const symbol = raw.length <= 8 && !/^[0-9a-f]{8,}$/i.test(raw) ? raw.toUpperCase() : raw.slice(0, 8);
   return { address: id, symbol, decimals: nearDecimals(id), icon: I("near") };
 }
 
 export function isNearStable(id?: string) {
   return Boolean(id && STABLES.has(id.toLowerCase()));
+}
+
+export function isNearPricedLeg(id?: string) {
+  const x = (id || "").toLowerCase();
+  return x === N_WRAP.address || NEAR_LST.has(x);
+}
+
+/** USD depth from stables and wrap/LST only. Unknown memes (ELON/INEAR) stay 0 — never trust indexer TVL. */
+export function nearUsdFromLegs(
+  a: { address: string; amount: number },
+  b: { address: string; amount: number },
+  wrapUsd: number | null,
+): number {
+  const priced: number[] = [];
+  for (const x of [a, b]) {
+    const id = x.address.toLowerCase();
+    const amt = Number.isFinite(x.amount) && x.amount > 0 ? x.amount : 0;
+    if (!amt) continue;
+    if (isNearStable(id)) priced.push(amt);
+    else if (isNearPricedLeg(id) && wrapUsd && wrapUsd > 0) priced.push(amt * wrapUsd);
+  }
+  if (!priced.length) return 0;
+  const sum = priced.reduce((n, v) => n + v, 0);
+  return priced.length === 2 ? sum : sum * 2;
+}
+
+export function wrapUsdFromRefPools(pools: RefTopPool[]): number | null {
+  let bestUsd = 0;
+  let px = 0;
+  for (const p of pools) {
+    const ids = (p.token_account_ids ?? []).map((x) => x.toLowerCase());
+    const amts = p.amounts ?? [];
+    if (ids.length !== 2) continue;
+    const wi = ids.indexOf(N_WRAP.address);
+    const si = ids.findIndex((id) => isNearStable(id));
+    if (wi < 0 || si < 0) continue;
+    const wrap = human(amts[wi], 24);
+    const usd = human(amts[si], nearDecimals(ids[si]));
+    if (!(wrap > 0) || !(usd > 0) || usd <= bestUsd) continue;
+    bestUsd = usd;
+    px = usd / wrap;
+  }
+  return px > 0 ? px : null;
+}
+
+export async function nearFtMeta(id: string): Promise<NearTok> {
+  const known = nearToken(id);
+  if (known) return { ...known, address: id };
+  const fallback = tokenMeta(id);
+  try {
+    return await cacheGet(
+      {
+        key: cacheKey("meta.near2", 397, id.toLowerCase()),
+        policy: { ...POLICIES.meta, keep: (m: NearTok) => Boolean(m.symbol) && m.decimals >= 0 },
+      },
+      async () => {
+        const meta = await nearView<{ symbol?: string; decimals?: number }>(id, "ft_metadata", {});
+        const decimals = Number(meta?.decimals);
+        const symbol = String(meta?.symbol || "").trim();
+        if (!Number.isFinite(decimals) || decimals < 0 || decimals > 24) throw new Error("decimals");
+        return {
+          address: id,
+          symbol: symbol && !/^[0-9a-f]{12,}$/i.test(symbol) ? symbol : fallback.symbol,
+          decimals,
+          icon: fallback.icon,
+        };
+      },
+    );
+  } catch {
+    return fallback;
+  }
 }
 
 export async function readRefPool(poolId: number): Promise<RefPool | null> {
@@ -145,7 +235,7 @@ export async function readRefPool(poolId: number): Promise<RefPool | null> {
   }
 }
 
-function venueFromPool(seed: NearPoolSeed, pool: RefPool): VenuePool | null {
+function venueFromPool(seed: NearPoolSeed, pool: RefPool, wrapUsd?: number | null): VenuePool | null {
   const ids = pool.token_account_ids.map((x) => x.toLowerCase());
   const iA = ids.indexOf(seed.a.address.toLowerCase());
   const iB = ids.indexOf(seed.b.address.toLowerCase());
@@ -154,7 +244,11 @@ function venueFromPool(seed: NearPoolSeed, pool: RefPool): VenuePool | null {
   const reserveB = human(pool.amounts[iB], seed.b.decimals);
   if (!reserveA || !reserveB) return null;
   const priceAinB = reserveB / reserveA;
-  const tvlQuote = isNearStable(seed.b.address) ? reserveB * 2 : isNearStable(seed.a.address) ? reserveA * 2 : 0;
+  const tvlQuote = nearUsdFromLegs(
+    { address: seed.a.address, amount: reserveA },
+    { address: seed.b.address, amount: reserveB },
+    wrapUsd ?? null,
+  );
   return {
     venue: REF_VENUE,
     pool: `${isRefSauce(pool.pool_kind) ? "sauce" : "ref"}:${seed.poolId}`,
@@ -174,10 +268,10 @@ export async function nearVenuesForPair(tokenA: string, tokenB: string): Promise
   try {
     const top = await fetchRefTopPools();
     for (const p of top) {
+      const n = Number(p.id);
       const tids = (p.token_account_ids ?? []).map((x) => x.toLowerCase());
       if (tids.length !== 2) continue;
       if (!(tids.includes(a) && tids.includes(b))) continue;
-      const n = Number(p.id);
       if (!Number.isFinite(n)) continue;
       if (isRefSauce(p.pool_kind)) sauce.add(n);
       else classic.add(n);
@@ -193,8 +287,7 @@ export async function nearVenuesForPair(tokenA: string, tokenB: string): Promise
       if ((x === a && y === b) || (x === b && y === a)) ids.add(p.poolId);
     }
   }
-  const wantA = nearToken(a) ?? { ...tokenMeta(a), address: a };
-  const wantB = nearToken(b) ?? { ...tokenMeta(b), address: b };
+  const [wantA, wantB, wrapUsd] = await Promise.all([nearFtMeta(a), nearFtMeta(b), nearWrapUsd()]);
   const fetched: { poolId: number; pool: RefPool }[] = [];
   await Promise.all(
     [...ids].map(async (poolId) => {
@@ -206,7 +299,7 @@ export async function nearVenuesForPair(tokenA: string, tokenB: string): Promise
   const use = live.length ? live : fetched;
   const out: VenuePool[] = [];
   for (const { poolId, pool } of use) {
-    const row = venueFromPool({ poolId, a: wantA, b: wantB }, pool);
+    const row = venueFromPool({ poolId, a: wantA, b: wantB }, pool, wrapUsd);
     if (row) out.push(row);
   }
   return out;

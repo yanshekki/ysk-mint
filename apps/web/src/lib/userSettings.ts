@@ -1,11 +1,13 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { GLOBAL_RPC_PROVIDERS, type RpcGlobalProvider } from "./rpcCatalog.ts";
 
 export const BUY_GREEN = "#10b981";
 export const SELL_RED = "#ef4444";
 
 export type QuoteSide = "right" | "left";
 export type QuotePriority = "stable-gas" | "gas-stable";
+export type RpcStrategy = "preferred" | "random";
 
 export type UserSettings = {
   liveDock: boolean;
@@ -17,6 +19,11 @@ export type UserSettings = {
   sellColor: string;
   disabledChains: number[];
   rpcByChain: Record<string, string>;
+  rpcStrategy: RpcStrategy;
+  rpcProvider: RpcGlobalProvider;
+  rpcPickByChain: Record<string, string>;
+  maxOutbound: number;
+  maxOutboundPerHost: number;
 };
 
 export const SETTINGS_DEFAULTS: UserSettings = {
@@ -29,21 +36,48 @@ export const SETTINGS_DEFAULTS: UserSettings = {
   sellColor: SELL_RED,
   disabledChains: [],
   rpcByChain: {},
+  rpcStrategy: "preferred",
+  rpcProvider: "publicnode",
+  rpcPickByChain: {},
+  maxOutbound: 10,
+  maxOutboundPerHost: 2,
 };
+
+function asRpcProvider(v: unknown): RpcGlobalProvider {
+  return (GLOBAL_RPC_PROVIDERS as readonly string[]).includes(String(v)) ? (v as RpcGlobalProvider) : "publicnode";
+}
 
 type Store = UserSettings & {
   patch: (next: Partial<UserSettings>) => void;
   reset: () => void;
   setChainEnabled: (chainId: number, on: boolean) => void;
   setRpc: (chainId: number, url?: string) => void;
+  setRpcPick: (chainId: number, pick?: string) => void;
 };
+
+const resetListeners = new Set<() => void>();
+
+export function onUserSettingsReset(fn: () => void) {
+  resetListeners.add(fn);
+  return () => {
+    resetListeners.delete(fn);
+  };
+}
 
 export const useUserSettings = create<Store>()(
   persist(
     (set, get) => ({
       ...SETTINGS_DEFAULTS,
       patch: (next) => set(next),
-      reset: () => set({ ...SETTINGS_DEFAULTS }),
+      reset: () => {
+        set({
+          ...SETTINGS_DEFAULTS,
+          disabledChains: [],
+          rpcByChain: {},
+          rpcPickByChain: {},
+        });
+        for (const fn of resetListeners) fn();
+      },
       setChainEnabled: (chainId, on) => {
         const cur = get().disabledChains;
         const has = cur.includes(chainId);
@@ -57,8 +91,37 @@ export const useUserSettings = create<Store>()(
         else cur[key] = url;
         set({ rpcByChain: cur });
       },
+      setRpcPick: (chainId, pick) => {
+        const cur = { ...(get().rpcPickByChain ?? {}) };
+        const key = String(chainId);
+        if (!pick || pick === "inherit") delete cur[key];
+        else cur[key] = pick;
+        set({ rpcPickByChain: cur });
+      },
     }),
-    { name: "ysk-mint.settings", version: 1 },
+    {
+      name: "ysk-mint.settings",
+      version: 2,
+      migrate: (persisted, version) => {
+        const s = persisted as Partial<UserSettings>;
+        if (version < 2) {
+          return {
+            ...SETTINGS_DEFAULTS,
+            ...s,
+            rpcStrategy: "preferred",
+            rpcProvider: asRpcProvider(s.rpcProvider),
+            rpcPickByChain: {},
+          };
+        }
+        return {
+          ...SETTINGS_DEFAULTS,
+          ...s,
+          rpcStrategy: s.rpcStrategy === "random" ? "random" : "preferred",
+          rpcProvider: asRpcProvider(s.rpcProvider),
+          rpcPickByChain: s.rpcPickByChain ?? {},
+        };
+      },
+    },
   ),
 );
 

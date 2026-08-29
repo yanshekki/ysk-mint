@@ -20,11 +20,11 @@ export function ShareCard({ name, address }: { name: string; address: string }) 
     ctx.fillRect(0, 0, canvas.width, 8);
     ctx.fillStyle = "#ffffff";
     ctx.font = "600 28px 'Plus Jakarta Sans', sans-serif";
-    ctx.fillText(name || "ysk-mint", 24, 64);
+    ctx.fillText(name || t("app.name"), 24, 64);
     ctx.font = "12px ui-monospace, monospace";
     ctx.fillStyle = "#94a3b8";
     ctx.fillText(address, 24, 96);
-    ctx.fillText("mint.ysk.hk · unaudited", 24, 168);
+    ctx.fillText(t("token.shareMark"), 24, 168);
     canvas.toBlob((blob) => {
       if (!blob) return;
       const url = URL.createObjectURL(blob);

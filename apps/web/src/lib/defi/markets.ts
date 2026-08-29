@@ -1,17 +1,17 @@
 import { CHAINS } from "@ysk-mint/config";
-import { DEX, isUsdStableAddress } from "../defiAddresses.ts";
+import { DEX, isUsdStableAddress, usdStables } from "../defiAddresses.ts";
 import { pairId } from "../pairKey.ts";
 import { displayStableSymbol, invertVenue, isQuoteOnRight } from "../pairOrient.ts";
 import { cacheGet, cacheKey, cacheLastGood, cacheWrite, forChunks, POLICIES } from "./cache.ts";
 import { evmPublicClient } from "./evm/client.ts";
 import { ensureProtocols } from "./protocols.ts";
 import { protocolsOn } from "./registry.ts";
-import { consensusPairPrice, rejectOutliers, venueDepthUsd, weightedUsd } from "./quote.ts";
+import { consensusPairPrice, quoteUsd, rejectOutliers, venueDepthUsd, weightedUsd } from "./quote.ts";
 import type { DefiCtx, DefiProtocol, MarketRow, PoolRef, TokenRef, VenueQuote } from "./types.ts";
-import { candidatePairs, marketTokensOn, tokensFromMarketRows, type MarketToken } from "./universe.ts";
+import { candidatePairs, evmTokenDecimals, localTokenIcon, marketTokensOn, tokensFromMarketRows, type MarketToken } from "./universe.ts";
 
 export function marketsCacheKey(chainId: number) {
-  return cacheKey("markets", chainId, "usd1");
+  return cacheKey("markets", chainId, "usd4");
 }
 
 export type DiscoveredPool = {
@@ -46,6 +46,8 @@ function approxStableUsd(symbol?: string): number | null {
   if (/^(W?USDC|W?USDT|DAI|USDS|FRAX|USDB|USDE|USDM|USDA|USD1)(\.E)?$/.test(s)) return 1;
   return null;
 }
+
+let _mktDbg = 0;
 
 type Hit = { a: MarketToken; b: MarketToken; protocolId: string; refs: PoolRef[] };
 
@@ -134,8 +136,20 @@ function listedToLive(rows: MarketRow[]): Array<Hit & { venues: VenueQuote[] }> 
   return rows
     .filter((r) => r.venues.length)
     .map((r) => ({
-      a: { chainId: r.chainId, address: r.tokenA, decimals: 18, symbol: r.symbolA, icon: r.iconA },
-      b: { chainId: r.chainId, address: r.tokenB, decimals: 18, symbol: r.symbolB, icon: r.iconB },
+      a: {
+        chainId: r.chainId,
+        address: r.tokenA,
+        decimals: evmTokenDecimals(r.chainId, r.tokenA),
+        symbol: r.symbolA,
+        icon: localTokenIcon(r.symbolA, r.iconA),
+      },
+      b: {
+        chainId: r.chainId,
+        address: r.tokenB,
+        decimals: evmTokenDecimals(r.chainId, r.tokenB),
+        symbol: r.symbolB,
+        icon: localTokenIcon(r.symbolB, r.iconB),
+      },
       protocolId: r.venues[0].protocolId,
       refs: [],
       venues: r.venues,
@@ -188,7 +202,8 @@ export async function loadEvmMarkets(chainId: number): Promise<MarketRow[]> {
     const wrapRows = live.filter((h) => h.a.address.toLowerCase() === wrap);
     const wrapUsd =
       usdForBase(wrap, wrapRows, wrap, null, chainId).usdc ??
-      usdForBase(wrap, live, wrap, null, chainId).usdc;
+      usdForBase(wrap, live, wrap, null, chainId).usdc ??
+      (await quoteUsd(ctx, chainId, d.wrapped, 18).then((q) => q?.usdc ?? null).catch(() => null));
 
     const byPair = new Map<string, MarketRow>();
     const bases = new Set(live.flatMap((h) => [h.a.address.toLowerCase(), h.b.address.toLowerCase()]));
@@ -226,14 +241,56 @@ export async function loadEvmMarkets(chainId: number): Promise<MarketRow[]> {
       const tvlQ = venueDepthUsd(venues);
       const price = px != null && qUsd != null ? px * qUsd : (usd?.usdc ?? null);
       const depth = qUsd != null && tvlQ > 0 ? tvlQ * qUsd : 0;
+      // #region agent log
+      {
+        const pairSym = `${a.symbol}/${b.symbol}`;
+        const deadIco = (a.icon || "").includes(".e") || (b.icon || "").includes(".e");
+        const usdce = /usdc\.e/i.test(pairSym);
+        const sample = _mktDbg < 8 && chainId === 43114 && /usd/i.test(pairSym);
+        if (deadIco || usdce || sample) {
+          if (sample && !deadIco && !usdce) _mktDbg += 1;
+        const wantA = usdStables(d).find((s) => s.address.toLowerCase() === a.address.toLowerCase())?.decimals ?? null;
+        const wantB = usdStables(d).find((s) => s.address.toLowerCase() === b.address.toLowerCase())?.decimals ?? null;
+        fetch("http://127.0.0.1:7877/ingest/5e2e6afe-2618-4b13-996a-8c6b0be88e05", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "05e1c5" },
+          body: JSON.stringify({
+            sessionId: "05e1c5",
+            runId: "pre-fix",
+            hypothesisId: "B",
+            location: "markets.ts:loadEvmMarkets",
+            message: "evm-depth-row",
+            data: {
+              chainId,
+              pair: pairSym,
+              usedDecA: a.decimals,
+              usedDecB: b.decimals,
+              wantDecA: wantA,
+              wantDecB: wantB,
+              wrapUsd,
+              qUsd,
+              tvlQ,
+              depth,
+              price,
+              iconA: a.icon,
+              venues: names,
+              n: venues.length,
+              tvlQuotes: venues.slice(0, 6).map((v) => ({ id: v.protocolId, tvl: v.tvlQuote, rA: v.reserveA, rB: v.reserveB })),
+            },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {});
+        }
+      }
+      // #endregion
       byPair.set(id, {
         pairId: id,
         chainId,
         chainShort: chain.short,
         symbolA: displayStableSymbol(chainId, a.address, a.symbol ?? a.address.slice(0, 6)),
         symbolB: displayStableSymbol(chainId, b.address, b.symbol ?? b.address.slice(0, 6)),
-        iconA: a.icon ?? "/tokens/eth.png",
-        iconB: b.icon ?? "/tokens/eth.png",
+        iconA: localTokenIcon(a.symbol, a.icon ?? "/tokens/eth.png"),
+        iconB: localTokenIcon(b.symbol, b.icon ?? "/tokens/eth.png"),
         tokenA: a.address,
         tokenB: b.address,
         venues,

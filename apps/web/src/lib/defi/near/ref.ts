@@ -1,4 +1,17 @@
-import { fetchRefTopPools, isRefSauce, loadNearMarkets, nearDecimals, nearToken, N_USDC, N_USDT, N_WRAP, quoteNearToken, REF_VENUE } from "../../nearDex.ts";
+import {
+  fetchRefTopPools,
+  isNearPricedLeg,
+  isNearStable,
+  isRefSauce,
+  loadNearMarkets,
+  nearDecimals,
+  nearToken,
+  nearUsdFromLegs,
+  N_WRAP,
+  quoteNearToken,
+  REF_VENUE,
+  wrapUsdFromRefPools,
+} from "../../nearDex.ts";
 import type { VenuePool } from "../../dexPools.ts";
 import { pairId } from "../../pairKey.ts";
 import { catalogTopOn } from "../universe.ts";
@@ -28,11 +41,23 @@ function decOf(id: string, catalog: Map<string, { decimals: number; symbol: stri
 function metaOf(id: string, catalog: Map<string, { decimals: number; symbol: string; icon: string }>) {
   const known = nearToken(id);
   if (known) return { symbol: known.symbol, icon: known.icon };
-  return catalog.get(id) ?? { symbol: id.split(".")[0] || id.slice(0, 6), icon: "/tokens/near.png" };
+  const hit = catalog.get(id);
+  if (hit) return hit;
+  const raw = id.split(".")[0] || id.slice(0, 6);
+  const symbol = raw.length <= 8 && !/^[0-9a-f]{8,}$/i.test(raw) ? raw.toUpperCase() : raw.slice(0, 8);
+  return { symbol, icon: "/tokens/near.png" };
 }
 
-function isStable(id: string) {
-  return id === N_USDT.address || id === N_USDC.address;
+function humanPriced(id: string, raw: string | undefined) {
+  if (!isNearStable(id) && !isNearPricedLeg(id)) return 0;
+  const n = Number(raw ?? 0) / 10 ** nearDecimals(id);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+function indexerSymbol(p: { token_symbols?: string[] }, i: number, id: string, catalog: Map<string, { decimals: number; symbol: string; icon: string }>) {
+  const fromApi = String(p.token_symbols?.[i] ?? "").trim();
+  if (fromApi && !/^[0-9a-f]{12,}$/i.test(fromApi)) return fromApi;
+  return metaOf(id, catalog).symbol;
 }
 
 async function marketsFromIndexer(): Promise<MarketRow[] | null> {
@@ -41,14 +66,20 @@ async function marketsFromIndexer(): Promise<MarketRow[] | null> {
     if (!json.length) return null;
     const tokens = catalogTopOn(397, 500);
     const catalog = new Map(tokens.map((t) => [t.address.toLowerCase(), { decimals: t.decimals, symbol: t.symbol ?? t.address, icon: t.icon ?? "/tokens/near.png" }]));
+    const wrapUsd = wrapUsdFromRefPools(json);
     const byPair = new Map<string, MarketRow>();
     const ingest = (p: (typeof json)[number], sauce: boolean) => {
       if (isRefSauce(p.pool_kind) !== sauce) return;
       const ids = (p.token_account_ids ?? []).map((x) => x.toLowerCase());
       if (ids.length !== 2) return;
-      const tvl = Number(p.tvl);
+      const amts = p.amounts ?? [];
+      const tvl = nearUsdFromLegs(
+        { address: ids[0], amount: humanPriced(ids[0], amts[0]) },
+        { address: ids[1], amount: humanPriced(ids[1], amts[1]) },
+        wrapUsd,
+      );
       if (!Number.isFinite(tvl) || tvl < 10) return;
-      const stableIdx = ids.findIndex((id) => isStable(id));
+      const stableIdx = ids.findIndex((id) => isNearStable(id));
       const wrapIdx = ids.findIndex((id) => id === N_WRAP.address);
       let iA = 0;
       let iB = 1;
@@ -63,10 +94,12 @@ async function marketsFromIndexer(): Promise<MarketRow[] | null> {
       const b = ids[iB];
       const id = pairId(397, a, b);
       if (sauce && byPair.has(id)) return;
+      const knownA = Boolean(nearToken(a) || catalog.get(a));
+      const knownB = Boolean(nearToken(b) || catalog.get(b));
       const decA = decOf(a, catalog);
       const decB = decOf(b, catalog);
-      const amtA = Number(p.amounts?.[iA] ?? 0) / 10 ** decA;
-      const amtB = Number(p.amounts?.[iB] ?? 0) / 10 ** decB;
+      const amtA = knownA ? Number(p.amounts?.[iA] ?? 0) / 10 ** decA : 0;
+      const amtB = knownB ? Number(p.amounts?.[iB] ?? 0) / 10 ** decB : 0;
       const price = amtA > 0 && amtB > 0 ? amtB / amtA : 0;
       const venue = {
         protocolId: REF_VENUE.id,
@@ -91,13 +124,15 @@ async function marketsFromIndexer(): Promise<MarketRow[] | null> {
       }
       const ma = metaOf(a, catalog);
       const mb = metaOf(b, catalog);
-      const usd = isStable(b) && price ? price : isStable(a) && price ? 1 / price : null;
+      const symbolA = indexerSymbol(p, iA, a, catalog);
+      const symbolB = indexerSymbol(p, iB, b, catalog);
+      const usd = isNearStable(b) && price ? price : isNearStable(a) && price ? 1 / price : null;
       byPair.set(id, {
         pairId: id,
         chainId: 397,
         chainShort: "NEAR",
-        symbolA: ma.symbol,
-        symbolB: mb.symbol,
+        symbolA,
+        symbolB,
         iconA: ma.icon,
         iconB: mb.icon,
         tokenA: a,

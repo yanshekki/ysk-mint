@@ -56,7 +56,7 @@ const CAKE: SeedToken = { address: "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82",
 const BTCB: SeedToken = { address: "0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c", symbol: "BTCB", decimals: 18, icon: I("wbtc") };
 
 const WAVAX: SeedToken = { address: "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7", symbol: "WAVAX", decimals: 18, icon: I("avax") };
-const USDC_AVAX: SeedToken = { address: "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c6dBe1", symbol: "USDC", decimals: 6, icon: I("usdc") };
+const USDC_AVAX: SeedToken = { address: "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E", symbol: "USDC", decimals: 6, icon: I("usdc") };
 const USDT_AVAX: SeedToken = { address: "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7", symbol: "USDT", decimals: 6, icon: I("usdt") };
 
 const WETH_OP: SeedToken = { address: "0x4200000000000000000000000000000000000006", symbol: "WETH", decimals: 18, icon: I("eth") };
@@ -250,7 +250,7 @@ export function seedToken(chainId: number, address: string) {
 }
 
 export function isStable(symbol: string) {
-  const s = symbol.replace(/\s+/g, "").toUpperCase();
+  const s = symbol.replace(/\s+/g, "").replace(/₮/g, "T").toUpperCase();
   return (
     s === "USDC" ||
     s === "USDT" ||
@@ -260,6 +260,8 @@ export function isStable(symbol: string) {
     s === "IUSD" ||
     s === "DJED" ||
     s === "USDE" ||
+    s === "USD1" ||
+    s === "USDB" ||
     s === "USDC.E" ||
     s === "USDT.E" ||
     s === "DAI.E" ||

@@ -1027,7 +1027,7 @@ export function MePage() {
     <section className="workspace">
       <div className="workspace-head">
         <div>
-          <p className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-text-muted">Portfolio</p>
+          <p className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-text-muted">{t("me.kicker")}</p>
           <h1>{t("me.title")}</h1>
           <p className="mt-1 text-[15px] text-text-sub">
             {snap.isMine ? t("me.body") : t("me.watching", { name: snap.watchName ?? "" })}

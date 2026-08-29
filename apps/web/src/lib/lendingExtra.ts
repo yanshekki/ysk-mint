@@ -3,6 +3,7 @@ import { accountCache } from "./defi/cache.ts";
 import { DEX } from "./defiAddresses.ts";
 import { quoteEvmToken, type Quote } from "./defiQuotes.ts";
 import { readAaveMarket, type AaveCard, type ProtocolLine } from "./defiPositions.ts";
+import { outboundFetch } from "./outbound.ts";
 
 export type LendCard = AaveCard & { protocol: string };
 
@@ -1067,7 +1068,7 @@ async function listaMarketIds(user: Address): Promise<`0x${string}`[]> {
       try {
         const ac = new AbortController();
         const t = setTimeout(() => ac.abort(), 12000);
-        const res = await fetch(url, { signal: ac.signal });
+        const res = await outboundFetch(url, { signal: ac.signal });
         clearTimeout(t);
         if (!res.ok) return;
         const json = (await res.json()) as { data?: unknown };
@@ -1084,7 +1085,7 @@ async function listaVaults(): Promise<Address[]> {
   try {
     const ac = new AbortController();
     const t = setTimeout(() => ac.abort(), 12000);
-    const res = await fetch("https://api.lista.org/api/moolah/vault/list?page=1&pageSize=50&chain=bsc", { signal: ac.signal });
+    const res = await outboundFetch("https://api.lista.org/api/moolah/vault/list?page=1&pageSize=50&chain=bsc", { signal: ac.signal });
     clearTimeout(t);
     if (!res.ok) return LISTA_VAULTS_FALLBACK;
     const json = (await res.json()) as { data?: { list?: Array<{ address?: string }> } };

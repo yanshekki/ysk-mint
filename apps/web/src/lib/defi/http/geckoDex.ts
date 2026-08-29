@@ -1,5 +1,6 @@
 import { pairId } from "../../pairKey.ts";
 import { cacheGet, cacheHash, cacheKey, POLICIES } from "../cache.ts";
+import { outboundFetch } from "../../outbound.ts";
 import type { DefiProtocol, MarketRow, VenueQuote } from "../types.ts";
 
 const PAGE = 20;
@@ -77,7 +78,7 @@ async function fetchJson<T>(url: string, ms: number): Promise<T | null> {
     const ac = new AbortController();
     const t = setTimeout(() => ac.abort(), ms);
     try {
-      const res = await fetch(url, { signal: ac.signal, headers: { accept: "application/json" } });
+      const res = await outboundFetch(url, { signal: ac.signal, headers: { accept: "application/json" } });
       if (res.status === 429) {
         await new Promise((r) => setTimeout(r, 1200 * (i + 1)));
         continue;

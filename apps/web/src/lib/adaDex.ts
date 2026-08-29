@@ -3,9 +3,11 @@ import type { Quote } from "./defiQuotes.ts";
 import type { VenuePool } from "./dexPools.ts";
 import type { Venue } from "./dexVenues.ts";
 import { pairId } from "./pairKey.ts";
+import { outboundFetch } from "./outbound.ts";
 import type { NativeMarket } from "./nearDex.ts";
 
 const AGG = "https://agg-api.minswap.org/aggregator";
+const MARKET = "https://api-mainnet-prod.minswap.org";
 
 export type AdaTok = { address: string; symbol: string; decimals: number; icon: string };
 
@@ -68,7 +70,7 @@ async function aggGet<T>(path: string): Promise<T> {
       policy: { ...POLICIES.catalog, keep: (v: T) => v != null },
     },
     async () => {
-      const res = await fetch(`${AGG}${path}`);
+      const res = await outboundFetch(`${AGG}${path}`);
       if (!res.ok) throw new Error(`minswap ${path}`);
       return (await res.json()) as T;
     },
@@ -82,7 +84,7 @@ async function aggPost<T>(path: string, body: unknown): Promise<T> {
       policy: { ...POLICIES.quote, keep: (v: T) => v != null },
     },
     async () => {
-      const res = await fetch(`${AGG}${path}`, {
+      const res = await outboundFetch(`${AGG}${path}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(body),
@@ -187,6 +189,144 @@ export async function adaVenuesForPair(tokenA: string, tokenB: string, decA = 6,
 }
 
 export async function loadAdaMarkets(): Promise<NativeMarket[]> {
+  const listed = await loadAdaMarketsFromMetrics().catch(() => [] as NativeMarket[]);
+  if (listed.length) return listed;
+  return loadAdaMarketsFromEstimate();
+}
+
+type AdaAsset = {
+  currency_symbol?: string;
+  token_name?: string;
+  metadata?: { ticker?: string; decimals?: number; name?: string };
+};
+
+type AdaPoolMetric = {
+  lp_asset?: AdaAsset;
+  type?: string;
+  asset_a?: AdaAsset;
+  asset_b?: AdaAsset;
+  liquidity_a?: number;
+  liquidity_b?: number;
+  liquidity_currency?: number;
+  trading_fee_tier?: number[];
+};
+
+function adaUnit(asset?: AdaAsset) {
+  if (!asset) return "";
+  const cs = (asset.currency_symbol || "").toLowerCase();
+  const tn = (asset.token_name || "").toLowerCase();
+  if (!cs && !tn) return "lovelace";
+  return `${cs}${tn}`;
+}
+
+function adaSym(asset?: AdaAsset, fallback = "TKN") {
+  const t = String(asset?.metadata?.ticker || asset?.metadata?.name || "").trim();
+  return t || fallback;
+}
+
+function adaIconOf(symbol: string) {
+  const s = symbol.toLowerCase();
+  if (s.includes("usd") || s === "dai") return I("usdc");
+  if (s.includes("btc")) return I("wbtc");
+  return I("ada");
+}
+
+async function fetchAdaPoolMetrics(): Promise<AdaPoolMetric[]> {
+  return cacheGet(
+    {
+      key: cacheKey("http.minswap", 1815, "pools.metrics3"),
+      policy: { ...POLICIES.catalog, keep: (rows: AdaPoolMetric[]) => rows.length > 0 },
+    },
+    async () => {
+      const out: AdaPoolMetric[] = [];
+      let searchAfter: unknown[] | undefined;
+      for (let page = 0; page < 4 && out.length < 120; page++) {
+        const res = await outboundFetch(`${MARKET}/v1/pools/metrics`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            sort_field: "liquidity",
+            sort_direction: "desc",
+            limit: 50,
+            currency: "usd",
+            protocols: ["Minswap", "MinswapV2", "MinswapStable"],
+            ...(searchAfter ? { search_after: searchAfter } : {}),
+          }),
+        });
+        if (!res.ok) break;
+        const json = (await res.json()) as { pool_metrics?: AdaPoolMetric[]; search_after?: unknown[] };
+        const list = json.pool_metrics ?? [];
+        out.push(...list);
+        searchAfter = json.search_after;
+        if (!list.length || !searchAfter) break;
+      }
+      return out;
+    },
+  );
+}
+
+async function loadAdaMarketsFromMetrics(): Promise<NativeMarket[]> {
+  const pools = await fetchAdaPoolMetrics();
+  const byPair = new Map<string, NativeMarket>();
+  for (const p of pools) {
+    const a0 = adaUnit(p.asset_a);
+    const b0 = adaUnit(p.asset_b);
+    if (!a0 || !b0 || a0 === b0) continue;
+    const tvl = Number(p.liquidity_currency);
+    if (!(tvl >= 1000)) continue;
+    let tokenA = a0;
+    let tokenB = b0;
+    let symbolA = adaSym(p.asset_a);
+    let symbolB = adaSym(p.asset_b);
+    let reserveA = Number(p.liquidity_a) || 0;
+    let reserveB = Number(p.liquidity_b) || 0;
+    let price = reserveA > 0 && reserveB > 0 ? reserveB / reserveA : 0;
+    if (isAdaStable(tokenA) && !isAdaStable(tokenB)) {
+      [tokenA, tokenB] = [tokenB, tokenA];
+      [symbolA, symbolB] = [symbolB, symbolA];
+      [reserveA, reserveB] = [reserveB, reserveA];
+      price = price ? 1 / price : 0;
+    }
+    const lp = p.lp_asset;
+    const pool = lp?.currency_symbol && lp.token_name ? `${lp.currency_symbol}.${lp.token_name}` : `${p.type || "minswap"}:${a0}:${b0}`;
+    const feeN = Array.isArray(p.trading_fee_tier) ? p.trading_fee_tier[0] : 0;
+    const venue: VenuePool = {
+      venue: venueNamed(p.type || "Minswap"),
+      pool,
+      feeLabel: feeN ? `${feeN}%` : p.type || "Minswap",
+      priceAinB: price,
+      tvlQuote: tvl,
+      reserveA,
+      reserveB,
+    };
+    const id = pairId(1815, tokenA, tokenB);
+    const prev = byPair.get(id);
+    if (prev) {
+      if (!prev.venues.some((v) => v.pool === pool)) prev.venues.push(venue);
+      prev.depth += tvl;
+      if (!prev.venueNames.includes(venue.venue.name)) prev.venueNames.push(venue.venue.name);
+      continue;
+    }
+    byPair.set(id, {
+      pairId: id,
+      chainId: 1815,
+      chainShort: "ADA",
+      symbolA,
+      symbolB,
+      iconA: adaIconOf(symbolA),
+      iconB: adaIconOf(symbolB),
+      tokenA,
+      tokenB,
+      venues: [venue],
+      price: isAdaStable(tokenB) && price ? price : isAdaStable(tokenA) && price ? 1 / price : price || null,
+      depth: tvl,
+      venueNames: [venue.venue.name],
+    });
+  }
+  return [...byPair.values()];
+}
+
+async function loadAdaMarketsFromEstimate(): Promise<NativeMarket[]> {
   const rows: NativeMarket[] = [];
   await Promise.all(
     ADA_SEEDS.map(async (s) => {

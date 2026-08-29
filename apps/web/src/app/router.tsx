@@ -87,6 +87,34 @@ export const router = createBrowserRouter([
           return { Component: SettingsPage };
         },
       },
+      {
+        path: "about",
+        lazy: async () => {
+          const { AboutPage } = await import("../features/legal/AboutPage.tsx");
+          return { Component: AboutPage };
+        },
+      },
+      {
+        path: "donate",
+        lazy: async () => {
+          const { DonatePage } = await import("../features/legal/DonatePage.tsx");
+          return { Component: DonatePage };
+        },
+      },
+      {
+        path: "terms",
+        lazy: async () => {
+          const { TermsPage } = await import("../features/legal/LegalDoc.tsx");
+          return { Component: TermsPage };
+        },
+      },
+      {
+        path: "disclaimer",
+        lazy: async () => {
+          const { DisclaimerPage } = await import("../features/legal/LegalDoc.tsx");
+          return { Component: DisclaimerPage };
+        },
+      },
     ],
   },
 ]);

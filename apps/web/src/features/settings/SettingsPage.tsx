@@ -1,18 +1,16 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAccount } from "wagmi";
-import { CHAINS as CHAIN_MAP, featuredChains, type ChainDefinition } from "@ysk-mint/config";
-import { builtinRpc, parseRpc, pingRpc } from "../../lib/rpc.ts";
 import { LOCALES } from "../../lib/i18n.ts";
 import { cacheWipe } from "../../lib/defi/cache.ts";
-import { chainIcon } from "../../lib/chainIcon.ts";
 import { listConnected, MAX_ADDRS, MAX_WATCH, useAddressSets } from "../../lib/addressSets.ts";
 import { useNativeWallets } from "../../lib/nativeWallets.ts";
 import { BUY_GREEN, SELL_RED, useUserSettings, type QuotePriority, type QuoteSide } from "../../lib/userSettings.ts";
 import { AddrAddBar, AddrRow } from "./AddrFields.tsx";
-
-const CHAINS = featuredChains().filter((c) => !c.testnet);
+import { OutboundFields } from "./OutboundFields.tsx";
+import { RpcSettings } from "./RpcSettings.tsx";
+import { SetItem, SetToggle } from "./SetControls.tsx";
 
 const TABS = ["display", "addresses", "chains", "data"] as const;
 type SettingsTab = (typeof TABS)[number];
@@ -37,120 +35,6 @@ const DEMO_ICO: Record<string, string> = {
   USDC: "/tokens/usdc.png",
 };
 
-function SetSwitch({ on }: { on: boolean }) {
-  return (
-    <span className={`set-switch ${on ? "on" : ""}`} aria-hidden="true">
-      <i />
-    </span>
-  );
-}
-
-function SetItem({ title, hint, children }: { title: string; hint: string; children: ReactNode }) {
-  return (
-    <div className="set-item">
-      <div className="holding-meta">
-        <b>{title}</b>
-        <span>{hint}</span>
-      </div>
-      <div className="set-ctrl">{children}</div>
-    </div>
-  );
-}
-
-function RpcRow({ chain }: { chain: ChainDefinition }) {
-  const { t } = useTranslation();
-  const saved = useUserSettings((s) => s.rpcByChain?.[String(chain.chainId)] ?? "");
-  const setRpc = useUserSettings((s) => s.setRpc);
-  const fallback = builtinRpc(chain.chainId) ?? chain.rpc;
-  const [text, setText] = useState(saved);
-  const [bad, setBad] = useState(false);
-  const [ping, setPing] = useState<"" | "ok" | "bad" | "mismatch">("");
-  useEffect(() => {
-    setText(saved);
-  }, [saved]);
-
-  function commit(raw: string) {
-    const next = raw.trim();
-    if (!next) {
-      setBad(false);
-      setPing("");
-      setRpc(chain.chainId, undefined);
-      return;
-    }
-    const url = parseRpc(next);
-    if (!url) {
-      setBad(true);
-      setPing("");
-      return;
-    }
-    setBad(false);
-    setRpc(chain.chainId, url);
-    void pingRpc(url, chain.chainId).then(setPing);
-  }
-
-  const pingNote = ping === "ok" ? t("settings.rpcOk") : ping === "mismatch" ? t("settings.rpcMismatch") : ping === "bad" ? t("settings.rpcFail") : "";
-
-  return (
-    <div className={`set-rpc-row ${bad ? "is-bad" : ""}`}>
-      <span className="holding-ico-wrap">
-        <img src={chainIcon(chain)} alt="" className="holding-ico" />
-      </span>
-      <div className="holding-meta">
-        <b>
-          {chain.name}
-          {saved ? <span className="me-count">{t("settings.rpcCustom")}</span> : null}
-        </b>
-        <span>{pingNote || `${chain.short} · ${chain.chainId}`}</span>
-      </div>
-      <input
-        className="field-text set-rpc-input"
-        value={text}
-        spellCheck={false}
-        autoComplete="off"
-        autoCorrect="off"
-        placeholder={t("settings.rpcPlaceholder", { url: fallback })}
-        aria-label={`${chain.short} RPC`}
-        onChange={(e) => {
-          setText(e.target.value);
-          setPing("");
-          if (bad) setBad(false);
-        }}
-        onBlur={() => commit(text)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-        }}
-      />
-      {saved ? (
-        <button
-          type="button"
-          className="me-pool-btn me-pool-btn-explore"
-          onClick={() => {
-            setText("");
-            commit("");
-          }}
-        >
-          {t("settings.rpcDefault")}
-        </button>
-      ) : (
-        <span />
-      )}
-      {bad ? <p className="set-rpc-err">{t("settings.rpcBad")}</p> : null}
-    </div>
-  );
-}
-
-function SetToggle({ title, hint, on, onChange }: { title: string; hint: string; on: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <button type="button" className="set-item set-item-btn" aria-pressed={on} onClick={() => onChange(!on)}>
-      <div className="holding-meta">
-        <b>{title}</b>
-        <span>{hint}</span>
-      </div>
-      <SetSwitch on={on} />
-    </button>
-  );
-}
-
 export function SettingsPage() {
   const { t, i18n } = useTranslation();
   const loc = useLocation();
@@ -163,7 +47,6 @@ export function SettingsPage() {
   const [wiping, setWiping] = useState(false);
   const [wiped, setWiped] = useState(false);
   const [restored, setRestored] = useState(false);
-  const [chainQ, setChainQ] = useState("");
   const watchAddRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   function setTab(next: SettingsTab) {
@@ -173,7 +56,6 @@ export function SettingsPage() {
   }
 
   const lng = LOCALES.some((l) => l.id === i18n.language) ? i18n.language : "zh-HK";
-  const onCount = CHAINS.length - s.disabledChains.filter((id) => CHAINS.some((c) => c.chainId === id)).length;
 
   const quoteIsStable = s.quotePriority !== "gas-stable";
   const quoteSym = quoteIsStable ? "USDC" : "WAVAX";
@@ -186,18 +68,6 @@ export function SettingsPage() {
     : s.quoteSide === "left"
       ? t("settings.pairPreviewLeft")
       : t("settings.pairPreviewRight");
-
-  const q = chainQ.trim().toLowerCase();
-  const visibleChains = useMemo(() => {
-    if (!q) return CHAINS;
-    return CHAINS.filter(
-      (c) =>
-        c.name.toLowerCase().includes(q) ||
-        c.short.toLowerCase().includes(q) ||
-        c.nativeSymbol.toLowerCase().includes(q) ||
-        String(c.chainId) === q,
-    );
-  }, [q]);
 
   const greenRed = s.buyColor === BUY_GREEN && s.sellColor === SELL_RED;
   const redGreen = s.buyColor === SELL_RED && s.sellColor === BUY_GREEN;
@@ -441,91 +311,13 @@ export function SettingsPage() {
             </>
           ) : null}
 
-          {tab === "chains" ? (
-            <>
-              <section className="me-card" role="tabpanel">
-                <div className="me-card-head">
-                  <b>{t("settings.chains")}</b>
-                  <input
-                    className="me-filter"
-                    type="text"
-                    value={chainQ}
-                    autoComplete="off"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    onChange={(e) => setChainQ(e.target.value)}
-                    placeholder={t("settings.chainSearch")}
-                    aria-label={t("settings.chainSearch")}
-                  />
-                  <span className="me-count">{t("settings.chainsOn", { on: onCount, total: CHAINS.length })}</span>
-                </div>
-                <div className="set-chain-bar">
-                  <p className="set-note">{t("settings.chainsHint")}</p>
-                  <button type="button" className="me-pool-btn me-pool-btn-explore" onClick={() => s.patch({ disabledChains: [] })}>
-                    {t("settings.allOn")}
-                  </button>
-                  <button
-                    type="button"
-                    className="me-pool-btn me-pool-btn-explore"
-                    onClick={() => s.patch({ disabledChains: CHAINS.map((c) => c.chainId) })}
-                  >
-                    {t("settings.allOff")}
-                  </button>
-                </div>
-                {onCount === 0 ? <p className="me-card-empty">{t("settings.chainsNone")}</p> : null}
-                {visibleChains.length === 0 ? (
-                  <p className="me-card-empty">{t("settings.chainEmpty")}</p>
-                ) : (
-                  <div className="me-list set-chain-list">
-                    {visibleChains.map((c) => {
-                      const on = !s.disabledChains.includes(c.chainId);
-                      return (
-                        <button
-                          key={c.chainId}
-                          type="button"
-                          role="switch"
-                          aria-checked={on}
-                          className={`me-token ${on ? "" : "me-token-zero"}`}
-                          onClick={() => s.setChainEnabled(c.chainId, !on)}
-                        >
-                          <span className="holding-ico-wrap">
-                            <img src={chainIcon(c)} alt="" className="holding-ico" />
-                          </span>
-                          <div className="holding-meta">
-                            <b>{c.name}</b>
-                            <span>
-                              {c.short} · {on ? t("settings.chainOn") : t("settings.chainOff")}
-                            </span>
-                          </div>
-                          <SetSwitch on={on} />
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </section>
-              <section className="me-card">
-                <div className="me-card-head">
-                  <b>{t("settings.rpc")}</b>
-                </div>
-                <p className="set-note set-note-pad">{t("settings.rpcHint")}</p>
-                {Object.values(CHAIN_MAP)
-                  .filter((c) => c.evm && c.enabled && !c.testnet)
-                  .map((c) => (
-                    <RpcRow key={c.chainId} chain={c} />
-                  ))}
-                <p className="set-note set-note-pad">{t("settings.rpcTestnets")}</p>
-                {Object.values(CHAIN_MAP)
-                  .filter((c) => c.evm && c.enabled && c.testnet)
-                  .map((c) => (
-                    <RpcRow key={c.chainId} chain={c} />
-                  ))}
-              </section>
-            </>
-          ) : null}
+          {tab === "chains" ? <RpcSettings /> : null}
 
           {tab === "data" ? (
             <section className="me-card" role="tabpanel">
+              <SetItem title={t("settings.outbound")} hint={t("settings.outboundHint")}>
+                <OutboundFields />
+              </SetItem>
               <div className="set-item">
                 <div className="holding-meta">
                   <b>{t("settings.cache")}</b>

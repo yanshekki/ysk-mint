@@ -15,6 +15,13 @@ const NAV = [
   ["/settings", "nav.settings"],
 ] as const;
 
+const LEGAL = [
+  ["/about", "nav.about"],
+  ["/donate", "nav.donate"],
+  ["/terms", "nav.terms"],
+  ["/disclaimer", "nav.disclaimer"],
+] as const;
+
 function navOn(path: string, href: string) {
   return path === href || (href !== "/" && path.startsWith(href));
 }
@@ -49,8 +56,8 @@ export function Shell() {
     <div className="app">
       <header className="topbar">
         <Link to="/" className="logo">
-          <span className="logo-mark" />
-          ysk-mint
+          <img className="logo-mark" src="/logo.svg" width={28} height={28} alt="" />
+          {t("app.name")}
         </Link>
         <nav className="top-nav">
           {NAV.map(([href, key]) => (
@@ -68,6 +75,18 @@ export function Shell() {
       </main>
       <LiveDock />
       <footer className="botbar">
+        <div className="bot-meta">
+          <Link to="/about" className="bot-powered">
+            {t("app.poweredBy")}
+          </Link>
+          <nav className="bot-legal" aria-label={t("nav.legal")}>
+            {LEGAL.map(([href, key]) => (
+              <Link key={href} to={href} className={loc.pathname === href ? "on" : ""}>
+                {t(key)}
+              </Link>
+            ))}
+          </nav>
+        </div>
         <nav className="bot-nav" aria-label={t("app.name")}>
           {NAV.map(([href, key]) => (
             <Link key={href} to={href} className={navOn(loc.pathname, href) ? "on" : ""}>

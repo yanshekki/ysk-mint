@@ -4,6 +4,31 @@ import { asAddr } from "../pairKey.ts";
 import { TOKEN_CATALOG } from "../tokenRegistry.ts";
 import type { TokenRef } from "./types.ts";
 
+export function localTokenIcon(symbol?: string, fallback = "/tokens/eth.png") {
+  const s = (symbol ?? "").toLowerCase().replace(/\s+/g, "");
+  if (!s) return fallback;
+  if (/usdc/.test(s)) return "/tokens/usdc.png";
+  if (/usdt|usd₮/.test(s)) return "/tokens/usdt.png";
+  if (s === "dai" || s.startsWith("dai.")) return "/tokens/dai.png";
+  if (/btc/.test(s)) return "/tokens/wbtc.png";
+  return fallback;
+}
+
+export function evmTokenDecimals(chainId: number, address: string, fallback = 18): number {
+  const d = DEX[chainId];
+  const a = address.toLowerCase();
+  if (d) {
+    if (a === d.wrapped.toLowerCase()) {
+      const native = TOKEN_CATALOG.find((t) => t.chainId === chainId && t.native);
+      return native?.decimals && native.decimals > 0 ? native.decimals : 18;
+    }
+    const s = usdStables(d).find((x) => x.address.toLowerCase() === a);
+    if (s) return s.decimals;
+  }
+  const t = TOKEN_CATALOG.find((x) => x.chainId === chainId && x.address && x.address.toLowerCase() === a);
+  return t?.decimals || fallback;
+}
+
 export type MarketToken = TokenRef & { icon: string; name?: string };
 
 const SENTINEL = /^0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee$/i;
@@ -99,6 +124,8 @@ export function chainTokenIcon(chainId: number) {
   return (WRAP_META[chainId] ?? { icon: "/tokens/eth.png" }).icon;
 }
 
+const _uniLogged = new Set<number>();
+
 export function marketTokensOn(chainId: number, extra: MarketToken[] = []): MarketToken[] {
   const d = DEX[chainId];
   if (!d) return [];
@@ -108,7 +135,7 @@ export function marketTokensOn(chainId: number, extra: MarketToken[] = []): Mark
   pushToken(out, seen, {
     chainId,
     address: d.wrapped,
-    decimals: 18,
+    decimals: evmTokenDecimals(chainId, d.wrapped, 18),
     symbol: wrap.symbol,
     icon: wrap.icon,
     native: true,
@@ -119,9 +146,37 @@ export function marketTokensOn(chainId: number, extra: MarketToken[] = []): Mark
       address: s.address,
       decimals: s.decimals,
       symbol: s.symbol,
-      icon: `/tokens/${s.symbol.toLowerCase()}.png`,
+      icon: localTokenIcon(s.symbol),
     });
   }
+  // #region agent log
+  if (!_uniLogged.has(chainId)) {
+    _uniLogged.add(chainId);
+    fetch("http://127.0.0.1:7877/ingest/5e2e6afe-2618-4b13-996a-8c6b0be88e05", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "05e1c5" },
+      body: JSON.stringify({
+        sessionId: "05e1c5",
+        runId: "pre-fix",
+        hypothesisId: "D",
+        location: "universe.ts:marketTokensOn",
+        message: "stable-icons-decimals",
+        data: {
+          chainId,
+          usdcDecimals: d.usdcDecimals,
+          wrapForced18: false,
+          wrapDecimals: evmTokenDecimals(chainId, d.wrapped, 18),
+          stables: usdStables(d).map((s) => ({
+            symbol: s.symbol,
+            decimals: s.decimals,
+            icon: localTokenIcon(s.symbol),
+          })),
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+  }
+  // #endregion
   for (const t of TOKEN_CATALOG) {
     if (t.chainId !== chainId || !t.address) continue;
     if (!t.address.startsWith("0x") && !t.address.startsWith("0X")) continue;
@@ -147,8 +202,20 @@ export function tokensFromMarketRows(
   const out: MarketToken[] = [];
   const seen = new Set<string>();
   for (const r of rows) {
-    pushToken(out, seen, { chainId: r.chainId, address: r.tokenA, decimals: 18, symbol: r.symbolA, icon: r.iconA });
-    pushToken(out, seen, { chainId: r.chainId, address: r.tokenB, decimals: 18, symbol: r.symbolB, icon: r.iconB });
+    pushToken(out, seen, {
+      chainId: r.chainId,
+      address: r.tokenA,
+      decimals: evmTokenDecimals(r.chainId, r.tokenA),
+      symbol: r.symbolA,
+      icon: r.iconA || localTokenIcon(r.symbolA),
+    });
+    pushToken(out, seen, {
+      chainId: r.chainId,
+      address: r.tokenB,
+      decimals: evmTokenDecimals(r.chainId, r.tokenB),
+      symbol: r.symbolB,
+      icon: r.iconB || localTokenIcon(r.symbolB),
+    });
   }
   return out;
 }

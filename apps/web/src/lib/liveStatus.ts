@@ -14,14 +14,21 @@ export type LiveJob = {
 
 type Store = {
   jobs: LiveJob[];
+  waveDone: number;
   start: (id: string, chainId: number, kind: LiveKind, phase?: Exclude<LivePhase, "fail">) => void;
   run: (id: string) => void;
   finish: (id: string, ok?: boolean) => void;
   clear: (prefix?: string) => void;
 };
 
+function nextWave(jobs: LiveJob[], done: number, add: number) {
+  if (!jobs.length) return { jobs, waveDone: 0 };
+  return { jobs, waveDone: done + add };
+}
+
 export const useLiveStatus = create<Store>((set, get) => ({
   jobs: [],
+  waveDone: 0,
   start: (id, chainId, kind, phase = "run") => {
     set((s) => ({
       jobs: [...s.jobs.filter((j) => j.id !== id), { id, chainId, kind, phase, at: Date.now() }],
@@ -38,7 +45,11 @@ export const useLiveStatus = create<Store>((set, get) => ({
     const cur = get().jobs.find((j) => j.id === id);
     if (!cur) return;
     if (ok) {
-      set((s) => ({ jobs: s.jobs.filter((j) => j.id !== id) }));
+      set((s) => nextWave(
+        s.jobs.filter((j) => j.id !== id),
+        s.waveDone,
+        1,
+      ));
       return;
     }
     if (cur.phase === "fail") return;
@@ -49,15 +60,20 @@ export const useLiveStatus = create<Store>((set, get) => ({
       set((s) => {
         const row = s.jobs.find((j) => j.id === id);
         if (!row || row.phase !== "fail") return s;
-        return { jobs: s.jobs.filter((j) => j.id !== id) };
+        return nextWave(
+          s.jobs.filter((j) => j.id !== id),
+          s.waveDone,
+          1,
+        );
       });
     }, 2000);
   },
   clear: (prefix) => {
     set((s) => {
-      const next = prefix ? s.jobs.filter((j) => !j.id.startsWith(prefix)) : [];
-      if (next.length === s.jobs.length) return s;
-      return { jobs: next };
+      const jobs = prefix ? s.jobs.filter((j) => !j.id.startsWith(prefix)) : [];
+      const dropped = s.jobs.length - jobs.length;
+      if (!dropped) return s;
+      return nextWave(jobs, s.waveDone, dropped);
     });
   },
 }));

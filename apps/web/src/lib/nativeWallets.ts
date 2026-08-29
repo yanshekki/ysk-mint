@@ -1,4 +1,5 @@
 import { isCardanoAddress, isNearAccountId, isSolanaAddress } from "@ysk-mint/sdk";
+import { koiosGet } from "./koios.ts";
 import {
   clearCardanoApi,
   enableCardano,
@@ -115,8 +116,7 @@ export async function pingNearRpc(): Promise<string | null> {
 
 export async function pingCardanoTip(): Promise<string | null> {
   try {
-    const res = await fetch("https://api.koios.rest/api/v1/tip");
-    const json = (await res.json()) as Array<{ block_height?: number }>;
+    const json = (await koiosGet("tip")) as Array<{ block_height?: number }>;
     const h = json[0]?.block_height;
     return typeof h === "number" ? String(h) : null;
   } catch {

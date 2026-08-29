@@ -1,5 +1,7 @@
 import { pairId } from "../../pairKey.ts";
 import { cacheGet, cacheHash, cacheKey, POLICIES } from "../cache.ts";
+import { outboundFetch } from "../../outbound.ts";
+import { saneUsdDepth } from "../saneTvl.ts";
 import type { DefiProtocol, MarketRow, VenueQuote } from "../types.ts";
 
 const USDC = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
@@ -41,8 +43,15 @@ function keep(row: Row) {
   return true;
 }
 
+function stableUsd(row: Row) {
+  if (isUsd(row.mintB, row.symbolB)) return row.reserveB;
+  if (isUsd(row.mintA, row.symbolA)) return row.reserveA;
+  return 0;
+}
+
 function venue(protocolId: string, name: string, row: Row): VenueQuote {
   const priceAinB = isUsd(row.mintB, row.symbolB) ? row.price : isUsd(row.mintA, row.symbolA) && row.price ? 1 / row.price : row.price;
+  const tvl = saneUsdDepth(row.tvl, stableUsd(row));
   return {
     protocolId,
     protocolName: name,
@@ -52,7 +61,7 @@ function venue(protocolId: string, name: string, row: Row): VenueQuote {
     priceAinB: Number.isFinite(priceAinB) ? priceAinB : 0,
     reserveA: row.reserveA,
     reserveB: row.reserveB,
-    tvlQuote: row.tvl,
+    tvlQuote: tvl,
     kind: "jup",
   };
 }
@@ -66,7 +75,7 @@ function toMarkets(protocolId: string, name: string, rows: Row[]): MarketRow[] {
     const prev = byPair.get(id);
     if (prev) {
       prev.venues.push(v);
-      prev.depth += r.tvl;
+      prev.depth += v.tvlQuote;
       if (!prev.venueNames.includes(name)) prev.venueNames.push(name);
       continue;
     }
@@ -82,7 +91,7 @@ function toMarkets(protocolId: string, name: string, rows: Row[]): MarketRow[] {
       tokenB: r.mintB,
       venues: [v],
       price: isUsd(r.mintB, r.symbolB) ? r.price : isUsd(r.mintA, r.symbolA) ? 1 : r.price,
-      depth: r.tvl,
+      depth: v.tvlQuote,
       venueNames: [name],
     });
   }
@@ -92,14 +101,14 @@ function toMarkets(protocolId: string, name: string, rows: Row[]): MarketRow[] {
 async function getJson<T>(url: string, ms = 15000): Promise<T | null> {
   return cacheGet(
     {
-      key: cacheKey("http.solamm", 101, cacheHash(url)),
+      key: cacheKey("http.solamm2", 101, cacheHash(url)),
       policy: { ...POLICIES.catalog, keep: (v: T | null) => v != null },
     },
     async () => {
       const ac = new AbortController();
       const t = setTimeout(() => ac.abort(), ms);
       try {
-        const res = await fetch(url, { signal: ac.signal });
+        const res = await outboundFetch(url, { signal: ac.signal });
         if (!res.ok) return null;
         return (await res.json()) as T;
       } catch {

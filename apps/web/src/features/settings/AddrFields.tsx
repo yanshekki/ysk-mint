@@ -28,8 +28,8 @@ export function AddrAddBar({
   const [nameBad, setNameBad] = useState(false);
 
   const fieldRef = useRef<HTMLInputElement | null>(null);
-  const isName = domainNames.looksLikeName(raw);
-  const hit = useMemo(() => (isName ? null : detectAddrKind(raw)), [isName, raw]);
+  const hit = useMemo(() => detectAddrKind(raw), [raw]);
+  const isName = Boolean(raw.trim()) && !hit.ok && domainNames.looksLikeName(raw);
 
   useEffect(() => {
     onBind?.(fieldRef.current);
@@ -78,6 +78,10 @@ export function AddrAddBar({
       setPicked(null);
       setErr(null);
       setNameHit(null);
+      return;
+    }
+    if (isName) {
+      if (nameBusy) return;
       return;
     }
     const k = nextKind ?? kind;

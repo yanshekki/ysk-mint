@@ -38,7 +38,7 @@ export const appChains = [...featuredEvm, ...tests].filter((c) => {
 const transports = Object.fromEntries(appChains.map((c) => [c.id, liveTransport(c.id)]));
 
 export const wagmiConfig = getDefaultConfig({
-  appName: "ysk-mint",
+  appName: "YSK Mint",
   projectId,
   chains: appChains,
   transports,

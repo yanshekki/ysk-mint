@@ -1,6 +1,6 @@
 import { CHAINS } from "@ysk-mint/config";
 import { DEX, isUsdStableAddress, usdStables } from "./defiAddresses.ts";
-import { venuesPriceUsd, venuesTvlUsd, venueTvlInQuote } from "./defi/quote.ts";
+import { marketDepthUsd, NATIVE_USD, venuesPriceUsd } from "./defi/quote.ts";
 import { canonId, sortPair } from "./pairKey.ts";
 import { useUserSettings } from "./userSettings.ts";
 
@@ -63,7 +63,7 @@ const GAS = new Set(
 export type QuoteRank = 0 | 1 | 2;
 
 function normSymbol(symbol?: string) {
-  return (symbol ?? "").replace(/\s+/g, "").toUpperCase();
+  return (symbol ?? "").replace(/\s+/g, "").replace(/₮/g, "T").toUpperCase();
 }
 
 export function quoteRank(chainId: number, address: string, symbol?: string): QuoteRank {
@@ -134,12 +134,28 @@ export function invertPrice(price: number) {
   return 1 / price;
 }
 
+function refreshVenueTvl<T extends { priceAinB: number; reserveA: number; reserveB: number; tvlQuote?: number }>(v: T, chainId: number): T {
+  if (NATIVE_USD.has(chainId)) return v;
+  if (!(v.reserveA > 0 || v.reserveB > 0)) return v;
+  const tvlQuote =
+    v.reserveA > 0 && v.priceAinB > 0 && Number.isFinite(v.priceAinB)
+      ? v.reserveA * v.priceAinB + Math.max(v.reserveB, 0)
+      : Math.max(v.reserveB, 0) * 2;
+  return { ...v, tvlQuote };
+}
+
 export function invertVenue<T extends { priceAinB: number; reserveA: number; reserveB: number; tvlQuote?: number }>(v: T): T {
   const priceAinB = invertPrice(v.priceAinB);
   const reserveA = v.reserveB;
   const reserveB = v.reserveA;
-  const tvlQuote = reserveA > 0 && priceAinB > 0 ? reserveA * priceAinB + reserveB : v.tvlQuote;
-  return { ...v, priceAinB, reserveA, reserveB, ...(tvlQuote != null ? { tvlQuote } : {}) };
+  let tvlQuote = v.tvlQuote;
+  if (reserveA > 0 || reserveB > 0) {
+    tvlQuote =
+      reserveA > 0 && priceAinB > 0 && Number.isFinite(priceAinB)
+        ? reserveA * priceAinB + Math.max(reserveB, 0)
+        : Math.max(reserveB, 0) * 2;
+  }
+  return { ...v, priceAinB, reserveA, reserveB, tvlQuote };
 }
 
 export function displayStableSymbol(chainId: number, address: string, fallback: string) {
@@ -164,7 +180,7 @@ type Marketish<V extends { priceAinB: number; reserveA: number; reserveB: number
   depth: number;
 };
 
-export function orientMarketRow<V extends { priceAinB: number; reserveA: number; reserveB: number; protocolId?: string; pool?: string }>(
+export function orientMarketRow<V extends { priceAinB: number; reserveA: number; reserveB: number; tvlQuote?: number; protocolId?: string; pool?: string }>(
   row: Marketish<V>,
 ): Marketish<V> {
   const keep = isQuoteOnRight(
@@ -174,11 +190,12 @@ export function orientMarketRow<V extends { priceAinB: number; reserveA: number;
   );
   const symbolA = displayStableSymbol(row.chainId, row.tokenA, row.symbolA);
   const symbolB = displayStableSymbol(row.chainId, row.tokenB, row.symbolB);
-  if (keep) return { ...row, symbolA, symbolB };
-  const venues = row.venues.map(invertVenue);
-  const quote = row.tokenA;
-  const price = venuesPriceUsd(venues, quote, row.chainId, null);
-  const depth = venuesTvlUsd(venues, quote, row.chainId, null);
+  const flipped = keep ? row.venues : row.venues.map(invertVenue);
+  const venues = flipped.map((v) => refreshVenueTvl(v, row.chainId));
+  const quote = keep ? row.tokenB : row.tokenA;
+  const price = venuesPriceUsd(venues, quote, row.chainId, null, keep ? row.tokenA : row.tokenB);
+  const depth = marketDepthUsd(venues, quote, row.chainId, null, row.depth);
+  if (keep) return { ...row, symbolA, symbolB, venues, price: price ?? row.price, depth };
   return {
     ...row,
     tokenA: row.tokenB,
@@ -189,11 +206,11 @@ export function orientMarketRow<V extends { priceAinB: number; reserveA: number;
     iconB: row.iconA,
     venues,
     price,
-    depth: depth > 0 ? depth : venues.reduce((n, v) => n + venueTvlInQuote(v), 0),
+    depth,
   };
 }
 
-export function mergeOriented<V extends { priceAinB: number; reserveA: number; reserveB: number; protocolId?: string; pool?: string }>(
+export function mergeOriented<V extends { priceAinB: number; reserveA: number; reserveB: number; tvlQuote?: number; protocolId?: string; pool?: string }>(
   rows: Array<Marketish<V>>,
 ): Array<Marketish<V>> {
   const by = new Map<string, Marketish<V>>();
@@ -216,15 +233,16 @@ export function mergeOriented<V extends { priceAinB: number; reserveA: number; r
       seen.add(k);
       venues.push(v);
     }
+    const refreshed = venues.map((v) => refreshVenueTvl(v, row.chainId));
     const names = [...new Set([...prev.venueNames, ...row.venueNames])];
-    const price = venuesPriceUsd(venues, row.tokenB, row.chainId, null);
-    const depthUsd = venuesTvlUsd(venues, row.tokenB, row.chainId, null);
+    const price = venuesPriceUsd(refreshed, row.tokenB, row.chainId, null, row.tokenA);
+    const depthUsd = marketDepthUsd(refreshed, row.tokenB, row.chainId, null, prev.depth);
     by.set(row.pairId, {
       ...prev,
-      venues,
+      venues: refreshed,
       venueNames: names,
       price: price ?? prev.price ?? row.price,
-      depth: depthUsd > 0 ? depthUsd : venues.reduce((n, v) => n + venueTvlInQuote(v), 0),
+      depth: depthUsd,
     });
   }
   return [...by.values()];

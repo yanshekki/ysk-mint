@@ -1,5 +1,6 @@
 import type { Address } from "viem";
 import { cacheGet, cacheKey, POLICIES } from "./defi/cache.ts";
+import { outboundFetch } from "./outbound.ts";
 
 export type DiscoveredErc20 = {
   chainId: number;
@@ -60,7 +61,7 @@ async function fetchExplorer(chainId: number, address: string): Promise<Discover
       const ctrl = new AbortController();
       const timer = window.setTimeout(() => ctrl.abort(), 25000);
       try {
-        const res = await fetch(`${base}/api/v2/addresses/${address}/token-balances`, { signal: ctrl.signal });
+        const res = await outboundFetch(`${base}/api/v2/addresses/${address}/token-balances`, { signal: ctrl.signal });
         if (!res.ok) return [];
         const json = (await res.json()) as BsTok[];
         if (!Array.isArray(json)) return [];

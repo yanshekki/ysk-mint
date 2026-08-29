@@ -1,4 +1,4 @@
-import { normalizeAddr, type AddrKind } from "../addrKind.ts";
+import { detectAddrKind, normalizeAddr, type AddrKind } from "../addrKind.ts";
 import { domainCache } from "./http.ts";
 import { icnsKindForName, RESOLVERS } from "./resolvers.ts";
 import type { DomainHit, DomainResolver } from "./types.ts";
@@ -11,7 +11,10 @@ export class DomainNames {
   constructor(private resolvers: DomainResolver[] = RESOLVERS) {}
 
   looksLikeName(raw: string): boolean {
-    return Boolean(this.match(raw.trim()));
+    const n = raw.trim();
+    if (!n) return false;
+    if (detectAddrKind(n).ok) return false;
+    return Boolean(this.match(n));
   }
 
   match(raw: string): DomainResolver | null {

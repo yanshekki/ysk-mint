@@ -1,11 +1,11 @@
 import { formatUnits, type Address, type PublicClient } from "viem";
 import { CHAINS } from "@ysk-mint/config";
-import { DEX, isUsdStableAddress } from "../../defiAddresses.ts";
 import { pairId } from "../../pairKey.ts";
+import { quoteRank } from "../../pairOrient.ts";
 import type { Venue } from "../../dexVenues.ts";
 import { forChunks } from "../cache.ts";
 import type { DefiCtx, MarketRow, VenueQuote } from "../types.ts";
-import { chainTokenIcon, marketTokensOn, type MarketToken } from "../universe.ts";
+import { chainTokenIcon, localTokenIcon, marketTokensOn, type MarketToken } from "../universe.ts";
 import { aeroFactoryAbi, erc20MetaAbi, v2FactoryAbi, v2PairAbi } from "./abis.ts";
 import { callMany } from "./client.ts";
 import { ZERO } from "./math.ts";
@@ -87,10 +87,11 @@ async function loadMetas(client: PublicClient, chainId: number, addrs: Address[]
       chunk.forEach((a, i) => {
         const dec = res[i * 2];
         const sym = res[i * 2 + 1];
-        const decimals = dec.status === "success" && typeof dec.result === "number" ? dec.result : 18;
-        const raw = sym.status === "success" ? String(sym.result ?? "") : "";
-        const symbol = raw.trim() ? raw.trim().slice(0, 16) : a.slice(0, 6);
-        map.set(a.toLowerCase(), { chainId, address: a, decimals, symbol, icon });
+        const fallback18 = !(dec.status === "success" && typeof dec.result === "number");
+        const decimals = !fallback18 ? (dec.result as number) : 18;
+        const sraw = sym.status === "success" ? String(sym.result ?? "") : "";
+        const symbol = sraw.trim() ? sraw.trim().slice(0, 16) : a.slice(0, 6);
+        map.set(a.toLowerCase(), { chainId, address: a, decimals, symbol, icon: localTokenIcon(symbol, icon) });
       });
     } catch {
       chunk.forEach((a) => {
@@ -147,12 +148,6 @@ async function readPairs(client: PublicClient, pools: Address[]): Promise<RawPai
   return out;
 }
 
-function isQuote(chainId: number, address: string) {
-  const d = DEX[chainId];
-  if (!d) return false;
-  return isUsdStableAddress(d, address) || address.toLowerCase() === d.wrapped.toLowerCase();
-}
-
 export async function enumVenueMarkets(ctx: DefiCtx, venue: Venue, kind: "v2" | "aero"): Promise<MarketRow[]> {
   const client = ctx.evm;
   if (!client) return [];
@@ -178,13 +173,13 @@ export async function enumVenueMarkets(ctx: DefiCtx, venue: Venue, kind: "v2" | 
     const r0 = Number(formatUnits(p.r0, m0.decimals));
     const r1 = Number(formatUnits(p.r1, m1.decimals));
     if (!Number.isFinite(r0) || !Number.isFinite(r1) || (!(r0 > 0) && !(r1 > 0))) continue;
-    const quote0 = isQuote(venue.chainId, m0.address);
-    const quote1 = isQuote(venue.chainId, m1.address);
+    const rank0 = quoteRank(venue.chainId, m0.address, m0.symbol);
+    const rank1 = quoteRank(venue.chainId, m1.address, m1.symbol);
     let a = m0;
     let b = m1;
     let reserveA = r0;
     let reserveB = r1;
-    if (quote0 && !quote1) {
+    if (rank0 < rank1) {
       a = m1;
       b = m0;
       reserveA = r1;
@@ -192,8 +187,8 @@ export async function enumVenueMarkets(ctx: DefiCtx, venue: Venue, kind: "v2" | 
     }
     const priceAinB = reserveA > 0 && reserveB > 0 ? reserveB / reserveA : 0;
     if (!Number.isFinite(priceAinB)) continue;
-    const quote = isQuote(venue.chainId, b.address);
-    const tvlQuote = quote && reserveA > 0 && priceAinB > 0 ? reserveA * priceAinB + reserveB : quote && reserveB > 0 ? reserveB * 2 : 0;
+    const quoted = quoteRank(venue.chainId, b.address, b.symbol) < 2;
+    const tvlQuote = quoted && reserveA > 0 && priceAinB > 0 ? reserveA * priceAinB + reserveB : quoted && reserveB > 0 ? reserveB * 2 : 0;
     const feeLabel = kind === "aero" ? (p.stable ? "0.05%" : "0.30%") : "0.30%";
     const v: VenueQuote = {
       protocolId: venue.id,
@@ -221,12 +216,12 @@ export async function enumVenueMarkets(ctx: DefiCtx, venue: Venue, kind: "v2" | 
       chainShort,
       symbolA: a.symbol ?? a.address.slice(0, 6),
       symbolB: b.symbol ?? b.address.slice(0, 6),
-      iconA: a.icon ?? chainTokenIcon(venue.chainId),
-      iconB: b.icon ?? chainTokenIcon(venue.chainId),
+        iconA: a.icon ?? localTokenIcon(a.symbol, chainTokenIcon(venue.chainId)),
+        iconB: b.icon ?? localTokenIcon(b.symbol, chainTokenIcon(venue.chainId)),
       tokenA: a.address,
       tokenB: b.address,
       venues: [v],
-      price: quote && priceAinB ? priceAinB : null,
+      price: quoted && priceAinB ? priceAinB : null,
       depth: tvlQuote,
       venueNames: [venue.name],
     });

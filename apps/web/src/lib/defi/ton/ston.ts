@@ -1,5 +1,7 @@
 import { pairId } from "../../pairKey.ts";
 import { cacheGet, cacheHash, cacheKey, POLICIES } from "../cache.ts";
+import { outboundFetch } from "../../outbound.ts";
+import { saneUsdDepth } from "../saneTvl.ts";
 import type { DefiProtocol, MarketRow, VenueQuote } from "../types.ts";
 
 const TON_NATIVE = "EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c";
@@ -72,12 +74,19 @@ function feeLabel(lp: unknown, proto: unknown) {
   return `${pct.toFixed(2).replace(/0+$/, "").replace(/\.$/, "")}%`;
 }
 
+function stableUsd(row: Row) {
+  if (isUsd(row.symbolB)) return row.reserveB;
+  if (isUsd(row.symbolA)) return row.reserveA;
+  return 0;
+}
+
 function venue(row: Row): VenueQuote {
   const priceAinB = isUsd(row.symbolB)
     ? row.price
     : isUsd(row.symbolA) && row.price
       ? 1 / row.price
       : row.price;
+  const tvl = saneUsdDepth(row.tvl, stableUsd(row));
   return {
     protocolId: "stonfi-607",
     protocolName: "STON.fi",
@@ -87,7 +96,7 @@ function venue(row: Row): VenueQuote {
     priceAinB: Number.isFinite(priceAinB) ? priceAinB : 0,
     reserveA: row.reserveA,
     reserveB: row.reserveB,
-    tvlQuote: row.tvl,
+    tvlQuote: tvl,
     kind: "jup",
   };
 }
@@ -101,7 +110,7 @@ function toMarkets(rows: Row[]): MarketRow[] {
     const prev = byPair.get(id);
     if (prev) {
       prev.venues.push(v);
-      prev.depth += r.tvl;
+      prev.depth += v.tvlQuote;
       if (!prev.venueNames.includes("STON.fi")) prev.venueNames.push("STON.fi");
       continue;
     }
@@ -117,7 +126,7 @@ function toMarkets(rows: Row[]): MarketRow[] {
       tokenB: r.mintB,
       venues: [v],
       price: isUsd(r.symbolB) ? r.price : isUsd(r.symbolA) ? 1 : r.price,
-      depth: r.tvl,
+      depth: v.tvlQuote,
       venueNames: ["STON.fi"],
     });
   }
@@ -134,7 +143,7 @@ async function getJson<T>(url: string, init?: RequestInit, ms = 15000): Promise<
       const ac = new AbortController();
       const t = setTimeout(() => ac.abort(), ms);
       try {
-        const res = await fetch(url, { ...init, signal: ac.signal });
+        const res = await outboundFetch(url, { ...init, signal: ac.signal });
         if (!res.ok) return null;
         return (await res.json()) as T;
       } catch {
