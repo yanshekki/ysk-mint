@@ -1,6 +1,6 @@
 {
   "name": "ysk-mint",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "description": "On-chain markets, holdings, and token launch. No backend. No custody.",
   "license": "MIT",

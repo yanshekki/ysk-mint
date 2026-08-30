@@ -23,7 +23,7 @@ Vite + React。路由可帶語言前綴。無前綴路徑為 zh-HK；`/zh-CN`、
 
 ### 鏈上讀取
 
-去中心化交易所市場及交易對頁讀取場地 HTTP 適配器及鏈上儲備。原生及 Gecko 適配器把美元 TVL 存入 `tvlQuote`；反轉交易對時保留該美金。標題與表頭由目錄及場地 metadata 解析代幣代號，而非截斷 mint。借貸頁讀取協議利率視圖。持倉合併錢包工作階段與觀察組，再讀取結餘、借貸、流動性及質押。會跟 Cosmos、XRPL、Aptos、Blockscout 等分頁延續；持倉 RPC 失敗顯示「—」，不會當 0。已死的 Blockscout 主機（BSC、Base、Linea、Blast、Mantle）改用 Ankr，再試 NodeReal 公開索引讀代幣清單及近期轉帳；活動 chip 按鏈失敗，不會顯示假的 0。熱門 RWA 寫入烘焙目錄，V2 LP `candidatePairs` 會跟；Morpho 倉位讀白名單 `marketId`。代幣頁與鎖倉頁呼叫 `view`。發幣執行及 OFT `send` 為須簽署的路徑。
+去中心化交易所市場及交易對頁讀取場地 HTTP 適配器及鏈上儲備。原生及 Gecko 適配器把美元 TVL 存入 `tvlQuote`；反轉交易對時保留該美金。標題與表頭由目錄及場地 metadata 解析代幣代號，而非截斷 mint。借貸頁讀取協議利率視圖。持倉合併錢包工作階段與觀察組，再讀取結餘、借貸、流動性及質押。會跟 Cosmos、XRPL、Aptos、Blockscout 等分頁延續；持倉 RPC 失敗顯示「—」，不會當 0。已死的 Blockscout 主機（BSC、Base、Linea、Blast、Mantle）改用 Ankr，再試 NodeReal 公開索引讀代幣清單及近期轉帳；活動 chip 按鏈失敗，不會顯示假的 0。發現會略過無報價空投、兆級供應，以及流動性不足約 1,000 美元的 DEX 報價。熱門 RWA 寫入烘焙目錄，V2 LP `candidatePairs` 會跟；Morpho 倉位讀白名單 `marketId`。代幣頁與鎖倉頁呼叫 `view`。發幣執行及 OFT `send` 為須簽署的路徑。
 
 ### RPC 與外連排隊
 

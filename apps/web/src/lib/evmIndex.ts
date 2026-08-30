@@ -120,14 +120,15 @@ async function fetchAnkrHoldings(chainId: number, address: string): Promise<Disc
     }
     if (raw <= 0n) continue;
     const usd = Number(a.balanceUsd);
+    const dec = Number(a.tokenDecimals);
     out.push({
       chainId,
       address: contract as Address,
       symbol: (a.tokenSymbol || "TOKEN").slice(0, 24),
       name: (a.tokenName || a.tokenSymbol || "Token").slice(0, 48),
-      decimals: Math.min(36, Math.max(0, Number(a.tokenDecimals ?? 18) || 18)),
+      decimals: Number.isFinite(dec) ? Math.min(36, Math.max(0, dec)) : 18,
       raw,
-      usdHint: Number.isFinite(usd) ? usd : null,
+      usdHint: Number.isFinite(usd) && usd > 0 ? usd : null,
     });
   }
   return out;

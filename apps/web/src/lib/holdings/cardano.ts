@@ -104,6 +104,7 @@ function rowsFromCardano(
         contract: unit,
         chainTag: "ADA",
         chainId: 1815,
+        decimals: bal.decimals,
       });
     }
   }
@@ -172,7 +173,7 @@ async function fetchYoroiUtxos(addresses: string[]) {
         for (const a of u.assets ?? []) {
           const unit = `${a.policyId ?? ""}${a.name ?? ""}`.toLowerCase();
           try {
-            addAsset(qty, unit, BigInt(a.amount || "0"), 0);
+            addAsset(qty, unit, BigInt(a.amount || "0"), cardanoByUnit(unit)?.decimals ?? 0);
           } catch {
             /* skip */
           }
@@ -210,7 +211,7 @@ async function fetchCardanoChain(address: string, extras?: { addresses?: string[
       }
       for (const a of u.asset_list ?? []) {
         try {
-          addAsset(qty, cardanoUnit(a), BigInt(a.quantity ?? "0"), a.decimals ?? 0);
+          addAsset(qty, cardanoUnit(a), BigInt(a.quantity ?? "0"), cardanoByUnit(cardanoUnit(a))?.decimals ?? a.decimals ?? 0);
         } catch {
           /* skip */
         }
@@ -230,7 +231,7 @@ async function fetchCardanoChain(address: string, extras?: { addresses?: string[
       }
       for (const a of flattenCardanoAssets(assetJson)) {
         try {
-          addAsset(qty, cardanoUnit(a), BigInt(a.quantity ?? "0"), a.decimals ?? 0);
+          addAsset(qty, cardanoUnit(a), BigInt(a.quantity ?? "0"), cardanoByUnit(cardanoUnit(a))?.decimals ?? a.decimals ?? 0);
         } catch {
           /* skip */
         }
@@ -254,7 +255,7 @@ async function fetchCardanoChain(address: string, extras?: { addresses?: string[
       }
       for (const a of flattenCardanoAssets(await koiosPost("address_assets", { _addresses: group }).catch(() => []))) {
         try {
-          addAsset(qty, cardanoUnit(a), BigInt(a.quantity ?? "0"), a.decimals ?? 0);
+          addAsset(qty, cardanoUnit(a), BigInt(a.quantity ?? "0"), cardanoByUnit(cardanoUnit(a))?.decimals ?? a.decimals ?? 0);
         } catch {
           /* skip */
         }

@@ -9,7 +9,10 @@ import type { DefiCtx, MarketRow, Quote, QuoteSource, TokenRef, VenueQuote } fro
 export const VENUES_CACHE = "venues5";
 
 const OUTLIER = 0.15;
-const quotePolicy = { ...POLICIES.quote, keep: (q: Quote | null) => Boolean(q && q.usdc > 0) };
+/** Illiquid v2 honeypots quote near $1 with a few dollars of USDT. Holdings must not use those. */
+export const MIN_QUOTE_DEPTH_USD = 1_000;
+const HONEYPOT_DEPTH_USD = 50_000;
+const quotePolicy = { ...POLICIES.quote, keep: (q: Quote | null) => Boolean(q && q.usdc > 0 && ((q.depth ?? 0) >= MIN_QUOTE_DEPTH_USD || q.source === "stable")) };
 const wrapPolicy = { ...POLICIES.quote, keep: (n: number | null) => n != null && n > 0 };
 
 export function rejectOutliers<T extends { usdc: number; depth: number }>(rows: T[]): T[] {
@@ -106,7 +109,7 @@ async function evmQuoteUsd(ctx: DefiCtx, chainId: number, token: TokenRef): Prom
   if (!addr) return null;
   if (isUsdStableAddress(d, addr)) return { usdc: 1, source: "stable", depth: 0 };
 
-  return cacheGet({ key: cacheKey("quote.usd", chainId, addr), policy: quotePolicy }, async () => {
+  return cacheGet({ key: cacheKey("quote.liq", chainId, addr), policy: quotePolicy }, async () => {
     const base: TokenRef = { ...token, address: addr, native: false };
     let spots = await spotsVsStables(ctx, chainId, base);
     if (!spots.length && addr !== d.wrapped.toLowerCase()) {
@@ -133,7 +136,10 @@ async function evmQuoteUsd(ctx: DefiCtx, chainId: number, token: TokenRef): Prom
     if (usdc == null) return null;
     const depth = kept.reduce((n, s) => n + s.depth, 0);
     const v3 = kept.some((s) => s.source === "v3");
-    return { usdc, source: v3 ? "v3" : kept[0]?.source ?? "agg", depth };
+    const source: QuoteSource = v3 ? "v3" : kept[0]?.source ?? "agg";
+    if (depth < MIN_QUOTE_DEPTH_USD) return null;
+    if (!v3 && usdc >= 0.5 && usdc <= 2 && depth < HONEYPOT_DEPTH_USD && addr !== d.wrapped.toLowerCase()) return null;
+    return { usdc, source, depth };
   });
 }
 

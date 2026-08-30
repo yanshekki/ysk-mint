@@ -562,7 +562,7 @@
     "liveDock": "Livedaten",
     "liveDockHint": "Scanfortschritt unten rechts anzeigen.",
     "hideZero": "Nullbestände ausblenden",
-    "hideZeroHint": "Bestandslisten zeigen nur Token mit Saldo.",
+    "hideZeroHint": "Bestandslisten zeigen nur Token mit Saldo. Ungequotete Airdrops und illiquide Kurse zählen nicht zur Summe.",
     "addrs": "Adressen",
     "addrsMine": "Meine Adressen",
     "addrsMineHint": "Bestände „Meine“ führt verbundene Wallets und eingefügte Adressen zusammen. Start und Brücke brauchen weiter eine verbundene Wallet.",

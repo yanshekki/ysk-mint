@@ -562,7 +562,7 @@
     "liveDock": "Données en direct",
     "liveDockHint": "Afficher la progression du scan en bas à droite.",
     "hideZero": "Masquer les avoirs à zéro",
-    "hideZeroHint": "Les listes d’avoirs n’affichent que les tokens avec un solde.",
+    "hideZeroHint": "Les listes d’avoirs n’affichent que les tokens avec un solde. Les airdrops sans cours et les cotations illiquides ne sont pas totalisés.",
     "addrs": "Adresses",
     "addrsMine": "Mes adresses",
     "addrsMineHint": "Les avoirs « Les miens » fusionnent les portefeuilles connectés et les adresses que vous collez. Lancer et le pont exigent toujours un portefeuille connecté.",

@@ -562,7 +562,7 @@
     "liveDock": "Live data",
     "liveDockHint": "Show scan progress in the bottom-right corner.",
     "hideZero": "Hide zero holdings",
-    "hideZeroHint": "Holdings lists only tokens with a balance.",
+    "hideZeroHint": "Holdings lists only tokens with a balance. Unquoted airdrops and illiquid DEX quotes are omitted from the total.",
     "addrs": "Addresses",
     "addrsMine": "My addresses",
     "addrsMineHint": "Holdings “Mine” merges connected wallets with addresses you paste. Launch and bridge still need a connected wallet.",

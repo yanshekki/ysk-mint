@@ -126,8 +126,11 @@ async function fetchExplorer(chainId: number, address: string): Promise<Discover
 function keepDisc(d: DiscoveredErc20, catalog: Set<string>, keepUnpriced = false) {
   const k = `${d.chainId}:${d.address.toLowerCase()}`;
   if (catalog.has(k)) return true;
-  if (d.usdHint != null && d.usdHint >= 1) return true;
-  if (keepUnpriced && d.usdHint == null) return true;
+  const amt = Number(d.raw) / 10 ** Math.max(d.decimals, 0);
+  if (!Number.isFinite(amt) || amt <= 0) return false;
+  if (amt >= 1e10) return false;
+  if (d.usdHint != null && Number.isFinite(d.usdHint) && d.usdHint >= 1 && d.usdHint <= 1_000_000) return true;
+  if (keepUnpriced && (d.usdHint == null || d.usdHint === 0) && amt < 1e7) return true;
   return false;
 }
 

@@ -562,7 +562,7 @@
     "liveDock": "Dados ao vivo",
     "liveDockHint": "Mostrar o progresso da varredura no canto inferior direito.",
     "hideZero": "Ocultar saldos zerados",
-    "hideZeroHint": "As listas de saldos mostram só tokens com saldo.",
+    "hideZeroHint": "As listas de saldos mostram só tokens com saldo. Airdrops sem cotação e cotações ilíquidas ficam de fora do total.",
     "addrs": "Endereços",
     "addrsMine": "Meus endereços",
     "addrsMineHint": "Saldos “Meus” junta as carteiras conectadas com os endereços que você cola. Lançar e a ponte ainda precisam de uma carteira conectada.",

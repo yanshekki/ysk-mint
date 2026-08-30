@@ -562,7 +562,7 @@
     "liveDock": "即時數據",
     "liveDockHint": "讀取鏈上資料時，於右下角顯示進度。",
     "hideZero": "隱藏零持倉",
-    "hideZeroHint": "持倉頁只列出有餘額的代幣。",
+    "hideZeroHint": "持倉頁只列出有餘額的代幣。無報價空投及無流動性的報價不顯示、不計入總值。",
     "addrs": "地址",
     "addrsMine": "我的地址",
     "addrsMineHint": "持倉「我的」會合併已連接錢包與你貼上的地址。發幣及跨鏈仍須連接錢包。",

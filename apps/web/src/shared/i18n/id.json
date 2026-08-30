@@ -562,7 +562,7 @@
     "liveDock": "Data langsung",
     "liveDockHint": "Tampilkan kemajuan pindai di sudut kanan bawah.",
     "hideZero": "Sembunyikan aset nol",
-    "hideZeroHint": "Daftar aset hanya token yang ber-saldo.",
+    "hideZeroHint": "Daftar aset hanya token yang ber-saldo. Airdrop tanpa kuotasi dan kuotasi tanpa likuiditas tidak dijumlahkan.",
     "addrs": "Alamat",
     "addrsMine": "Alamat saya",
     "addrsMineHint": "Aset “Saya” menggabungkan dompet terhubung dengan alamat yang Anda tempel. Peluncuran dan jembatan tetap butuh dompet terhubung.",

@@ -117,9 +117,23 @@ function rowDecimals(r: HoldingRow) {
 }
 
 function valued(raw: bigint, decimals: number, q?: Quote | null) {
-  if (!q) return null;
+  if (!q || !(q.usdc > 0) || !Number.isFinite(q.usdc)) return null;
   const n = Number(formatUnits(raw, decimals));
   return Number.isFinite(n) ? n * q.usdc : null;
+}
+
+function unknownToken(r: HoldingRow) {
+  return r.id.startsWith("disc-") || r.id.startsWith("ada-");
+}
+
+function listedHolding(r: HoldingRow, q: Quote | undefined, hideZero: boolean) {
+  if (unknownToken(r)) {
+    if (r.raw <= 0n || r.amount === "—") return false;
+    const v = valued(r.raw, rowDecimals(r), q);
+    return v != null && v >= 0.01;
+  }
+  if (!hideZero) return true;
+  return r.raw > 0n && r.amount !== "—";
 }
 
 function lineKey(l: ProtocolLine) {
@@ -934,9 +948,8 @@ export function MePage() {
       }),
     );
     const scoped = filter === "all" ? rows : rows.filter((r) => r.chainId === filter);
-    if (!hideZero) return scoped;
-    return scoped.filter((r) => r.raw > 0n && r.amount !== "—");
-  }, [aTokens, benqi, buckets, filter, hideZero]);
+    return scoped.filter((r) => listedHolding(r, quotes.get(quoteKey(r.chainId ?? 0, r.contract, r.native)), hideZero));
+  }, [aTokens, benqi, buckets, filter, hideZero, quotes]);
 
   const stakeAll = useMemo(() => {
     const lst = buckets.flatMap((g) => lstStakeLines(g.id, g.rows, quotes, t("me.unstakeLiquid")));
@@ -1040,7 +1053,12 @@ export function MePage() {
 
   const chipCount = (id: number | "all") => {
     const rows = id === "all" ? buckets.flatMap((g) => g.rows) : (buckets.find((g) => g.id === id)?.rows ?? []);
-    const nWallet = rows.filter((r) => r.raw > 0n && !isLst(r.chainId ?? 0, r.contract) && !(r.contract && aTokens.has(r.contract.toLowerCase()))).length;
+    const nWallet = rows.filter((r) => {
+      if (r.raw <= 0n) return false;
+      if (r.chainId != null && isLst(r.chainId, r.contract)) return false;
+      if (r.contract && aTokens.has(r.contract.toLowerCase())) return false;
+      return listedHolding(r, quotes.get(quoteKey(r.chainId ?? 0, r.contract, r.native)), hideZero);
+    }).length;
     const nAave = (id === "all" ? aave : aave.filter((c) => c.chainId === id)).reduce((n, c) => n + c.lines.length, 0);
     const nBurrow = (id === "all" ? burrow : burrow.filter((c) => c.chainId === id)).reduce((n, c) => n + c.lines.length, 0);
     const nBenqi = (id === "all" ? benqi : benqi.filter((c) => c.chainId === id)).reduce((n, c) => n + c.lines.length, 0);

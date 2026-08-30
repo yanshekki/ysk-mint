@@ -562,7 +562,7 @@
     "liveDock": "Datos en vivo",
     "liveDockHint": "Mostrar el progreso del escaneo abajo a la derecha.",
     "hideZero": "Ocultar saldos en cero",
-    "hideZeroHint": "Las listas de saldos solo muestran tokens con balance.",
+    "hideZeroHint": "Las listas de saldos solo muestran tokens con balance. Los airdrops sin cotización y las cotizaciones ilíquidas no entran en el total.",
     "addrs": "Direcciones",
     "addrsMine": "Mis direcciones",
     "addrsMineHint": "Saldos “Míos” une las billeteras conectadas con las direcciones que pegues. Lanzar y el puente siguen necesitando una billetera conectada.",

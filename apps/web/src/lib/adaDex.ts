@@ -389,24 +389,14 @@ export async function quoteAdaToken(unit?: string, native?: boolean): Promise<Qu
   try {
     const json = await aggPost<{ tokens?: TokenHit[] }>("/tokens", {
       query: "",
-      only_verified: false,
+      only_verified: true,
       assets: [id],
     });
-    const hit = json.tokens?.find((t) => t.token_id.toLowerCase() === id) ?? json.tokens?.[0];
+    const hit = json.tokens?.find((t) => t.token_id.toLowerCase() === id);
     const ada = Number(hit?.price_by_ada);
     if (usd && Number.isFinite(ada) && ada > 0) return { usdc: ada * usd, source: "minswap" };
   } catch {
-    /* estimate fallback */
-  }
-  const est = await estimate(id, A_USDM.address, "1000000");
-  if (est) {
-    const p = priceFromEstimate(est, 6, 6);
-    if (p) return { usdc: p, source: "minswap" };
-  }
-  if (usd) {
-    const vsAda = await estimate(id, "lovelace", "1000000");
-    const p = vsAda ? priceFromEstimate(vsAda, 6, 6) : null;
-    if (p) return { usdc: p * usd, source: "minswap" };
+    /* unverified Cardano assets stay unquoted */
   }
   return null;
 }
