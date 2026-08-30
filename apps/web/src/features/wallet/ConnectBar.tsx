@@ -87,7 +87,8 @@ export function ConnectBar() {
   const [xrplOpen, setXrplOpen] = useState(false);
   const [strkWallets, setStrkWallets] = useState<ExtraWalletInfo[]>([]);
   const [strkOpen, setStrkOpen] = useState(false);
-  const [pos, setPos] = useState({ top: 72, right: 24 });
+  const [pos, setPos] = useState({ top: 72, end: 24 });
+  const [compactLang, setCompactLang] = useState(false);
   const barRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
   const popRef = useRef<HTMLDivElement>(null);
@@ -117,6 +118,14 @@ export function ConnectBar() {
   }, []);
 
   useEffect(() => {
+    const mq = window.matchMedia("(max-width: 1024px)");
+    const sync = () => setCompactLang(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  useEffect(() => {
     if (!open) return;
     setAdaWallets(listCardanoWallets());
     void listSolanaWallets().then(setSolWallets);
@@ -124,7 +133,10 @@ export function ConnectBar() {
       const el = btnRef.current;
       if (!el) return;
       const r = el.getBoundingClientRect();
-      setPos({ top: r.bottom + 8, right: Math.max(12, window.innerWidth - r.right) });
+      setPos({
+        top: r.bottom + 8,
+        end: Math.max(12, document.documentElement.dir === "rtl" ? r.left : window.innerWidth - r.right),
+      });
     };
     place();
     const onDoc = (e: MouseEvent) => {
@@ -185,7 +197,7 @@ export function ConnectBar() {
         >
           {LOCALES.map((l) => (
             <option key={l.id} value={l.id}>
-              {l.label}
+              {compactLang ? l.short : l.label}
             </option>
           ))}
         </select>
@@ -201,7 +213,13 @@ export function ConnectBar() {
             );
           }
           const menu = (
-            <div className="session-pop" ref={popRef} role="dialog" aria-label={t("wallet.session")} style={pos}>
+            <div
+              className="session-pop"
+              ref={popRef}
+              role="dialog"
+              aria-label={t("wallet.session")}
+              style={{ top: pos.top, insetInlineEnd: pos.end }}
+            >
               <p className="session-pop-title">{t("wallet.session")}</p>
 
               <div className="session-row">

@@ -53,6 +53,7 @@ import { lendAppHref, stakeAppHref, stakeBrandName } from "../../lib/lendApp.ts"
 import { readExtraLending, type LendCard } from "../../lib/lendingExtra.ts";
 import { readNativeLending } from "../../lib/lendingNative.ts";
 import { SortHead, useSort, type SortDir } from "../../shared/ui/SortTable.tsx";
+import { Metric } from "../../shared/ui/Metric.tsx";
 import { readBurrow } from "../../lib/nearDex.ts";
 import {
   lstStakeLines,
@@ -218,6 +219,7 @@ type LineProps = {
 };
 
 function Line(p: LineProps) {
+  const { t } = useTranslation();
   const cls = `me-token me-token-5${p.zero ? " me-token-zero" : ""}`;
   const title =
     p.href && p.internal ? (
@@ -249,9 +251,15 @@ function Line(p: LineProps) {
         </b>
         <span className={`num${p.note ? " me-note" : ""}`}>{p.subtitle}</span>
       </div>
-      <span className="num me-price">{p.price ?? "—"}</span>
-      <span className="num holding-amt">{p.amount}</span>
-      <span className="num me-value">{p.value ?? "—"}</span>
+      <Metric className="num me-price" label={t("me.quote")}>
+        {p.price ?? "—"}
+      </Metric>
+      <Metric className="num holding-amt" label={t("me.amount")}>
+        {p.amount}
+      </Metric>
+      <Metric className="num me-value" label={t("me.value")}>
+        {p.value ?? "—"}
+      </Metric>
     </div>
   );
 }
@@ -353,6 +361,7 @@ function BrandHead({ name, chain, href, icon, right }: { name: string; chain?: s
 }
 
 function ProtoSumRow({ kind, brand }: { kind: "lend" | "lp" | "stake"; brand: ProtoBrand }) {
+  const { t } = useTranslation();
   const to = localePath(`/me/${kind}/${brand.slug}`);
   const icon = brand.chains[0]?.lines[0]?.icon ?? "/tokens/eth.png";
   const chains = brand.chains.map((c) => c.chain).join(" · ");
@@ -374,7 +383,9 @@ function ProtoSumRow({ kind, brand }: { kind: "lend" | "lp" | "stake"; brand: Pr
         </b>
         <span className="me-proto-sub">{chains}</span>
       </div>
-      <span className="num me-value me-proto-go">{fmtUsdc(brandValue(brand))}</span>
+      <Metric className="num me-value me-proto-go" label={t("me.value")}>
+        {fmtUsdc(brandValue(brand))}
+      </Metric>
     </div>
   );
 }

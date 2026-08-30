@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { parseUnits } from "viem";
 import { useAccount } from "wagmi";
@@ -128,6 +128,10 @@ export function CreatePage() {
 
   const idx = flowIndex(w.step);
 
+  useEffect(() => {
+    document.querySelector(".me-chips-steps .me-chip-on")?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+  }, [idx]);
+
   return (
     <section className="workspace">
       <div className="workspace-head">
@@ -139,7 +143,7 @@ export function CreatePage() {
       </div>
       <div className="workspace-scroll">
         <div className="me-desk">
-          <div className="me-chips" role="tablist" aria-label="wizard">
+          <div className="me-chips me-chips-steps" role="tablist" aria-label="wizard">
             {STEP_FLOW.filter((id) => id !== LaunchStep.Success).map((id) => {
               const i = flowIndex(id);
               const on = i === idx;

@@ -11,6 +11,7 @@ import { useLiveStatus } from "../../lib/liveStatus.ts";
 import { useLendMarkets } from "../../lib/useLendMarkets.ts";
 import { useUserSettings } from "../../lib/userSettings.ts";
 import { ChipBusy } from "../../shared/ui/LiveDock.tsx";
+import { Metric } from "../../shared/ui/Metric.tsx";
 import { SortHead, useSort } from "../../shared/ui/SortTable.tsx";
 
 const PRIMARY_LEND_IDS = new Set([1, 8453, 42161, 43114, 56, 137, 10, 999, 101, 397, 784, 637]);
@@ -350,9 +351,15 @@ export function LendPage() {
                           {util != null && util >= 1 ? ` · ${t("lend.util")} ${util.toFixed(0)}%` : ""}
                         </span>
                       </div>
-                      <span className="num me-price lend-apy-in lend-apy-range">{fmtApyRange(r.supplyApyMin, r.supplyApyMax)}</span>
-                      <span className="num holding-amt lend-apy-out lend-apy-range">{fmtApyRange(r.borrowApyMin, r.borrowApyMax)}</span>
-                      <span className="num me-value">{fmtUsd(r.supplyUsd)}</span>
+                      <Metric className="num me-price lend-apy-in lend-apy-range" label={t("lend.supplyApy")}>
+                        {fmtApyRange(r.supplyApyMin, r.supplyApyMax)}
+                      </Metric>
+                      <Metric className="num holding-amt lend-apy-out lend-apy-range" label={t("lend.borrowApy")}>
+                        {fmtApyRange(r.borrowApyMin, r.borrowApyMax)}
+                      </Metric>
+                      <Metric className="num me-value" label={t("lend.supplied")}>
+                        {fmtUsd(r.supplyUsd)}
+                      </Metric>
                     </Link>
                   );
                 })}

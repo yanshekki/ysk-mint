@@ -11,6 +11,7 @@ import { groupLendAssets, groupLendByChain, lendSymbolSlug, type LendMarketRow }
 import { TOKEN_CATALOG } from "../../lib/tokenRegistry.ts";
 import { useLendMarkets } from "../../lib/useLendMarkets.ts";
 import { useSort } from "../../shared/ui/SortTable.tsx";
+import { Metric } from "../../shared/ui/Metric.tsx";
 import { LendChainBar, lendHref, persistLendQuery } from "./LendPage.tsx";
 
 function parseChain(raw: string | null): number | "all" {
@@ -215,9 +216,15 @@ function ChainVenues({ rows, get }: { rows: LendMarketRow[]; get: (r: LendMarket
                 </i>
               ) : null}
             </div>
-            <span className="num me-price lend-apy-in">{fmtApy(r.supplyApy)}</span>
-            <span className="num holding-amt me-lend-borrow lend-apy-out">{fmtApy(r.borrowApy)}</span>
-            <span className="num me-value">{fmtUsd(r.supplyUsd)}</span>
+            <Metric className="num me-price lend-apy-in" label={t("lend.supplyApy")}>
+              {fmtApy(r.supplyApy)}
+            </Metric>
+            <Metric className="num holding-amt me-lend-borrow lend-apy-out" label={t("lend.borrowApy")}>
+              {fmtApy(r.borrowApy)}
+            </Metric>
+            <Metric className="num me-value" label={t("lend.supplied")}>
+              {fmtUsd(r.supplyUsd)}
+            </Metric>
             <span className="me-pool-acts">
               {explore ? (
                 <a className="me-pool-btn me-pool-btn-explore" href={explore} target="_blank" rel="noreferrer">
