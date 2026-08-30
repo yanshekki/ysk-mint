@@ -2,6 +2,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { appRelease } from "./app-version.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const dist = join(root, "dist");
@@ -149,6 +150,7 @@ function inject(template, { lang, dir, title, desc, canonical, path, body }) {
 
 const indexHtml = readFileSync(join(dist, "index.html"), "utf8");
 writeFileSync(join(dist, "sitemap.xml"), sitemap());
+writeFileSync(join(dist, "version.json"), `${JSON.stringify(appRelease())}\n`);
 
 for (const locale of LOCALES) {
   const pack = loadLocale(locale);
@@ -172,4 +174,4 @@ for (const locale of LOCALES) {
   }
 }
 
-console.log(`seo-static: sitemap + ${LOCALES.length * LEGAL.length} legal pages`);
+console.log(`seo-static: sitemap + version.json + ${LOCALES.length * LEGAL.length} legal pages`);

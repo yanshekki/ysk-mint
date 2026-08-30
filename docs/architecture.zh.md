@@ -23,11 +23,15 @@ Vite + React。路由可帶語言前綴。無前綴路徑為 zh-HK；`/zh-CN`、
 
 ### 鏈上讀取
 
-去中心化交易所市場及交易對頁讀取場地 HTTP 適配器及鏈上儲備。原生及 Gecko 適配器把美元 TVL 存入 `tvlQuote`；反轉交易對時保留該美金。標題與表頭由目錄及場地 metadata 解析代幣代號，而非截斷 mint。借貸頁讀取協議利率視圖。持倉合併錢包工作階段與觀察組，再讀取結餘、借貸、流動性及質押。會跟 Cosmos、XRPL、Aptos、Blockscout 等分頁延續；持倉 RPC 失敗顯示「—」，不會當 0。代幣頁與鎖倉頁呼叫 `view`。發幣執行及 OFT `send` 為須簽署的路徑。
+去中心化交易所市場及交易對頁讀取場地 HTTP 適配器及鏈上儲備。原生及 Gecko 適配器把美元 TVL 存入 `tvlQuote`；反轉交易對時保留該美金。標題與表頭由目錄及場地 metadata 解析代幣代號，而非截斷 mint。借貸頁讀取協議利率視圖。持倉合併錢包工作階段與觀察組，再讀取結餘、借貸、流動性及質押。會跟 Cosmos、XRPL、Aptos、Blockscout 等分頁延續；持倉 RPC 失敗顯示「—」，不會當 0。已死的 Blockscout 主機（BSC、Base、Linea、Blast、Mantle）改用 Ankr，再試 NodeReal 公開索引讀代幣清單及近期轉帳；活動 chip 按鏈失敗，不會顯示假的 0。熱門 RWA 寫入烘焙目錄，V2 LP `candidatePairs` 會跟；Morpho 倉位讀白名單 `marketId`。代幣頁與鎖倉頁呼叫 `view`。發幣執行及 OFT `send` 為須簽署的路徑。
 
 ### RPC 與外連排隊
 
 `rpcPool.ts` 輪詢公開端點（官方、PublicNode、1RPC、dRPC，以及可選的、存於 `localStorage` 的自訂網址）。`outbound.ts` 限制並行請求（預設全域 10、每主機 2；使用者可調 1–32），並在 429 時退避。失敗顯示於即時狀態列，不會當作隱藏後端重試。
+
+### 靜態託管與快取
+
+SPA 以靜態檔上傳，Cloudflare DNS proxy 開住。Vite 把 JS／CSS 編成 `/assets/` 帶 hash 的檔，edge 可存一年（`immutable`）。HTML（`index.html` 及預渲染法律頁）必須再驗證（`Cache-Control: no-cache`）。`/version.json` 為 `no-store`，Cloudflare 須 **Bypass cache**，否則新上傳睇唔到。Origin 片段：[deploy/origin-cache.conf](../deploy/origin-cache.conf)。Cache Rule：Bypass `/version.json`、`*.html` 及 `/`；`/assets/*` Eligible 且 Edge TTL 一年。唔好用全站 Cache Everything。規則未生效前，每次上傳要 **Purge Everything**，否則 edge 仍係舊 HTML（因而舊 hashed bundle）。頂欄字標 YSK Mint 在任何寬度都顯示。頁腳在手機、平板及桌面都顯示烘焙嘅 `v…` 及 Powered by；若 `/version.json` 的 `build` 不同，會提示重新整理。不加 service worker。
 
 ## 代幣部署
 

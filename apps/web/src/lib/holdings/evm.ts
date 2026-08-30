@@ -15,7 +15,39 @@ const EVM_HOLD_IDS = featuredChains()
   .map((c) => c.chainId);
 
 const SENTINEL_ERC = /^0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee$/i;
-const SCAN_ALWAYS = new Set(["WBTC", "CBBTC", "WETH", "STETH", "WSTETH", "USDC", "USDT", "DAI", "USDE"]);
+const SCAN_ALWAYS = new Set([
+  "WBTC",
+  "CBBTC",
+  "WETH",
+  "STETH",
+  "WSTETH",
+  "USDC",
+  "USDT",
+  "DAI",
+  "USDE",
+  "SUSDE",
+  "PAXG",
+  "XAUT",
+  "USDY",
+  "OUSG",
+  "BUIDL",
+  "USYC",
+  "USTB",
+  "BENJI",
+  "FOBXX",
+  "WTGXX",
+  "TBILL",
+  "JTRSY",
+  "USDM",
+  "BIB01",
+  "SYRUPUSDC",
+  "ONDO",
+  "TSLAX",
+  "NVDAX",
+  "NVDAON",
+  "AAPLX",
+  "SPYX",
+]);
 const BALANCE_QUERY = { staleTime: 30_000, refetchOnWindowFocus: false as const, retry: 1 };
 
 export function useEvmHoldings(address: Address | Address[] | undefined) {

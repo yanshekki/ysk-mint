@@ -1050,7 +1050,11 @@ export function MePage() {
     return nWallet + nAave + nBurrow + nBenqi + nUni + nLend + nStake;
   };
   const txCount = (id: number | "all") => (id === "all" ? txs.rows.length : txs.rows.filter((r) => r.chainId === id).length);
-  const tabCount = (id: number | "all") => (deskTab === "txs" ? txCount(id) : chipCount(id));
+  const txCountLabel = (id: number | "all") => {
+    if (id !== "all" && txs.failedChains.has(id) && txCount(id) === 0) return "—";
+    return String(txCount(id));
+  };
+  const tabCount = (id: number | "all") => (deskTab === "txs" ? txCountLabel(id) : chipCount(id));
 
   return (
     <section className="workspace">
@@ -1221,7 +1225,12 @@ export function MePage() {
               </div>
 
               {deskTab === "txs" ? (
-                <TxDesk rows={txs.rows} loading={txs.loading} failed={txs.failed} chainFilter={filter} />
+                <TxDesk
+                  rows={txs.rows}
+                  loading={txs.loading}
+                  failed={filter === "all" ? txs.failed : txs.failedChains.has(filter)}
+                  chainFilter={filter}
+                />
               ) : protoKind ? (
               <section className="me-card">
                 <div className="me-card-head">

@@ -2,7 +2,9 @@
   "app": {
     "name": "YSK Mint",
     "tagline": "Pasar di rantai, aset, dan peluncuran token. Tanpa server belakang. Tanpa kustodi.",
-    "poweredBy": "Didukung oleh YSK Limited"
+    "poweredBy": "Didukung oleh YSK Limited",
+    "version": "v{{v}}",
+    "reload": "Ada versi baru. Muat ulang"
   },
   "live": {
     "title": "Data langsung",

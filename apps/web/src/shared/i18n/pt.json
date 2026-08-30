@@ -2,7 +2,9 @@
   "app": {
     "name": "YSK Mint",
     "tagline": "Mercados, saldos e lançamento de tokens na blockchain. Sem backend. Sem custódia.",
-    "poweredBy": "Desenvolvido por YSK Limited"
+    "poweredBy": "Desenvolvido por YSK Limited",
+    "version": "v{{v}}",
+    "reload": "Nova versão. Atualizar"
   },
   "live": {
     "title": "Dados ao vivo",

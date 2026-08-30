@@ -141,6 +141,7 @@ select {
   font-size: 18px;
   white-space: nowrap;
   color: var(--text-main);
+  flex-shrink: 0;
 }
 .logo-mark {
   width: 28px;
@@ -867,6 +868,30 @@ select {
 }
 .bot-powered:hover {
   color: var(--brand-blue);
+}
+.bot-ver {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.bot-reload {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--brand-blue);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.bot-reload:hover {
+  text-decoration: underline;
 }
 .bot-legal {
   display: flex;
@@ -3837,13 +3862,17 @@ html[dir="rtl"] .donate-addr {
 
 @media (max-width: 1024px) {
   :root {
-    --botbar-h: calc(56px + env(safe-area-inset-bottom, 0px));
+    --botbar-h: calc(80px + env(safe-area-inset-bottom, 0px));
   }
   .top-nav {
     display: none;
   }
+  .logo {
+    font-size: 16px;
+    gap: 6px;
+  }
   .logo-name {
-    display: none;
+    display: inline;
   }
   .lang-dd {
     max-width: 72px;
@@ -3868,7 +3897,17 @@ html[dir="rtl"] .donate-addr {
     padding: 0;
     gap: 0;
   }
-  .bot-meta,
+  .bot-meta {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-inline-end: 0;
+    padding: 6px 12px 0;
+    gap: 8px 12px;
+    min-height: 24px;
+  }
+  .bot-legal,
   .bot-session {
     display: none;
   }
@@ -3960,7 +3999,7 @@ html[dir="rtl"] .donate-addr {
     min-height: 44px;
   }
   .wallet-session-btn {
-    max-width: min(148px, calc(100vw - 132px));
+    max-width: min(148px, calc(100vw - 228px));
     height: 44px;
   }
   .workspace-scroll {

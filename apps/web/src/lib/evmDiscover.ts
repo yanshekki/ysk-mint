@@ -1,34 +1,23 @@
 import type { Address } from "viem";
 import { cacheGet, cacheKey, POLICIES } from "./defi/cache.ts";
 import { outboundFetch } from "./outbound.ts";
+import { DEAD_BLOCKSCOUT, fetchIndexedHoldings, indexedHoldingsChains, type DiscoveredErc20 } from "./evmIndex.ts";
 
-export type DiscoveredErc20 = {
-  chainId: number;
-  address: Address;
-  symbol: string;
-  name: string;
-  decimals: number;
-  raw: bigint;
-  usdHint: number | null;
-};
+export type { DiscoveredErc20 };
 
 const EXPLORER: Partial<Record<number, string>> = {
   1: "https://eth.blockscout.com",
   10: "https://explorer.optimism.io",
-  8453: "https://base.blockscout.com",
   42161: "https://arbitrum.blockscout.com",
   137: "https://polygon.blockscout.com",
   100: "https://gnosis.blockscout.com",
   324: "https://zksync.blockscout.com",
   534352: "https://scroll.blockscout.com",
-  81457: "https://blast.blockscout.com",
   42220: "https://celo.blockscout.com",
-  56: "https://bsc.blockscout.com",
-  59144: "https://explorer.linea.build",
   130: "https://unichain.blockscout.com",
   1868: "https://soneium.blockscout.com",
-  5000: "https://explorer.mantle.xyz",
   480: "https://worldchain-mainnet.explorer.alchemy.com",
+  4663: "https://robinhoodchain.blockscout.com",
 };
 
 type BsTok = {
@@ -49,7 +38,7 @@ type BsTok = {
 const DISC_POLICY = { ...POLICIES.http, ttlMs: 120_000, staleMs: 600_000 };
 
 export function explorerChains() {
-  return Object.keys(EXPLORER).map(Number);
+  return [...new Set([...Object.keys(EXPLORER).map(Number), ...indexedHoldingsChains()])];
 }
 
 export function explorerUrl(chainId: number) {
@@ -134,10 +123,11 @@ async function fetchExplorer(chainId: number, address: string): Promise<Discover
   );
 }
 
-function keepDisc(d: DiscoveredErc20, catalog: Set<string>) {
+function keepDisc(d: DiscoveredErc20, catalog: Set<string>, keepUnpriced = false) {
   const k = `${d.chainId}:${d.address.toLowerCase()}`;
   if (catalog.has(k)) return true;
   if (d.usdHint != null && d.usdHint >= 1) return true;
+  if (keepUnpriced && d.usdHint == null) return true;
   return false;
 }
 
@@ -147,26 +137,33 @@ export async function discoverEvmTokens(
   addresses: string[],
   catalogKeys: Set<string>,
 ): Promise<{ tokens: DiscoveredErc20[]; failed: number[] }> {
-  const jobs: Array<{ chainId: number; run: Promise<DiscoveredErc20[]> }> = [];
+  const jobs: Array<{ chainId: number; run: Promise<DiscoveredErc20[]>; unpriced: boolean }> = [];
   for (const addr of addresses) {
     for (const id of chainIds) {
+      if (DEAD_BLOCKSCOUT.has(id) || (!EXPLORER[id] && indexedHoldingsChains().includes(id))) {
+        jobs.push({ chainId: id, run: fetchIndexedHoldings(id, addr), unpriced: true });
+        continue;
+      }
       if (!EXPLORER[id]) continue;
-      jobs.push({ chainId: id, run: fetchExplorer(id, addr) });
+      jobs.push({ chainId: id, run: fetchExplorer(id, addr), unpriced: false });
     }
   }
   const failed = new Set<number>();
-  const parts: DiscoveredErc20[][] = [];
+  const parts: Array<{ list: DiscoveredErc20[]; unpriced: boolean }> = [];
   const settled = await Promise.allSettled(jobs.map((j) => j.run));
   settled.forEach((s, i) => {
-    const id = jobs[i]?.chainId;
-    if (s.status === "fulfilled") parts.push(s.value);
-    else if (id != null) failed.add(id);
+    const job = jobs[i];
+    if (!job) return;
+    if (s.status === "fulfilled") parts.push({ list: s.value, unpriced: job.unpriced });
+    else failed.add(job.chainId);
   });
   const by = new Map<string, DiscoveredErc20>();
-  for (const list of parts) {
+  const unpricedKeys = new Set<string>();
+  for (const { list, unpriced } of parts) {
     for (const d of list) {
-      if (!keepDisc(d, catalogKeys)) continue;
+      if (!keepDisc(d, catalogKeys, unpriced)) continue;
       const k = `${d.chainId}:${d.address.toLowerCase()}`;
+      if (unpriced) unpricedKeys.add(k);
       const prev = by.get(k);
       if (!prev) by.set(k, { ...d });
       else by.set(k, { ...prev, raw: prev.raw + d.raw, usdHint: (prev.usdHint ?? 0) + (d.usdHint ?? 0) });
@@ -177,8 +174,10 @@ export async function discoverEvmTokens(
   const per = new Map<number, number>();
   const capped: DiscoveredErc20[] = [];
   for (const d of merged) {
+    const k = `${d.chainId}:${d.address.toLowerCase()}`;
     const n = per.get(d.chainId) ?? 0;
-    if (n >= 80 && !catalogKeys.has(`${d.chainId}:${d.address.toLowerCase()}`)) continue;
+    const cap = unpricedKeys.has(k) ? 200 : 80;
+    if (n >= cap && !catalogKeys.has(k)) continue;
     per.set(d.chainId, n + 1);
     capped.push(d);
   }

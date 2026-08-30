@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { BS_TX, SCAN_TX, addFlow, chainMeta, fmtAmt, isZeroAddr, mergeTxRows, methodLabel, retouch, type TxRow } from "./txIndex.ts";
+import { BS_TX, INDEX_TX, SCAN_TX, addFlow, chainMeta, fmtAmt, isZeroAddr, mergeTxRows, methodLabel, retouch, type TxRow } from "./txIndex.ts";
 import { applyTags } from "./addrLabels.ts";
 import { trackLive, useLiveStatus } from "./liveStatus.ts";
 import type { AddrKind } from "./addrKind.ts";
 import { fetchBlockscout, fetchScan } from "./txs/evm.ts";
+import { fetchIndexedEvm } from "./txs/indexedEvm.ts";
 import { fetchSol } from "./txs/sol.ts";
 import { fetchAda } from "./txs/ada.ts";
 import { fetchNear } from "./txs/near.ts";
@@ -85,6 +86,7 @@ export function useAddressTxs(addrs: AddrIn[]) {
   const [rows, setRows] = useState<TxRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [failedChains, setFailedChains] = useState<Set<number>>(() => new Set());
   const list = useMemo(() => addrs, [key]);
 
   useEffect(() => {
@@ -92,12 +94,14 @@ export function useAddressTxs(addrs: AddrIn[]) {
       setRows([]);
       setLoading(false);
       setFailed(false);
+      setFailedChains(new Set());
       return;
     }
     let cancelled = false;
     setRows([]);
     setLoading(true);
     setFailed(false);
+    setFailedChains(new Set());
     const jobs: Array<{ id: string; chainId: number; run: () => Promise<TxRow[]> }> = [];
     const ours = oursSet(list);
     const prefer = [1, 43114, 8453, 42161, 56, 137, 10, 480, 101, 1815, 397];
@@ -113,6 +117,9 @@ export function useAddressTxs(addrs: AddrIn[]) {
         for (const id of Object.keys(SCAN_TX).map(Number)) {
           jobs.push({ id: `txs:${id}:${a.value}`, chainId: id, run: () => fetchScan(id, a.value, ours) });
         }
+        for (const id of INDEX_TX) {
+          jobs.push({ id: `txs:${id}:${a.value}`, chainId: id, run: () => fetchIndexedEvm(id, a.value, ours) });
+        }
       } else if (a.kind === "solana") jobs.push({ id: `txs:101:${a.value}`, chainId: 101, run: () => fetchSol(a.value) });
       else if (a.kind === "cardano") jobs.push({ id: `txs:1815:${a.value}`, chainId: 1815, run: () => fetchAda(a.value) });
       else if (a.kind === "near") jobs.push({ id: `txs:397:${a.value}`, chainId: 397, run: () => fetchNear(a.value) });
@@ -120,6 +127,7 @@ export function useAddressTxs(addrs: AddrIn[]) {
     jobs.sort((a, b) => rank(a.chainId) - rank(b.chainId));
     void (async () => {
       let ok = false;
+      const dead = new Set<number>();
       let i = 0;
       const worker = async () => {
         while (i < jobs.length && !cancelled) {
@@ -133,12 +141,13 @@ export function useAddressTxs(addrs: AddrIn[]) {
             });
             ok = true;
           } catch {
-            /* live dock records fail */
+            dead.add(j.chainId);
           }
         }
       };
       await Promise.all(Array.from({ length: Math.min(6, jobs.length) }, () => worker()));
       if (cancelled) return;
+      setFailedChains(dead);
       setFailed(jobs.length > 0 && !ok);
       setLoading(false);
     })();
@@ -148,5 +157,5 @@ export function useAddressTxs(addrs: AddrIn[]) {
     };
   }, [key]);
 
-  return { rows, loading, failed };
+  return { rows, loading, failed, failedChains };
 }

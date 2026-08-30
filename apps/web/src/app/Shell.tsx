@@ -50,6 +50,38 @@ function moreOn(path: string) {
   return LEGAL.some(([href]) => rest === href || rest.startsWith(href));
 }
 
+const APP_VERSION = import.meta.env.VITE_APP_VERSION || "";
+const APP_BUILD = import.meta.env.VITE_APP_BUILD || "";
+
+function FooterVersion() {
+  const { t } = useTranslation();
+  const [stale, setStale] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/version.json", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json: { build?: string } | null) => {
+        if (cancelled || !json?.build || !APP_BUILD) return;
+        if (json.build !== APP_BUILD) setStale(true);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  if (!APP_VERSION) return null;
+  return (
+    <span className="bot-ver" title={APP_BUILD}>
+      {t("app.version", { v: APP_VERSION })}
+      {stale ? (
+        <button type="button" className="bot-reload" onClick={() => globalThis.location.reload()}>
+          {t("app.reload")}
+        </button>
+      ) : null}
+    </span>
+  );
+}
+
 function gasLabel(formatted?: string) {
   if (!formatted) return "";
   const n = Number(formatted);
@@ -187,6 +219,7 @@ export function Shell() {
           <LocaleLink to="/about" className="bot-powered">
             {t("app.poweredBy")}
           </LocaleLink>
+          <FooterVersion />
           <nav className="bot-legal" aria-label={t("nav.legal")}>
             {LEGAL.map(([href, key]) => (
               <LocaleLink key={href} to={href} className={navOn(loc.pathname, href) ? "on" : ""}>

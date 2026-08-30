@@ -23,11 +23,15 @@ Vite + React. Routes live under an optional locale prefix. Unprefixed paths are 
 
 ### On-chain reads
 
-DEX markets and pair pages read venue HTTP adapters and on-chain reserves. Native and Gecko adapters store USD TVL in `tvlQuote`; inverting a pair keeps that USD. Pair titles and headers resolve token symbols from catalog and venue metadata, not truncated mints. Lending pages read protocol rate views. Holdings merge wallet sessions and watch sets, then read balances, lending, LP, and staking. Token lists that paginate (Cosmos, XRPL, Aptos, Blockscout) follow continuation tokens; a failed holdings RPC is shown as “—”, not zero. Token and lock pages call `view`. Launch execution and OFT `send` are the signed paths.
+DEX markets and pair pages read venue HTTP adapters and on-chain reserves. Native and Gecko adapters store USD TVL in `tvlQuote`; inverting a pair keeps that USD. Pair titles and headers resolve token symbols from catalog and venue metadata, not truncated mints. Lending pages read protocol rate views. Holdings merge wallet sessions and watch sets, then read balances, lending, LP, and staking. Token lists that paginate (Cosmos, XRPL, Aptos, Blockscout) follow continuation tokens; a failed holdings RPC is shown as “—”, not zero. Dead Blockscout hosts (BSC, Base, Linea, Blast, Mantle) use Ankr then NodeReal public indexers for token inventory and recent transfers; activity chips fail per chain instead of showing a fake 0. Hot RWAs sit in the baked catalog so V2 LP `candidatePairs` include them; Morpho positions read an allowlisted `marketId` set. Token and lock pages call `view`. Launch execution and OFT `send` are the signed paths.
 
 ### RPC and outbound
 
 `rpcPool.ts` rotates public endpoints (official, PublicNode, 1RPC, dRPC, plus optional custom URLs in `localStorage`). `outbound.ts` caps concurrent fetches (default 10 global, 2 per host; user-adjustable 1–32) and backs off on 429. Failures surface in the live dock; they are not retried as a hidden backend.
+
+### Static hosting and cache
+
+The SPA is uploaded as static files behind Cloudflare proxy. Vite hashes JS/CSS under `/assets/`; those may stay at the edge for a year (`immutable`). HTML (`index.html` and prerendered legal pages) must revalidate (`Cache-Control: no-cache`). `/version.json` is `no-store` and must **Bypass cache** on Cloudflare so a fresh upload is visible. Origin snippet: [deploy/origin-cache.conf](../deploy/origin-cache.conf). Cloudflare Cache Rules: Bypass `/version.json`, `*.html`, and `/`; Eligible + Edge TTL 1 year for `/assets/*`. Do not use site-wide Cache Everything. Until those rules are live, **Purge Everything** after each upload or the edge keeps the old HTML (and thus the old hashed bundle). The header wordmark is YSK Mint at every width. The footer shows the baked `v…` and Powered by on phone, tablet, and desktop; if `/version.json` `build` differs, it offers a refresh. No service worker.
 
 ## Token deploy
 

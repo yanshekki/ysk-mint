@@ -62,11 +62,11 @@ Connected EVM (RainbowKit / wagmi) plus native sessions (NEAR, Cardano, Solana, 
 
 ### Positions
 
-Holdings tab: token balances quoted at DEX spots where available; lending (supply/borrow), LP, and staking lines grouped by protocol. Protocol names link out. Values can lag or miss venues. A failed chain read shows as “—” rather than a fake zero. Paged token lists (Cosmos LCD `next_key`, XRPL `marker`, Aptos FA cursor, Blockscout `next_page_params`) are followed. Spendable native stays in the wallet table; locked value (ADA rewards, SOL/NEAR/Sui stake, Tron frozen, Cosmos-family delegations, listed EVM LSTs) is in the staking group when a reader exists. Spot-check: `pnpm --filter @ysk-mint/web verify:holdings`.
+Holdings tab: token balances quoted at DEX spots where available; lending (supply/borrow), LP, and staking lines grouped by protocol. Protocol names link out. Values can lag or miss venues. A failed chain read shows as “—” rather than a fake zero. Paged token lists (Cosmos LCD `next_key`, XRPL `marker`, Aptos FA cursor, Blockscout `next_page_params`) are followed. When a Blockscout host is down (BSC, Base, Linea, Blast, Mantle), token discovery and activity fall back to Ankr then NodeReal public indexers; a failed chain still shows “—” rather than a fake empty list. The baked catalog includes hot RWAs (tokenized treasuries, gold, credit, Maple syrupUSDC, and popular stock wrappers). Live-explorer chains still `balanceOf` those symbols; V2 LP candidate pairs follow the catalog (permissioned funds without a pool stay “—”). Aave / Spark / Compound lists stay on-chain (`getReservesList` / `getAllMarkets`); Morpho user positions use an allowlisted market set that includes those RWA markets. Spendable native stays in the wallet table; locked value (ADA rewards, SOL/NEAR/Sui stake, Tron frozen, Cosmos-family delegations, listed EVM LSTs) is in the staking group when a reader exists. Spot-check: `pnpm --filter @ysk-mint/web verify:holdings`.
 
 ### Activity
 
-Activity tab lists recent transactions for indexed chains, with tags where the indexer recognizes a protocol. Incomplete history is expected.
+Activity tab lists recent transactions for indexed chains, with tags where the indexer recognizes a protocol. Incomplete history is expected. A per-chain indexer failure shows “—” on that chip (not a fake 0). ETH, OP, and other live Blockscout hosts stay on their own instance; Robinhood Chain is wired to its Blockscout host.
 
 ## Settings
 
@@ -85,7 +85,7 @@ Language follows the URL. Switching language in Settings rewrites the path (`/` 
 
 **Static copy. No signature.**
 
-Footer: [About](https://mint.ysk.hk/about), [Donate](https://mint.ysk.hk/donate), [Terms of Use](https://mint.ysk.hk/terms), [Disclaimer](https://mint.ysk.hk/disclaimer). Donate is a voluntary gift; it is not a sale of tokens or services. Addresses match the Donate page: `yanshekki.eth`, `yanshekki.near`, `$yanshekki`.
+Footer: [About](https://mint.ysk.hk/about), [Donate](https://mint.ysk.hk/donate), [Terms of Use](https://mint.ysk.hk/terms), [Disclaimer](https://mint.ysk.hk/disclaimer). The header wordmark is **YSK Mint** on phone, tablet, and desktop. The bar shows **Powered by YSK Limited** and the baked app version (`v…`) at every width; if `/version.json` `build` differs, it offers a refresh (it does not auto-reload). On widths ≤1024px, legal links sit in More; Powered by and `v…` stay above the tab bar. Donate is a voluntary gift; it is not a sale of tokens or services. Addresses match the Donate page: `yanshekki.eth`, `yanshekki.near`, `$yanshekki`.
 
 ## Languages and URLs
 

@@ -62,11 +62,11 @@
 
 ### 倉位
 
-持倉分頁：代幣結餘（有報價時取去中心化交易所即時價）；借貸（存／借）、流動性及質押按協議分組。協議名稱連到外部網站。數值可能滯後或漏場地。鏈上讀取失敗顯示「—」，不會畫成假的 0。會跟 Cosmos LCD `next_key`、XRPL `marker`、Aptos FA cursor、Blockscout `next_page_params` 等分頁。錢包表只計可花 native；鎖倉（ADA 獎賞、SOL／NEAR／Sui 質押、Tron frozen、Cosmos 系委託、已列入的 EVM LST）在有讀取器時列入質押組。抽樣：`pnpm --filter @ysk-mint/web verify:holdings`。
+持倉分頁：代幣結餘（有報價時取去中心化交易所即時價）；借貸（存／借）、流動性及質押按協議分組。協議名稱連到外部網站。數值可能滯後或漏場地。鏈上讀取失敗顯示「—」，不會畫成假的 0。會跟 Cosmos LCD `next_key`、XRPL `marker`、Aptos FA cursor、Blockscout `next_page_params` 等分頁。Blockscout 主機失效（BSC、Base、Linea、Blast、Mantle）時，代幣發現及活動改走 Ankr，再試 NodeReal 公開索引；該鏈失敗仍顯示「—」，不會扮成空白清單。烘焙目錄含熱門 RWA（代幣化國債、黃金、信貸、Maple syrupUSDC、熱門股包裝）。仍然活的 explorer 鏈亦會對這些代號做 `balanceOf`；V2 LP 候選交易對跟目錄走（沒有池的許可制基金維持「—」）。Aave／Spark／Compound 名單仍由鏈上 `getReservesList`／`getAllMarkets` 讀取；Morpho 使用者倉位用白名單市場（已含上述 RWA）。錢包表只計可花 native；鎖倉（ADA 獎賞、SOL／NEAR／Sui 質押、Tron frozen、Cosmos 系委託、已列入的 EVM LST）在有讀取器時列入質押組。抽樣：`pnpm --filter @ysk-mint/web verify:holdings`。
 
 ### 活動
 
-活動分頁列出已索引鏈的近期交易，並在索引器可辨識時加上協議標籤。紀錄不全屬預期情況。
+活動分頁列出已索引鏈的近期交易，並在索引器可辨識時加上協議標籤。紀錄不全屬預期情況。單鏈索引失敗時該 chip 顯示「—」（不是假的 0）。ETH、OP 及其他仍然活的 Blockscout 維持各自實例；Robinhood Chain 已接入其 Blockscout。
 
 ## 設定
 
@@ -85,7 +85,7 @@
 
 **靜態文稿。無須簽署。**
 
-頁腳：[關於](https://mint.ysk.hk/about)、[捐助](https://mint.ysk.hk/donate)、[使用條款](https://mint.ysk.hk/terms)、[免責聲明](https://mint.ysk.hk/disclaimer)。捐助為自願饋贈，不構成代幣或服務的買賣。地址與捐助頁相同：`yanshekki.eth`、`yanshekki.near`、`$yanshekki`。
+頁腳：[關於](https://mint.ysk.hk/about)、[捐助](https://mint.ysk.hk/donate)、[使用條款](https://mint.ysk.hk/terms)、[免責聲明](https://mint.ysk.hk/disclaimer)。頂欄字標 **YSK Mint** 在手機、平板及桌面均顯示。底欄在任何寬度都顯示 **Powered by YSK Limited** 及烘焙嘅應用版本（`v…`）；若 `/version.json` 的 `build` 不同，會提示重新整理（不會自動 reload）。寬度 ≤1024px 時，法律連結放在「更多」；Powered by 與 `v…` 仍在 tab 上方。捐助為自願饋贈，不構成代幣或服務的買賣。地址與捐助頁相同：`yanshekki.eth`、`yanshekki.near`、`$yanshekki`。
 
 ## 語言與網址
 

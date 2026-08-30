@@ -2,7 +2,9 @@
   "app": {
     "name": "YSK Mint",
     "tagline": "Marchés, avoirs et lancement de tokens sur la chaîne. Pas de backend. Pas de conservation.",
-    "poweredBy": "Propulsé par YSK Limited"
+    "poweredBy": "Propulsé par YSK Limited",
+    "version": "v{{v}}",
+    "reload": "Nouvelle version. Actualiser"
   },
   "live": {
     "title": "Données en direct",

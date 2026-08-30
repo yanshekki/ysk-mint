@@ -155,7 +155,30 @@ const CMC_PLAT_NAME = {
   bitcoin: 833,
 };
 
-const FORCE_GECKO = ["wrapped-bitcoin", "coinbase-wrapped-btc", "staked-ether", "wrapped-steth"];
+const FORCE_GECKO = [
+  "wrapped-bitcoin",
+  "coinbase-wrapped-btc",
+  "staked-ether",
+  "wrapped-steth",
+  "pax-gold",
+  "tether-gold",
+  "ondo-us-dollar-yield",
+  "hashnote-usyc",
+  "blackrock-usd-institutional-digital-liquidity-fund",
+  "superstate-ustb",
+  "ondo-us-government-bond",
+  "franklin-onchain-u-s-government-money-fund",
+  "openeden-tbill",
+  "mountain-protocol-usdm",
+  "backed-ib01-treasury-bond-0-1yr",
+  "syrup",
+  "ethena-staked-usde",
+  "apple-xstock",
+  "tesla-xstock",
+  "nvidia-xstock",
+  "sp500-xstock",
+  "wisdomtree-government-money-market-digital-fund",
+];
 const USD_SYM = /^(usdt|usdc|usde|usds|usd1|busd|tusd|fdusd|usdp|rlusd|pyusd)$/i;
 
 function sleep(ms) {

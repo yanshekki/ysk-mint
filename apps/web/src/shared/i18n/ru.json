@@ -2,7 +2,9 @@
   "app": {
     "name": "YSK Mint",
     "tagline": "Ончейн-рынки, активы и запуск токена. Без бэкенда. Без кастодии.",
-    "poweredBy": "При поддержке YSK Limited"
+    "poweredBy": "При поддержке YSK Limited",
+    "version": "v{{v}}",
+    "reload": "Новая версия. Обновить"
   },
   "live": {
     "title": "Живые данные",

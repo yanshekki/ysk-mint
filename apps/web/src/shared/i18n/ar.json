@@ -2,7 +2,9 @@
   "app": {
     "name": "YSK Mint",
     "tagline": "أسواق على السلسلة، وحيازات، وإطلاق رموز. بلا خادم خلفي. بلا وصاية.",
-    "poweredBy": "بتشغيل YSK Limited"
+    "poweredBy": "بتشغيل YSK Limited",
+    "version": "v{{v}}",
+    "reload": "نسخة جديدة. حدّث"
   },
   "live": {
     "title": "بيانات مباشرة",

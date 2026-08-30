@@ -2,7 +2,9 @@
   "app": {
     "name": "YSK Mint",
     "tagline": "鏈上市場、持倉與發幣。無後端伺服器。不託管資產。",
-    "poweredBy": "Powered by YSK Limited"
+    "poweredBy": "Powered by YSK Limited",
+    "version": "v{{v}}",
+    "reload": "有新版本，重新整理"
   },
   "live": {
     "title": "即時數據",

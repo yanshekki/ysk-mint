@@ -9,6 +9,7 @@
 import { fetchAptos, fetchCosmosBank, fetchSui, fetchTron, fetchXrpl } from "../src/lib/holdings/rest.ts";
 import { fetchSolana } from "../src/lib/holdings/solana.ts";
 import { explorerUrl } from "../src/lib/evmDiscover.ts";
+import { fetchIndexedHoldings } from "../src/lib/evmIndex.ts";
 import { readCosmosStake } from "../src/lib/stake/cosmos.ts";
 import { readSuiStake } from "../src/lib/stake/sui.ts";
 import { readTronStake, tronFrozenSun } from "../src/lib/stake/tron.ts";
@@ -248,11 +249,71 @@ async function checkEvm(addr: string) {
   else if (pn) pass("evm native", { wei: BigInt(pn).toString() });
   else skip("evm rpc");
   const base = explorerUrl(1);
-  if (!base) return;
-  const json = await getJson(`${base}/api/v2/addresses/${a}/token-balances`);
-  const n = Array.isArray(json) ? json.length : json && typeof json === "object" && Array.isArray((json as { items?: unknown[] }).items) ? (json as { items: unknown[] }).items.length : -1;
-  if (n < 0) skip("evm explorer shape");
-  else pass("evm explorer tokens", { n });
+  if (base) {
+    const json = await getJson(`${base}/api/v2/addresses/${a}/token-balances`);
+    const n = Array.isArray(json) ? json.length : json && typeof json === "object" && Array.isArray((json as { items?: unknown[] }).items) ? (json as { items: unknown[] }).items.length : -1;
+    if (n < 0) skip("evm explorer shape");
+    else pass("evm explorer tokens", { n });
+  }
+  await checkBscIndex(a);
+  await checkAaveReserves();
+  const ethJson = base ? await getJson(`${base}/api/v2/addresses/${a}/token-balances`) : null;
+  const hay = JSON.stringify(ethJson ?? "").toLowerCase();
+  if (hay.includes(PAXG) || hay.includes(USDY) || hay.includes("paxg") || hay.includes("usdy")) pass("eth rwa sample", {});
+  else skip("eth rwa sample no PAXG/USDY");
+}
+
+const QQQB = "0x205812cdbed920aff76c6580abd681a46d11efc7";
+const PAXG = "0x45804880de22913dafe09f4980848ece6ecbaf78";
+const USDY = "0x96f6ef951840721adbf46ac996b59e0235cb985c";
+const USYC = "0x136471a34f6ef19fe571effc1ca711fdb8e49f2b";
+
+async function checkBscIndex(addr: string) {
+  try {
+    const toks = await fetchIndexedHoldings(56, addr);
+    const held = toks.filter((t) => t.raw > 0n);
+    if (!held.length) {
+      fail("bsc indexer no tokens", { n: toks.length });
+      return;
+    }
+    pass("bsc indexed tokens", { n: held.length });
+    const qqqb = held.find((t) => t.address.toLowerCase() === QQQB);
+    if (!qqqb) fail("bsc missing QQQB", { symbols: held.slice(0, 8).map((t) => t.symbol) });
+    else pass("bsc QQQB", { raw: qqqb.raw.toString(), symbol: qqqb.symbol });
+  } catch (err) {
+    fail("bsc indexer", { err: err instanceof Error ? err.message : String(err) });
+  }
+}
+
+async function checkAaveReserves() {
+  const pool = "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2";
+  const raw = (await rpc("https://eth-mainnet.nodereal.io/v1/1659dfb40aa24bbb8153a677b98064d7", "eth_call", [
+    { to: pool, data: "0xd1946dbc" },
+    "latest",
+  ])) as string | null;
+  if (!raw || raw === "0x") {
+    skip("aave getReservesList");
+    return;
+  }
+  const hex = raw.slice(2);
+  if (hex.length < 128) {
+    skip("aave reserves decode");
+    return;
+  }
+  const offset = Number.parseInt(hex.slice(0, 64), 16) * 2;
+  const count = Number.parseInt(hex.slice(offset, offset + 64), 16);
+  const addrs: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const slice = hex.slice(offset + 64 + i * 64, offset + 64 + (i + 1) * 64);
+    if (slice.length < 64) break;
+    addrs.push(`0x${slice.slice(24).toLowerCase()}`);
+  }
+  const hit = {
+    PAXG: addrs.includes(PAXG),
+    USDY: addrs.includes(USDY),
+    USYC: addrs.includes(USYC),
+  };
+  pass("aave v3 eth reserves", { n: addrs.length, ...hit });
 }
 
 async function run(name: string, fn: () => Promise<void>) {

@@ -52,20 +52,16 @@ export type TxRow = {
 export const BS_TX: Partial<Record<number, string>> = {
   1: "https://eth.blockscout.com",
   10: "https://explorer.optimism.io",
-  8453: "https://base.blockscout.com",
   42161: "https://arbitrum.blockscout.com",
   137: "https://polygon.blockscout.com",
   100: "https://gnosis.blockscout.com",
   324: "https://zksync.blockscout.com",
   534352: "https://scroll.blockscout.com",
-  81457: "https://blast.blockscout.com",
   42220: "https://celo.blockscout.com",
-  56: "https://bsc.blockscout.com",
-  59144: "https://explorer.linea.build",
   130: "https://unichain.blockscout.com",
   1868: "https://soneium.blockscout.com",
-  5000: "https://explorer.mantle.xyz",
   480: "https://worldchain-mainnet.explorer.alchemy.com",
+  4663: "https://robinhoodchain.blockscout.com",
 };
 
 /** Etherscan-style account txlist. Tried in order. */
@@ -74,7 +70,12 @@ export const SCAN_TX: Partial<Record<number, string[]>> = {
     "https://api.routescan.io/v2/network/mainnet/evm/43114/etherscan/api",
     "https://api.snowtrace.io/api",
   ],
+  81457: ["https://api.routescan.io/v2/network/mainnet/evm/81457/etherscan/api"],
+  5000: ["https://api.routescan.io/v2/network/mainnet/evm/5000/etherscan/api"],
 };
+
+/** JSON-RPC indexed history (Ankr / NodeReal) when Blockscout is down. */
+export const INDEX_TX = new Set([56, 8453, 59144]);
 
 const ZERO = "0x0000000000000000000000000000000000000000";
 
@@ -115,7 +116,7 @@ const SPECIFIC: Array<[number, string, string]> = [
   [43114, "0x60ae616a2155ee3d9a68541ba4544862310933d4", "Trader Joe"],
 ];
 
-for (const id of [...Object.keys(BS_TX), ...Object.keys(SCAN_TX)].map(Number)) {
+for (const id of [...Object.keys(BS_TX), ...Object.keys(SCAN_TX), ...INDEX_TX].map(Number)) {
   for (const [addr, name] of SHARED) putProto(id, addr, name);
 }
 for (const [id, addr, name] of SPECIFIC) putProto(id, addr, name);
@@ -156,7 +157,7 @@ export function txExplorer(chainId: number, hash: string) {
 }
 
 export function txIndexed(chainId: number) {
-  return Boolean(BS_TX[chainId] || SCAN_TX[chainId] || chainId === 101 || chainId === 1815 || chainId === 397);
+  return Boolean(BS_TX[chainId] || SCAN_TX[chainId] || INDEX_TX.has(chainId) || chainId === 101 || chainId === 1815 || chainId === 397);
 }
 
 export function classifyTx(opts: {

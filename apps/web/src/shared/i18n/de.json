@@ -2,7 +2,9 @@
   "app": {
     "name": "YSK Mint",
     "tagline": "On-Chain-Märkte, Bestände und Token-Start. Kein Backend. Keine Verwahrung.",
-    "poweredBy": "Bereitgestellt von YSK Limited"
+    "poweredBy": "Bereitgestellt von YSK Limited",
+    "version": "v{{v}}",
+    "reload": "Neue Version. Neu laden"
   },
   "live": {
     "title": "Livedaten",

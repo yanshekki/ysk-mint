@@ -2,7 +2,9 @@
   "app": {
     "name": "YSK Mint",
     "tagline": "オンチェーンの市場、保有、トークン発行。バックエンドなし。資産は預かりません。",
-    "poweredBy": "提供：YSK Limited"
+    "poweredBy": "提供：YSK Limited",
+    "version": "v{{v}}",
+    "reload": "新しい版があります。再読み込み"
   },
   "live": {
     "title": "ライブデータ",
