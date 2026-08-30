@@ -1,5 +1,5 @@
 import { CHAINS } from "@ysk-mint/config";
-import { DEX, isUsdStableAddress, usdStables } from "./defiAddresses.ts";
+import { SOL_NATIVE_MINT, DEX, isUsdStableAddress, usdStables } from "./defiAddresses.ts";
 import { marketDepthUsd, NATIVE_USD, venuesPriceUsd } from "./defi/quote.ts";
 import { canonId, sortPair } from "./pairKey.ts";
 import { useUserSettings } from "./userSettings.ts";
@@ -144,12 +144,15 @@ function refreshVenueTvl<T extends { priceAinB: number; reserveA: number; reserv
   return { ...v, tvlQuote };
 }
 
-export function invertVenue<T extends { priceAinB: number; reserveA: number; reserveB: number; tvlQuote?: number }>(v: T): T {
+export function invertVenue<T extends { priceAinB: number; reserveA: number; reserveB: number; tvlQuote?: number }>(v: T, chainId?: number): T {
+  const extra = v as T & { chainId?: number; venue?: { chainId?: number } };
+  const cid = chainId ?? extra.chainId ?? extra.venue?.chainId;
   const priceAinB = invertPrice(v.priceAinB);
   const reserveA = v.reserveB;
   const reserveB = v.reserveA;
+  const keepUsd = cid != null && NATIVE_USD.has(cid);
   let tvlQuote = v.tvlQuote;
-  if (reserveA > 0 || reserveB > 0) {
+  if (!keepUsd && (reserveA > 0 || reserveB > 0)) {
     tvlQuote =
       reserveA > 0 && priceAinB > 0 && Number.isFinite(priceAinB)
         ? reserveA * priceAinB + Math.max(reserveB, 0)
@@ -160,9 +163,23 @@ export function invertVenue<T extends { priceAinB: number; reserveA: number; res
 
 export function displayStableSymbol(chainId: number, address: string, fallback: string) {
   const d = DEX[chainId];
-  if (!d) return fallback;
-  const hit = usdStables(d).find((s) => s.address.toLowerCase() === address.toLowerCase());
-  return hit?.symbol ?? fallback;
+  if (d) {
+    const hit = usdStables(d).find((s) => s.address.toLowerCase() === address.toLowerCase());
+    if (hit?.symbol) return hit.symbol;
+  }
+  const a = address.toLowerCase();
+  if (chainId === 101) {
+    if (a === "epjfwdd5aufqssqem2qn1xzybapc8g4weggkzwytdt1v") return "USDC";
+    if (a === "es9vmfrzacermjfrf4h2fyd4kconky11mcce8benwnyb") return "USDT";
+    if (a === SOL_NATIVE_MINT.toLowerCase()) return "SOL";
+  }
+  if (chainId === 784) {
+    if (a.includes("::usdc::")) return "USDC";
+    if (a.includes("::usdt::")) return "USDT";
+    if (a.includes("::usde::")) return "USDE";
+    if (a.includes("::sui::sui")) return "SUI";
+  }
+  return fallback;
 }
 
 type Marketish<V extends { priceAinB: number; reserveA: number; reserveB: number; protocolId?: string; pool?: string }> = {
@@ -190,7 +207,7 @@ export function orientMarketRow<V extends { priceAinB: number; reserveA: number;
   );
   const symbolA = displayStableSymbol(row.chainId, row.tokenA, row.symbolA);
   const symbolB = displayStableSymbol(row.chainId, row.tokenB, row.symbolB);
-  const flipped = keep ? row.venues : row.venues.map(invertVenue);
+  const flipped = keep ? row.venues : row.venues.map((v) => invertVenue(v, row.chainId));
   const venues = flipped.map((v) => refreshVenueTvl(v, row.chainId));
   const quote = keep ? row.tokenB : row.tokenA;
   const price = venuesPriceUsd(venues, quote, row.chainId, null, keep ? row.tokenA : row.tokenB);

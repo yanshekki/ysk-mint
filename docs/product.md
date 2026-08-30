@@ -12,7 +12,7 @@ Launch, lock, and related contracts are **not audited**. Mainnet factory address
 
 **Read on-chain. No wallet required to browse.**
 
-The home route `/` lists live DEX pools: pair, chain, price, and depth from on-chain reserves (and native-chain venue readers where wired). Filter by chain or search. Pagination and filters stay in this browser session. Quotes are spots, not a promise of fill.
+The home route `/` lists live DEX pools: pair, chain, USD quote, and **Depth USD** (the pool’s dollar value). When a venue publishes USD TVL (Raydium `tvl`, Orca `tvlUsdc`, Cetus `pure_tvl_in_usd`, Gecko `reserve_in_usd`, and the other wired native adapters), that figure is shown. Otherwise the app converts both reserves through the same USD quote as the price column. The column is always labeled Depth USD — not a quote-token or mint. Filter by chain or search. Pagination and filters stay in this browser session. Quotes are spots, not a promise of fill.
 
 YSK launch-pool rows (when a factory is configured) appear alongside third-party venues. Mainnet factories are still zero, so those product pools are empty until a deploy.
 
@@ -20,7 +20,7 @@ YSK launch-pool rows (when a factory is configured) appear alongside third-party
 
 **Read on-chain. Swap on the venue’s site.**
 
-`/pair/:chainId/:tokenA/:tokenB` shows oriented price, venue depth, and recent swaps. YSK Mint does not execute a swap. Open the DEX from the pair page when you want to trade.
+`/pair/:chainId/:tokenA/:tokenB` shows token **symbols** (for example `SOL / USDC`) in the title, pool rows, headers, and SEO — not truncated mint or contract addresses. Pool addresses stay as a small technical id. Columns are USD quote, base-token reserve, and Depth USD. YSK Mint does not execute a swap. Open the DEX from the pair page when you want to trade.
 
 ## Lending
 

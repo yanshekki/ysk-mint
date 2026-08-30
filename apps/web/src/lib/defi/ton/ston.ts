@@ -81,6 +81,7 @@ function stableUsd(row: Row) {
 }
 
 function venue(row: Row): VenueQuote {
+  // STON.fi `lp_total_supply_usd` is USD. `price` is token0 in token1; inverted here when mintA is the stable.
   const priceAinB = isUsd(row.symbolB)
     ? row.price
     : isUsd(row.symbolA) && row.price

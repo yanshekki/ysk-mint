@@ -1,5 +1,4 @@
 import { formatUnits, type Address } from "viem";
-import { DEX, usdStables } from "../../defiAddresses.ts";
 import { asAddr, canonAddr } from "../../pairKey.ts";
 import type { Venue } from "../../dexVenues.ts";
 import { forChunks } from "../cache.ts";
@@ -7,8 +6,6 @@ import type { DefiProtocol, PoolRef, TokenRef, VenueQuote } from "../types.ts";
 import { erc20BalAbi, v3FactoryAbi, v3PoolAbi, v3TickFactoryAbi } from "./abis.ts";
 import { callMany } from "./client.ts";
 import { ZERO, priceFromSqrtPriceX96 } from "./math.ts";
-
-let _v3Dbg = 0;
 
 function v3Key(venue: Venue) {
   const tick = venue.poolArg === "tick";
@@ -132,45 +129,6 @@ async function readV3Pool(
     if (price == null) return null;
     const reserveA = Number(formatUnits(balA, tokenA.decimals));
     const reserveB = Number(formatUnits(balB, tokenB.decimals));
-    // #region agent log
-    {
-      const d = DEX[venue.chainId];
-      const want = (addr: string, used: number) =>
-        d
-          ? (usdStables(d).find((s) => s.address.toLowerCase() === addr.toLowerCase())?.decimals ??
-            (d.wrapped.toLowerCase() === addr.toLowerCase() ? 18 : used))
-          : used;
-      const wantA = want(String(tokenA.address), tokenA.decimals);
-      const wantB = want(String(tokenB.address), tokenB.decimals);
-      if (_v3Dbg < 8 && (wantA !== tokenA.decimals || wantB !== tokenB.decimals || /usd/i.test(`${tokenA.symbol}${tokenB.symbol}`))) {
-        _v3Dbg += 1;
-        fetch("http://127.0.0.1:7877/ingest/5e2e6afe-2618-4b13-996a-8c6b0be88e05", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "05e1c5" },
-          body: JSON.stringify({
-            sessionId: "05e1c5",
-            runId: "pre-fix",
-            hypothesisId: "B",
-            location: "univ3.ts:readV3Pool",
-            message: "v3-decimals",
-            data: {
-              chainId: venue.chainId,
-              venue: venue.name,
-              usedA: tokenA.decimals,
-              usedB: tokenB.decimals,
-              wantA,
-              wantB,
-              mismatch: wantA !== tokenA.decimals || wantB !== tokenB.decimals,
-              reserveA,
-              reserveB,
-              price,
-            },
-            timestamp: Date.now(),
-          }),
-        }).catch(() => {});
-      }
-    }
-    // #endregion
     if (!Number.isFinite(reserveA) || !Number.isFinite(reserveB)) return null;
     if (reserveA <= 0 && reserveB <= 0) return null;
     return {
@@ -182,6 +140,7 @@ async function readV3Pool(
       priceAinB: price,
       reserveA,
       reserveB,
+      // UI balances; price is A-in-B from sqrtPriceX96; tvlQuote is quote-token units until wrap/stable conversion.
       tvlQuote: reserveA > 0 && price > 0 ? reserveA * price + Math.max(reserveB, 0) : Math.max(reserveB, 0) * 2,
       kind: "v3",
     };

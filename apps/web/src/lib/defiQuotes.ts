@@ -68,3 +68,31 @@ export function fmtCompact(n: number | null | undefined) {
   if (abs === 0) return "0";
   return `${sign}${abs.toLocaleString(undefined, { maximumFractionDigits: 6 })}`;
 }
+
+/** Pair / markets quote column: enough fraction digits, never `0.3`. */
+export function fmtQuoteUsd(n: number | null | undefined) {
+  if (n == null || !Number.isFinite(n)) return "—";
+  if (n >= 1) return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 3 });
+  if (n >= 0.01) return n.toLocaleString(undefined, { minimumFractionDigits: 6, maximumFractionDigits: 6 });
+  return n.toLocaleString(undefined, { minimumFractionDigits: 6, maximumFractionDigits: 10 });
+}
+
+/** Base-token reserve: no 2-dp compact. */
+export function fmtReserveAmt(n: number | null | undefined) {
+  if (n == null || !Number.isFinite(n)) return "—";
+  const sign = n < 0 ? "-" : "";
+  const abs = Math.abs(n);
+  if (abs >= 1e9) return `${sign}${(abs / 1e9).toFixed(3)}B`;
+  if (abs >= 1e6) return `${sign}${(abs / 1e6).toFixed(3)}M`;
+  if (abs >= 1000) return `${sign}${abs.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`;
+  if (abs >= 1) return `${sign}${abs.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 6 })}`;
+  if (abs === 0) return "0";
+  return `${sign}${abs.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 8 })}`;
+}
+
+/** Depth USD: thousand separators, no T/B that hide bad units. */
+export function fmtDepthUsd(n: number | null | undefined) {
+  if (n == null || !Number.isFinite(n) || n <= 0) return "—";
+  if (n >= 1) return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 3 });
+  return n.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 6 });
+}

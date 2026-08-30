@@ -188,6 +188,7 @@ export async function enumVenueMarkets(ctx: DefiCtx, venue: Venue, kind: "v2" | 
     const priceAinB = reserveA > 0 && reserveB > 0 ? reserveB / reserveA : 0;
     if (!Number.isFinite(priceAinB)) continue;
     const quoted = quoteRank(venue.chainId, b.address, b.symbol) < 2;
+    // UI reserves; price is A-in-B; tvlQuote is quote-token units until wrap/stable conversion.
     const tvlQuote = quoted && reserveA > 0 && priceAinB > 0 ? reserveA * priceAinB + reserveB : quoted && reserveB > 0 ? reserveB * 2 : 0;
     const feeLabel = kind === "aero" ? (p.stable ? "0.05%" : "0.30%") : "0.30%";
     const v: VenueQuote = {

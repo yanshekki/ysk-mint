@@ -22,6 +22,7 @@ This is a **product checklist**, not an audit opinion. The app does not take cus
 
 - Custom RPC URLs and address books live in this browser (`localStorage`). They are not uploaded to a YSK server.
 - Public node rotation can fail, rate-limit, or return stale data. Treat figures as unverified.
+- Market Depth USD comes from protocol TVL endpoints and DEX quotes. It can be delayed, incomplete, or wrong.
 - Outbound caps limit concurrent fetches; they are not a security boundary.
 
 ## Engineering rules

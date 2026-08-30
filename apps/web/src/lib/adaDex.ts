@@ -272,6 +272,7 @@ async function loadAdaMarketsFromMetrics(): Promise<NativeMarket[]> {
     const a0 = adaUnit(p.asset_a);
     const b0 = adaUnit(p.asset_b);
     if (!a0 || !b0 || a0 === b0) continue;
+    // Minswap metrics `liquidity_currency` is USD TVL. Price is derived from UI reserves (A-in-B).
     const tvl = Number(p.liquidity_currency);
     if (!(tvl >= 1000)) continue;
     let tokenA = a0;

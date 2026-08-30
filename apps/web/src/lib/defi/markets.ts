@@ -1,5 +1,5 @@
 import { CHAINS } from "@ysk-mint/config";
-import { DEX, isUsdStableAddress, usdStables } from "../defiAddresses.ts";
+import { DEX, isUsdStableAddress } from "../defiAddresses.ts";
 import { pairId } from "../pairKey.ts";
 import { displayStableSymbol, invertVenue, isQuoteOnRight } from "../pairOrient.ts";
 import { cacheGet, cacheKey, cacheLastGood, cacheWrite, forChunks, POLICIES } from "./cache.ts";
@@ -46,8 +46,6 @@ function approxStableUsd(symbol?: string): number | null {
   if (/^(W?USDC|W?USDT|DAI|USDS|FRAX|USDB|USDE|USDM|USDA|USD1)(\.E)?$/.test(s)) return 1;
   return null;
 }
-
-let _mktDbg = 0;
 
 type Hit = { a: MarketToken; b: MarketToken; protocolId: string; refs: PoolRef[] };
 
@@ -218,7 +216,7 @@ export async function loadEvmMarkets(chainId: number): Promise<MarketRow[]> {
       );
       const a = keep ? h.a : h.b;
       const b = keep ? h.b : h.a;
-      const hitVenues = keep ? h.venues : h.venues.map(invertVenue);
+      const hitVenues = keep ? h.venues : h.venues.map((v) => invertVenue(v, chainId));
       const id = pairId(chainId, a.address, b.address);
       const prev = byPair.get(id);
       const venues = [...(prev?.venues ?? [])];
@@ -241,48 +239,6 @@ export async function loadEvmMarkets(chainId: number): Promise<MarketRow[]> {
       const tvlQ = venueDepthUsd(venues);
       const price = px != null && qUsd != null ? px * qUsd : (usd?.usdc ?? null);
       const depth = qUsd != null && tvlQ > 0 ? tvlQ * qUsd : 0;
-      // #region agent log
-      {
-        const pairSym = `${a.symbol}/${b.symbol}`;
-        const deadIco = (a.icon || "").includes(".e") || (b.icon || "").includes(".e");
-        const usdce = /usdc\.e/i.test(pairSym);
-        const sample = _mktDbg < 8 && chainId === 43114 && /usd/i.test(pairSym);
-        if (deadIco || usdce || sample) {
-          if (sample && !deadIco && !usdce) _mktDbg += 1;
-        const wantA = usdStables(d).find((s) => s.address.toLowerCase() === a.address.toLowerCase())?.decimals ?? null;
-        const wantB = usdStables(d).find((s) => s.address.toLowerCase() === b.address.toLowerCase())?.decimals ?? null;
-        fetch("http://127.0.0.1:7877/ingest/5e2e6afe-2618-4b13-996a-8c6b0be88e05", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "05e1c5" },
-          body: JSON.stringify({
-            sessionId: "05e1c5",
-            runId: "pre-fix",
-            hypothesisId: "B",
-            location: "markets.ts:loadEvmMarkets",
-            message: "evm-depth-row",
-            data: {
-              chainId,
-              pair: pairSym,
-              usedDecA: a.decimals,
-              usedDecB: b.decimals,
-              wantDecA: wantA,
-              wantDecB: wantB,
-              wrapUsd,
-              qUsd,
-              tvlQ,
-              depth,
-              price,
-              iconA: a.icon,
-              venues: names,
-              n: venues.length,
-              tvlQuotes: venues.slice(0, 6).map((v) => ({ id: v.protocolId, tvl: v.tvlQuote, rA: v.reserveA, rB: v.reserveB })),
-            },
-            timestamp: Date.now(),
-          }),
-        }).catch(() => {});
-        }
-      }
-      // #endregion
       byPair.set(id, {
         pairId: id,
         chainId,

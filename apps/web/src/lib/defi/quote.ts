@@ -175,8 +175,9 @@ function faceQuotes(venues: VenueQuote[], rowA: string, wantA: string): VenueQuo
     const priceAinB = v.priceAinB && Number.isFinite(v.priceAinB) ? 1 / v.priceAinB : v.priceAinB;
     const reserveA = v.reserveB;
     const reserveB = v.reserveA;
-    const tvlQuote =
-      reserveA > 0 && priceAinB > 0 && Number.isFinite(priceAinB)
+    const tvlQuote = NATIVE_USD.has(v.chainId)
+      ? v.tvlQuote
+      : reserveA > 0 && priceAinB > 0 && Number.isFinite(priceAinB)
         ? reserveA * priceAinB + Math.max(reserveB, 0)
         : Math.max(reserveB, 0) * 2;
     return { ...v, priceAinB, reserveA, reserveB, tvlQuote };
@@ -280,6 +281,23 @@ export function quoteAmountUsd(amount: number, quoteAddr: string, chainId: numbe
   return null;
 }
 
+const SOL_USDC = "epjfwdd5aufqssqem2qn1xzybapc8g4weggkzwytdt1v";
+const SOL_USDT = "es9vmfrzacermjfrf4h2fyd4kconky11mcce8benwnyb";
+
+function nativeGas(chainId: number, addr: string) {
+  const a = addr.toLowerCase();
+  if (chainId === 101) return a === "so11111111111111111111111111111111111111112";
+  if (chainId === 784) return a.includes("::sui::sui");
+  return false;
+}
+
+function nativeUsdStable(chainId: number, addr: string) {
+  const a = addr.toLowerCase();
+  if (chainId === 101) return a === SOL_USDC || a === SOL_USDT;
+  if (chainId === 784) return a.includes("::usdc::") || a.includes("::usdt::") || a.includes("::usde::");
+  return false;
+}
+
 /** USD of the volatile leg when one side is a stable; otherwise base in USD via wrap. */
 export function pairPriceUsd(
   priceAinB: number,
@@ -289,6 +307,16 @@ export function pairPriceUsd(
   wrapUsd: number | null = null,
 ): number | null {
   if (!(priceAinB > 0) || !Number.isFinite(priceAinB)) return null;
+  const wrap = wrapUsd ?? cacheLastGood<number>(cacheKey("quote.wrap", chainId)) ?? null;
+  if (NATIVE_USD.has(chainId)) {
+    if (nativeUsdStable(chainId, tokenB)) return priceAinB;
+    if (nativeUsdStable(chainId, tokenA)) {
+      const inv = 1 / priceAinB;
+      return Number.isFinite(inv) && inv > 0 ? inv : null;
+    }
+    if (wrap && wrap > 0 && nativeGas(chainId, tokenB)) return priceAinB * wrap;
+    return priceAinB;
+  }
   const d = DEX[chainId];
   if (!d) return priceAinB;
   if (isUsdStableAddress(d, tokenB)) return priceAinB;
@@ -296,7 +324,7 @@ export function pairPriceUsd(
     const inv = 1 / priceAinB;
     return Number.isFinite(inv) && inv > 0 ? inv : null;
   }
-  return quoteAmountUsd(priceAinB, tokenB, chainId, wrapUsd ?? cacheLastGood<number>(cacheKey("quote.wrap", chainId)) ?? null);
+  return quoteAmountUsd(priceAinB, tokenB, chainId, wrap);
 }
 
 export function consensusPairPrice(venues: TvlLike[]): number | null {
@@ -317,7 +345,7 @@ export function venuesTvlUsd(venues: TvlLike[], quoteAddr: string, chainId: numb
 }
 
 /** Native/Gecko adapters already store USD in tvlQuote. Do not treat quote-token reserves as dollars. */
-export const NATIVE_USD = new Set([101, 397, 1815, 784, 607, 637]);
+export const NATIVE_USD = new Set([101, 397, 1815, 784, 607, 637, 146, 999, 80094]);
 
 export function marketDepthUsd(venues: TvlLike[], quoteAddr: string, chainId: number, wrapUsd: number | null, prevUsd = 0): number {
   const indexed = venues.reduce((n, v) => n + Math.max(v.tvlQuote ?? 0, 0), 0);
@@ -336,22 +364,41 @@ export function marketDepthUsd(venues: TvlLike[], quoteAddr: string, chainId: nu
   return 0;
 }
 
-export function venueDisplayDepth(v: TvlLike, asUsd: boolean): number {
+/** USD per 1 quote token (1 for stables, wrap USD for WSOL/SUI/WETH). */
+export function quoteTokenUsd(quoteAddr: string, chainId: number, wrapUsd: number | null = null): number | null {
+  const wrap = wrapUsd ?? cacheLastGood<number>(cacheKey("quote.wrap", chainId)) ?? null;
+  if (NATIVE_USD.has(chainId)) {
+    if (nativeUsdStable(chainId, quoteAddr)) return 1;
+    if (wrap && wrap > 0 && nativeGas(chainId, quoteAddr)) return wrap;
+    return null;
+  }
+  return quoteAmountUsd(1, quoteAddr, chainId, wrap);
+}
+
+/** Pool USD = reserveA × displayed USD quote + reserveB × quote-token USD. */
+export function venueUsdFromQuote(v: TvlLike, tokenA: string, tokenB: string, chainId: number): number {
+  const px = pairPriceUsd(v.priceAinB, tokenA, tokenB, chainId);
+  if (px == null || !(px > 0) || !(v.reserveA > 0)) return 0;
+  const qUsd = quoteTokenUsd(tokenB, chainId);
+  const quoteLeg = qUsd != null && Number.isFinite(v.reserveB) ? Math.max(v.reserveB, 0) * qUsd : 0;
+  const n = v.reserveA * px + quoteLeg;
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+/** Always USD. Prefer protocol USD TVL on native chains when quote-based depth diverges. */
+export function venueDisplayDepth(v: TvlLike, tokenA: string, tokenB: string, chainId: number): number {
   const indexed = Math.max(v.tvlQuote ?? 0, 0);
-  let fromReserves = 0;
-  if (v.reserveA > 0 && v.priceAinB > 0 && Number.isFinite(v.reserveB)) {
-    const tvl = v.reserveA * v.priceAinB + Math.max(v.reserveB, 0);
-    if (Number.isFinite(tvl) && tvl > 0) fromReserves = tvl;
-  }
   if (v.pool && /^(ref|sauce):/i.test(v.pool)) return indexed;
-  if (asUsd) {
-    if (indexed > 0 && fromReserves > 0) {
-      const ratio = fromReserves > indexed ? fromReserves / indexed : indexed / fromReserves;
-      return ratio > 2 ? indexed : fromReserves;
+  const fromQuote = venueUsdFromQuote(v, tokenA, tokenB, chainId);
+  const native = NATIVE_USD.has(chainId) || (v.chainId != null && NATIVE_USD.has(v.chainId));
+  if (native) {
+    if (indexed > 0 && fromQuote > 0) {
+      const ratio = fromQuote > indexed ? fromQuote / indexed : indexed / fromQuote;
+      return ratio > 2 ? indexed : fromQuote;
     }
-    return indexed || fromReserves;
+    return indexed || fromQuote;
   }
-  return fromReserves || indexed;
+  return fromQuote || indexed;
 }
 
 export function venueDepthUsd(venues: TvlLike[]): number {

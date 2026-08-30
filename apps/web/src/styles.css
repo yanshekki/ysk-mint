@@ -1564,7 +1564,7 @@ button.me-token.transfer-pick-on {
 }
 .me-cols-markets,
 .me-token.me-token-markets {
-  grid-template-columns: 36px minmax(0, 1fr) 88px 48px 88px;
+  grid-template-columns: 36px minmax(0, 1fr) 112px 48px 128px;
 }
 .me-cols-5 span:nth-child(1),
 .me-cols-5 .me-sort:nth-child(1) {
@@ -1573,7 +1573,11 @@ button.me-token.transfer-pick-on {
 }
 .me-cols-pool,
 .me-token.me-token-pool {
-  grid-template-columns: 36px minmax(0, 1fr) 96px 96px 96px minmax(148px, auto);
+  grid-template-columns: 36px minmax(140px, 200px) minmax(140px, 1fr) minmax(140px, 1fr) minmax(148px, 1fr) minmax(148px, auto);
+}
+.me-cols-pool span:nth-child(5),
+.me-cols-pool .me-sort:nth-child(5) {
+  grid-column: 6;
 }
 .me-pool-acts {
   display: flex;
@@ -2428,7 +2432,7 @@ button.me-token:focus-visible {
   }
   .me-cols-markets,
   .me-token.me-token-markets {
-    grid-template-columns: 36px minmax(0, 1fr) 64px 40px 64px;
+    grid-template-columns: 36px minmax(0, 1fr) 88px 40px 100px;
   }
   .me-token.me-token-5.me-token-proto {
     grid-template-columns: 36px minmax(0, 1fr) 88px;
@@ -2443,7 +2447,7 @@ button.me-token:focus-visible {
   }
   .me-cols-pool,
   .me-token.me-token-pool {
-    grid-template-columns: 36px minmax(0, 1fr) 64px 64px 64px minmax(120px, auto);
+    grid-template-columns: 36px minmax(72px, 110px) minmax(108px, 1fr) minmax(108px, 1fr) minmax(120px, 1fr) minmax(120px, auto);
   }
   .lend-apy-range {
     font-size: 12px;
@@ -4023,6 +4027,15 @@ html[dir="rtl"] .donate-addr {
     grid-area: m3;
     display: flex;
     text-align: start;
+  }
+  .me-token.me-token-pool .me-metric.me-price,
+  .me-token.me-token-pool .me-metric.holding-amt,
+  .me-token.me-token-pool .me-metric.me-value {
+    overflow: visible;
+    text-overflow: unset;
+    white-space: nowrap;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
   }
   .me-token.me-token-5 .me-pool-acts {
     grid-area: acts;

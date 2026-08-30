@@ -246,6 +246,11 @@ export function seedToken(chainId: number, address: string) {
     if (p.a.address.toLowerCase() === a) return p.a;
     if (p.b.address.toLowerCase() === a) return p.b;
   }
+  for (const p of SOL_SEEDS) {
+    if (p.chainId !== chainId) continue;
+    if (p.mintA.toLowerCase() === a) return { address: p.mintA, symbol: p.symbolA, decimals: 9, icon: p.iconA };
+    if (p.mintB.toLowerCase() === a) return { address: p.mintB, symbol: p.symbolB, decimals: 6, icon: p.iconB };
+  }
   return undefined;
 }
 

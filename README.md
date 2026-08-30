@@ -8,7 +8,7 @@ Live: [mint.ysk.hk](https://mint.ysk.hk). Source: [github.com/yanshekki/ysk-mint
 
 | | |
 |--|--|
-| **Version** | 1.0.0 |
+| **Version** | 1.1.0 |
 | **License** | MIT |
 | **Frontend** | Vite + React + TypeScript (static SPA) |
 | **Contracts** | Solidity 0.8.22, Foundry, OpenZeppelin 5.x |
@@ -26,7 +26,7 @@ Live: [mint.ysk.hk](https://mint.ysk.hk). Source: [github.com/yanshekki/ysk-mint
 
 Full walkthrough: [Product guide](./docs/product.md).
 
-- **Markets** — live DEX pools, prices, and depth from on-chain reserves. No wallet required to browse.
+- **Markets** — live DEX pools, USD quotes, and Depth USD (the pool’s dollar value). No wallet required to browse. Pair pages show token symbols, not truncated contract addresses.
 - **Lending** — supply and borrow APY from on-chain rates. Read-only; deposit or borrow on the protocol’s site.
 - **Holdings** — look up public addresses or connect wallets. Lending, LP, staking, and activity. Quotes are DEX spots.
 - **Launch** — guided OFT deploy, LP, and lock on supported EVM networks. You sign. Contracts are not audited.
@@ -68,7 +68,7 @@ pnpm --filter @ysk-mint/web dev
 
 Foundry: `forge test -vv`
 
-Web typecheck and i18n key check: `pnpm --filter @ysk-mint/web typecheck` and `pnpm --filter @ysk-mint/web i18n:check`.
+Web typecheck and i18n key check: `pnpm --filter @ysk-mint/web typecheck` and `pnpm --filter @ysk-mint/web i18n:check`. Market depth spot-check (live venue APIs): `pnpm --filter @ysk-mint/web verify:depth`.
 
 ## Docs
 

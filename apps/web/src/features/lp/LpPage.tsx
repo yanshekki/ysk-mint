@@ -8,7 +8,7 @@ import { featuredChains, isConfigured, launchContracts } from "@ysk-mint/config"
 import { useLpFeed, type LpFilter, type LpRow } from "../../lib/useLpFeed.ts";
 import { useDexMarkets, type MarketRow } from "../../lib/useDexMarkets.ts";
 import { useDexLp, type MyLpRow } from "../../lib/useDexLp.ts";
-import { fmtCompact, fmtUsdc } from "../../lib/defiQuotes.ts";
+import { fmtDepthUsd, fmtQuoteUsd, fmtUsdc } from "../../lib/defiQuotes.ts";
 import { chainIcon } from "../../lib/chainIcon.ts";
 import { useNativeWallets } from "../../lib/nativeWallets.ts";
 import { useCardanoHoldings } from "../../lib/useHoldings.ts";
@@ -360,13 +360,13 @@ export function LpPage() {
                       <span>{r.venueNames.join(" · ")}</span>
                     </div>
                     <Metric className="num me-price" label={t("me.quote")}>
-                      {r.price == null ? "—" : fmtUsdc(r.price)}
+                      {r.price == null ? "—" : fmtQuoteUsd(r.price)}
                     </Metric>
                     <Metric className="num holding-amt" label={t("lp.poolCount")}>
                       {r.venues.length || r.venueNames.length}
                     </Metric>
                     <Metric className="num me-value" label={t("lp.depth")}>
-                      {r.depth ? fmtCompact(r.depth) : "—"}
+                      {r.depth ? fmtDepthUsd(r.depth) : "—"}
                     </Metric>
                   </Link>
                 ))}

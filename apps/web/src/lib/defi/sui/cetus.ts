@@ -1,5 +1,5 @@
 import { pairId } from "../../pairKey.ts";
-import { cacheGet, cacheHash, cacheKey, POLICIES } from "../cache.ts";
+import { cacheGet, cacheHash, cacheKey, cacheWrite, POLICIES } from "../cache.ts";
 import { outboundFetch } from "../../outbound.ts";
 import type { DefiProtocol, MarketRow, VenueQuote } from "../types.ts";
 
@@ -51,18 +51,14 @@ function feeLabel(fee: unknown) {
 }
 
 function venue(row: Row): VenueQuote {
-  const priceAinB = isUsd(row.mintB, row.symbolB)
-    ? row.price
-    : isUsd(row.mintA, row.symbolA) && row.price
-      ? 1 / row.price
-      : row.price;
+  // Cetus `pure_tvl_in_usd` is USD. `price` is coin_a in coin_b; USD-left pools swap tokens but keep price.
   return {
     protocolId: "cetus-784",
     protocolName: "Cetus",
     chainId: 784,
     pool: row.pool,
     feeLabel: row.feeLabel,
-    priceAinB: Number.isFinite(priceAinB) ? priceAinB : 0,
+    priceAinB: Number.isFinite(row.price) ? row.price : 0,
     reserveA: row.reserveA,
     reserveB: row.reserveB,
     tvlQuote: row.tvl,
@@ -94,7 +90,7 @@ function toMarkets(rows: Row[]): MarketRow[] {
       tokenA: r.mintA,
       tokenB: r.mintB,
       venues: [v],
-      price: isUsd(r.mintB, r.symbolB) ? r.price : isUsd(r.mintA, r.symbolA) ? 1 : r.price,
+      price: r.price,
       depth: r.tvl,
       venueNames: ["Cetus"],
     });
@@ -146,7 +142,8 @@ function asRow(p: Record<string, unknown>): Row | null {
     tvl: num(p.pure_tvl_in_usd ?? p.tvl),
     feeLabel: feeLabel(p.fee),
   };
-  if (isUsd(row.mintA, row.symbolA) && !isUsd(row.mintB, row.symbolB)) {
+  const flippedUsdLeft = isUsd(row.mintA, row.symbolA) && !isUsd(row.mintB, row.symbolB);
+  if (flippedUsdLeft) {
     row = {
       ...row,
       mintA: row.mintB,
@@ -155,8 +152,11 @@ function asRow(p: Record<string, unknown>): Row | null {
       symbolB: row.symbolA,
       reserveA: row.reserveB,
       reserveB: row.reserveA,
-      price: row.price ? 1 / row.price : 0,
+      price: row.price,
     };
+    if (/^SUI$/i.test(row.symbolA) && isUsd(row.mintB, row.symbolB) && row.price > 0) {
+      cacheWrite(cacheKey("quote.wrap", 784), { ...POLICIES.quote, keep: (n: number | null) => n != null && n > 0 }, row.price);
+    }
   }
   return row;
 }

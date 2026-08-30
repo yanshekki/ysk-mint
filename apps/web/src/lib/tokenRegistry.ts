@@ -162,3 +162,11 @@ export function cardanoByUnit(unit: string) {
 export function solByMint(mint: string) {
   return TOKEN_CATALOG.find((t) => t.vm === "solana" && t.address === mint);
 }
+
+export function catalogToken(chainId: number, address: string) {
+  if (!address) return TOKEN_CATALOG.find((t) => t.chainId === chainId && t.native);
+  const exact = TOKEN_CATALOG.find((t) => t.chainId === chainId && t.address === address);
+  if (exact) return exact;
+  const a = address.toLowerCase();
+  return TOKEN_CATALOG.find((t) => t.chainId === chainId && t.address && t.address.toLowerCase() === a);
+}

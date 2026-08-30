@@ -124,8 +124,6 @@ export function chainTokenIcon(chainId: number) {
   return (WRAP_META[chainId] ?? { icon: "/tokens/eth.png" }).icon;
 }
 
-const _uniLogged = new Set<number>();
-
 export function marketTokensOn(chainId: number, extra: MarketToken[] = []): MarketToken[] {
   const d = DEX[chainId];
   if (!d) return [];
@@ -149,34 +147,6 @@ export function marketTokensOn(chainId: number, extra: MarketToken[] = []): Mark
       icon: localTokenIcon(s.symbol),
     });
   }
-  // #region agent log
-  if (!_uniLogged.has(chainId)) {
-    _uniLogged.add(chainId);
-    fetch("http://127.0.0.1:7877/ingest/5e2e6afe-2618-4b13-996a-8c6b0be88e05", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "05e1c5" },
-      body: JSON.stringify({
-        sessionId: "05e1c5",
-        runId: "pre-fix",
-        hypothesisId: "D",
-        location: "universe.ts:marketTokensOn",
-        message: "stable-icons-decimals",
-        data: {
-          chainId,
-          usdcDecimals: d.usdcDecimals,
-          wrapForced18: false,
-          wrapDecimals: evmTokenDecimals(chainId, d.wrapped, 18),
-          stables: usdStables(d).map((s) => ({
-            symbol: s.symbol,
-            decimals: s.decimals,
-            icon: localTokenIcon(s.symbol),
-          })),
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-  }
-  // #endregion
   for (const t of TOKEN_CATALOG) {
     if (t.chainId !== chainId || !t.address) continue;
     if (!t.address.startsWith("0x") && !t.address.startsWith("0X")) continue;

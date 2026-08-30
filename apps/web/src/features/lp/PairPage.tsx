@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { type PublicClient } from "viem";
 import { useAccount } from "wagmi";
 import { CHAINS } from "@ysk-mint/config";
-import { seedToken, isStable } from "../../lib/dexVenues.ts";
+import { seedToken } from "../../lib/dexVenues.ts";
 import { evmPublicClient } from "../../lib/defi/evm/client.ts";
 import { erc20MetaAbi } from "../../lib/defi/evm/abis.ts";
 import { readVenuesForPair, venueQuotesToPools, weightedPrice, type VenuePool } from "../../lib/dexPools.ts";
@@ -16,32 +16,28 @@ import { venueDisplayDepth, pairPriceUsd, VENUES_CACHE } from "../../lib/defi/qu
 import type { VenueQuote } from "../../lib/defi/types.ts";
 import { usePairSwaps, type SwapRow } from "../../lib/usePairSwaps.ts";
 import { cancelLive, trackLive } from "../../lib/liveStatus.ts";
-import { fmtCompact, fmtUsdc } from "../../lib/defiQuotes.ts";
+import { fmtCompact, fmtDepthUsd, fmtQuoteUsd, fmtReserveAmt } from "../../lib/defiQuotes.ts";
 import { asAddr, canonAddr, pairId } from "../../lib/pairKey.ts";
 import { displayStableSymbol, orientPair } from "../../lib/pairOrient.ts";
+import { chainIcon } from "../../lib/chainIcon.ts";
 import { TOKEN_CATALOG } from "../../lib/tokenRegistry.ts";
+import { looksLikeContractLabel, resolveTokenMeta, type TokenMeta } from "../../lib/tokenLabel.ts";
 import { nearFtMeta, nearToken } from "../../lib/nearDex.ts";
 import { adaTokenMeta } from "../../lib/adaDex.ts";
-import { cachedMarketPairQuotes, nativePairVenues } from "../../lib/nativePairVenues.ts";
+import { cachedMarketPairMeta, cachedMarketPairQuotes, nativePairVenues } from "../../lib/nativePairVenues.ts";
 import { SortHead, useSort } from "../../shared/ui/SortTable.tsx";
 import { Metric } from "../../shared/ui/Metric.tsx";
 import { marketsHref } from "./LpPage.tsx";
 import { dexAppHref } from "../../lib/dexApp.ts";
 
-type TokenMeta = { symbol: string; decimals: number; icon: string };
-
 async function evmTokenMeta(client: PublicClient, chainId: number, address: string, hint?: { symbol?: string; decimals?: number; icon?: string }): Promise<TokenMeta> {
-  const hit = TOKEN_CATALOG.find((t) => t.chainId === chainId && t.address?.toLowerCase() === address.toLowerCase());
-  const icon = hit?.icon ?? hint?.icon ?? "/tokens/eth.png";
-  if (hit?.symbol && hit.decimals) {
-    return { symbol: displayStableSymbol(chainId, address, hit.symbol), decimals: hit.decimals, icon };
+  const seeded = resolveTokenMeta(chainId, address, hint);
+  if (!looksLikeContractLabel(seeded.symbol) && seeded.decimals) {
+    if (!address.startsWith("0x") && !address.startsWith("0X")) return seeded;
+    if (TOKEN_CATALOG.find((t) => t.chainId === chainId && t.address?.toLowerCase() === address.toLowerCase())) return seeded;
+    if (hint?.symbol && hint.decimals) return seeded;
   }
-  if (hint?.symbol && hint.decimals) {
-    return { symbol: displayStableSymbol(chainId, address, hint.symbol), decimals: hint.decimals, icon };
-  }
-  if (!address.startsWith("0x") && !address.startsWith("0X")) {
-    return { symbol: hint?.symbol ?? short(address), decimals: hint?.decimals ?? 18, icon };
-  }
+  if (!address.startsWith("0x") && !address.startsWith("0X")) return seeded;
   try {
     return await cacheGet(
       {
@@ -53,12 +49,16 @@ async function evmTokenMeta(client: PublicClient, chainId: number, address: stri
           client.readContract({ address: asAddr(address), abi: erc20MetaAbi, functionName: "decimals" }),
           client.readContract({ address: asAddr(address), abi: erc20MetaAbi, functionName: "symbol" }).catch(() => ""),
         ]);
-        const sym = displayStableSymbol(chainId, address, String(symbol || "").trim() || short(address));
-        return { symbol: sym, decimals: Number(decimals) || 18, icon };
+        const sym = displayStableSymbol(chainId, address, String(symbol || "").trim());
+        return resolveTokenMeta(chainId, address, {
+          symbol: looksLikeContractLabel(sym) ? seeded.symbol : sym,
+          decimals: Number(decimals) || seeded.decimals,
+          icon: seeded.icon,
+        });
       },
     );
   } catch {
-    return { symbol: hint?.symbol ?? short(address), decimals: hint?.decimals ?? 18, icon };
+    return seeded;
   }
 }
 
@@ -92,19 +92,22 @@ export function PairPage() {
   const leftSeed = oriented.flipped ? sb : sa;
   const rightSeed = oriented.flipped ? sa : sb;
   const { address } = useAccount();
+  const marketMeta = Number.isFinite(chainId) && base && quote ? cachedMarketPairMeta(chainId, base, quote) : undefined;
+  const leftHint = {
+    symbol: marketMeta?.symbolA ?? leftSeed?.symbol,
+    decimals: leftSeed?.decimals,
+    icon: marketMeta?.iconA ?? leftSeed?.icon,
+  };
+  const rightHint = {
+    symbol: marketMeta?.symbolB ?? rightSeed?.symbol,
+    decimals: rightSeed?.decimals,
+    icon: marketMeta?.iconB ?? rightSeed?.icon,
+  };
   const [venues, setVenues] = useState<VenuePool[]>([]);
   const [loading, setLoading] = useState(true);
   const [client, setClient] = useState<PublicClient | undefined>();
-  const [metaA, setMetaA] = useState<TokenMeta>({
-    symbol: displayStableSymbol(chainId, base, leftSeed?.symbol ?? short(base)),
-    decimals: leftSeed?.decimals ?? 18,
-    icon: leftSeed?.icon ?? "/tokens/eth.png",
-  });
-  const [metaB, setMetaB] = useState<TokenMeta>({
-    symbol: displayStableSymbol(chainId, quote, rightSeed?.symbol ?? short(quote)),
-    decimals: rightSeed?.decimals ?? 18,
-    icon: rightSeed?.icon ?? "/tokens/eth.png",
-  });
+  const [metaA, setMetaA] = useState<TokenMeta>(() => resolveTokenMeta(chainId, base, leftHint));
+  const [metaB, setMetaB] = useState<TokenMeta>(() => resolveTokenMeta(chainId, quote, rightHint));
 
   useEffect(() => {
     if (!oriented.flipped || !base || !quote || !Number.isFinite(chainId)) return;
@@ -117,6 +120,11 @@ export function PairPage() {
     const venuesKey = cacheKey(VENUES_CACHE, pairId(chainId, base, quote), "base", base.toLowerCase());
     const seed = cacheLastGood<VenueQuote[]>(venuesKey);
     const fromList = cachedMarketPairQuotes(chainId, base, quote);
+    const pairMeta = cachedMarketPairMeta(chainId, base, quote);
+    if (pairMeta) {
+      setMetaA(resolveTokenMeta(chainId, base, { symbol: pairMeta.symbolA, icon: pairMeta.iconA, decimals: leftSeed?.decimals }));
+      setMetaB(resolveTokenMeta(chainId, quote, { symbol: pairMeta.symbolB, icon: pairMeta.iconB, decimals: rightSeed?.decimals }));
+    }
     if (fromList.length || seed?.length) {
       const seen = new Set<string>();
       const merged: VenueQuote[] = [];
@@ -139,18 +147,31 @@ export function PairPage() {
         if (chain.vm === "near") {
           const [ma, mb] = await Promise.all([nearFtMeta(base), nearFtMeta(quote)]);
           if (!cancelled) {
-            setMetaA({ symbol: ma.symbol, decimals: ma.decimals, icon: ma.icon });
-            setMetaB({ symbol: mb.symbol, decimals: mb.decimals, icon: mb.icon });
+            setMetaA(resolveTokenMeta(chainId, base, { symbol: ma.symbol, decimals: ma.decimals, icon: ma.icon }));
+            setMetaB(resolveTokenMeta(chainId, quote, { symbol: mb.symbol, decimals: mb.decimals, icon: mb.icon }));
+          }
+        } else {
+          const hit = cachedMarketPairMeta(chainId, base, quote);
+          if (!cancelled && hit) {
+            setMetaA(resolveTokenMeta(chainId, base, { symbol: hit.symbolA, icon: hit.iconA, decimals: leftSeed?.decimals }));
+            setMetaB(resolveTokenMeta(chainId, quote, { symbol: hit.symbolB, icon: hit.iconB, decimals: rightSeed?.decimals }));
           }
         }
-        return nativePairVenues(chainId, chain.vm, base, quote, leftSeed?.decimals ?? 6, rightSeed?.decimals ?? 6);
+        const pools = await nativePairVenues(chainId, chain.vm, base, quote, leftSeed?.decimals ?? 6, rightSeed?.decimals ?? 6);
+        const after = cachedMarketPairMeta(chainId, base, quote);
+        if (!cancelled && after) {
+          setMetaA(resolveTokenMeta(chainId, base, { symbol: after.symbolA, icon: after.iconA, decimals: leftSeed?.decimals }));
+          setMetaB(resolveTokenMeta(chainId, quote, { symbol: after.symbolB, icon: after.iconB, decimals: rightSeed?.decimals }));
+        }
+        return pools;
       }
       const c = evmPublicClient(chainId);
       if (!c) return [];
       setClient(c);
+      const m = cachedMarketPairMeta(chainId, base, quote);
       const [ma, mb] = await Promise.all([
-        evmTokenMeta(c, chainId, base, leftSeed),
-        evmTokenMeta(c, chainId, quote, rightSeed),
+        evmTokenMeta(c, chainId, base, { symbol: m?.symbolA ?? leftSeed?.symbol, decimals: leftSeed?.decimals, icon: m?.iconA ?? leftSeed?.icon }),
+        evmTokenMeta(c, chainId, quote, { symbol: m?.symbolB ?? rightSeed?.symbol, decimals: rightSeed?.decimals, icon: m?.iconB ?? rightSeed?.icon }),
       ]);
       if (!cancelled) {
         setMetaA(ma);
@@ -195,8 +216,8 @@ export function PairPage() {
     if (k === "name") return v.venue.name;
     if (k === "quote") return pairPriceUsd(v.priceAinB, base, quote, chainId) ?? 0;
     if (k === "amount") return v.reserveA;
-    return venueDisplayDepth(v, isStable(metaB.symbol));
-  }, [base, chainId, metaB.symbol, quote]);
+    return venueDisplayDepth(v, base, quote, chainId);
+  }, [base, chainId, quote]);
   const venueSort = useSort(venues, "depth", venueGet);
   const tradeGet = useCallback((s: SwapRow, k: string) => {
     if (k === "name") return s.venue;
@@ -206,7 +227,6 @@ export function PairPage() {
     return s.ts ?? Number(s.block);
   }, []);
   const tradeSort = useSort(swaps.rows, "time", tradeGet);
-  const quoteIsStable = isStable(metaB.symbol);
   const title = `${metaA.symbol} / ${metaB.symbol}`;
   const chainName = chain?.name ?? chain?.short ?? String(chainId);
   const pairReady = Boolean(base && quote && Number.isFinite(chainId) && metaA.symbol && metaB.symbol && metaA.symbol !== "…" && metaB.symbol !== "…");
@@ -240,7 +260,7 @@ export function PairPage() {
           <p className="mt-1 text-[15px] text-text-sub">{t("lp.oracleNote")}</p>
         </div>
         <div className="me-summary">
-          <b>{price == null ? "—" : fmtUsdc(price)}</b>
+          <b>{price == null ? "—" : fmtQuoteUsd(price)}</b>
           <span>{t("lp.oracle", { n: venues.length })}</span>
         </div>
       </div>
@@ -261,7 +281,7 @@ export function PairPage() {
                   <SortHead id="name" label={t("lp.protocol")} active={venueSort.key === "name"} dir={venueSort.dir} onToggle={venueSort.toggle} align="left" />
                   <SortHead id="quote" label={t("me.quote")} active={venueSort.key === "quote"} dir={venueSort.dir} onToggle={venueSort.toggle} />
                   <SortHead id="amount" label={metaA.symbol} active={venueSort.key === "amount"} dir={venueSort.dir} onToggle={venueSort.toggle} />
-                  <SortHead id="depth" label={t("lp.depthUnit", { unit: quoteIsStable ? "USD" : metaB.symbol })} active={venueSort.key === "depth"} dir={venueSort.dir} onToggle={venueSort.toggle} />
+                  <SortHead id="depth" label={t("lp.depth")} active={venueSort.key === "depth"} dir={venueSort.dir} onToggle={venueSort.toggle} />
                   <span />
                 </div>
                 {venueSort.sorted.map((v) => {
@@ -278,7 +298,17 @@ export function PairPage() {
                   return (
                     <div key={`${v.venue.id}-${v.pool}-${v.feeLabel}`} className="me-token me-token-5 me-token-pool">
                       <span className="holding-ico-wrap">
-                        <img src={metaA.icon} alt="" className="holding-ico" />
+                        <img
+                          src={metaA.icon}
+                          alt=""
+                          className="holding-ico"
+                          onError={(e) => {
+                            const el = e.currentTarget;
+                            if (el.dataset.fb) return;
+                            el.dataset.fb = "1";
+                            el.src = chain ? chainIcon(chain) : "/tokens/sol.png";
+                          }}
+                        />
                       </span>
                       <div className="holding-meta">
                         <b>{v.venue.name}</b>
@@ -289,13 +319,13 @@ export function PairPage() {
                         <span className="num">{short(v.pool)}</span>
                       </div>
                       <Metric className="num me-price" label={t("me.quote")}>
-                        {fmtUsdc(pairPriceUsd(v.priceAinB, base, quote, chainId))}
+                        {fmtQuoteUsd(pairPriceUsd(v.priceAinB, base, quote, chainId))}
                       </Metric>
                       <Metric className="num holding-amt" label={metaA.symbol}>
-                        {v.reserveA > 0 ? fmtCompact(v.reserveA) : "—"}
+                        {v.reserveA > 0 ? fmtReserveAmt(v.reserveA) : "—"}
                       </Metric>
-                      <Metric className="num me-value" label={t("lp.depthUnit", { unit: quoteIsStable ? "USD" : metaB.symbol })}>
-                        {venueDisplayDepth(v, quoteIsStable) > 0 ? fmtCompact(venueDisplayDepth(v, quoteIsStable)) : "—"}
+                      <Metric className="num me-value" label={t("lp.depth")}>
+                        {venueDisplayDepth(v, base, quote, chainId) > 0 ? fmtDepthUsd(venueDisplayDepth(v, base, quote, chainId)) : "—"}
                       </Metric>
                       <span className="me-pool-acts">
                         {explore ? (

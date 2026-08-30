@@ -244,6 +244,7 @@ function venueFromPool(seed: NearPoolSeed, pool: RefPool, wrapUsd?: number | nul
   const reserveB = human(pool.amounts[iB], seed.b.decimals);
   if (!reserveA || !reserveB) return null;
   const priceAinB = reserveB / reserveA;
+  // USD only from stables / wrap.NEAR legs — never indexer TVL or meme reserves.
   const tvlQuote = nearUsdFromLegs(
     { address: seed.a.address, amount: reserveA },
     { address: seed.b.address, amount: reserveB },

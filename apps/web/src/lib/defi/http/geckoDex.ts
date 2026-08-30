@@ -118,6 +118,7 @@ function parseName(name: string): [string, string] {
   return [a || "TKN", b || "TKN"];
 }
 
+/** Gecko `reserve_in_usd` is USD TVL. `base_token_price_quote_token` is A-in-B. Pool reserves are not provided. */
 export async function geckoDexMarkets(spec: GeckoDexSpec): Promise<MarketRow[]> {
   const pages = spec.pages ?? 1;
   const included = new Map<string, GeckoToken>();

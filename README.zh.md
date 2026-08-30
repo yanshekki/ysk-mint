@@ -8,7 +8,7 @@ YSK Mint 是瀏覽器應用，用於鏈上市場、持倉與發幣。並無 YSK 
 
 | | |
 |--|--|
-| **版本** | 1.0.0 |
+| **版本** | 1.1.0 |
 | **授權** | MIT |
 | **前端** | Vite + React + TypeScript（靜態 SPA） |
 | **合約** | Solidity 0.8.22、Foundry、OpenZeppelin 5.x |
@@ -26,7 +26,7 @@ YSK Mint 是瀏覽器應用，用於鏈上市場、持倉與發幣。並無 YSK 
 
 完整說明見[產品說明](./docs/product.zh.md)。
 
-- **市場** — 去中心化交易所流動池、價格與深度取自鏈上儲備。無須連接錢包即可瀏覽。
+- **市場** — 去中心化交易所流動池、美元報價與「深度 USD」（池內美金總值）。無須連接錢包即可瀏覽。交易對頁顯示代幣代號，而非截斷合約地址。
 - **借貸** — 供應及借出年利率取自鏈上。本頁只供查閱；存入或借出請到協議網站。
 - **持倉** — 查閱公開地址或連接錢包。借貸、流動性、質押及活動。報價為去中心化交易所即時價。
 - **發幣** — 在已支援的 EVM 網絡引導部署 OFT、加入流動性並鎖定。由你簽署。合約未經審計。
@@ -68,7 +68,7 @@ pnpm --filter @ysk-mint/web dev
 
 Foundry：`forge test -vv`
 
-前端型別檢查及語言鍵核對：`pnpm --filter @ysk-mint/web typecheck` 及 `pnpm --filter @ysk-mint/web i18n:check`。
+前端型別檢查及語言鍵核對：`pnpm --filter @ysk-mint/web typecheck` 及 `pnpm --filter @ysk-mint/web i18n:check`。市場深度抽樣（即時場地 API）：`pnpm --filter @ysk-mint/web verify:depth`。
 
 ## 文件
 

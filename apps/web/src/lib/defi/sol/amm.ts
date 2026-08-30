@@ -1,8 +1,10 @@
+import { SOL_NATIVE_MINT } from "../../defiAddresses.ts";
 import { pairId } from "../../pairKey.ts";
-import { cacheGet, cacheHash, cacheKey, POLICIES } from "../cache.ts";
+import { cacheGet, cacheHash, cacheKey, cacheLastGood, cacheWrite, POLICIES } from "../cache.ts";
 import { outboundFetch } from "../../outbound.ts";
 import { saneUsdDepth } from "../saneTvl.ts";
 import type { DefiProtocol, MarketRow, VenueQuote } from "../types.ts";
+import { quoteSolMints } from "./jupiter.ts";
 
 const USDC = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 const USDT = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB";
@@ -49,8 +51,9 @@ function stableUsd(row: Row) {
   return 0;
 }
 
+/** Raydium/Orca/Meteora: `price` is mintA in mintB (not USD). `tvl`/`tvlUsdc` is USD. Raydium/Meteora reserves are UI; Orca `tokenBalance*` is raw lamports (converted via uiAmount). */
 function venue(protocolId: string, name: string, row: Row): VenueQuote {
-  const priceAinB = isUsd(row.mintB, row.symbolB) ? row.price : isUsd(row.mintA, row.symbolA) && row.price ? 1 / row.price : row.price;
+  const priceAinB = row.price;
   const tvl = saneUsdDepth(row.tvl, stableUsd(row));
   return {
     protocolId,
@@ -66,7 +69,37 @@ function venue(protocolId: string, name: string, row: Row): VenueQuote {
   };
 }
 
+let solWrapOnce: Promise<void> | null = null;
+function ensureSolWrapUsd() {
+  solWrapOnce ??= quoteSolMints([SOL_NATIVE_MINT])
+    .then((m) => {
+      const px = m.get(SOL_NATIVE_MINT)?.usdc;
+      if (px && px > 0) cacheWrite(cacheKey("quote.wrap", 101), { ...POLICIES.quote, keep: (n: number | null) => n != null && n > 0 }, px);
+    })
+    .catch(() => {});
+  return solWrapOnce;
+}
+
+function seedSolWrapFromPools(rows: Row[]) {
+  if (cacheLastGood<number>(cacheKey("quote.wrap", 101))) return;
+  for (const r of rows) {
+    const aSol = /^(W)?SOL$/i.test(r.symbolA);
+    const bSol = /^(W)?SOL$/i.test(r.symbolB);
+    let px = 0;
+    if (aSol && isUsd(r.mintB, r.symbolB) && r.price > 1 && r.price < 5000) px = r.price;
+    else if (bSol && isUsd(r.mintA, r.symbolA) && r.price > 0) {
+      const inv = 1 / r.price;
+      if (inv > 1 && inv < 5000) px = inv;
+    }
+    if (px > 0) {
+      cacheWrite(cacheKey("quote.wrap", 101), { ...POLICIES.quote, keep: (n: number | null) => n != null && n > 0 }, px);
+      return;
+    }
+  }
+}
+
 function toMarkets(protocolId: string, name: string, rows: Row[]): MarketRow[] {
+  seedSolWrapFromPools(rows);
   const picked = rows.filter(keep).sort((a, b) => b.tvl - a.tvl).slice(0, PAGE_CAP);
   const byPair = new Map<string, MarketRow>();
   for (const r of picked) {
@@ -90,7 +123,7 @@ function toMarkets(protocolId: string, name: string, rows: Row[]): MarketRow[] {
       tokenA: r.mintA,
       tokenB: r.mintB,
       venues: [v],
-      price: isUsd(r.mintB, r.symbolB) ? r.price : isUsd(r.mintA, r.symbolA) ? 1 : r.price,
+      price: r.price,
       depth: v.tvlQuote,
       venueNames: [name],
     });
@@ -125,6 +158,12 @@ function num(x: unknown): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+function uiAmount(raw: number, decimals: number) {
+  if (!Number.isFinite(raw) || raw < 0) return 0;
+  const d = Number.isFinite(decimals) && decimals >= 0 && decimals <= 18 ? decimals : 0;
+  return raw / 10 ** d;
+}
+
 function feePct(rate: number) {
   if (!Number.isFinite(rate) || rate <= 0) return "dyn";
   const pct = rate > 1 ? rate / 10000 : rate * 100;
@@ -137,6 +176,7 @@ export const raydiumProtocol: DefiProtocol = {
   chainId: 101,
   caps: ["markets"],
   async markets() {
+    await ensureSolWrapUsd();
     const rows: Row[] = [];
     const seen = new Set<string>();
     for (let page = 1; page <= 6 && rows.length < PAGE_CAP; page++) {
@@ -179,6 +219,7 @@ export const orcaProtocol: DefiProtocol = {
   chainId: 101,
   caps: ["markets"],
   async markets() {
+    await ensureSolWrapUsd();
     const rows: Row[] = [];
     const seen = new Set<string>();
     let next: string | undefined;
@@ -207,8 +248,8 @@ export const orcaProtocol: DefiProtocol = {
           symbolB: b.symbol || "TKN",
           decimalsA: a.decimals ?? 9,
           decimalsB: b.decimals ?? 6,
-          reserveA: num(p.tokenBalanceA),
-          reserveB: num(p.tokenBalanceB),
+          reserveA: uiAmount(num(p.tokenBalanceA), a.decimals ?? 9),
+          reserveB: uiAmount(num(p.tokenBalanceB), b.decimals ?? 6),
           price: num(p.price),
           tvl: num(p.tvlUsdc ?? p.tvl),
           feeLabel: feePct(num(p.feeRate) / 1e6),
@@ -227,6 +268,7 @@ export const meteoraProtocol: DefiProtocol = {
   chainId: 101,
   caps: ["markets"],
   async markets() {
+    await ensureSolWrapUsd();
     const rows: Row[] = [];
     const seen = new Set<string>();
     for (let page = 1; page <= 6 && rows.length < PAGE_CAP; page++) {
