@@ -39,9 +39,9 @@ Phase 6 之後，SPA 已超出發幣範圍：
 - **持倉** — 合併錢包與觀察組；借貸、流動性、質押、活動標籤、分享網址。
 - **市場與借貸** — 鏈上去中心化交易所看板、交易對頁、只讀年利率；存入／借出／兌換仍在協議網站。
 - **市場深度** — 「深度 USD」為池內美金總值；交易對頁顯示代幣代號；`pnpm --filter @ysk-mint/web verify:depth` 抽樣核對場地美元欄。
-- **持倉對齊** — 跟分頁代幣 API；讀取失敗顯示「—」而非 0；質押涵蓋 ADA、SOL、NEAR、已列入的 EVM LST、Sui、Tron frozen、Cosmos 系委託；`pnpm --filter @ysk-mint/web verify:holdings` 對照 native／代幣／質押與公開 API。
+- **持倉對齊** — 跟分頁代幣 API；讀取失敗顯示「—」而非 0；質押涵蓋 ADA、SOL、NEAR、已列入的 EVM LST、Sui、Tron frozen、Cosmos 系委託。Cardano native ADA 按 stake key 加總 UTXO（同源 `/koios` 反代；Koios POST 無 CORS）。`pnpm --filter @ysk-mint/web verify:holdings` 對照 native／代幣／質押與公開 API。
 - **EVM 索引** — Blockscout 失效（BSC、Base、Linea、Blast、Mantle）時，代幣清單及活動改走 Ankr，再試 NodeReal；單鏈失敗顯示「—」，不是假的 0。Robinhood Chain 用其 Blockscout。熱門 RWA 在烘焙目錄；Morpho 倉位用白名單市場。無報價空投、兆級供應、以及流動性不足約 1,000 美元的 DEX 報價不列入持倉亦不計入總值。
-- **靜態託管** — hashed `/assets` 可長駐 edge；HTML 與 `/version.json` 再驗證。頁腳 `v…` 由 web 套件版本烘焙。
+- **靜態託管** — hashed `/assets` 可長駐 edge；HTML 與 `/version.json` 再驗證。頁腳烘焙 `v1.2.2`。Cloudflare 須 Bypass `/koios*`。
 - **RPC 與外連** — 公開節點輪詢、僅存瀏覽器的自訂 RPC、連線上限。
 - **多語與 SEO** — 網址前綴（包括 zh-CN）、對爬蟲安全的語言處理、文件標頭、網站地圖、預渲染法律頁。
 

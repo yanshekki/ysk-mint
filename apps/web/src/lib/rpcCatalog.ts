@@ -24,7 +24,7 @@ export const RPC_PROVIDER_LABEL: Record<string, string> = {
   koios: "Koios",
   aptoslabs: "Aptos Labs",
   alchemy: "Alchemy",
-  proxy: "Local",
+  proxy: "Koios",
   blockstream: "Blockstream",
   mempool: "Mempool",
   xrplcluster: "XRPL Cluster",
@@ -243,11 +243,8 @@ export function rpcEndpoints(chainId: number): RpcEndpoint[] {
 
   for (const row of NATIVE_EXTRA[chainId] ?? []) push(row);
 
-  if (
-    (chainId === 1815 || chainId === 18151) &&
-    typeof location !== "undefined" &&
-    (location.hostname === "localhost" || location.hostname === "127.0.0.1")
-  ) {
+  // Koios POST omits Access-Control-Allow-Origin; the browser can only read a same-origin proxy.
+  if (chainId === 1815 && typeof location !== "undefined" && /^https?:/.test(location.protocol)) {
     out.unshift(ep("proxy", "/koios"));
   }
 

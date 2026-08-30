@@ -7,6 +7,13 @@ function join(base: string, path: string) {
   return `${base.replace(/\/+$/, "")}/${path.replace(/^\//, "")}`;
 }
 
+async function readKoiosJson(res: Response, path: string): Promise<unknown> {
+  if (!res.ok) throw new Error(`koios ${path} ${res.status}`);
+  const text = await res.text();
+  if (!text.trim() || text.trimStart().startsWith("<")) throw new Error(`koios ${path} html`);
+  return JSON.parse(text);
+}
+
 async function koiosPostRaw(path: string, body: unknown): Promise<unknown> {
   return rpcTry(1815, async (base, signal) => {
     const res = await rpcOutboundFetch(join(base, path), {
@@ -15,8 +22,7 @@ async function koiosPostRaw(path: string, body: unknown): Promise<unknown> {
       body: JSON.stringify(body),
       signal,
     });
-    if (!res.ok) throw new Error(`koios ${path} ${res.status}`);
-    return await res.json();
+    return readKoiosJson(res, path);
   });
 }
 
@@ -30,8 +36,7 @@ export async function koiosPost(path: string, body: unknown, _tries = 3): Promis
 async function koiosGetRaw(path: string): Promise<unknown> {
   return rpcTry(1815, async (base, signal) => {
     const res = await rpcOutboundFetch(join(base, path), { headers: { accept: "application/json" }, signal });
-    if (!res.ok) throw new Error(`koios ${path} ${res.status}`);
-    return await res.json();
+    return readKoiosJson(res, path);
   });
 }
 

@@ -39,9 +39,9 @@ After Phase 6 the SPA grew beyond launch:
 - **Holdings** — merged wallets and watch sets; lending, LP, staking, activity tags, share URLs.
 - **Markets and lending** — on-chain DEX boards, pair pages, read-only APY; deposit/borrow/swap stay on protocol sites.
 - **Market depth** — Depth USD is the pool’s dollar value; pair pages show token symbols; `pnpm --filter @ysk-mint/web verify:depth` spot-checks venue USD fields.
-- **Holdings parity** — paged token APIs are followed; failed reads show “—” not zero; staking covers ADA, SOL, NEAR, listed EVM LSTs, Sui, Tron frozen, and Cosmos-family delegations; `pnpm --filter @ysk-mint/web verify:holdings` compares native / tokens / stake to public APIs.
+- **Holdings parity** — paged token APIs are followed; failed reads show “—” not zero; staking covers ADA, SOL, NEAR, listed EVM LSTs, Sui, Tron frozen, and Cosmos-family delegations. Cardano native ADA is the stake-key UTXO total (same-origin `/koios` proxy; Koios POST has no CORS). `pnpm --filter @ysk-mint/web verify:holdings` compares native / tokens / stake to public APIs.
 - **EVM indexers** — when Blockscout is down (BSC, Base, Linea, Blast, Mantle), token inventory and activity use Ankr then NodeReal; a per-chain fail is “—”, not a fake 0. Robinhood Chain uses its Blockscout host. Hot RWAs sit in the baked catalog; Morpho positions use an allowlisted market set. Unpriced airdrops, trillion-unit supplies, and DEX quotes from pools with under about $1k depth are omitted from the desk and the USD total.
-- **Static hosting** — hashed `/assets` may stay at the edge; HTML and `/version.json` revalidate. The footer bakes `v…` from the web package version.
+- **Static hosting** — hashed `/assets` may stay at the edge; HTML and `/version.json` revalidate. The footer bakes `v1.2.2`. Cloudflare must Bypass `/koios*`.
 - **RPC and outbound** — public node rotation, custom RPC in the browser, connection caps.
 - **Locales and SEO** — URL prefixes (including zh-CN), crawler-safe language, document head, sitemap, prerendered legal pages.
 

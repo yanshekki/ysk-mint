@@ -31,7 +31,7 @@ Vite + React。路由可帶語言前綴。無前綴路徑為 zh-HK；`/zh-CN`、
 
 ### 靜態託管與快取
 
-SPA 以靜態檔上傳，Cloudflare DNS proxy 開住。Vite 把 JS／CSS 編成 `/assets/` 帶 hash 的檔，edge 可存一年（`immutable`）。HTML（`index.html` 及預渲染法律頁）必須再驗證（`Cache-Control: no-cache`）。`/version.json` 為 `no-store`，Cloudflare 須 **Bypass cache**，否則新上傳睇唔到。Origin 片段：[deploy/origin-cache.conf](../deploy/origin-cache.conf)。Cache Rule：Bypass `/version.json`、`*.html` 及 `/`；`/assets/*` Eligible 且 Edge TTL 一年。唔好用全站 Cache Everything。規則未生效前，每次上傳要 **Purge Everything**，否則 edge 仍係舊 HTML（因而舊 hashed bundle）。頂欄字標 YSK Mint 在任何寬度都顯示。頁腳在手機、平板及桌面都顯示烘焙嘅 `v…` 及 Powered by；若 `/version.json` 的 `build` 不同，會提示重新整理。不加 service worker。
+SPA 以靜態檔上傳，Cloudflare DNS proxy 開住。Vite 把 JS／CSS 編成 `/assets/` 帶 hash 的檔，edge 可存一年（`immutable`）。HTML（`index.html` 及預渲染法律頁）必須再驗證（`Cache-Control: no-cache`）。`/version.json` 為 `no-store`，Cloudflare 須 **Bypass cache**，否則新上傳睇唔到。Origin 片段：[deploy/origin-cache.conf](../deploy/origin-cache.conf)。Cache Rule：Bypass `/version.json`、`/koios*`、`*.html` 及 `/`；`/assets/*` Eligible 且 Edge TTL 一年。Origin 另外把 `/koios/` 反代到 Koios（`api.koios.rest`）：Koios 的 POST 回應冇 `Access-Control-Allow-Origin`，瀏覽器不能直接讀 `api.koios.rest`。Cardano 持倉按 stake key 加總全部付款地址的 UTXO，而不是 ADA Handle 單一 `addr1`。唔好用全站 Cache Everything。規則未生效前，每次上傳要 **Purge Everything**，否則 edge 仍係舊 HTML（因而舊 hashed bundle）。頂欄字標 YSK Mint 在任何寬度都顯示。頁腳在手機、平板及桌面都顯示烘焙嘅 `v…` 及 Powered by；若 `/version.json` 的 `build` 不同，會提示重新整理。不加 service worker。
 
 ## 代幣部署
 

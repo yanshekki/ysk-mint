@@ -199,9 +199,13 @@ async function fetchCardanoChain(address: string, extras?: { addresses?: string[
   let ada = 0n;
 
   if (stake.startsWith("stake")) {
-    const utxos = asKoiosRows<KoiosUtxo>(
-      await koiosPost("account_utxos", { _stake_addresses: [stake], _extended: true }).catch(() => []),
-    );
+    const [utxoJson, infoJson, assetJson, addrJson] = await Promise.all([
+      koiosPost("account_utxos", { _stake_addresses: [stake], _extended: true }).catch(() => []),
+      koiosPost("account_info", { _stake_addresses: [stake] }).catch(() => []),
+      koiosPost("account_assets", { _stake_addresses: [stake] }).catch(() => []),
+      koiosPost("account_addresses", { _stake_addresses: [stake] }).catch(() => []),
+    ]);
+    const utxos = asKoiosRows<KoiosUtxo>(utxoJson);
     for (const u of utxos) {
       if (u.address?.startsWith("addr")) pays.push(u.address);
       try {
@@ -217,17 +221,20 @@ async function fetchCardanoChain(address: string, extras?: { addresses?: string[
         }
       }
     }
+    const info = asKoiosRows<{ utxo?: string; total_balance?: string }>(infoJson)[0];
+    try {
+      const listed = BigInt(info?.utxo || "0");
+      if (listed > ada) ada = listed;
+    } catch {
+      /* skip */
+    }
     if (!utxos.length) {
-      const [infoJson, assetJson, addrJson] = await Promise.all([
-        koiosPost("account_info", { _stake_addresses: [stake] }).catch(() => []),
-        koiosPost("account_assets", { _stake_addresses: [stake] }).catch(() => []),
-        koiosPost("account_addresses", { _stake_addresses: [stake] }).catch(() => []),
-      ]);
-      const info = asKoiosRows<{ utxo?: string; total_balance?: string }>(infoJson)[0];
-      try {
-        ada = BigInt(info?.utxo || info?.total_balance || "0");
-      } catch {
-        ada = 0n;
+      if (ada === 0n) {
+        try {
+          ada = BigInt(info?.utxo || info?.total_balance || "0");
+        } catch {
+          ada = 0n;
+        }
       }
       for (const a of flattenCardanoAssets(assetJson)) {
         try {
@@ -236,8 +243,8 @@ async function fetchCardanoChain(address: string, extras?: { addresses?: string[
           /* skip */
         }
       }
-      pays.push(...koiosPayList(addrJson));
     }
+    pays.push(...koiosPayList(addrJson));
   }
 
   pays = [...new Set(pays.filter((a) => a.startsWith("addr")))];

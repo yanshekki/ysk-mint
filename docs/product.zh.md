@@ -62,7 +62,7 @@
 
 ### 倉位
 
-持倉分頁：代幣結餘（有報價時取去中心化交易所即時價）；借貸（存／借）、流動性及質押按協議分組。協議名稱連到外部網站。數值可能滯後或漏場地。鏈上讀取失敗顯示「—」，不會畫成假的 0。會跟 Cosmos LCD `next_key`、XRPL `marker`、Aptos FA cursor、Blockscout `next_page_params` 等分頁。Blockscout 主機失效（BSC、Base、Linea、Blast、Mantle）時，代幣發現及活動改走 Ankr，再試 NodeReal 公開索引；該鏈失敗仍顯示「—」，不會扮成空白清單。無報價的空投、兆級供應代幣，或流動性不足約 1,000 美元的 DEX 報價，不會列出亦不會計入總值。烘焙目錄含熱門 RWA（代幣化國債、黃金、信貸、Maple syrupUSDC、熱門股包裝）。仍然活的 explorer 鏈亦會對這些代號做 `balanceOf`；V2 LP 候選交易對跟目錄走（沒有池的許可制基金維持「—」）。Aave／Spark／Compound 名單仍由鏈上 `getReservesList`／`getAllMarkets` 讀取；Morpho 使用者倉位用白名單市場（已含上述 RWA）。錢包表只計可花 native；鎖倉（ADA 獎賞、SOL／NEAR／Sui 質押、Tron frozen、Cosmos 系委託、已列入的 EVM LST）在有讀取器時列入質押組。抽樣：`pnpm --filter @ysk-mint/web verify:holdings`。
+持倉分頁：代幣結餘（有報價時取去中心化交易所即時價）；借貸（存／借）、流動性及質押按協議分組。協議名稱連到外部網站。數值可能滯後或漏場地。鏈上讀取失敗顯示「—」，不會畫成假的 0。會跟 Cosmos LCD `next_key`、XRPL `marker`、Aptos FA cursor、Blockscout `next_page_params` 等分頁。Blockscout 主機失效（BSC、Base、Linea、Blast、Mantle）時，代幣發現及活動改走 Ankr，再試 NodeReal 公開索引；該鏈失敗仍顯示「—」，不會扮成空白清單。無報價的空投、兆級供應代幣，或流動性不足約 1,000 美元的 DEX 報價，不會列出亦不會計入總值。烘焙目錄含熱門 RWA（代幣化國債、黃金、信貸、Maple syrupUSDC、熱門股包裝）。仍然活的 explorer 鏈亦會對這些代號做 `balanceOf`；V2 LP 候選交易對跟目錄走（沒有池的許可制基金維持「—」）。Aave／Spark／Compound 名單仍由鏈上 `getReservesList`／`getAllMarkets` 讀取；Morpho 使用者倉位用白名單市場（已含上述 RWA）。Cardano ADA 按 stake key 加總該帳下全部付款地址的 UTXO，而不是 ADA Handle 解析到的單一 `addr1`；可提取獎賞在質押組。錢包表只計可花 native；鎖倉（ADA 獎賞、SOL／NEAR／Sui 質押、Tron frozen、Cosmos 系委託、已列入的 EVM LST）在有讀取器時列入質押組。抽樣：`pnpm --filter @ysk-mint/web verify:holdings`。
 
 ### 活動
 
