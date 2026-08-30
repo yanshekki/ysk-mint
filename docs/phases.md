@@ -39,6 +39,7 @@ After Phase 6 the SPA grew beyond launch:
 - **Holdings** — merged wallets and watch sets; lending, LP, staking, activity tags, share URLs.
 - **Markets and lending** — on-chain DEX boards, pair pages, read-only APY; deposit/borrow/swap stay on protocol sites.
 - **Market depth** — Depth USD is the pool’s dollar value; pair pages show token symbols; `pnpm --filter @ysk-mint/web verify:depth` spot-checks venue USD fields.
+- **Holdings parity** — paged token APIs are followed; failed reads show “—” not zero; staking covers ADA, SOL, NEAR, listed EVM LSTs, Sui, Tron frozen, and Cosmos-family delegations; `pnpm --filter @ysk-mint/web verify:holdings` compares native / tokens / stake to public APIs.
 - **RPC and outbound** — public node rotation, custom RPC in the browser, connection caps.
 - **Locales and SEO** — URL prefixes (including zh-CN), crawler-safe language, document head, sitemap, prerendered legal pages.
 

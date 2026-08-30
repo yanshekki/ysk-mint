@@ -8,7 +8,7 @@ Live: [mint.ysk.hk](https://mint.ysk.hk). Source: [github.com/yanshekki/ysk-mint
 
 | | |
 |--|--|
-| **Version** | 1.1.0 |
+| **Version** | 1.1.1 |
 | **License** | MIT |
 | **Frontend** | Vite + React + TypeScript (static SPA) |
 | **Contracts** | Solidity 0.8.22, Foundry, OpenZeppelin 5.x |
@@ -68,7 +68,7 @@ pnpm --filter @ysk-mint/web dev
 
 Foundry: `forge test -vv`
 
-Web typecheck and i18n key check: `pnpm --filter @ysk-mint/web typecheck` and `pnpm --filter @ysk-mint/web i18n:check`. Market depth spot-check (live venue APIs): `pnpm --filter @ysk-mint/web verify:depth`.
+Web typecheck and i18n key check: `pnpm --filter @ysk-mint/web typecheck` and `pnpm --filter @ysk-mint/web i18n:check`. Market depth spot-check (live venue APIs): `pnpm --filter @ysk-mint/web verify:depth`. Holdings parity (native / paged tokens / stake vs public APIs): `pnpm --filter @ysk-mint/web verify:holdings`.
 
 ## Docs
 

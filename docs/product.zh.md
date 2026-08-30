@@ -62,7 +62,7 @@
 
 ### 倉位
 
-持倉分頁：代幣結餘（有報價時取去中心化交易所即時價）；借貸（存／借）、流動性及質押按協議分組。協議名稱連到外部網站。數值可能滯後或漏場地。
+持倉分頁：代幣結餘（有報價時取去中心化交易所即時價）；借貸（存／借）、流動性及質押按協議分組。協議名稱連到外部網站。數值可能滯後或漏場地。鏈上讀取失敗顯示「—」，不會畫成假的 0。會跟 Cosmos LCD `next_key`、XRPL `marker`、Aptos FA cursor、Blockscout `next_page_params` 等分頁。錢包表只計可花 native；鎖倉（ADA 獎賞、SOL／NEAR／Sui 質押、Tron frozen、Cosmos 系委託、已列入的 EVM LST）在有讀取器時列入質押組。抽樣：`pnpm --filter @ysk-mint/web verify:holdings`。
 
 ### 活動
 

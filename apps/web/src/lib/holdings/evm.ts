@@ -29,9 +29,13 @@ export function useEvmHoldings(address: Address | Address[] | undefined) {
     () => catalog.filter((t) => t.address && !t.native && !SENTINEL_ERC.test(t.address) && !off.has(t.chainId)),
     [catalog, off],
   );
+  const [discFailed, setDiscFailed] = useState<Set<number>>(new Set());
   const scanErc20s = useMemo(
-    () => erc20s.filter((t) => !explore.has(t.chainId) || SCAN_ALWAYS.has(t.symbol.toUpperCase())),
-    [erc20s, explore],
+    () =>
+      erc20s.filter(
+        (t) => !explore.has(t.chainId) || discFailed.has(t.chainId) || SCAN_ALWAYS.has(t.symbol.toUpperCase()),
+      ),
+    [erc20s, explore, discFailed],
   );
   const natives = useMemo(() => catalog.filter((t) => t.native && !off.has(t.chainId)), [catalog, off]);
   const connected = addrs.length > 0;
@@ -160,6 +164,7 @@ export function useEvmHoldings(address: Address | Address[] | undefined) {
   useEffect(() => {
     if (!addrs.length) {
       setDisc([]);
+      setDiscFailed(new Set());
       setDiscLoading(false);
       return;
     }
@@ -167,8 +172,16 @@ export function useEvmHoldings(address: Address | Address[] | undefined) {
     setDiscLoading(true);
     const chains = EVM_HOLD_IDS.filter((id) => !off.has(id) && explorerChains().includes(id));
     void discoverEvmTokens(chains, addrs, catalogKeys)
-      .then((list) => {
-        if (!cancelled) setDisc(list);
+      .then((res) => {
+        if (cancelled) return;
+        setDisc(res.tokens);
+        setDiscFailed(new Set(res.failed));
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setDisc([]);
+          setDiscFailed(new Set(chains));
+        }
       })
       .finally(() => {
         if (!cancelled) setDiscLoading(false);

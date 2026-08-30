@@ -23,7 +23,7 @@ Vite + React. Routes live under an optional locale prefix. Unprefixed paths are 
 
 ### On-chain reads
 
-DEX markets and pair pages read venue HTTP adapters and on-chain reserves. Native and Gecko adapters store USD TVL in `tvlQuote`; inverting a pair keeps that USD. Pair titles and headers resolve token symbols from catalog and venue metadata, not truncated mints. Lending pages read protocol rate views. Holdings merge wallet sessions and watch sets, then read balances, lending, LP, and staking. Token and lock pages call `view`. Launch execution and OFT `send` are the signed paths.
+DEX markets and pair pages read venue HTTP adapters and on-chain reserves. Native and Gecko adapters store USD TVL in `tvlQuote`; inverting a pair keeps that USD. Pair titles and headers resolve token symbols from catalog and venue metadata, not truncated mints. Lending pages read protocol rate views. Holdings merge wallet sessions and watch sets, then read balances, lending, LP, and staking. Token lists that paginate (Cosmos, XRPL, Aptos, Blockscout) follow continuation tokens; a failed holdings RPC is shown as “—”, not zero. Token and lock pages call `view`. Launch execution and OFT `send` are the signed paths.
 
 ### RPC and outbound
 

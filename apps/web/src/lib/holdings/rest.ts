@@ -4,6 +4,8 @@ import { endpointByUrl, rpcEndpoints } from "../rpcCatalog.ts";
 import { markRpcLive, rpcJsonRpc, rpcOutboundFetch, rpcTry } from "../rpcPool.ts";
 import { addrList, mergeBals, useJsonHoldings, type BalHit } from "./shared.ts";
 
+const PAGE_CAP = 40;
+
 async function fetchHyperCore(user: string) {
   const out = new Map<string, BalHit>();
   const [state, meta] = await Promise.all([
@@ -52,7 +54,7 @@ export function useHyperCoreHoldings(address: string | string[] | undefined) {
   return useJsonHoldings(998, catalog, addrs.length > 0, load);
 }
 
-async function fetchTron(addr: string) {
+export async function fetchTron(addr: string) {
   const out = new Map<string, BalHit>();
   const json = await rpcTry(728126428, async (base, signal) => {
     const r = await rpcOutboundFetch(`${base.replace(/\/+$/, "")}/v1/accounts/${addr}`, { signal });
@@ -80,9 +82,9 @@ export function useTronHoldings(address: string | string[]) {
   return useJsonHoldings(728126428, catalog, addrs.length > 0, load);
 }
 
-async function fetchSui(addr: string) {
+export async function fetchSui(addr: string) {
   const out = new Map<string, BalHit>();
-  const coins = await rpcJsonRpc<Array<{ coinType: string; totalBalance: string }>>(784, "suix_getAllBalances", [addr]).catch(() => [] as Array<{ coinType: string; totalBalance: string }>);
+  const coins = await rpcJsonRpc<Array<{ coinType: string; totalBalance: string }>>(784, "suix_getAllBalances", [addr]);
   for (const b of coins ?? []) {
     const rec = { raw: BigInt(b.totalBalance || "0"), decimals: 9, symbol: b.coinType.split("::").pop(), contract: b.coinType };
     if (b.coinType.endsWith("::sui::SUI")) out.set("native", rec);
@@ -163,7 +165,39 @@ export function useTonHoldings(address: string | string[]) {
   return useJsonHoldings(607, catalog, addrs.length > 0, load);
 }
 
-async function fetchAptos(addr: string) {
+type AptosFa = { asset_type?: string; amount?: string; metadata?: { symbol?: string; decimals?: number } };
+
+async function fetchAptosFa(addr: string): Promise<AptosFa[]> {
+  const all: AptosFa[] = [];
+  let start: string | undefined;
+  for (let page = 0; page < PAGE_CAP; page++) {
+    const { rows, cursor } = await rpcTry(637, async (base, signal) => {
+      const u = new URL(`${base.replace(/\/+$/, "")}/accounts/${addr}/fungible_asset_balances`);
+      u.searchParams.set("limit", "100");
+      if (start) u.searchParams.set("start", start);
+      const r = await rpcOutboundFetch(u.href, { signal });
+      if (r.status === 404) return { rows: [] as AptosFa[], cursor: undefined };
+      if (!r.ok) throw new Error(String(r.status));
+      const json: unknown = await r.json();
+      const rows = Array.isArray(json)
+        ? (json as AptosFa[])
+        : json && typeof json === "object" && Array.isArray((json as { data?: AptosFa[] }).data)
+          ? ((json as { data: AptosFa[] }).data)
+          : null;
+      if (!rows) throw new Error("aptos fa shape");
+      const next =
+        r.headers.get("x-aptos-cursor") ||
+        (json && typeof json === "object" ? String((json as { cursor?: string }).cursor ?? "") : "");
+      return { rows, cursor: next || undefined };
+    });
+    all.push(...rows);
+    if (!cursor) break;
+    start = cursor;
+  }
+  return all;
+}
+
+export async function fetchAptos(addr: string) {
   const out = new Map<string, BalHit>();
   const apt = await rpcTry(637, async (base, signal) => {
     const r = await rpcOutboundFetch(
@@ -178,20 +212,12 @@ async function fetchAptos(addr: string) {
     throw err;
   });
   out.set("native", { raw: BigInt(apt.data?.coin?.value ?? "0"), decimals: 8, symbol: "APT" });
-  try {
-    const coins = await rpcTry(637, async (base, signal) => {
-      const r = await rpcOutboundFetch(`${base.replace(/\/+$/, "")}/accounts/${addr}/fungible_asset_balances`, { signal });
-      if (!r.ok) throw new Error(String(r.status));
-      return r.json() as Promise<Array<{ asset_type?: string; amount?: string; metadata?: { symbol?: string; decimals?: number } }>>;
-    }).catch(() => [] as Array<{ asset_type?: string; amount?: string; metadata?: { symbol?: string; decimals?: number } }>);
-    for (const c of coins) {
-      if (!c.asset_type) continue;
-      const rec = { raw: BigInt(c.amount ?? "0"), decimals: c.metadata?.decimals ?? 8, symbol: c.metadata?.symbol, contract: c.asset_type };
-      if (c.asset_type.includes("aptos_coin")) out.set("native", rec);
-      else out.set(c.asset_type, rec);
-    }
-  } catch {
-    /* fa optional */
+  const coins = await fetchAptosFa(addr);
+  for (const c of coins) {
+    if (!c.asset_type) continue;
+    const rec = { raw: BigInt(c.amount ?? "0"), decimals: c.metadata?.decimals ?? 8, symbol: c.metadata?.symbol, contract: c.asset_type };
+    if (c.asset_type.includes("aptos_coin")) out.set("native", rec);
+    else out.set(c.asset_type, rec);
   }
   return out;
 }
@@ -230,7 +256,9 @@ export function useBitcoinHoldings(address: string | string[]) {
   return useJsonHoldings(833, catalog, addrs.length > 0, load);
 }
 
-async function fetchXrpl(addr: string) {
+type XrplLine = { currency?: string; balance?: string; account?: string };
+
+export async function fetchXrpl(addr: string) {
   const out = new Map<string, BalHit>();
   const info = await rpcTry(144, async (url, signal) => {
     const r = await rpcOutboundFetch(url, {
@@ -243,16 +271,19 @@ async function fetchXrpl(addr: string) {
     return r.json() as Promise<{ result?: { account_data?: { Balance?: string } } }>;
   });
   out.set("native", { raw: BigInt(info.result?.account_data?.Balance ?? "0"), decimals: 6, symbol: "XRP" });
-  try {
+  let marker: unknown;
+  for (let page = 0; page < PAGE_CAP; page++) {
+    const params: Record<string, unknown> = { account: addr, ledger_index: "validated", limit: 400 };
+    if (marker) params.marker = marker;
     const lines = await rpcTry(144, async (url, signal) => {
       const r = await rpcOutboundFetch(url, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ method: "account_lines", params: [{ account: addr, ledger_index: "validated" }] }),
+        body: JSON.stringify({ method: "account_lines", params: [params] }),
         signal,
       });
       if (!r.ok) throw new Error(String(r.status));
-      return r.json() as Promise<{ result?: { lines?: Array<{ currency?: string; balance?: string; account?: string }> } }>;
+      return r.json() as Promise<{ result?: { lines?: XrplLine[]; marker?: unknown } }>;
     });
     for (const l of lines.result?.lines ?? []) {
       const n = Number(l.balance);
@@ -261,8 +292,8 @@ async function fetchXrpl(addr: string) {
       const code = l.currency && l.currency.length <= 3 ? l.currency : (l.currency ?? "IOU").slice(0, 4);
       out.set(`${l.account}:${l.currency}`, { raw, decimals: 6, symbol: code, contract: l.account });
     }
-  } catch {
-    /* lines optional */
+    marker = lines.result?.marker;
+    if (!marker) break;
   }
   return out;
 }
@@ -317,31 +348,45 @@ export function useStellarHoldings(address: string | string[]) {
   return useJsonHoldings(148, catalog, addrs.length > 0, load);
 }
 
+export async function fetchCosmosBank(chainId: number, denom: string, symbol: string, addr: string) {
+  const out = new Map<string, BalHit>();
+  let key: string | undefined;
+  for (let page = 0; page < PAGE_CAP; page++) {
+    const json = await rpcTry(chainId, async (lcd, signal) => {
+      const u = new URL(`${lcd.replace(/\/+$/, "")}/cosmos/bank/v1beta1/balances/${addr}`);
+      u.searchParams.set("pagination.limit", "200");
+      if (key) u.searchParams.set("pagination.key", key);
+      const r = await rpcOutboundFetch(u.href, { signal });
+      if (!r.ok) throw new Error(String(r.status));
+      return r.json() as Promise<{
+        balances?: Array<{ denom?: string; amount?: string }>;
+        pagination?: { next_key?: string | null };
+      }>;
+    });
+    for (const b of json.balances ?? []) {
+      const raw = BigInt(b.amount ?? "0");
+      if (b.denom === denom) out.set("native", { raw, decimals: 6, symbol });
+      else if (raw > 0n)
+        out.set(b.denom ?? "coin", {
+          raw,
+          decimals: 6,
+          symbol: (b.denom ?? "COIN").replace("u", "").toUpperCase().slice(0, 6),
+          contract: b.denom,
+        });
+    }
+    const next = json.pagination?.next_key;
+    if (!next) break;
+    key = next;
+  }
+  return out;
+}
+
 function useCosmosLcd(chainId: number, denom: string, symbol: string, address: string | string[]) {
   const catalog = useMemo(() => tokensFor("cosmos", chainId), [chainId]);
   const accKey = Array.isArray(address) ? address.join("|") : address;
   const addrs = useMemo(() => addrList(address), [accKey]);
   const load = useMemo(
-    () => async () => {
-      const maps = await Promise.all(
-        addrs.map(async (addr) => {
-          const out = new Map<string, BalHit>();
-          const json = await rpcTry(chainId, async (lcd, signal) => {
-            const r = await rpcOutboundFetch(`${lcd.replace(/\/+$/, "")}/cosmos/bank/v1beta1/balances/${addr}`, { signal });
-            if (!r.ok) throw new Error(String(r.status));
-            return r.json() as Promise<{ balances?: Array<{ denom?: string; amount?: string }> }>;
-          });
-          for (const b of json.balances ?? []) {
-            const raw = BigInt(b.amount ?? "0");
-            if (b.denom === denom) out.set("native", { raw, decimals: 6, symbol });
-            else if (raw > 0n)
-              out.set(b.denom ?? "coin", { raw, decimals: 6, symbol: (b.denom ?? "COIN").replace("u", "").toUpperCase().slice(0, 6), contract: b.denom });
-          }
-          return out;
-        }),
-      );
-      return mergeBals(maps);
-    },
+    () => async () => mergeBals(await Promise.all(addrs.map((addr) => fetchCosmosBank(chainId, denom, symbol, addr)))),
     [accKey, addrs, chainId, denom, symbol],
   );
   return useJsonHoldings(chainId, catalog, addrs.length > 0, load);
@@ -383,9 +428,12 @@ export function useStarknetHoldings(address: string | string[]) {
       const maps = await Promise.all(
         addrs.map(async (addr) => {
           const out = new Map<string, BalHit>();
-          const [strk, eth] = await Promise.all([starknetBalance(STRK, addr).catch(() => 0n), starknetBalance(STRK_ETH, addr).catch(() => 0n)]);
+          const [strk, eth] = await Promise.all([
+            starknetBalance(STRK, addr),
+            starknetBalance(STRK_ETH, addr).catch(() => null as bigint | null),
+          ]);
           out.set("native", { raw: strk, decimals: 18, symbol: "STRK" });
-          if (eth > 0n) out.set(STRK_ETH, { raw: eth, decimals: 18, symbol: "ETH", contract: STRK_ETH, icon: "/tokens/eth.png" });
+          if (eth != null && eth > 0n) out.set(STRK_ETH, { raw: eth, decimals: 18, symbol: "ETH", contract: STRK_ETH, icon: "/tokens/eth.png" });
           return out;
         }),
       );

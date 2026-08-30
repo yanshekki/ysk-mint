@@ -46,10 +46,57 @@ type BsTok = {
   };
 };
 
-const DISC_POLICY = { ...POLICIES.http, ttlMs: 120_000, staleMs: 600_000, keep: (v: DiscoveredErc20[]) => v.length >= 0 };
+const DISC_POLICY = { ...POLICIES.http, ttlMs: 120_000, staleMs: 600_000 };
 
 export function explorerChains() {
   return Object.keys(EXPLORER).map(Number);
+}
+
+export function explorerUrl(chainId: number) {
+  return EXPLORER[chainId];
+}
+
+const PAGE_CAP = 20;
+
+type BsPage = { items: BsTok[]; next?: Record<string, unknown> };
+
+function asBsPage(json: unknown): BsPage {
+  if (Array.isArray(json)) return { items: json as BsTok[] };
+  if (json && typeof json === "object") {
+    const o = json as { items?: BsTok[]; next_page_params?: Record<string, unknown> | null };
+    if (Array.isArray(o.items)) return { items: o.items, next: o.next_page_params ?? undefined };
+  }
+  throw new Error("explorer shape");
+}
+
+function parseTok(chainId: number, item: BsTok): DiscoveredErc20 | null {
+  const tok = item.token;
+  if (!tok) return null;
+  const typ = (tok.type || "ERC-20").toUpperCase();
+  if (typ.includes("721") || typ.includes("1155")) return null;
+  if (typ && !typ.includes("ERC-20") && typ !== "ERC20") return null;
+  const contract = (tok.address_hash || tok.address || "").toLowerCase();
+  if (!/^0x[a-f0-9]{40}$/.test(contract)) return null;
+  let raw = 0n;
+  try {
+    raw = BigInt(item.value || "0");
+  } catch {
+    return null;
+  }
+  if (raw <= 0n) return null;
+  const decimals = Math.min(36, Math.max(0, Number(tok.decimals ?? 18) || 18));
+  const amt = Number(raw) / 10 ** decimals;
+  const px = tok.exchange_rate != null && tok.exchange_rate !== "" ? Number(tok.exchange_rate) : NaN;
+  const usdHint = Number.isFinite(amt) && Number.isFinite(px) ? amt * px : null;
+  return {
+    chainId,
+    address: contract as Address,
+    symbol: (tok.symbol || "TOKEN").slice(0, 24),
+    name: (tok.name || tok.symbol || "Token").slice(0, 48),
+    decimals,
+    raw,
+    usdHint,
+  };
 }
 
 async function fetchExplorer(chainId: number, address: string): Promise<DiscoveredErc20[]> {
@@ -58,49 +105,33 @@ async function fetchExplorer(chainId: number, address: string): Promise<Discover
   return cacheGet(
     { key: cacheKey("hold.disc", chainId, address), policy: { ...DISC_POLICY, account: address.toLowerCase() } },
     async () => {
-      const ctrl = new AbortController();
-      const timer = window.setTimeout(() => ctrl.abort(), 25000);
-      try {
-        const res = await outboundFetch(`${base}/api/v2/addresses/${address}/token-balances`, { signal: ctrl.signal });
-        if (!res.ok) return [];
-        const json = (await res.json()) as BsTok[];
-        if (!Array.isArray(json)) return [];
-        const out: DiscoveredErc20[] = [];
-        for (const item of json) {
-          const tok = item.token;
-          if (!tok) continue;
-          const typ = (tok.type || "ERC-20").toUpperCase();
-          if (typ.includes("721") || typ.includes("1155")) continue;
-          if (typ && !typ.includes("ERC-20") && typ !== "ERC20") continue;
-          const contract = (tok.address_hash || tok.address || "").toLowerCase();
-          if (!/^0x[a-f0-9]{40}$/.test(contract)) continue;
-          let raw = 0n;
-          try {
-            raw = BigInt(item.value || "0");
-          } catch {
-            continue;
+      const out: DiscoveredErc20[] = [];
+      let query = "";
+      for (let page = 0; page < PAGE_CAP; page++) {
+        const ctrl = new AbortController();
+        const timer = globalThis.setTimeout(() => ctrl.abort(), 25000);
+        try {
+          const res = await outboundFetch(`${base}/api/v2/addresses/${address}/token-balances${query}`, { signal: ctrl.signal });
+          if (!res.ok) throw new Error(`explorer ${chainId} ${res.status}`);
+          const { items, next } = asBsPage(await res.json());
+          for (const item of items) {
+            const row = parseTok(chainId, item);
+            if (row) out.push(row);
           }
-          if (raw <= 0n) continue;
-          const decimals = Math.min(36, Math.max(0, Number(tok.decimals ?? 18) || 18));
-          const amt = Number(raw) / 10 ** decimals;
-          const px = tok.exchange_rate != null && tok.exchange_rate !== "" ? Number(tok.exchange_rate) : NaN;
-          const usdHint = Number.isFinite(amt) && Number.isFinite(px) ? amt * px : null;
-          out.push({
-            chainId,
-            address: contract as Address,
-            symbol: (tok.symbol || "TOKEN").slice(0, 24),
-            name: (tok.name || tok.symbol || "Token").slice(0, 48),
-            decimals,
-            raw,
-            usdHint,
-          });
+          if (!next || !Object.keys(next).length) break;
+          const qs = new URLSearchParams();
+          for (const [k, v] of Object.entries(next)) {
+            if (v == null) continue;
+            qs.set(k, String(v));
+          }
+          query = `?${qs.toString()}`;
+        } finally {
+          globalThis.clearTimeout(timer);
         }
-        return out;
-      } finally {
-        window.clearTimeout(timer);
       }
+      return out;
     },
-  ).catch(() => [] as DiscoveredErc20[]);
+  );
 }
 
 function keepDisc(d: DiscoveredErc20, catalog: Set<string>) {
@@ -111,15 +142,26 @@ function keepDisc(d: DiscoveredErc20, catalog: Set<string>) {
 }
 
 /** Explorer-indexed ERC-20s this address actually holds. Dust / NFT spam dropped. */
-export async function discoverEvmTokens(chainIds: number[], addresses: string[], catalogKeys: Set<string>): Promise<DiscoveredErc20[]> {
-  const jobs: Array<Promise<DiscoveredErc20[]>> = [];
+export async function discoverEvmTokens(
+  chainIds: number[],
+  addresses: string[],
+  catalogKeys: Set<string>,
+): Promise<{ tokens: DiscoveredErc20[]; failed: number[] }> {
+  const jobs: Array<{ chainId: number; run: Promise<DiscoveredErc20[]> }> = [];
   for (const addr of addresses) {
     for (const id of chainIds) {
       if (!EXPLORER[id]) continue;
-      jobs.push(fetchExplorer(id, addr));
+      jobs.push({ chainId: id, run: fetchExplorer(id, addr) });
     }
   }
-  const parts = await Promise.all(jobs);
+  const failed = new Set<number>();
+  const parts: DiscoveredErc20[][] = [];
+  const settled = await Promise.allSettled(jobs.map((j) => j.run));
+  settled.forEach((s, i) => {
+    const id = jobs[i]?.chainId;
+    if (s.status === "fulfilled") parts.push(s.value);
+    else if (id != null) failed.add(id);
+  });
   const by = new Map<string, DiscoveredErc20>();
   for (const list of parts) {
     for (const d of list) {
@@ -140,5 +182,5 @@ export async function discoverEvmTokens(chainIds: number[], addresses: string[],
     per.set(d.chainId, n + 1);
     capped.push(d);
   }
-  return capped;
+  return { tokens: capped, failed: [...failed] };
 }

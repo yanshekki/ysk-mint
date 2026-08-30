@@ -59,11 +59,14 @@ import {
   lstStakeLines,
   readAdaStake,
   readBenqiMarkets,
+  readCosmosStake,
   readLidoQueue,
   readNearStake,
   readPinnedLst,
   readSavaxUnlocks,
   readSolStake,
+  readSuiStake,
+  readTronStake,
   stakeBadge,
   stakeSubtitle,
   type StakeLine,
@@ -780,6 +783,9 @@ export function MePage() {
       const suiAccs = snap.byKind.sui;
       const tronAccs = snap.byKind.tron;
       const aptosAccs = snap.byKind.aptos;
+      const cosmosAccs = snap.byKind.cosmos;
+      const osmoAccs = snap.byKind.osmosis;
+      const tiaAccs = snap.byKind.celestia;
       const defiIds = [
         ...clients.keys(),
         ...(nearAccs.length ? [397] : []),
@@ -787,6 +793,9 @@ export function MePage() {
         ...(suiAccs.length ? [784] : []),
         ...(tronAccs.length ? [728126428] : []),
         ...(aptosAccs.length ? [637] : []),
+        ...(cosmosAccs.length ? [118] : []),
+        ...(osmoAccs.length ? [100001] : []),
+        ...(tiaAccs.length ? [100002] : []),
       ];
       for (const id of defiIds) useLiveStatus.getState().start(`defi:${id}`, id, "defi", "wait");
 
@@ -817,6 +826,7 @@ export function MePage() {
             }
             if (id === 784) {
               for (const acc of suiAccs) {
+                extra.push(...(await readSuiStake(acc).catch(() => [])));
                 const more = await readNativeLending({ sui: acc, quotes: next }).catch(() => []);
                 for (const card of more) {
                   lendCards.push(card);
@@ -827,12 +837,18 @@ export function MePage() {
             }
             if (id === 728126428) {
               for (const acc of tronAccs) {
+                extra.push(...(await readTronStake(acc).catch(() => [])));
                 const more = await readNativeLending({ tron: acc, quotes: next }).catch(() => []);
                 for (const card of more) {
                   lendCards.push(card);
                   for (const x of card.aTokens) tokens.add(x);
                 }
               }
+              return;
+            }
+            if (id === 118 || id === 100001 || id === 100002) {
+              const accs = id === 118 ? cosmosAccs : id === 100001 ? osmoAccs : tiaAccs;
+              for (const acc of accs) extra.push(...(await readCosmosStake(id, acc).catch(() => [])));
               return;
             }
             if (id === 637) {

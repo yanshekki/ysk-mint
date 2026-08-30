@@ -62,7 +62,7 @@ Connected EVM (RainbowKit / wagmi) plus native sessions (NEAR, Cardano, Solana, 
 
 ### Positions
 
-Holdings tab: token balances quoted at DEX spots where available; lending (supply/borrow), LP, and staking lines grouped by protocol. Protocol names link out. Values can lag or miss venues.
+Holdings tab: token balances quoted at DEX spots where available; lending (supply/borrow), LP, and staking lines grouped by protocol. Protocol names link out. Values can lag or miss venues. A failed chain read shows as “—” rather than a fake zero. Paged token lists (Cosmos LCD `next_key`, XRPL `marker`, Aptos FA cursor, Blockscout `next_page_params`) are followed. Spendable native stays in the wallet table; locked value (ADA rewards, SOL/NEAR/Sui stake, Tron frozen, Cosmos-family delegations, listed EVM LSTs) is in the staking group when a reader exists. Spot-check: `pnpm --filter @ysk-mint/web verify:holdings`.
 
 ### Activity
 

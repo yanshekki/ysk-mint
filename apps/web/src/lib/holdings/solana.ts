@@ -27,24 +27,18 @@ async function solMintMeta(mint: string): Promise<{ symbol: string; name: string
   }
 }
 
-async function solanaCall<T>(body: { method: string; params: unknown }): Promise<T | null> {
+async function solanaCall<T>(body: { method: string; params: unknown }): Promise<T> {
   return cacheGet(
     {
       key: cacheKey("hold.sol", 101, cacheHash(JSON.stringify(body))),
       policy: POLICIES.account,
     },
-    async () => {
-      try {
-        return await rpcJsonRpc<T>(101, body.method, body.params);
-      } catch {
-        return null;
-      }
-    },
+    () => rpcJsonRpc<T>(101, body.method, body.params),
   );
 }
 
-function collectMints(json: SolTokJson | null, into: Map<string, { raw: bigint; decimals: number }>) {
-  for (const v of json?.value ?? []) {
+function collectMints(json: SolTokJson, into: Map<string, { raw: bigint; decimals: number }>) {
+  for (const v of json.value ?? []) {
     const info = v.account?.data?.parsed?.info;
     if (!info?.mint) continue;
     const raw = BigInt(info.tokenAmount?.amount ?? "0");
@@ -56,11 +50,11 @@ function collectMints(json: SolTokJson | null, into: Map<string, { raw: bigint; 
   }
 }
 
-async function fetchSolana(address: string) {
-  let lamports: number | null = null;
+export async function fetchSolana(address: string) {
   const byMint = new Map<string, { raw: bigint; decimals: number }>();
   const balJson = await solanaCall<{ value?: number }>({ method: "getBalance", params: [address] });
-  if (typeof balJson?.value === "number") lamports = balJson.value;
+  if (typeof balJson.value !== "number") throw new Error("solana getBalance");
+  const lamports = balJson.value;
   const tokenParams = (programId: string) => [address, { programId }, { encoding: "jsonParsed" as const }];
   collectMints(await solanaCall<SolTokJson>({ method: "getTokenAccountsByOwner", params: tokenParams(TOKEN_PROGRAM) }), byMint);
   collectMints(await solanaCall<SolTokJson>({ method: "getTokenAccountsByOwner", params: tokenParams(TOKEN_2022_PROGRAM) }), byMint);

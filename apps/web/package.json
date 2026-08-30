@@ -1,6 +1,6 @@
 {
   "name": "@ysk-mint/web",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "i18n:check": "node scripts/i18n-check.mjs",
     "preview": "vite preview",
-    "verify:depth": "npx --yes tsx scripts/verify-depth.ts"
+    "verify:depth": "npx --yes tsx scripts/verify-depth.ts",
+    "verify:holdings": "npx --yes tsx scripts/verify-holdings.ts"
   },
   "dependencies": {
     "@near-wallet-selector/bitte-wallet": "10.1.4",
