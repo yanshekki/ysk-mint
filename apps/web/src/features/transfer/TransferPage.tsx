@@ -13,6 +13,7 @@ import {
   type LaunchError,
 } from "@ysk-mint/sdk";
 import { Button } from "../../shared/ui/Button.tsx";
+import { Metric } from "../../shared/ui/Metric.tsx";
 import { ChipGroup } from "../../shared/ui/ChipGroup.tsx";
 import { useEvmHoldings, type HoldingRow } from "../../lib/useHoldings.ts";
 import { chainIcon } from "../../lib/chainIcon.ts";
@@ -444,9 +445,9 @@ export function TransferPage() {
                       <b>{p.symbol}</b>
                       <span className="num">{shortAddr(p.contract)}</span>
                     </div>
-                    <span />
-                    <span />
-                    <span className="num me-value">{p.amount || "—"}</span>
+                    <Metric className="num me-value" label={t("me.amount")}>
+                      {p.amount || "—"}
+                    </Metric>
                   </button>
                 ))}
               </div>

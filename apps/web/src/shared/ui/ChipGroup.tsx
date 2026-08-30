@@ -12,7 +12,7 @@ export function ChipGroup<T extends string | number>({
   ariaLabel: string;
 }) {
   return (
-    <div role="radiogroup" aria-label={ariaLabel} className="flex flex-wrap gap-2">
+    <div role="radiogroup" aria-label={ariaLabel} className="me-chips">
       {options.map((o) => (
         <button
           key={String(o.value)}
@@ -43,7 +43,7 @@ export function ChipMulti<T extends string | number>({
   ariaLabel: string;
 }) {
   return (
-    <div role="group" aria-label={ariaLabel} className="flex flex-wrap gap-2">
+    <div role="group" aria-label={ariaLabel} className="me-chips">
       {options.map((o) => {
         const on = value.includes(o.value);
         return (

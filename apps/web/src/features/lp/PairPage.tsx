@@ -24,6 +24,7 @@ import { nearFtMeta, nearToken } from "../../lib/nearDex.ts";
 import { adaTokenMeta } from "../../lib/adaDex.ts";
 import { cachedMarketPairQuotes, nativePairVenues } from "../../lib/nativePairVenues.ts";
 import { SortHead, useSort } from "../../shared/ui/SortTable.tsx";
+import { Metric } from "../../shared/ui/Metric.tsx";
 import { marketsHref } from "./LpPage.tsx";
 import { dexAppHref } from "../../lib/dexApp.ts";
 
@@ -287,9 +288,15 @@ export function PairPage() {
                         </span>
                         <span className="num">{short(v.pool)}</span>
                       </div>
-                      <span className="num me-price">{fmtUsdc(pairPriceUsd(v.priceAinB, base, quote, chainId))}</span>
-                      <span className="num holding-amt">{v.reserveA > 0 ? fmtCompact(v.reserveA) : "—"}</span>
-                      <span className="num me-value">{venueDisplayDepth(v, quoteIsStable) > 0 ? fmtCompact(venueDisplayDepth(v, quoteIsStable)) : "—"}</span>
+                      <Metric className="num me-price" label={t("me.quote")}>
+                        {fmtUsdc(pairPriceUsd(v.priceAinB, base, quote, chainId))}
+                      </Metric>
+                      <Metric className="num holding-amt" label={metaA.symbol}>
+                        {v.reserveA > 0 ? fmtCompact(v.reserveA) : "—"}
+                      </Metric>
+                      <Metric className="num me-value" label={t("lp.depthUnit", { unit: quoteIsStable ? "USD" : metaB.symbol })}>
+                        {venueDisplayDepth(v, quoteIsStable) > 0 ? fmtCompact(venueDisplayDepth(v, quoteIsStable)) : "—"}
+                      </Metric>
                       <span className="me-pool-acts">
                         {explore ? (
                           <a className="me-pool-btn me-pool-btn-explore" href={explore} target="_blank" rel="noreferrer">
@@ -355,9 +362,15 @@ export function PairPage() {
                           {s.tx ? ` · ${short(s.tx)}` : ""}
                         </span>
                       </div>
-                      <span className="num me-price">{fmtCompact(s.amountA)}</span>
-                      <span className="num holding-amt">{fmtCompact(s.amountB)}</span>
-                      <span className="num me-value">{s.price == null ? "—" : fmtCompact(s.price)}</span>
+                      <Metric className="num me-price" label={metaA.symbol}>
+                        {fmtCompact(s.amountA)}
+                      </Metric>
+                      <Metric className="num holding-amt" label={metaB.symbol}>
+                        {fmtCompact(s.amountB)}
+                      </Metric>
+                      <Metric className="num me-value" label={t("lp.price")}>
+                        {s.price == null ? "—" : fmtCompact(s.price)}
+                      </Metric>
                     </>
                   );
                   return href ? (

@@ -15,6 +15,7 @@ import { useCardanoHoldings } from "../../lib/useHoldings.ts";
 import { ChipBusy } from "../../shared/ui/LiveDock.tsx";
 import { useLiveStatus } from "../../lib/liveStatus.ts";
 import { SortHead, useSort } from "../../shared/ui/SortTable.tsx";
+import { Metric } from "../../shared/ui/Metric.tsx";
 import { useUserSettings } from "../../lib/userSettings.ts";
 
 /** High-usage chains shown before 「更多」. Order follows featuredChains(). */
@@ -358,9 +359,15 @@ export function LpPage() {
                       </b>
                       <span>{r.venueNames.join(" · ")}</span>
                     </div>
-                    <span className="num me-price">{r.price == null ? "—" : fmtUsdc(r.price)}</span>
-                    <span className="num holding-amt">{r.venues.length || r.venueNames.length}</span>
-                    <span className="num me-value">{r.depth ? fmtCompact(r.depth) : "—"}</span>
+                    <Metric className="num me-price" label={t("me.quote")}>
+                      {r.price == null ? "—" : fmtUsdc(r.price)}
+                    </Metric>
+                    <Metric className="num holding-amt" label={t("lp.poolCount")}>
+                      {r.venues.length || r.venueNames.length}
+                    </Metric>
+                    <Metric className="num me-value" label={t("lp.depth")}>
+                      {r.depth ? fmtCompact(r.depth) : "—"}
+                    </Metric>
                   </Link>
                 ))}
                 {marketMore ? (

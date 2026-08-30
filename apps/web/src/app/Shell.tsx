@@ -1,5 +1,5 @@
+import { useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
-import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAccount, useBalance, useChainId } from "wagmi";
 import { evmEnabledChains } from "@ysk-mint/config";
@@ -20,6 +20,18 @@ const NAV = [
   ["/settings", "nav.settings"],
 ] as const;
 
+const TAB_NAV = [
+  ["/", "nav.lp", "markets"],
+  ["/lend", "nav.lend", "lend"],
+  ["/create", "nav.create", "create"],
+  ["/me", "nav.me", "me"],
+] as const;
+
+const MORE_LINKS = [
+  ["/transfer", "nav.transfer"],
+  ["/settings", "nav.settings"],
+] as const;
+
 const LEGAL = [
   ["/about", "nav.about"],
   ["/donate", "nav.donate"],
@@ -32,12 +44,61 @@ function navOn(path: string, href: string) {
   return rest === href || (href !== "/" && rest.startsWith(href));
 }
 
+function moreOn(path: string) {
+  const rest = stripLocalePrefix(path);
+  if (MORE_LINKS.some(([href]) => navOn(path, href))) return true;
+  return LEGAL.some(([href]) => rest === href || rest.startsWith(href));
+}
+
 function gasLabel(formatted?: string) {
   if (!formatted) return "";
   const n = Number(formatted);
   if (!Number.isFinite(n) || n <= 0) return "";
   if (n < 0.001) return " <0.001";
   return ` ${n.toLocaleString(undefined, { maximumFractionDigits: 3 })}`;
+}
+
+function TabIcon({ name }: { name: (typeof TAB_NAV)[number][2] | "more" }) {
+  const common = { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", "aria-hidden": true as const };
+  const stroke = { stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  if (name === "markets") {
+    return (
+      <svg {...common}>
+        <path {...stroke} d="M4 19V9M10 19V5M16 19v-7M22 19H2" />
+      </svg>
+    );
+  }
+  if (name === "lend") {
+    return (
+      <svg {...common}>
+        <rect {...stroke} x="3" y="6" width="18" height="13" rx="2" />
+        <path {...stroke} d="M3 10h18M7 14h2M12 14h2" />
+      </svg>
+    );
+  }
+  if (name === "create") {
+    return (
+      <svg {...common}>
+        <circle {...stroke} cx="12" cy="12" r="8" />
+        <path {...stroke} d="M12 8v8M8 12h8" />
+      </svg>
+    );
+  }
+  if (name === "me") {
+    return (
+      <svg {...common}>
+        <circle {...stroke} cx="12" cy="8" r="3.2" />
+        <path {...stroke} d="M5 19c1.2-3 3.7-4.5 7-4.5S17.8 16 19 19" />
+      </svg>
+    );
+  }
+  return (
+    <svg {...common}>
+      <circle cx="6" cy="12" r="1.6" fill="currentColor" />
+      <circle cx="12" cy="12" r="1.6" fill="currentColor" />
+      <circle cx="18" cy="12" r="1.6" fill="currentColor" />
+    </svg>
+  );
 }
 
 export function Shell() {
@@ -48,10 +109,25 @@ export function Shell() {
   const bal = useBalance({ address });
   const native = useNativeWallets();
   const chain = evmEnabledChains().find((c) => c.chainId === chainId);
+  const [moreOpen, setMoreOpen] = useState(false);
+
   useEffect(() => {
     const urlLng = localeFromPathname(loc.pathname);
     if (canonicalLocale(i18n.language) !== urlLng) void i18n.changeLanguage(urlLng);
   }, [loc.pathname]);
+
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [loc.pathname]);
+
+  useEffect(() => {
+    if (!moreOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMoreOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [moreOpen]);
 
   const sessionChips: string[] = [];
   if (isConnected) sessionChips.push(`${chain?.short ?? "EVM"}${gasLabel(bal.data?.formatted)}`);
@@ -68,7 +144,7 @@ export function Shell() {
       <header className="topbar">
         <LocaleLink to="/" className="logo">
           <img className="logo-mark" src="/logo.svg" width={28} height={28} alt="" />
-          {t("app.name")}
+          <span className="logo-name">{t("app.name")}</span>
         </LocaleLink>
         <nav className="top-nav">
           {NAV.map(([href, key]) => (
@@ -85,6 +161,27 @@ export function Shell() {
         <Outlet />
       </main>
       <LiveDock />
+      {moreOpen ? (
+        <>
+          <button type="button" className="more-sheet-backdrop" aria-hidden="true" tabIndex={-1} onClick={() => setMoreOpen(false)} />
+          <div className="more-sheet" role="dialog" aria-modal="true" aria-label={t("nav.more")}>
+            <nav className="more-sheet-nav">
+              {MORE_LINKS.map(([href, key]) => (
+                <LocaleLink key={href} to={href} className={navOn(loc.pathname, href) ? "on" : ""} onClick={() => setMoreOpen(false)}>
+                  {t(key)}
+                </LocaleLink>
+              ))}
+            </nav>
+            <nav className="more-sheet-nav more-sheet-legal" aria-label={t("nav.legal")}>
+              {LEGAL.map(([href, key]) => (
+                <LocaleLink key={href} to={href} className={navOn(loc.pathname, href) ? "on" : ""} onClick={() => setMoreOpen(false)}>
+                  {t(key)}
+                </LocaleLink>
+              ))}
+            </nav>
+          </div>
+        </>
+      ) : null}
       <footer className="botbar">
         <div className="bot-meta">
           <LocaleLink to="/about" className="bot-powered">
@@ -99,11 +196,22 @@ export function Shell() {
           </nav>
         </div>
         <nav className="bot-nav" aria-label={t("app.name")}>
-          {NAV.map(([href, key]) => (
+          {TAB_NAV.map(([href, key, icon]) => (
             <LocaleLink key={href} to={href} className={navOn(loc.pathname, href) ? "on" : ""}>
-              {t(key)}
+              <TabIcon name={icon} />
+              <span>{t(key)}</span>
             </LocaleLink>
           ))}
+          <button
+            type="button"
+            className={`bot-more-btn ${moreOpen || moreOn(loc.pathname) ? "on" : ""}`}
+            aria-expanded={moreOpen}
+            aria-haspopup="dialog"
+            onClick={() => setMoreOpen((v) => !v)}
+          >
+            <TabIcon name="more" />
+            <span>{t("nav.more")}</span>
+          </button>
         </nav>
         {sessionChips.length ? (
           <div className="bot-session">

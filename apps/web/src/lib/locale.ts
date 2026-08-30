@@ -8,17 +8,17 @@ export type LocaleId = typeof DEFAULT_LOCALE | PrefixLocale;
 export type SdkLocale = "en" | "zh-HK" | "zh-CN";
 
 export const LOCALES = [
-  { id: "zh-HK", label: "繁體中文", htmlLang: "zh-HK", ogLocale: "zh_HK", dir: "ltr" as const },
-  { id: "zh-CN", label: "简体中文", htmlLang: "zh-CN", ogLocale: "zh_CN", dir: "ltr" as const },
-  { id: "en", label: "English", htmlLang: "en-US", ogLocale: "en_US", dir: "ltr" as const },
-  { id: "es", label: "Español", htmlLang: "es", ogLocale: "es_ES", dir: "ltr" as const },
-  { id: "ar", label: "العربية", htmlLang: "ar", ogLocale: "ar_SA", dir: "rtl" as const },
-  { id: "pt", label: "Português", htmlLang: "pt-BR", ogLocale: "pt_BR", dir: "ltr" as const },
-  { id: "id", label: "Bahasa Indonesia", htmlLang: "id", ogLocale: "id_ID", dir: "ltr" as const },
-  { id: "ja", label: "日本語", htmlLang: "ja", ogLocale: "ja_JP", dir: "ltr" as const },
-  { id: "ru", label: "Русский", htmlLang: "ru", ogLocale: "ru_RU", dir: "ltr" as const },
-  { id: "fr", label: "Français", htmlLang: "fr", ogLocale: "fr_FR", dir: "ltr" as const },
-  { id: "de", label: "Deutsch", htmlLang: "de", ogLocale: "de_DE", dir: "ltr" as const },
+  { id: "zh-HK", label: "繁體中文", short: "繁", htmlLang: "zh-HK", ogLocale: "zh_HK", dir: "ltr" as const },
+  { id: "zh-CN", label: "简体中文", short: "简", htmlLang: "zh-CN", ogLocale: "zh_CN", dir: "ltr" as const },
+  { id: "en", label: "English", short: "EN", htmlLang: "en-US", ogLocale: "en_US", dir: "ltr" as const },
+  { id: "es", label: "Español", short: "ES", htmlLang: "es", ogLocale: "es_ES", dir: "ltr" as const },
+  { id: "ar", label: "العربية", short: "ع", htmlLang: "ar", ogLocale: "ar_SA", dir: "rtl" as const },
+  { id: "pt", label: "Português", short: "PT", htmlLang: "pt-BR", ogLocale: "pt_BR", dir: "ltr" as const },
+  { id: "id", label: "Bahasa Indonesia", short: "ID", htmlLang: "id", ogLocale: "id_ID", dir: "ltr" as const },
+  { id: "ja", label: "日本語", short: "日", htmlLang: "ja", ogLocale: "ja_JP", dir: "ltr" as const },
+  { id: "ru", label: "Русский", short: "RU", htmlLang: "ru", ogLocale: "ru_RU", dir: "ltr" as const },
+  { id: "fr", label: "Français", short: "FR", htmlLang: "fr", ogLocale: "fr_FR", dir: "ltr" as const },
+  { id: "de", label: "Deutsch", short: "DE", htmlLang: "de", ogLocale: "de_DE", dir: "ltr" as const },
 ] as const;
 
 export const PREFIX_SET = new Set<string>(PREFIX_LOCALES);

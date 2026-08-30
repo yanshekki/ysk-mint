@@ -1,4 +1,4 @@
-import { useMemo, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import { CHAINS } from "@ysk-mint/config";
 import { chainIcon } from "../../lib/chainIcon.ts";
@@ -52,6 +52,15 @@ export function LiveDock() {
   const jobs = useLiveStatus((s) => s.jobs);
   const waveDone = useLiveStatus((s) => s.waveDone);
   const links = useSyncExternalStore(subscribeOutbound, getOutboundSnapshot, getOutboundSnapshot);
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 1024px)");
+    const sync = () => setCollapsed(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
 
   const { running, queued, failed } = useMemo(() => {
     const running: LiveJob[] = [];
@@ -76,11 +85,11 @@ export function LiveDock() {
   if (!dockOn || !jobs.length) return null;
 
   return (
-    <aside className="live-dock" aria-live="polite" aria-label={t("live.title")}>
-      <div className="live-dock-head">
+    <aside className={`live-dock${collapsed ? " live-dock-collapsed" : ""}`} aria-live="polite" aria-label={t("live.title")}>
+      <button type="button" className="live-dock-head" onClick={() => setCollapsed((v) => !v)} aria-expanded={!collapsed}>
         <p className="live-dock-title">{t("live.title")}</p>
         <p className="live-dock-count">{t("live.count", { done: waveDone, total })}</p>
-      </div>
+      </button>
       <div
         className="live-dock-bar"
         role="progressbar"
