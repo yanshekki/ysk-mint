@@ -11,9 +11,9 @@ import {
   TAX_MAX_BPS_ONE_SIDE,
   TAX_MAX_BPS_SUM,
 } from "@ysk-mint/config";
-import { ErrorCode, type LaunchError } from "../errors/codes";
-import { err } from "../errors/decode";
-import type { Locale } from "../errors/messages";
+import { ErrorCode, type LaunchError } from "../errors/codes.js";
+import { err } from "../errors/decode.js";
+import type { Locale } from "../errors/messages.js";
 
 const encoder = new TextEncoder();
 

@@ -1,6 +1,6 @@
-import { ErrorCode, type LaunchError } from "../errors/codes";
-import { err } from "../errors/decode";
-import type { Locale } from "../errors/messages";
+import { ErrorCode, type LaunchError } from "../errors/codes.js";
+import { err } from "../errors/decode.js";
+import type { Locale } from "../errors/messages.js";
 
 const NEAR_ACCOUNT =
   /^(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+$/;

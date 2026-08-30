@@ -1,4 +1,4 @@
-import { ErrorCode, type ErrorCodeName } from "./codes";
+import { ErrorCode, type ErrorCodeName } from "./codes.js";
 
 export const errorMessages = {
   en: {

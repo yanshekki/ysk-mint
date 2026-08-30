@@ -1,4 +1,4 @@
-import { ChainKey } from "./enums";
+import { ChainKey } from "./enums.js";
 
 export type ChainVm =
   | "evm"

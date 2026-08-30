@@ -8,7 +8,7 @@ YSK Mint 是瀏覽器應用，用於鏈上市場、持倉與發幣。並無 YSK 
 
 | | |
 |--|--|
-| **版本** | 0.5.0 |
+| **版本** | 1.0.0 |
 | **授權** | MIT |
 | **前端** | Vite + React + TypeScript（靜態 SPA） |
 | **合約** | Solidity 0.8.22、Foundry、OpenZeppelin 5.x |
@@ -51,8 +51,12 @@ YSK Mint 是瀏覽器應用，用於鏈上市場、持倉與發幣。並無 YSK 
 
 - `apps/web` — 靜態 SPA（市場、借貸、持倉、發幣、多語）
 - `packages/contracts` — Foundry（OFT、factory、LP 管理、鎖倉）
-- `packages/sdk` — 列舉、錯誤、校驗（與 Solidity 鏡像）
-- `packages/config` — 鏈註冊與數值上限
+- [`@ysk-mint/sdk`](https://www.npmjs.com/package/@ysk-mint/sdk) — 列舉、錯誤、校驗（與 Solidity 鏡像）
+- [`@ysk-mint/config`](https://www.npmjs.com/package/@ysk-mint/config) — 鏈註冊與數值上限
+
+```bash
+npm install @ysk-mint/sdk
+```
 
 ## 開發
 

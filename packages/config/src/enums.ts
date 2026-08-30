@@ -1,4 +1,4 @@
-import parity from "../enum-parity.json";
+import parity from "../enum-parity.json" with { type: "json" };
 
 export const ChainKey = parity.ChainKey;
 export const DexKind = parity.DexKind;

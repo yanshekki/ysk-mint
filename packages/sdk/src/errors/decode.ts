@@ -1,5 +1,5 @@
 import { decodeErrorResult } from "viem";
-import { launchErrorAbi } from "./abi";
+import { launchErrorAbi } from "./abi.js";
 import {
   ErrorCode,
   RETRYABLE_CODES,
@@ -7,8 +7,8 @@ import {
   type ErrorCodeName,
   type LaunchError,
   type LaunchErrorSeverity,
-} from "./codes";
-import { messageFor, type Locale } from "./messages";
+} from "./codes.js";
+import { messageFor, type Locale } from "./messages.js";
 
 function severityOf(code: string): LaunchErrorSeverity {
   if (USER_CODES.has(code)) return "user";

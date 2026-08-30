@@ -8,7 +8,7 @@ Live: [mint.ysk.hk](https://mint.ysk.hk). Source: [github.com/yanshekki/ysk-mint
 
 | | |
 |--|--|
-| **Version** | 0.5.0 |
+| **Version** | 1.0.0 |
 | **License** | MIT |
 | **Frontend** | Vite + React + TypeScript (static SPA) |
 | **Contracts** | Solidity 0.8.22, Foundry, OpenZeppelin 5.x |
@@ -51,8 +51,12 @@ Thank you. The app stays free to use, with no backend and no custody.
 
 - `apps/web` — static SPA (markets, lending, holdings, launch, i18n)
 - `packages/contracts` — Foundry (OFT, factory, LP manager, locker)
-- `packages/sdk` — enums, errors, validation (mirrors Solidity)
-- `packages/config` — chain registry and numeric bounds
+- [`@ysk-mint/sdk`](https://www.npmjs.com/package/@ysk-mint/sdk) — enums, errors, validation (mirrors Solidity)
+- [`@ysk-mint/config`](https://www.npmjs.com/package/@ysk-mint/config) — chain registry and numeric bounds
+
+```bash
+npm install @ysk-mint/sdk
+```
 
 ## Develop
 

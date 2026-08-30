@@ -1,7 +1,7 @@
 import { CHAINS } from "@ysk-mint/config";
-import { ErrorCode, type LaunchError } from "../errors/codes";
-import { err } from "../errors/decode";
-import type { Locale } from "../errors/messages";
+import { ErrorCode, type LaunchError } from "../errors/codes.js";
+import { err } from "../errors/decode.js";
+import type { Locale } from "../errors/messages.js";
 import { pad, type Address } from "viem";
 
 export type DeployedOFT = {

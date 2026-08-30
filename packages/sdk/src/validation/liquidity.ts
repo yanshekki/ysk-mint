@@ -1,7 +1,7 @@
 import { LOCK_MAX_SECONDS, LOCK_MIN_SECONDS, LockMode } from "@ysk-mint/config";
-import { ErrorCode, type LaunchError } from "../errors/codes";
-import { err } from "../errors/decode";
-import type { Locale } from "../errors/messages";
+import { ErrorCode, type LaunchError } from "../errors/codes.js";
+import { err } from "../errors/decode.js";
+import type { Locale } from "../errors/messages.js";
 
 export function validateLockMode(mode: number, locale: Locale = "en"): LaunchError[] {
   if (mode !== LockMode.Timed && mode !== LockMode.Burn) {

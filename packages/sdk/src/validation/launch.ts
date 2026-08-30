@@ -1,8 +1,8 @@
 import { CHAINS, ChainKey, type ChainKeyName } from "@ysk-mint/config";
-import { ErrorCode, type LaunchError } from "../errors/codes";
-import { err } from "../errors/decode";
-import type { Locale } from "../errors/messages";
-import { validateBasics, validateModuleFlags, validateSupplyMode } from "./token";
+import { ErrorCode, type LaunchError } from "../errors/codes.js";
+import { err } from "../errors/decode.js";
+import type { Locale } from "../errors/messages.js";
+import { validateBasics, validateModuleFlags, validateSupplyMode } from "./token.js";
 
 export type LaunchDraft = {
   name: string;
