@@ -31,6 +31,7 @@
   "nav": {
     "home": "Markets",
     "lp": "Markets",
+    "stocks": "US stocks",
     "lend": "Lending",
     "create": "Launch",
     "transfer": "Bridge",
@@ -78,6 +79,10 @@
     "oracle": "{{n}} pools, weighted",
     "oracleNote": "Live pool price, depth, and recent swaps where this chain publishes them.",
     "trades": "Recent trades",
+    "chart": "Price",
+    "chartTf1m": "1m",
+    "chartTf5m": "5m",
+    "chartTf15m": "15m",
     "noTrades": "No recent trades in this window.",
     "tradesRpc": "Could not load recent trades. Try again.",
     "noOnchainTrades": "Recent trades are not available on this chain.",
@@ -119,6 +124,13 @@
       "amount": "LP amount",
       "explorer": "Explorer"
     }
+  },
+  "stocks": {
+    "kicker": "Tokenized US stocks",
+    "hint": "On-chain wrappers of US stocks and ETFs — not listed shares. Price and depth come from DEX pools. No wallet required to browse.",
+    "empty": "No tokenized US stock pairs on the selected chains.",
+    "emptyFilter": "No US stock pairs match this search.",
+    "search": "Search ticker, venue, or address"
   },
   "lend": {
     "kicker": "On-chain",
@@ -883,6 +895,8 @@
   "seo": {
     "homeTitle": "Markets · YSK Mint",
     "homeDesc": "Live DEX pools. Price and depth come from on-chain reserves. No wallet required to browse.",
+    "stocksTitle": "US stocks · YSK Mint",
+    "stocksDesc": "Tokenized US stocks and ETFs as on-chain wrappers. Price and depth come from DEX pools. Not listed shares.",
     "lendTitle": "Lending · YSK Mint",
     "lendDesc": "Supply and borrow APY from on-chain rates. Read-only — deposit or borrow on the protocol’s site.",
     "lendAssetTitle": "{{symbol}} · Lending · YSK Mint",
@@ -892,7 +906,7 @@
     "createDesc": "Guided token launch on supported networks. You sign in your own wallet. Contracts are not audited.",
     "pairTitle": "{{pair}} · {{chain}} · YSK Mint",
     "pairFallback": "Trading pair · YSK Mint",
-    "pairDesc": "Live DEX price, depth, and recent swaps from on-chain pools.",
+    "pairDesc": "Live DEX price, depth, recent swaps, and a 15-minute pool chart from on-chain data.",
     "tokenTitle": "{{name}} · YSK Mint",
     "tokenFallback": "Token · YSK Mint",
     "tokenDesc": "On-chain token details. You sign in your own wallet. Contracts are not audited.",

@@ -11,7 +11,7 @@ A static React SPA talks to wallets and public RPC (and a few protocol HTTP endp
 1. `packages/contracts` — enums, errors, validation library, OFT, factory, LP manager, locker.
 2. `packages/config` — chain list, LayerZero endpoints, numeric constants, enum lock file, contract address slots (mainnet factories remain zero).
 3. `packages/sdk` — decode reverts, validate drafts, encode calldata.
-4. `apps/web` — locale router, document head, wallet, markets, lending, holdings, launch wizard, settings. No product HTTP API.
+4. `apps/web` — locale router, document head, wallet, markets, tokenized US stocks, lending, holdings, launch wizard, settings. No product HTTP API.
 
 ## Web app
 
@@ -23,7 +23,7 @@ Vite + React. Routes live under an optional locale prefix. Unprefixed paths are 
 
 ### On-chain reads
 
-DEX markets and pair pages read venue HTTP adapters and on-chain reserves. Native and Gecko adapters store USD TVL in `tvlQuote`; inverting a pair keeps that USD. Pair titles and headers resolve token symbols from catalog and venue metadata, not truncated mints. Lending pages read protocol rate views. Holdings merge wallet sessions and watch sets, then read balances, lending, LP, and staking. Token lists that paginate (Cosmos, XRPL, Aptos, Blockscout) follow continuation tokens; a failed holdings RPC is shown as “—”, not zero. Dead Blockscout hosts (BSC, Base, Linea, Blast, Mantle) use Ankr then NodeReal public indexers for token inventory and recent transfers; activity chips fail per chain instead of showing a fake 0. Discovery omits unpriced airdrops, trillion-unit supplies, and DEX quotes from pools with under about $1k depth. Hot RWAs sit in the baked catalog so V2 LP `candidatePairs` include them; Morpho positions read an allowlisted `marketId` set. Token and lock pages call `view`. Launch execution and OFT `send` are the signed paths.
+DEX markets and pair pages read venue HTTP adapters and on-chain reserves. Pair charts prefer one GeckoTerminal pool OHLCV call (15m × 1000); the trade tape remains a short Gecko `/trades` or EVM log window (cap 300). `/stocks` is the same market feed filtered to tokenized US stocks and US ETFs in the baked catalog; those pairs are omitted from `/`. Native and Gecko adapters store USD TVL in `tvlQuote`; inverting a pair keeps that USD. Pair titles and headers resolve token symbols from catalog and venue metadata, not truncated mints. Lending pages read protocol rate views. Holdings merge wallet sessions and watch sets, then read balances, lending, LP, and staking. Token lists that paginate (Cosmos, XRPL, Aptos, Blockscout) follow continuation tokens; a failed holdings RPC is shown as “—”, not zero. Dead Blockscout hosts (BSC, Base, Linea, Blast, Mantle) use Ankr then NodeReal public indexers for token inventory and recent transfers; activity chips fail per chain instead of showing a fake 0. Discovery omits unpriced airdrops, trillion-unit supplies, and DEX quotes from pools with under about $1k depth. Hot RWAs sit in the baked catalog so V2 LP `candidatePairs` include them; Morpho positions read an allowlisted `marketId` set. Token and lock pages call `view`. Launch execution and OFT `send` are the signed paths.
 
 ### RPC and outbound
 

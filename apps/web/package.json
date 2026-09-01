@@ -1,6 +1,6 @@
 {
   "name": "@ysk-mint/web",
-  "version": "1.2.2",
+  "version": "1.3.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,7 +10,8 @@
     "i18n:check": "node scripts/i18n-check.mjs",
     "preview": "vite preview",
     "verify:depth": "npx --yes tsx scripts/verify-depth.ts",
-    "verify:holdings": "npx --yes tsx scripts/verify-holdings.ts"
+    "verify:holdings": "npx --yes tsx scripts/verify-holdings.ts",
+    "verify:equity": "npx --yes tsx scripts/verify-equity.ts"
   },
   "dependencies": {
     "@near-wallet-selector/bitte-wallet": "10.1.4",
@@ -34,6 +35,7 @@
     "@ysk-mint/sdk": "workspace:*",
     "buffer": "^6.0.3",
     "i18next": "^24.2.3",
+    "lightweight-charts": "^5.2.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-i18next": "^15.4.1",

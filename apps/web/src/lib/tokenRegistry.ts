@@ -1,5 +1,6 @@
 import { featuredChains } from "@ysk-mint/config";
 import cmc from "./cmcCatalog.json";
+import { nameLooksLikeUsEquity } from "./tokenizedEquity.ts";
 
 export type TokenVm =
   | "evm"
@@ -156,9 +157,34 @@ const EXTRA: TokenRecord[] = [
   { id: "avax-bib01", vm: "evm", chainId: 43114, symbol: "bIB01", name: "Backed IB01 $ Treasury Bond 0-1yr", decimals: 18, address: "0xCA30c93B02514f86d5C86a6e375E3A330b435Fb5", icon: I("usdc") },
   { id: "eth-syrupusdc", vm: "evm", chainId: 1, symbol: "syrupUSDC", name: "Syrup USDC", decimals: 6, address: "0x80ac24aA929eaF5013f6436cdA2a7ba190f5Cc0b", icon: I("usdc") },
   { id: "eth-aaplx", vm: "evm", chainId: 1, symbol: "AAPLx", name: "Apple xStock", decimals: 18, address: "0x9d275685dC284C8eB1C79f6ABA7a63Dc75ec890a", icon: I("eth") },
+  { id: "avax-btsla", vm: "evm", chainId: 43114, symbol: "bTSLA", name: "Backed Tesla", decimals: 18, address: "0x14A5f2872396802C3Cc8942A39Ab3E4118EE5038", icon: I("avax") },
+  { id: "avax-bgoogl", vm: "evm", chainId: 43114, symbol: "bGOOGL", name: "Backed Alphabet Class A", decimals: 18, address: "0xebEe37aAf2905b7BDa7E3b928043862e982e8F32", icon: I("avax") },
+  { id: "avax-bcoin", vm: "evm", chainId: 43114, symbol: "bCOIN", name: "Backed Coinbase Global", decimals: 18, address: "0xbbcb0356bB9e6B3faa5cbF9E5f36185d53403Ac9", icon: I("avax") },
+  { id: "avax-bcspx", vm: "evm", chainId: 43114, symbol: "bCSPX", name: "Backed CSPX Core S&P 500", decimals: 18, address: "0x1e2C4fb7ede391d116E6B41cD0608260e8801d59", icon: I("avax") },
+  { id: "base-aaplc", vm: "evm", chainId: 8453, symbol: "AAPLc", name: "Apple Coinbase Tokenized Stock", decimals: 18, address: "0xb200000000000000000000C2e324d24d7eEcd1fb", icon: I("eth") },
+  { id: "base-nvdac", vm: "evm", chainId: 8453, symbol: "NVDAc", name: "NVIDIA Coinbase Tokenized Stock", decimals: 18, address: "0xb20000000000000000000078ee7ce2fE4908108C", icon: I("eth") },
+  { id: "base-googlc", vm: "evm", chainId: 8453, symbol: "GOOGLc", name: "Alphabet Coinbase Tokenized Stock", decimals: 18, address: "0xb2000000000000000000002D0BA3164cc74f58B7", icon: I("eth") },
+  { id: "base-metac", vm: "evm", chainId: 8453, symbol: "METAc", name: "Meta Coinbase Tokenized Stock", decimals: 18, address: "0xb2000000000000000000008bC8786B856E61707C", icon: I("eth") },
+  { id: "base-amznc", vm: "evm", chainId: 8453, symbol: "AMZNc", name: "Amazon Coinbase Tokenized Stock", decimals: 18, address: "0xb200000000000000000000d9192b6B456483C2E8", icon: I("eth") },
+  { id: "base-tslac", vm: "evm", chainId: 8453, symbol: "TSLAc", name: "Tesla Coinbase Tokenized Stock", decimals: 18, address: "0xb2000000000000000000001e800a7f5189430cD0", icon: I("eth") },
+  { id: "base-msftc", vm: "evm", chainId: 8453, symbol: "MSFTc", name: "Microsoft Coinbase Tokenized Stock", decimals: 18, address: "0xB200000000000000000000Ab99cFa739E253872B", icon: I("eth") },
+  { id: "base-coinc", vm: "evm", chainId: 8453, symbol: "COINc", name: "Coinbase Coinbase Tokenized Stock", decimals: 18, address: "0xb200000000000000000000c85a31389D71F3ecfb", icon: I("eth") },
 ];
 
 const fromCmc = (cmc as TokenRecord[]).filter((t) => t.address);
+
+/** Same CREATE2 xStock addresses as Ethereum; confirmed live on Optimism. */
+function cloneEthXstocksToOp(list: TokenRecord[]): TokenRecord[] {
+  const out: TokenRecord[] = [];
+  for (const t of list) {
+    if (t.vm !== "evm" || t.chainId !== 1 || !t.address) continue;
+    if (!t.address.startsWith("0x") && !t.address.startsWith("0X")) continue;
+    if (!nameLooksLikeUsEquity(t.symbol, t.name)) continue;
+    if (!/xstock/i.test(`${t.symbol} ${t.name}`)) continue;
+    out.push({ ...t, id: `${t.id}-op`, chainId: 10 });
+  }
+  return out;
+}
 
 function dedupeCatalog(list: TokenRecord[]) {
   const seen = new Set<string>();
@@ -172,7 +198,8 @@ function dedupeCatalog(list: TokenRecord[]) {
   return out;
 }
 
-export const TOKEN_CATALOG: TokenRecord[] = dedupeCatalog([...NATIVES, ...AUTO_NATIVES, ...EXTRA, ...fromCmc]);
+const SEEDED = [...EXTRA, ...fromCmc];
+export const TOKEN_CATALOG: TokenRecord[] = dedupeCatalog([...NATIVES, ...AUTO_NATIVES, ...SEEDED, ...cloneEthXstocksToOp(SEEDED)]);
 
 export function tokensFor(vm: TokenVm, chainId?: number) {
   return TOKEN_CATALOG.filter((t) => t.vm === vm && (chainId == null || t.chainId === chainId));

@@ -3,6 +3,7 @@ import { stripLocalePrefix } from "./locale.ts";
 
 export type SeoPage =
   | "home"
+  | "stocks"
   | "lend"
   | "lendAsset"
   | "create"
@@ -51,6 +52,7 @@ export function useSeoExtraState() {
 export function matchSeoPage(pathname: string): { page: SeoPage; noindex: boolean } {
   const p = stripLocalePrefix(pathname);
   if (p === "/") return { page: "home", noindex: false };
+  if (p === "/stocks") return { page: "stocks", noindex: false };
   if (p === "/lend") return { page: "lend", noindex: false };
   if (p.startsWith("/lend/")) return { page: "lendAsset", noindex: false };
   if (p === "/create") return { page: "create", noindex: false };

@@ -13,6 +13,7 @@ import i18n from "../lib/i18n.ts";
 
 const NAV = [
   ["/", "nav.lp"],
+  ["/stocks", "nav.stocks"],
   ["/lend", "nav.lend"],
   ["/create", "nav.create"],
   ["/transfer", "nav.transfer"],
@@ -22,12 +23,13 @@ const NAV = [
 
 const TAB_NAV = [
   ["/", "nav.lp", "markets"],
+  ["/stocks", "nav.stocks", "stocks"],
   ["/lend", "nav.lend", "lend"],
-  ["/create", "nav.create", "create"],
   ["/me", "nav.me", "me"],
 ] as const;
 
 const MORE_LINKS = [
+  ["/create", "nav.create"],
   ["/transfer", "nav.transfer"],
   ["/settings", "nav.settings"],
 ] as const;
@@ -100,19 +102,19 @@ function TabIcon({ name }: { name: (typeof TAB_NAV)[number][2] | "more" }) {
       </svg>
     );
   }
+  if (name === "stocks") {
+    return (
+      <svg {...common}>
+        <path {...stroke} d="M4 16l5-5 3 3 8-9" />
+        <path {...stroke} d="M15 5h5v5" />
+      </svg>
+    );
+  }
   if (name === "lend") {
     return (
       <svg {...common}>
         <rect {...stroke} x="3" y="6" width="18" height="13" rx="2" />
         <path {...stroke} d="M3 10h18M7 14h2M12 14h2" />
-      </svg>
-    );
-  }
-  if (name === "create") {
-    return (
-      <svg {...common}>
-        <circle {...stroke} cx="12" cy="12" r="8" />
-        <path {...stroke} d="M12 8v8M8 12h8" />
       </svg>
     );
   }

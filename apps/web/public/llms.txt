@@ -13,6 +13,7 @@ Unprefixed paths are Hong Kong written Chinese (zh-HK). Simplified Chinese is /z
 ## Public pages
 
 - / — DEX markets
+- /stocks — tokenized US stocks and ETFs (read-only DEX wrappers, not listed shares)
 - /lend — lending markets (read-only)
 - /create — token launch guide
 - /transfer — OFT bridge

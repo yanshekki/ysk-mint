@@ -4,6 +4,7 @@ import { formatUnits, parseAbiItem, type Address, type PublicClient } from "viem
 import type { VenuePool } from "./dexPools.ts";
 import { asAddr, canonAddr } from "./pairKey.ts";
 import { cacheGet, cacheKey, cacheLastGood, mapChunk, onVisibleInterval, POLICIES } from "./defi/cache.ts";
+import { fetchSolSwaps, seedSolSwaps } from "./solSwaps.ts";
 import { v2PairAbi } from "./defi/evm/abis.ts";
 
 const v2Swap = parseAbiItem(
@@ -15,7 +16,8 @@ const v3Swap = parseAbiItem(
 
 const WINDOW = 2000n;
 const MAX_SPAN = 10_000n;
-const MAX_ROWS = 50;
+const MAX_ROWS = 300;
+export const TRADE_TABLE_ROWS = 300;
 const token0Abi = [{ type: "function", name: "token0", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] }] as const;
 
 export type SwapRow = {
@@ -297,7 +299,8 @@ export function usePairSwaps(
   venuesRef.current = venues;
   useEffect(() => {
     const list = venuesRef.current;
-    if (!client || !list.length || !tokenA) {
+    const sol = chainId === 101;
+    if ((!client && !sol) || !list.length || !tokenA) {
       if (!list.length) {
         setRows([]);
         setRpcError(false);
@@ -305,7 +308,7 @@ export function usePairSwaps(
       return;
     }
     let cancelled = false;
-    const seeded = seedSwaps(chainId, list);
+    const seeded = sol ? seedSolSwaps(list) : seedSwaps(chainId, list);
     if (seeded.length) {
       setRows(seeded);
       setLoading(false);
@@ -313,7 +316,7 @@ export function usePairSwaps(
       setLoading(true);
     }
 
-    const run = () => fetchSwaps(client, list, tokenA, decA, decB, chainId);
+    const run = () => (sol ? fetchSolSwaps(list, tokenA) : fetchSwaps(client!, list, tokenA, decA, decB, chainId));
     const job = chainId ? trackLive(`trades:${chainId}`, chainId, "trades", run) : run();
     void job
       .then((r) => {
@@ -331,7 +334,7 @@ export function usePairSwaps(
         if (!cancelled) setLoading(false);
       });
     const stop = onVisibleInterval(30_000, () => {
-      if (cancelled || !client) return;
+      if (cancelled || (!client && !sol)) return;
       const again = chainId ? trackLive(`trades:${chainId}`, chainId, "trades", run) : run();
       void again
         .then((r) => {

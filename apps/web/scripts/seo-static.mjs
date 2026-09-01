@@ -25,7 +25,7 @@ const HTML_LANG = {
   fr: "fr",
   de: "de",
 };
-const PATHS = ["/", "/lend", "/create", "/transfer", "/about", "/donate", "/terms", "/disclaimer"];
+const PATHS = ["/", "/stocks", "/lend", "/create", "/transfer", "/about", "/donate", "/terms", "/disclaimer"];
 const LEGAL = ["about", "donate", "terms", "disclaimer"];
 
 function localePath(path, locale) {

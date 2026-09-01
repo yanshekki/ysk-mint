@@ -31,6 +31,13 @@ function appChildren(): RouteObject[] {
       },
     },
     {
+      path: "stocks",
+      lazy: async () => {
+        const { StocksPage } = await import("../features/stocks/StocksPage.tsx");
+        return { Component: StocksPage };
+      },
+    },
+    {
       path: "create",
       lazy: async () => {
         const { CreatePage } = await import("../features/wizard/CreatePage.tsx");

@@ -31,6 +31,7 @@
   "nav": {
     "home": "Märkte",
     "lp": "Märkte",
+    "stocks": "US-Aktien",
     "lend": "Kredit",
     "create": "Starten",
     "transfer": "Brücke",
@@ -78,6 +79,10 @@
     "oracle": "{{n}} Pools, gewichtet",
     "oracleNote": "Live-Poolpreis, Tiefe und aktuelle Tauschvorgänge, soweit dieses Netzwerk sie veröffentlicht.",
     "trades": "Aktuelle Abschlüsse",
+    "chart": "Preis",
+    "chartTf1m": "1m",
+    "chartTf5m": "5m",
+    "chartTf15m": "15m",
     "noTrades": "Keine aktuellen Abschlüsse in diesem Fenster.",
     "tradesRpc": "Aktuelle Abschlüsse ließen sich nicht laden. Versuch es erneut.",
     "noOnchainTrades": "Aktuelle Abschlüsse sind auf diesem Netzwerk nicht verfügbar.",
@@ -119,6 +124,13 @@
       "amount": "LP-Betrag",
       "explorer": "Blockexplorer"
     }
+  },
+  "stocks": {
+    "kicker": "Tokenisierte US-Aktien",
+    "hint": "On-Chain-Hüllen von US-Aktien und ETFs — keine börsennotierten Anteile. Preis und Tiefe stammen aus DEX-Pools. Zum Ansehen keine Wallet nötig.",
+    "empty": "Keine tokenisierten US-Aktienpaare auf den gewählten Ketten.",
+    "emptyFilter": "Keine US-Aktienpaare passen zu dieser Suche.",
+    "search": "Ticker, Venue oder Adresse suchen"
   },
   "lend": {
     "kicker": "On-Chain",
@@ -883,6 +895,8 @@
   "seo": {
     "homeTitle": "Märkte · YSK Mint",
     "homeDesc": "Live-DEX-Pools. Preis und Tiefe kommen aus On-Chain-Reserven. Zum Durchstöbern brauchst du keine Wallet.",
+    "stocksTitle": "US-Aktien · YSK Mint",
+    "stocksDesc": "Tokenisierte US-Aktien und ETFs als On-Chain-Hüllen. Preis und Tiefe aus DEX-Pools. Keine börsennotierten Anteile.",
     "lendTitle": "Kredit · YSK Mint",
     "lendDesc": "Einlage- und Kredit-APY aus On-Chain-Sätzen. Nur Lesen — einzahlen oder leihen auf der Seite des Protokolls.",
     "lendAssetTitle": "{{symbol}} · Kredit · YSK Mint",
@@ -892,7 +906,7 @@
     "createDesc": "Geführter Token-Start auf unterstützten Netzwerken. Du unterschreibst in deiner eigenen Wallet. Verträge sind nicht geprüft.",
     "pairTitle": "{{pair}} · {{chain}} · YSK Mint",
     "pairFallback": "Handelspaar · YSK Mint",
-    "pairDesc": "Live-DEX-Preis, Tiefe und aktuelle Tauschvorgänge aus On-Chain-Pools.",
+    "pairDesc": "Live-DEX-Preis, Tiefe, aktuelle Tauschvorgänge und ein 15-Minuten-Poolchart aus On-Chain-Daten.",
     "tokenTitle": "{{name}} · YSK Mint",
     "tokenFallback": "Token · YSK Mint",
     "tokenDesc": "On-Chain-Tokendetails. Du unterschreibst in deiner eigenen Wallet. Verträge sind nicht geprüft.",

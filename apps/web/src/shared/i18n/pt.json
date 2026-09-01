@@ -31,6 +31,7 @@
   "nav": {
     "home": "Mercados",
     "lp": "Mercados",
+    "stocks": "Ações EUA",
     "lend": "Empréstimos",
     "create": "Lançar",
     "transfer": "Ponte",
@@ -78,6 +79,10 @@
     "oracle": "{{n}} pools, ponderado",
     "oracleNote": "Preço do pool, profundidade e trocas recentes quando esta rede os publica.",
     "trades": "Negociações recentes",
+    "chart": "Preço",
+    "chartTf1m": "1m",
+    "chartTf5m": "5m",
+    "chartTf15m": "15m",
     "noTrades": "Nenhuma negociação recente nesta janela.",
     "tradesRpc": "Não foi possível carregar as negociações recentes. Tente de novo.",
     "noOnchainTrades": "Negociações recentes não estão disponíveis nesta rede.",
@@ -119,6 +124,13 @@
       "amount": "Quantidade LP",
       "explorer": "Explorador"
     }
+  },
+  "stocks": {
+    "kicker": "Ações tokenizadas dos EUA",
+    "hint": "Invólucros on-chain de ações e ETFs dos EUA — não são ações listadas. Preço e profundidade vêm de pools DEX. Não precisa de carteira para ver.",
+    "empty": "Não há pares de ações tokenizadas dos EUA nas cadeias selecionadas.",
+    "emptyFilter": "Nenhum par de ações dos EUA corresponde a esta busca.",
+    "search": "Buscar ticker, venue ou endereço"
   },
   "lend": {
     "kicker": "Na blockchain",
@@ -883,6 +895,8 @@
   "seo": {
     "homeTitle": "Mercados · YSK Mint",
     "homeDesc": "Pools DEX ao vivo. Preço e profundidade vêm das reservas na blockchain. Não precisa de carteira para navegar.",
+    "stocksTitle": "Ações EUA · YSK Mint",
+    "stocksDesc": "Ações e ETFs dos EUA tokenizados como invólucros on-chain. Preço e profundidade de pools DEX. Não são ações listadas.",
     "lendTitle": "Empréstimos · YSK Mint",
     "lendDesc": "APY de depósito e empréstimo a partir das taxas na blockchain. Somente leitura — deposite ou tome emprestado no site do protocolo.",
     "lendAssetTitle": "{{symbol}} · Empréstimos · YSK Mint",
@@ -892,7 +906,7 @@
     "createDesc": "Lançamento guiado de token nas redes compatíveis. Você assina na sua própria carteira. Os contratos não são auditados.",
     "pairTitle": "{{pair}} · {{chain}} · YSK Mint",
     "pairFallback": "Par de trading · YSK Mint",
-    "pairDesc": "Preço DEX ao vivo, profundidade e trocas recentes a partir de pools na blockchain.",
+    "pairDesc": "Preço DEX ao vivo, profundidade, trocas recentes e um gráfico de 15 minutos a partir de dados on-chain.",
     "tokenTitle": "{{name}} · YSK Mint",
     "tokenFallback": "Token · YSK Mint",
     "tokenDesc": "Detalhes do token na blockchain. Você assina na sua própria carteira. Os contratos não são auditados.",

@@ -17,6 +17,7 @@ import { useLiveStatus } from "../../lib/liveStatus.ts";
 import { SortHead, useSort } from "../../shared/ui/SortTable.tsx";
 import { Metric } from "../../shared/ui/Metric.tsx";
 import { useUserSettings } from "../../lib/userSettings.ts";
+import { isTokenizedUsEquityPair } from "../../lib/usEquity.ts";
 
 /** High-usage chains shown before 「更多」. Order follows featuredChains(). */
 const PRIMARY_MARKET_IDS = new Set([1, 101, 56, 8453, 42161, 43114, 137, 784, 607, 637, 999, 146, 80094]);
@@ -142,11 +143,12 @@ export function LpPage() {
     return r.depth;
   }, []);
   const marketFiltered = useMemo(() => {
+    const rows = markets.rows.filter((r) => !isTokenizedUsEquityPair(r));
     const q = marketQ.trim().toLowerCase();
-    if (!q) return markets.rows;
+    if (!q) return rows;
     const addrQ = q.startsWith("0x") || (q.length >= 8 && /^[0-9a-f]+$/.test(q));
     const parts = q.split(/[/\s]+/).filter(Boolean);
-    return markets.rows.filter((r) => {
+    return rows.filter((r) => {
       if (parts.length >= 2) {
         const [qa, qb] = parts;
         return (symHit(r.symbolA, qa) && symHit(r.symbolB, qb)) || (symHit(r.symbolA, qb) && symHit(r.symbolB, qa));

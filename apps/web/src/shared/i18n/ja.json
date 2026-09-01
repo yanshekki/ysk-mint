@@ -31,6 +31,7 @@
   "nav": {
     "home": "市場",
     "lp": "市場",
+    "stocks": "米株",
     "lend": "レンディング",
     "create": "発行",
     "transfer": "ブリッジ",
@@ -78,6 +79,10 @@
     "oracle": "{{n}} プール、加重",
     "oracleNote": "このチェーンが公開しているライブのプール価格、深さ、直近スワップ。",
     "trades": "直近の約定",
+    "chart": "価格",
+    "chartTf1m": "1分",
+    "chartTf5m": "5分",
+    "chartTf15m": "15分",
     "noTrades": "この期間に直近の約定はありません。",
     "tradesRpc": "直近の約定を読み込めませんでした。再試行してください。",
     "noOnchainTrades": "このチェーンでは直近の約定を取得できません。",
@@ -119,6 +124,13 @@
       "amount": "LP 数量",
       "explorer": "エクスプローラー"
     }
+  },
+  "stocks": {
+    "kicker": "トークン化米株",
+    "hint": "米株および米株 ETF のオンチェーン包装であり、上場株式ではありません。価格と深さは DEX プールから取得します。閲覧にウォレットは不要です。",
+    "empty": "選択したチェーンにトークン化米株のペアはありません。",
+    "emptyFilter": "この検索に一致する米株はありません。",
+    "search": "ティッカー、会場、またはアドレスを検索"
   },
   "lend": {
     "kicker": "オンチェーン",
@@ -883,6 +895,8 @@
   "seo": {
     "homeTitle": "市場 · YSK Mint",
     "homeDesc": "ライブ DEX プール。価格と深さはオンチェーン準備金から取得します。閲覧にウォレットは不要です。",
+    "stocksTitle": "米株 · YSK Mint",
+    "stocksDesc": "米株および米株 ETF のオンチェーン包装。価格と深さは DEX プールから。上場株式ではありません。",
     "lendTitle": "レンディング · YSK Mint",
     "lendDesc": "預入・借入 APY はオンチェーン金利です。閲覧のみ — 預入や借入はプロトコルのサイトで行います。",
     "lendAssetTitle": "{{symbol}} · レンディング · YSK Mint",
@@ -892,7 +906,7 @@
     "createDesc": "対応ネットワークでの案内付きトークン発行。署名は自分のウォレットで行います。コントラクトは監査されていません。",
     "pairTitle": "{{pair}} · {{chain}} · YSK Mint",
     "pairFallback": "取引ペア · YSK Mint",
-    "pairDesc": "オンチェーンプールからのライブ DEX 価格、深さ、直近スワップ。",
+    "pairDesc": "オンチェーンデータからのライブ DEX 価格、深さ、直近スワップ、15分チャート。",
     "tokenTitle": "{{name}} · YSK Mint",
     "tokenFallback": "トークン · YSK Mint",
     "tokenDesc": "オンチェーンのトークン詳細。署名は自分のウォレットで行います。コントラクトは監査されていません。",

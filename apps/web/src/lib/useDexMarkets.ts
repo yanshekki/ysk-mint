@@ -104,14 +104,20 @@ function marketKey(id: number) {
   return NATIVE.has(id) ? cacheKey("markets", id, "n12") : cacheKey("markets", id, "g4");
 }
 
-function marketIds(chainId: number | "all", disabled: number[]) {
+export function scansMarketChain(chainId: number) {
+  return NATIVE.has(chainId) || !SKIP.has(chainId);
+}
+
+function marketIds(chainId: number | "all", disabled: number[], only?: ReadonlySet<number>) {
   ensureProtocols();
   const off = new Set(disabled);
+  const ok = (id: number) =>
+    !off.has(id) && protocolsOn(id).length > 0 && scansMarketChain(id) && (!only || only.has(id));
   return chainId === "all"
     ? featuredChains()
-        .filter((c) => !c.testnet && !off.has(c.chainId) && protocolsOn(c.chainId).length > 0)
+        .filter((c) => !c.testnet && ok(c.chainId))
         .map((c) => c.chainId)
-    : !off.has(chainId) && protocolsOn(chainId).length
+    : ok(chainId)
       ? [chainId]
       : [];
 }
@@ -125,15 +131,16 @@ function seedRows(ids: number[]) {
   return sortMarkets(mergeOriented(out) as MarketRow[]);
 }
 
-export function useDexMarkets(chainId: number | "all") {
+export function useDexMarkets(chainId: number | "all", only?: ReadonlySet<number>) {
   const [rows, setRows] = useState<MarketRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const disabledChains = useUserSettings((s) => s.disabledChains);
+  const onlyKey = only ? [...only].sort((a, b) => a - b).join(",") : "";
 
   useEffect(() => {
     let cancelled = false;
-    const ids = marketIds(chainId, disabledChains);
+    const ids = marketIds(chainId, disabledChains, only);
     const byChain = new Map<number, MarketRow[]>();
 
     const publish = () => {
@@ -234,7 +241,7 @@ export function useDexMarkets(chainId: number | "all") {
       stopPoll();
       useLiveStatus.getState().clear("markets:");
     };
-  }, [chainId, disabledChains]);
+  }, [chainId, disabledChains, only, onlyKey]);
 
   return { rows, loading, error };
 }

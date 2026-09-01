@@ -12,15 +12,21 @@ Launch, lock, and related contracts are **not audited**. Mainnet factory address
 
 **Read on-chain. No wallet required to browse.**
 
-The home route `/` lists live DEX pools: pair, chain, USD quote, and **Depth USD** (the pool’s dollar value). When a venue publishes USD TVL (Raydium `tvl`, Orca `tvlUsdc`, Cetus `pure_tvl_in_usd`, Gecko `reserve_in_usd`, and the other wired native adapters), that figure is shown. Otherwise the app converts both reserves through the same USD quote as the price column. The column is always labeled Depth USD — not a quote-token or mint. Filter by chain or search. Pagination and filters stay in this browser session. Quotes are spots, not a promise of fill.
+The home route `/` lists live DEX pools: pair, chain, USD quote, and **Depth USD** (the pool’s dollar value). When a venue publishes USD TVL (Raydium `tvl`, Orca `tvlUsdc`, Cetus `pure_tvl_in_usd`, Gecko `reserve_in_usd`, and the other wired native adapters), that figure is shown. Otherwise the app converts both reserves through the same USD quote as the price column. The column is always labeled Depth USD — not a quote-token or mint. Filter by chain or search. Pagination and filters stay in this browser session. Quotes are spots, not a promise of fill. Tokenized US stocks and US ETFs are listed on `/stocks`, not here.
 
 YSK launch-pool rows (when a factory is configured) appear alongside third-party venues. Mainnet factories are still zero, so those product pools are empty until a deploy.
+
+## Tokenized US stocks
+
+**Read on-chain. No wallet required to browse.**
+
+`/stocks` lists DEX pools for tokenized US stocks and US ETFs already in the baked catalog (xStock, Ondo, bStocks, Republic pre-IPO, Coinbase B20 on Base, and Backed bTokens on Avalanche). These are on-chain wrappers, not listed shares. The table is the same shape as Markets: pair, chain, USD quote, Depth USD. Only chains that hold those wrappers are listed and scanned (ETH, OP, Base, Arb, BNB, SOL, TON, AVAX, HyperEVM, Mantle, Ink, X Layer where catalogued). Open the pair page to use the venue’s DEX. Treasuries, gold, credit RWAs, and non-US names stay off this desk.
 
 ## Trading pairs
 
 **Read on-chain. Swap on the venue’s site.**
 
-`/pair/:chainId/:tokenA/:tokenB` shows token **symbols** (for example `SOL / USDC`) in the title, pool rows, headers, and SEO — not truncated mint or contract addresses. Pool addresses stay as a small technical id. Columns are USD quote, base-token reserve, and Depth USD. YSK Mint does not execute a swap. Open the DEX from the pair page when you want to trade.
+`/pair/:chainId/:tokenA/:tokenB` shows token **symbols** (for example `SOL / USDC`) in the title, pool rows, headers, and SEO — not truncated mint or contract addresses. Pool addresses stay as a small technical id. Columns are USD quote, base-token reserve, and Depth USD. The price chart uses one public GeckoTerminal pool OHLCV call (15-minute candles, up to 1000 ≈ 10 days). If that feed is missing, it falls back to recent pool swaps (EVM logs; Solana via GeckoTerminal trades). The trade table shows up to 300 prints — Gecko `/trades` and our EVM log scan both stop there. It is not a broker or TradingView market feed. YSK Mint does not execute a swap. Open the DEX from the pair page when you want to trade.
 
 ## Lending
 

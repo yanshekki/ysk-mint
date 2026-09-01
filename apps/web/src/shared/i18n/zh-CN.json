@@ -31,6 +31,7 @@
   "nav": {
     "home": "市场",
     "lp": "市场",
+    "stocks": "美股",
     "lend": "借贷",
     "create": "发币",
     "transfer": "跨链",
@@ -78,6 +79,10 @@
     "oracle": "{{n}} 个池加权",
     "oracleNote": "即时池价、深度，以及此链有公开的近期成交。",
     "trades": "近期成交",
+    "chart": "价格",
+    "chartTf1m": "1分",
+    "chartTf5m": "5分",
+    "chartTf15m": "15分",
     "noTrades": "此时段没有近期成交。",
     "tradesRpc": "无法读取近期成交，请稍后再试。",
     "noOnchainTrades": "此链没有近期成交资料。",
@@ -119,6 +124,13 @@
       "amount": "LP 数量",
       "explorer": "区块浏览器"
     }
+  },
+  "stocks": {
+    "kicker": "代币化美股",
+    "hint": "美股及美股 ETF 的链上包装，并非上市股票。报价与深度取自去中心化交易所流动池。无须连接钱包即可浏览。",
+    "empty": "所选链暂无代币化美股池。",
+    "emptyFilter": "没有符合此搜索的美股。",
+    "search": "搜索美股代号、场地或地址"
   },
   "lend": {
     "kicker": "链上",
@@ -883,6 +895,8 @@
   "seo": {
     "homeTitle": "市场 · YSK Mint",
     "homeDesc": "各链去中心化交易所的流动池。报价与深度取自链上储备，无需连接钱包即可查看。",
+    "stocksTitle": "美股 · YSK Mint",
+    "stocksDesc": "美股及美股 ETF 的链上包装。报价与深度取自去中心化交易所流动池。并非上市股票。",
     "lendTitle": "借贷 · YSK Mint",
     "lendDesc": "供应及借出年利率取自链上。本页只供查阅，存入或借出请到协议网站。",
     "lendAssetTitle": "{{symbol}} · 借贷 · YSK Mint",
@@ -892,7 +906,7 @@
     "createDesc": "在已支持网络逐步发行代币。由你在自有钱包签署。合约未经审计。",
     "pairTitle": "{{pair}} · {{chain}} · YSK Mint",
     "pairFallback": "交易对 · YSK Mint",
-    "pairDesc": "去中心化交易所即时价格、深度及近期成交，取自链上流动池。",
+    "pairDesc": "去中心化交易所即时价格、深度、近期成交，以及 15 分钟池图，取自链上资料。",
     "tokenTitle": "{{name}} · YSK Mint",
     "tokenFallback": "代币 · YSK Mint",
     "tokenDesc": "链上代币资料。由你在自有钱包签署。合约未经审计。",

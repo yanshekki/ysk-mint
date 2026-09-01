@@ -12,15 +12,21 @@
 
 **讀取鏈上。無須連接錢包即可瀏覽。**
 
-首頁 `/` 列出即時去中心化交易所流動池：交易對、鏈、美元報價與**深度 USD**（池內美金總值）。場地若已公布美元 TVL（Raydium `tvl`、Orca `tvlUsdc`、Cetus `pure_tvl_in_usd`、Gecko `reserve_in_usd` 及其他已接線的原生適配器），則顯示該數字；否則用與報價欄相同的美元價，把兩邊儲備換成美金。欄名固定為「深度 USD」，不以報價代幣或 mint 當單位。可按鏈篩選或搜尋。分頁及篩選留在本瀏覽器工作階段。報價為即時價，並非成交保證。
+首頁 `/` 列出即時去中心化交易所流動池：交易對、鏈、美元報價與**深度 USD**（池內美金總值）。場地若已公布美元 TVL（Raydium `tvl`、Orca `tvlUsdc`、Cetus `pure_tvl_in_usd`、Gecko `reserve_in_usd` 及其他已接線的原生適配器），則顯示該數字；否則用與報價欄相同的美元價，把兩邊儲備換成美金。欄名固定為「深度 USD」，不以報價代幣或 mint 當單位。可按鏈篩選或搜尋。分頁及篩選留在本瀏覽器工作階段。報價為即時價，並非成交保證。代幣化美股及美股 ETF 列於 `/stocks`，不在此頁。
 
 本產品發幣池（factory 已配置時）與第三方場地並列。主網 factory 仍為零，故在部署前該等產品池為空。
+
+## 代幣化美股
+
+**讀取鏈上。無須連接錢包即可瀏覽。**
+
+`/stocks` 列出烘焙目錄中已有的代幣化美股及美股 ETF 流動池（xStock、Ondo、bStocks、Republic 上市前包裝、Base 上的 Coinbase B20、Avalanche 的 Backed bToken）。此為鏈上包裝，並非上市股票。表格與市場相同：交易對、鏈、美元報價、深度 USD。只列出並掃描持有該等包裝的鏈（目錄所及的 ETH、OP、Base、Arb、BNB、SOL、TON、AVAX、HyperEVM、Mantle、Ink、X Layer）。打開交易對頁即可到場地的去中心化交易所。國債、黃金、信貸 RWA 及非美名稱不在此桌。
 
 ## 交易對
 
 **讀取鏈上。兌換請到場地網站。**
 
-`/pair/:chainId/:tokenA/:tokenB` 在標題、池列、表頭及 SEO 顯示代幣**代號**（例如 `SOL / USDC`），而非截斷的 mint 或合約地址。池地址留作細字技術編號。欄位為美元報價、基礎代幣儲備及深度 USD。YSK Mint 並不執行兌換。若要交易，請從交易對頁開啟該去中心化交易所。
+`/pair/:chainId/:tokenA/:tokenB` 在標題、池列、表頭及 SEO 顯示代幣**代號**（例如 `SOL / USDC`），而非截斷的 mint 或合約地址。池地址留作細字技術編號。欄位為美元報價、基礎代幣儲備及深度 USD。價格圖一次取 GeckoTerminal 池 OHLCV（15 分鐘 K，最多 1000 根，約 10 日）。若該饋源沒有資料，則回退到近期池成交（EVM 讀 Swap 日誌；Solana 經 GeckoTerminal trades）。成交表最多 300 筆——Gecko `/trades` 與本機 EVM 日誌掃描都停在此上限。並非券商或 TradingView 行情。YSK Mint 並不執行兌換。若要交易，請從交易對頁開啟該去中心化交易所。
 
 ## 借貸
 
@@ -85,7 +91,7 @@
 
 **靜態文稿。無須簽署。**
 
-頁腳：[關於](https://mint.ysk.hk/about)、[捐助](https://mint.ysk.hk/donate)、[使用條款](https://mint.ysk.hk/terms)、[免責聲明](https://mint.ysk.hk/disclaimer)。頂欄字標 **YSK Mint** 在手機、平板及桌面均顯示。底欄在任何寬度都顯示 **Powered by YSK Limited** 及烘焙嘅應用版本（`v…`）；若 `/version.json` 的 `build` 不同，會提示重新整理（不會自動 reload）。寬度 ≤1024px 時，法律連結放在「更多」；Powered by 與 `v…` 仍在 tab 上方。捐助為自願饋贈，不構成代幣或服務的買賣。地址與捐助頁相同：`yanshekki.eth`、`yanshekki.near`、`$yanshekki`。
+頁腳：[關於](https://mint.ysk.hk/about)、[捐助](https://mint.ysk.hk/donate)、[使用條款](https://mint.ysk.hk/terms)、[免責聲明](https://mint.ysk.hk/disclaimer)。頂欄字標 **YSK Mint** 在手機、平板及桌面均顯示。底欄在任何寬度都顯示 **Powered by YSK Limited** 及烘焙的應用版本（`v…`）；若 `/version.json` 的 `build` 不同，會提示重新整理（不會自動 reload）。寬度 ≤1024px 時，法律連結放在「更多」；Powered by 與 `v…` 仍在 tab 上方。捐助為自願饋贈，不構成代幣或服務的買賣。地址與捐助頁相同：`yanshekki.eth`、`yanshekki.near`、`$yanshekki`。
 
 ## 語言與網址
 

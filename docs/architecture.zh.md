@@ -11,7 +11,7 @@
 1. `packages/contracts` — 列舉、錯誤、校驗庫、OFT、factory、流動性管理、鎖倉。
 2. `packages/config` — 鏈清單、LayerZero endpoint、數值常數、列舉鎖定檔、合約地址欄位（主網 factory 仍為零）。
 3. `packages/sdk` — 解碼 revert、校驗草稿、編碼 calldata。
-4. `apps/web` — 語言路由、文件標頭、錢包、市場、借貸、持倉、發幣引導、設定。沒有產品 HTTP API。
+4. `apps/web` — 語言路由、文件標頭、錢包、市場、代幣化美股、借貸、持倉、發幣引導、設定。沒有產品 HTTP API。
 
 ## 網頁應用
 
@@ -23,7 +23,7 @@ Vite + React。路由可帶語言前綴。無前綴路徑為 zh-HK；`/zh-CN`、
 
 ### 鏈上讀取
 
-去中心化交易所市場及交易對頁讀取場地 HTTP 適配器及鏈上儲備。原生及 Gecko 適配器把美元 TVL 存入 `tvlQuote`；反轉交易對時保留該美金。標題與表頭由目錄及場地 metadata 解析代幣代號，而非截斷 mint。借貸頁讀取協議利率視圖。持倉合併錢包工作階段與觀察組，再讀取結餘、借貸、流動性及質押。會跟 Cosmos、XRPL、Aptos、Blockscout 等分頁延續；持倉 RPC 失敗顯示「—」，不會當 0。已死的 Blockscout 主機（BSC、Base、Linea、Blast、Mantle）改用 Ankr，再試 NodeReal 公開索引讀代幣清單及近期轉帳；活動 chip 按鏈失敗，不會顯示假的 0。發現會略過無報價空投、兆級供應，以及流動性不足約 1,000 美元的 DEX 報價。熱門 RWA 寫入烘焙目錄，V2 LP `candidatePairs` 會跟；Morpho 倉位讀白名單 `marketId`。代幣頁與鎖倉頁呼叫 `view`。發幣執行及 OFT `send` 為須簽署的路徑。
+去中心化交易所市場及交易對頁讀取場地 HTTP 適配器及鏈上儲備。交易對圖表優先一次取 GeckoTerminal 池 OHLCV（15 分 × 1000）；成交帶仍是短窗的 Gecko `/trades` 或 EVM 日誌（上限 300）。`/stocks` 用同一市場資料，只保留烘焙目錄中的代幣化美股及美股 ETF；該等交易對不會出現在 `/`。原生及 Gecko 適配器把美元 TVL 存入 `tvlQuote`；反轉交易對時保留該美金。標題與表頭由目錄及場地 metadata 解析代幣代號，而非截斷 mint。借貸頁讀取協議利率視圖。持倉合併錢包工作階段與觀察組，再讀取結餘、借貸、流動性及質押。會跟 Cosmos、XRPL、Aptos、Blockscout 等分頁延續；持倉 RPC 失敗顯示「—」，不會當 0。已死的 Blockscout 主機（BSC、Base、Linea、Blast、Mantle）改用 Ankr，再試 NodeReal 公開索引讀代幣清單及近期轉帳；活動 chip 按鏈失敗，不會顯示假的 0。發現會略過無報價空投、兆級供應，以及流動性不足約 1,000 美元的 DEX 報價。熱門 RWA 寫入烘焙目錄，V2 LP `candidatePairs` 會跟；Morpho 倉位讀白名單 `marketId`。代幣頁與鎖倉頁呼叫 `view`。發幣執行及 OFT `send` 為須簽署的路徑。
 
 ### RPC 與外連排隊
 
@@ -31,7 +31,7 @@ Vite + React。路由可帶語言前綴。無前綴路徑為 zh-HK；`/zh-CN`、
 
 ### 靜態託管與快取
 
-SPA 以靜態檔上傳，Cloudflare DNS proxy 開住。Vite 把 JS／CSS 編成 `/assets/` 帶 hash 的檔，edge 可存一年（`immutable`）。HTML（`index.html` 及預渲染法律頁）必須再驗證（`Cache-Control: no-cache`）。`/version.json` 為 `no-store`，Cloudflare 須 **Bypass cache**，否則新上傳睇唔到。Origin 片段：[deploy/origin-cache.conf](../deploy/origin-cache.conf)。Cache Rule：Bypass `/version.json`、`/koios*`、`*.html` 及 `/`；`/assets/*` Eligible 且 Edge TTL 一年。Origin 另外把 `/koios/` 反代到 Koios（`api.koios.rest`）：Koios 的 POST 回應冇 `Access-Control-Allow-Origin`，瀏覽器不能直接讀 `api.koios.rest`。Cardano 持倉按 stake key 加總全部付款地址的 UTXO，而不是 ADA Handle 單一 `addr1`。唔好用全站 Cache Everything。規則未生效前，每次上傳要 **Purge Everything**，否則 edge 仍係舊 HTML（因而舊 hashed bundle）。頂欄字標 YSK Mint 在任何寬度都顯示。頁腳在手機、平板及桌面都顯示烘焙嘅 `v…` 及 Powered by；若 `/version.json` 的 `build` 不同，會提示重新整理。不加 service worker。
+SPA 以靜態檔上傳，Cloudflare DNS proxy 開啟。Vite 把 JS／CSS 編成 `/assets/` 帶 hash 的檔，edge 可存一年（`immutable`）。HTML（`index.html` 及預渲染法律頁）必須再驗證（`Cache-Control: no-cache`）。`/version.json` 為 `no-store`，Cloudflare 須 **Bypass cache**，否則新上傳看不見。Origin 片段：[deploy/origin-cache.conf](../deploy/origin-cache.conf)。Cache Rule：Bypass `/version.json`、`/koios*`、`*.html` 及 `/`；`/assets/*` Eligible 且 Edge TTL 一年。Origin 另外把 `/koios/` 反代到 Koios（`api.koios.rest`）：Koios 的 POST 回應沒有 `Access-Control-Allow-Origin`，瀏覽器不能直接讀 `api.koios.rest`。Cardano 持倉按 stake key 加總全部付款地址的 UTXO，而不是 ADA Handle 單一 `addr1`。不要用全站 Cache Everything。規則未生效前，每次上傳要 **Purge Everything**，否則 edge 仍是舊 HTML（因而仍是舊 hashed bundle）。頂欄字標 YSK Mint 在任何寬度都顯示。頁腳在手機、平板及桌面都顯示烘焙的 `v…` 及 Powered by；若 `/version.json` 的 `build` 不同，會提示重新整理。不加 service worker。
 
 ## 代幣部署
 

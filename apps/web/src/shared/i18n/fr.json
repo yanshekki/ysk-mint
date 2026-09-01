@@ -31,6 +31,7 @@
   "nav": {
     "home": "Marchés",
     "lp": "Marchés",
+    "stocks": "Actions US",
     "lend": "Prêts",
     "create": "Lancer",
     "transfer": "Pont",
@@ -78,6 +79,10 @@
     "oracle": "{{n}} pools, pondéré",
     "oracleNote": "Prix du pool, profondeur et échanges récents lorsque cette chaîne les publie.",
     "trades": "Échanges récents",
+    "chart": "Prix",
+    "chartTf1m": "1m",
+    "chartTf5m": "5m",
+    "chartTf15m": "15m",
     "noTrades": "Aucun échange récent dans cette fenêtre.",
     "tradesRpc": "Impossible de charger les échanges récents. Réessayez.",
     "noOnchainTrades": "Les échanges récents ne sont pas disponibles sur cette chaîne.",
@@ -119,6 +124,13 @@
       "amount": "Montant LP",
       "explorer": "Explorateur"
     }
+  },
+  "stocks": {
+    "kicker": "Actions US tokenisées",
+    "hint": "Enveloppes on-chain d’actions et d’ETF américains — ce ne sont pas des titres cotés. Prix et profondeur viennent des pools DEX. Aucun portefeuille pour consulter.",
+    "empty": "Aucun pair d’actions US tokenisées sur les chaînes sélectionnées.",
+    "emptyFilter": "Aucun pair d’actions US ne correspond à cette recherche.",
+    "search": "Rechercher un ticker, un lieu ou une adresse"
   },
   "lend": {
     "kicker": "Sur la chaîne",
@@ -883,6 +895,8 @@
   "seo": {
     "homeTitle": "Marchés · YSK Mint",
     "homeDesc": "Pools DEX en direct. Le prix et la profondeur viennent des réserves sur la chaîne. Aucun portefeuille n’est requis pour parcourir.",
+    "stocksTitle": "Actions US · YSK Mint",
+    "stocksDesc": "Actions et ETF américains tokenisés, en enveloppes on-chain. Prix et profondeur des pools DEX. Ce ne sont pas des titres cotés.",
     "lendTitle": "Prêts · YSK Mint",
     "lendDesc": "APY d’apport et d’emprunt issus des taux sur la chaîne. Lecture seule — déposez ou empruntez sur le site du protocole.",
     "lendAssetTitle": "{{symbol}} · Prêts · YSK Mint",
@@ -892,7 +906,7 @@
     "createDesc": "Lancement guidé de token sur les réseaux pris en charge. Vous signez dans votre propre portefeuille. Les contrats ne sont pas audités.",
     "pairTitle": "{{pair}} · {{chain}} · YSK Mint",
     "pairFallback": "Paire de trading · YSK Mint",
-    "pairDesc": "Prix DEX en direct, profondeur et échanges récents issus des pools sur la chaîne.",
+    "pairDesc": "Prix DEX en direct, profondeur, échanges récents et graphique 15 minutes issus des données on-chain.",
     "tokenTitle": "{{name}} · YSK Mint",
     "tokenFallback": "Token · YSK Mint",
     "tokenDesc": "Détails du token sur la chaîne. Vous signez dans votre propre portefeuille. Les contrats ne sont pas audités.",

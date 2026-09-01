@@ -31,6 +31,7 @@
   "nav": {
     "home": "Pasar",
     "lp": "Pasar",
+    "stocks": "Saham AS",
     "lend": "Pinjaman",
     "create": "Luncurkan",
     "transfer": "Jembatan",
@@ -78,6 +79,10 @@
     "oracle": "{{n}} kolam, tertimbang",
     "oracleNote": "Harga kolam langsung, kedalaman, dan pertukaran terbaru jika rantai ini memublikasikannya.",
     "trades": "Transaksi terbaru",
+    "chart": "Harga",
+    "chartTf1m": "1m",
+    "chartTf5m": "5m",
+    "chartTf15m": "15m",
     "noTrades": "Tidak ada transaksi terbaru di jendela ini.",
     "tradesRpc": "Tidak dapat memuat transaksi terbaru. Coba lagi.",
     "noOnchainTrades": "Transaksi terbaru tidak tersedia di rantai ini.",
@@ -119,6 +124,13 @@
       "amount": "Jumlah LP",
       "explorer": "Penjelajah"
     }
+  },
+  "stocks": {
+    "kicker": "Saham AS yang ditokenisasi",
+    "hint": "Pembungkus on-chain saham dan ETF AS — bukan saham tercatat. Harga dan kedalaman dari kolam DEX. Tidak perlu dompet untuk melihat.",
+    "empty": "Tidak ada pasangan saham AS yang ditokenisasi di rantai yang dipilih.",
+    "emptyFilter": "Tidak ada pasangan saham AS yang cocok dengan pencarian ini.",
+    "search": "Cari ticker, venue, atau alamat"
   },
   "lend": {
     "kicker": "Di rantai",
@@ -883,6 +895,8 @@
   "seo": {
     "homeTitle": "Pasar · YSK Mint",
     "homeDesc": "Kolam DEX langsung. Harga dan kedalaman berasal dari cadangan di rantai. Dompet tidak wajib untuk menelusuri.",
+    "stocksTitle": "Saham AS · YSK Mint",
+    "stocksDesc": "Saham dan ETF AS yang ditokenisasi sebagai pembungkus on-chain. Harga dan kedalaman dari kolam DEX. Bukan saham tercatat.",
     "lendTitle": "Pinjaman · YSK Mint",
     "lendDesc": "APY suplai dan pinjam dari suku bunga di rantai. Hanya baca — setor atau pinjam di situs protokol.",
     "lendAssetTitle": "{{symbol}} · Pinjaman · YSK Mint",
@@ -892,7 +906,7 @@
     "createDesc": "Peluncuran token terpandu di jaringan yang didukung. Anda menandatangani di dompet sendiri. Kontrak belum diaudit.",
     "pairTitle": "{{pair}} · {{chain}} · YSK Mint",
     "pairFallback": "Pasangan dagang · YSK Mint",
-    "pairDesc": "Harga DEX langsung, kedalaman, dan pertukaran terbaru dari kolam di rantai.",
+    "pairDesc": "Harga DEX langsung, kedalaman, pertukaran terbaru, dan grafik 15 menit dari data on-chain.",
     "tokenTitle": "{{name}} · YSK Mint",
     "tokenFallback": "Token · YSK Mint",
     "tokenDesc": "Rincian token di rantai. Anda menandatangani di dompet sendiri. Kontrak belum diaudit.",

@@ -8,7 +8,7 @@ YSK Mint 是瀏覽器應用，用於鏈上市場、持倉與發幣。並無 YSK 
 
 | | |
 |--|--|
-| **版本** | 1.2.2 |
+| **版本** | 1.3.0 |
 | **授權** | MIT |
 | **前端** | Vite + React + TypeScript（靜態 SPA） |
 | **合約** | Solidity 0.8.22、Foundry、OpenZeppelin 5.x |
@@ -26,7 +26,8 @@ YSK Mint 是瀏覽器應用，用於鏈上市場、持倉與發幣。並無 YSK 
 
 完整說明見[產品說明](./docs/product.zh.md)。
 
-- **市場** — 去中心化交易所流動池、美元報價與「深度 USD」（池內美金總值）。無須連接錢包即可瀏覽。交易對頁顯示代幣代號，而非截斷合約地址。
+- **市場** — 去中心化交易所流動池、美元報價與「深度 USD」（池內美金總值）。無須連接錢包即可瀏覽。交易對頁顯示代幣代號，而非截斷合約地址，並附公開池 OHLCV 的 15 分鐘價格圖。
+- **美股** — 代幣化美股及美股 ETF 的鏈上包裝（並非上市股票），見 `/stocks`。報價與深度與市場相同。
 - **借貸** — 供應及借出年利率取自鏈上。本頁只供查閱；存入或借出請到協議網站。
 - **持倉** — 查閱公開地址或連接錢包。借貸、流動性、質押及活動。報價為去中心化交易所即時價。Blockscout 失效時改走公開索引。
 - **發幣** — 在已支援的 EVM 網絡引導部署 OFT、加入流動性並鎖定。由你簽署。合約未經審計。
@@ -68,7 +69,7 @@ pnpm --filter @ysk-mint/web dev
 
 Foundry：`forge test -vv`
 
-前端型別檢查及語言鍵核對：`pnpm --filter @ysk-mint/web typecheck` 及 `pnpm --filter @ysk-mint/web i18n:check`。市場深度抽樣（即時場地 API）：`pnpm --filter @ysk-mint/web verify:depth`。持倉對齊（native／分頁代幣／質押對照公開 API）：`pnpm --filter @ysk-mint/web verify:holdings`。
+前端型別檢查及語言鍵核對：`pnpm --filter @ysk-mint/web typecheck` 及 `pnpm --filter @ysk-mint/web i18n:check`。市場深度抽樣（即時場地 API）：`pnpm --filter @ysk-mint/web verify:depth`。持倉對齊（native／分頁代幣／質押對照公開 API）：`pnpm --filter @ysk-mint/web verify:holdings`。代幣化美股分類：`pnpm --filter @ysk-mint/web verify:equity`。
 
 ## 文件
 

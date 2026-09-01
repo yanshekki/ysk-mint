@@ -14,7 +14,9 @@ import { readVenuesForPair, venueQuotesToPools, weightedPrice, type VenuePool } 
 import { cacheGet, cacheKey, cacheLastGood, cacheReady, onVisibleInterval, POLICIES } from "../../lib/defi/cache.ts";
 import { venueDisplayDepth, pairPriceUsd, VENUES_CACHE } from "../../lib/defi/quote.ts";
 import type { VenueQuote } from "../../lib/defi/types.ts";
-import { usePairSwaps, type SwapRow } from "../../lib/usePairSwaps.ts";
+import { TRADE_TABLE_ROWS, usePairSwaps, type SwapRow } from "../../lib/usePairSwaps.ts";
+import { usePoolOhlcv } from "../../lib/poolOhlcv.ts";
+import { PairTradeChart } from "./PairChart.tsx";
 import { cancelLive, trackLive } from "../../lib/liveStatus.ts";
 import { fmtCompact, fmtDepthUsd, fmtQuoteUsd, fmtReserveAmt } from "../../lib/defiQuotes.ts";
 import { asAddr, canonAddr, pairId } from "../../lib/pairKey.ts";
@@ -28,6 +30,8 @@ import { cachedMarketPairMeta, cachedMarketPairQuotes, nativePairVenues } from "
 import { SortHead, useSort } from "../../shared/ui/SortTable.tsx";
 import { Metric } from "../../shared/ui/Metric.tsx";
 import { marketsHref } from "./LpPage.tsx";
+import { stocksHref } from "../stocks/StocksPage.tsx";
+import { isTokenizedUsEquityPair } from "../../lib/usEquity.ts";
 import { dexAppHref } from "../../lib/dexApp.ts";
 
 async function evmTokenMeta(client: PublicClient, chainId: number, address: string, hint?: { symbol?: string; decimals?: number; icon?: string }): Promise<TokenMeta> {
@@ -211,7 +215,10 @@ export function PairPage() {
     return px == null ? null : pairPriceUsd(px, base, quote, chainId);
   }, [venues, base, quote, chainId]);
   const evm = chain?.vm === "evm" || chain?.evm;
-  const swaps = usePairSwaps(evm ? client : undefined, evm ? venues : [], base, metaA.decimals, metaB.decimals, chainId);
+  const tape = evm || chainId === 101;
+  const swaps = usePairSwaps(evm ? client : undefined, venues, base, metaA.decimals, metaB.decimals, chainId);
+  const ohlcv = usePoolOhlcv(chainId, venues, base);
+  const tableRows = useMemo(() => swaps.rows.slice(0, TRADE_TABLE_ROWS), [swaps.rows]);
   const venueGet = useCallback((v: VenuePool, k: string) => {
     if (k === "name") return v.venue.name;
     if (k === "quote") return pairPriceUsd(v.priceAinB, base, quote, chainId) ?? 0;
@@ -226,7 +233,7 @@ export function PairPage() {
     if (k === "price") return s.price;
     return s.ts ?? Number(s.block);
   }, []);
-  const tradeSort = useSort(swaps.rows, "time", tradeGet);
+  const tradeSort = useSort(tableRows, "time", tradeGet);
   const title = `${metaA.symbol} / ${metaB.symbol}`;
   const chainName = chain?.name ?? chain?.short ?? String(chainId);
   const pairReady = Boolean(base && quote && Number.isFinite(chainId) && metaA.symbol && metaB.symbol && metaA.symbol !== "…" && metaB.symbol !== "…");
@@ -247,12 +254,20 @@ export function PairPage() {
 
   if (!base || !quote || !Number.isFinite(chainId)) return <p className="workspace-scroll">{t("lp.pairMissing")}</p>;
 
+  const equityPair = isTokenizedUsEquityPair({
+    chainId,
+    tokenA: base,
+    tokenB: quote,
+    symbolA: metaA.symbol,
+    symbolB: metaB.symbol,
+  });
+
   return (
     <section className="workspace">
       <div className="workspace-head">
         <div>
           <p className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-text-muted">
-            <Link to={marketsHref()}>{t("nav.lp")}</Link>
+            <Link to={equityPair ? stocksHref() : marketsHref()}>{t(equityPair ? "nav.stocks" : "nav.lp")}</Link>
             {" · "}
             {chain?.short ?? chainId}
           </p>
@@ -347,14 +362,15 @@ export function PairPage() {
           </section>
 
           <section className="me-card">
+            <PairTradeChart ohlcv={ohlcv.candles} rows={swaps.rows} waiting={ohlcv.loading} />
             <div className="me-card-head">
               <b>{t("lp.trades")}</b>
-              <span className="me-count">{swaps.loading ? "…" : swaps.rows.length}</span>
+              <span className="me-count">{swaps.loading ? "…" : tableRows.length}</span>
             </div>
             {swaps.loading || loading ? (
               <p className="me-card-empty">{t("lp.loading")}</p>
             ) : swaps.rows.length === 0 ? (
-              <p className="me-card-empty">{swaps.rpcError ? t("lp.tradesRpc") : evm ? t("lp.noTrades") : t("lp.noOnchainTrades")}</p>
+              <p className="me-card-empty">{swaps.rpcError ? t("lp.tradesRpc") : tape ? t("lp.noTrades") : t("lp.noOnchainTrades")}</p>
             ) : (
               <div className="me-list">
                 <div className="me-cols me-cols-5">

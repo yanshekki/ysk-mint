@@ -64,7 +64,7 @@ function iconOf(symbol: string, chainShort: string) {
 
 let geckoQ: Promise<void> = Promise.resolve();
 
-function geckoEnqueue<T>(fn: () => Promise<T>): Promise<T> {
+export function geckoEnqueue<T>(fn: () => Promise<T>): Promise<T> {
   const run = geckoQ.then(fn, fn);
   geckoQ = run.then(
     () => new Promise<void>((r) => setTimeout(r, 350)),

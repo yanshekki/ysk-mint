@@ -152,13 +152,16 @@ select {
 .top-nav {
   display: flex;
   gap: 4px;
+  min-width: 0;
+  overflow-x: auto;
 }
 .top-nav a {
-  padding: 8px 12px;
+  padding: 8px 10px;
   border-radius: 10px;
   color: var(--text-sub);
   font-weight: 650;
   font-size: 15px;
+  white-space: nowrap;
 }
 .top-nav a:hover,
 .top-nav a.on {
@@ -2062,6 +2065,13 @@ button.me-token:focus-visible {
 .set-preview .me-trade-sell {
   background: var(--trade-sell, #ef4444);
   color: #fff;
+}
+.pair-chart-wrap {
+  margin: 0 0 8px;
+}
+.pair-chart {
+  height: 280px;
+  width: 100%;
 }
 .chip {
   display: inline-flex;
