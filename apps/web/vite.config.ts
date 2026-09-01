@@ -9,6 +9,25 @@ import { appRelease } from "./scripts/app-version.mjs";
 
 const release = appRelease();
 
+/** Optional. Set at build time only — never commit a live measurement id. */
+function analyticsTag() {
+  return {
+    name: "analytics-tag",
+    transformIndexHtml(html: string) {
+      const id = String(process.env.VITE_GA_MEASUREMENT_ID || process.env.GA_MEASUREMENT_ID || "").trim();
+      if (!/^G-[A-Z0-9]+$/i.test(id)) return html;
+      const snippet = `    <script async src="https://www.googletagmanager.com/gtag/js?id=${id}"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', '${id}');
+    </script>`;
+      return html.replace("</head>", `${snippet}\n  </head>`);
+    },
+  };
+}
+
 function servePrerendered() {
   const dist = join(fileURLToPath(new URL(".", import.meta.url)), "dist");
   const handler = (req: { url?: string }, res: { setHeader: (k: string, v: string) => void; end: (b: Buffer) => void }, next: () => void) => {
@@ -62,6 +81,7 @@ export default defineConfig({
     }),
     react(),
     tailwindcss(),
+    analyticsTag(),
     servePrerendered(),
   ],
   resolve: {

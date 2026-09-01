@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -84,6 +84,7 @@ export function DocumentHead() {
   const title = extra.title || fallbackTitle(page, t);
   const description = extra.description || fallbackDesc(page, t);
   const ogLoc = localeMeta(locale).ogLocale;
+  const skipFirstPageview = useRef(true);
 
   useEffect(() => {
     applyDocumentLang(canonicalLocale(i18n.language) === locale ? i18n.language : locale);
@@ -139,6 +140,12 @@ export function DocumentHead() {
       setJsonLd("ysk-jsonld-page", webPageJsonLd(canonical, title, description));
     } else {
       document.getElementById("ysk-jsonld-page")?.remove();
+    }
+
+    if (skipFirstPageview.current) {
+      skipFirstPageview.current = false;
+    } else if (typeof window.gtag === "function") {
+      window.gtag("event", "page_view", { page_title: title, page_location: canonical, page_path: rest });
     }
   }, [canonical, description, extra.description, extra.title, i18n.language, locale, noindex, ogLoc, page, rest, t, title]);
 
