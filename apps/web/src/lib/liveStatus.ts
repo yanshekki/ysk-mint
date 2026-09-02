@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type LiveKind = "markets" | "holdings" | "quote" | "lp" | "trades" | "defi" | "txs" | "lend";
+export type LiveKind = "markets" | "holdings" | "quote" | "lp" | "trades" | "defi" | "txs" | "lend" | "nft";
 
 export type LivePhase = "wait" | "run" | "fail";
 

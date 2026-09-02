@@ -29,6 +29,7 @@ export const RPC_PROVIDER_LABEL: Record<string, string> = {
   mempool: "Mempool",
   xrplcluster: "XRPL Cluster",
   blastapi: "BlastAPI",
+  tenderly: "Tenderly",
 };
 
 function ep(id: string, url: string): RpcEndpoint {
@@ -140,10 +141,8 @@ const DRPC: Record<number, string> = {
 const LLAMA: Record<number, string> = {
   1: "https://eth.llamarpc.com",
   8453: "https://base.llamarpc.com",
-  42161: "https://arbitrum.llamarpc.com",
   10: "https://optimism.llamarpc.com",
   56: "https://binance.llamarpc.com",
-  137: "https://polygon.llamarpc.com",
   43114: "https://avalanche.llamarpc.com",
   324: "https://zksync.llamarpc.com",
   59144: "https://linea.llamarpc.com",
@@ -155,6 +154,8 @@ const LLAMA: Record<number, string> = {
 /** Extra branded public URLs that are not the four global maps. */
 const NATIVE_EXTRA: Record<number, RpcEndpoint[]> = {
   1: [ep("cloudflare", "https://cloudflare-eth.com")],
+  137: [ep("tenderly", "https://polygon.gateway.tenderly.co")],
+  42161: [ep("tenderly", "https://arbitrum.gateway.tenderly.co")],
   480: [ep("alchemy", "https://worldchain-mainnet.g.alchemy.com/public")],
   397: [ep("fastnear", "https://free.rpc.fastnear.com"), ep("lava", "https://near.lava.build")],
   784: [

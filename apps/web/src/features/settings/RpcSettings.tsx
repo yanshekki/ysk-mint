@@ -1,11 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { CHAINS as CHAIN_MAP, featuredChains, testnetChains } from "@ysk-mint/config";
+import { CHAINS as CHAIN_MAP, featuredChains, testnetChains, type ChainDefinition } from "@ysk-mint/config";
+import {
+  DEFI_SCAN_KINDS,
+  disabledForChainPreset,
+  disabledForDefiPreset,
+  isCoreChainId,
+  type DefiScanKind,
+  type ScanPreset,
+} from "../../lib/defiScan.ts";
 import { GLOBAL_RPC_PROVIDERS } from "../../lib/rpcCatalog.ts";
 import { rpcActiveLabel, subscribeRpcSession } from "../../lib/rpcPool.ts";
 import { chainIcon } from "../../lib/chainIcon.ts";
 import { useUserSettings } from "../../lib/userSettings.ts";
-import { SetItem, SetSwitch } from "./SetControls.tsx";
+import { SetItem, SetSwitch, SetToggle } from "./SetControls.tsx";
 import { RpcChainRow } from "./RpcChainRow.tsx";
 import { chainHits, rpcBadgeLabel, rpcProvLabel } from "./rpcLabels.ts";
 
@@ -14,6 +22,91 @@ const CHAINS = featuredChains().filter((c) => !c.testnet);
 function useRpcSession() {
   const [, setN] = useState(0);
   useEffect(() => subscribeRpcSession(() => setN((n) => n + 1)), []);
+}
+
+function ScanPresetBar({ hint, onPick }: { hint: string; onPick: (preset: ScanPreset) => void }) {
+  const { t } = useTranslation();
+  return (
+    <div className="set-chain-bar">
+      <p className="set-note">{hint}</p>
+      <button type="button" className="me-pool-btn me-pool-btn-explore" onClick={() => onPick("core")}>
+        {t("settings.scanCore")}
+      </button>
+      <button type="button" className="me-pool-btn me-pool-btn-explore" onClick={() => onPick("extra")}>
+        {t("settings.scanExtra")}
+      </button>
+      <button type="button" className="me-pool-btn me-pool-btn-explore" onClick={() => onPick("all")}>
+        {t("settings.allOn")}
+      </button>
+      <button type="button" className="me-pool-btn me-pool-btn-explore" onClick={() => onPick("none")}>
+        {t("settings.allOff")}
+      </button>
+    </div>
+  );
+}
+
+function ChainEnableRow({ chain, on }: { chain: ChainDefinition; on: boolean }) {
+  const { t } = useTranslation();
+  const setChainEnabled = useUserSettings((s) => s.setChainEnabled);
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      className={`me-token ${on ? "" : "me-token-zero"}`}
+      onClick={() => setChainEnabled(chain.chainId, !on)}
+    >
+      <span className="holding-ico-wrap">
+        <img src={chainIcon(chain)} alt="" className="holding-ico" />
+      </span>
+      <div className="holding-meta">
+        <b>{chain.name}</b>
+        <span>
+          {chain.short} · {on ? t("settings.chainOn") : t("settings.chainOff")}
+        </span>
+      </div>
+      <SetSwitch on={on} />
+    </button>
+  );
+}
+
+function DefiScanCard() {
+  const { t } = useTranslation();
+  const disabledDefi = useUserSettings((s) => s.disabledDefi);
+  const setDefiEnabled = useUserSettings((s) => s.setDefiEnabled);
+  const patch = useUserSettings((s) => s.patch);
+  const onCount = DEFI_SCAN_KINDS.length - disabledDefi.filter((k) => (DEFI_SCAN_KINDS as readonly string[]).includes(k)).length;
+  const core = DEFI_SCAN_KINDS.filter((k) => k.endsWith("Core"));
+  const extra = DEFI_SCAN_KINDS.filter((k) => k.endsWith("Extra"));
+  return (
+    <section className="me-card">
+      <div className="me-card-head">
+        <b>{t("settings.defi")}</b>
+        <span className="me-count">{t("settings.chainsOn", { on: onCount, total: DEFI_SCAN_KINDS.length })}</span>
+      </div>
+      <ScanPresetBar hint={t("settings.defiHint")} onPick={(preset) => patch({ disabledDefi: disabledForDefiPreset(preset) })} />
+      <p className="chain-group-title set-scan-group">{t("settings.scanCore")}</p>
+      {core.map((kind) => (
+        <SetToggle
+          key={kind}
+          title={t(`settings.defiKind.${kind}`)}
+          hint={t(`settings.defiKindHint.${kind}`)}
+          on={!disabledDefi.includes(kind)}
+          onChange={(on) => setDefiEnabled(kind as DefiScanKind, on)}
+        />
+      ))}
+      <p className="chain-group-title set-scan-group">{t("settings.scanExtra")}</p>
+      {extra.map((kind) => (
+        <SetToggle
+          key={kind}
+          title={t(`settings.defiKind.${kind}`)}
+          hint={t(`settings.defiKindHint.${kind}`)}
+          on={!disabledDefi.includes(kind)}
+          onChange={(on) => setDefiEnabled(kind as DefiScanKind, on)}
+        />
+      ))}
+    </section>
+  );
 }
 
 function RpcGlobalBar() {
@@ -74,6 +167,9 @@ export function RpcSettings() {
   const rpcNeedle = rpcQ.trim().toLowerCase();
 
   const visibleChains = useMemo(() => CHAINS.filter((c) => chainHits(c, enableNeedle)), [enableNeedle]);
+  const coreVisible = useMemo(() => visibleChains.filter((c) => isCoreChainId(c.chainId)), [visibleChains]);
+  const extraVisible = useMemo(() => visibleChains.filter((c) => !isCoreChainId(c.chainId)), [visibleChains]);
+  const searching = Boolean(enableNeedle);
   const rpcMainnets = useMemo(() => {
     const featured = featuredChains().filter((c) => c.enabled && !c.testnet);
     const seen = new Set(featured.map((c) => c.chainId));
@@ -102,51 +198,30 @@ export function RpcSettings() {
           />
           <span className="me-count">{t("settings.chainsOn", { on: onCount, total: CHAINS.length })}</span>
         </div>
-        <div className="set-chain-bar">
-          <p className="set-note">{t("settings.chainsHint")}</p>
-          <button type="button" className="me-pool-btn me-pool-btn-explore" onClick={() => s.patch({ disabledChains: [] })}>
-            {t("settings.allOn")}
-          </button>
-          <button
-            type="button"
-            className="me-pool-btn me-pool-btn-explore"
-            onClick={() => s.patch({ disabledChains: CHAINS.map((c) => c.chainId) })}
-          >
-            {t("settings.allOff")}
-          </button>
-        </div>
+        <ScanPresetBar hint={t("settings.chainsHint")} onPick={(preset) => s.patch({ disabledChains: disabledForChainPreset(preset) })} />
         {onCount === 0 ? <p className="me-card-empty">{t("settings.chainsNone")}</p> : null}
         {visibleChains.length === 0 ? (
           <p className="me-card-empty">{t("settings.chainEmpty")}</p>
+        ) : searching ? (
+          <div className="me-list set-chain-list">
+            {visibleChains.map((c) => (
+              <ChainEnableRow key={c.chainId} chain={c} on={!s.disabledChains.includes(c.chainId)} />
+            ))}
+          </div>
         ) : (
           <div className="me-list set-chain-list">
-            {visibleChains.map((c) => {
-              const on = !s.disabledChains.includes(c.chainId);
-              return (
-                <button
-                  key={c.chainId}
-                  type="button"
-                  role="switch"
-                  aria-checked={on}
-                  className={`me-token ${on ? "" : "me-token-zero"}`}
-                  onClick={() => s.setChainEnabled(c.chainId, !on)}
-                >
-                  <span className="holding-ico-wrap">
-                    <img src={chainIcon(c)} alt="" className="holding-ico" />
-                  </span>
-                  <div className="holding-meta">
-                    <b>{c.name}</b>
-                    <span>
-                      {c.short} · {on ? t("settings.chainOn") : t("settings.chainOff")}
-                    </span>
-                  </div>
-                  <SetSwitch on={on} />
-                </button>
-              );
-            })}
+            {coreVisible.length ? <p className="chain-group-title set-scan-group">{t("settings.scanCore")}</p> : null}
+            {coreVisible.map((c) => (
+              <ChainEnableRow key={c.chainId} chain={c} on={!s.disabledChains.includes(c.chainId)} />
+            ))}
+            {extraVisible.length ? <p className="chain-group-title set-scan-group">{t("settings.scanExtra")}</p> : null}
+            {extraVisible.map((c) => (
+              <ChainEnableRow key={c.chainId} chain={c} on={!s.disabledChains.includes(c.chainId)} />
+            ))}
           </div>
         )}
       </section>
+      <DefiScanCard />
       <section className="me-card" id="rpc">
         <div className="me-card-head">
           <b>{t("settings.rpc")}</b>

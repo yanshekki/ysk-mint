@@ -148,6 +148,15 @@ function isLiveErr(err: unknown) {
   return Boolean(err && typeof err === "object" && (err as { rpcLive?: boolean }).rpcLive);
 }
 
+/** HTTP 200 + JSON-RPC error that still means “try the next public node”. */
+export function isRpcCapacityError(err: { message?: string; code?: number } | null | undefined) {
+  if (!err) return false;
+  const code = err.code;
+  if (code === -32001 || code === -32005 || code === -32029 || code === 429) return true;
+  const m = (err.message || "").toLowerCase();
+  return /rate.?limit|too many requests|usage limit|quota|capacity|unauthorized|api key|upgrade here|current plan/.test(m);
+}
+
 export function markRpcLive<T extends Error>(err: T): T {
   Object.assign(err, { rpcLive: true });
   return err;
@@ -211,8 +220,9 @@ export async function rpcJsonRpc<T>(chainId: number, method: string, params: unk
       throw new Error("rpc json");
     }
     if (json.error) {
-      const err = markRpcLive(new Error(json.error.message || "rpc"));
+      const err = new Error(json.error.message || "rpc");
       Object.assign(err, { code: json.error.code, data: json.error.data });
+      if (!isRpcCapacityError(json.error)) markRpcLive(err);
       throw err;
     }
     return json.result as T;

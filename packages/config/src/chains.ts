@@ -1206,6 +1206,24 @@ export const CHAINS: Record<(typeof ChainKey)[keyof typeof ChainKey], ChainDefin
   }),
 };
 
+/** Product bar + holdings chains people actually use. Settings “mainstream” preset. */
+const CORE_HOLDINGS_ORDER: Array<(typeof ChainKey)[keyof typeof ChainKey]> = [
+  ChainKey.Ethereum,
+  ChainKey.Avalanche,
+  ChainKey.Base,
+  ChainKey.Arbitrum,
+  ChainKey.Cardano,
+  ChainKey.Near,
+  ChainKey.Bnb,
+  ChainKey.Solana,
+  ChainKey.Tron,
+  ChainKey.Polygon,
+  ChainKey.Sui,
+  ChainKey.Ton,
+  ChainKey.Aptos,
+  ChainKey.Optimism,
+];
+
 /** Product bar: ETH · AVAX · Base · Arb · ADA · NEAR · BNB · SOL, then the extra holdings chains. */
 const FEATURED_ORDER: Array<(typeof ChainKey)[keyof typeof ChainKey]> = [
   ChainKey.Ethereum,
@@ -1339,6 +1357,10 @@ export function nativeChains(): ChainDefinition[] {
 
 export function featuredChains(): ChainDefinition[] {
   return FEATURED_ORDER.map((k) => CHAINS[k]);
+}
+
+export function coreHoldingsChains(): ChainDefinition[] {
+  return CORE_HOLDINGS_ORDER.map((k) => CHAINS[k]);
 }
 
 export function issuanceChains(): ChainDefinition[] {

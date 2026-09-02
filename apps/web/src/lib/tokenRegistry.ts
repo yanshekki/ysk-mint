@@ -107,6 +107,10 @@ const AUTO_NATIVES: TokenRecord[] = featuredChains()
   );
 
 const EXTRA: TokenRecord[] = [
+  { id: "hype-whype", vm: "evm", chainId: 999, symbol: "WHYPE", name: "Wrapped HYPE", decimals: 18, address: "0x5555555555555555555555555555555555555555", icon: I("hype") },
+  { id: "hype-usdc", vm: "evm", chainId: 999, symbol: "USDC", name: "USD Coin", decimals: 6, address: "0xb88339CB7199b77E23DB6E890353E22632Ba630f", icon: I("usdc") },
+  { id: "hype-khype", vm: "evm", chainId: 999, symbol: "kHYPE", name: "Kinetiq kHYPE", decimals: 18, address: "0xfD739d4e423301CE9385c1fb8850539D657C296D", icon: I("hype") },
+  { id: "eth-stkaave", vm: "evm", chainId: 1, symbol: "stkAAVE", name: "Aave Safety Module", decimals: 18, address: "0x4da27a545c0c5b758a6ba100e3a049001de870f5", icon: I("eth") },
   { id: "eth-weth", vm: "evm", chainId: 1, symbol: "WETH", name: "Wrapped Ether", decimals: 18, address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", icon: I("eth") },
   { id: "eth-steth", vm: "evm", chainId: 1, symbol: "stETH", name: "Lido Staked ETH", decimals: 18, address: "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84", icon: I("steth") },
   { id: "eth-wsteth", vm: "evm", chainId: 1, symbol: "wstETH", name: "Wrapped stETH", decimals: 18, address: "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0", icon: I("wsteth") },

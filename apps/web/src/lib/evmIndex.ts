@@ -10,6 +10,7 @@ export type DiscoveredErc20 = {
   decimals: number;
   raw: bigint;
   usdHint: number | null;
+  nft?: boolean;
 };
 
 /** Chains whose per-instance Blockscout REST is dead or unusable. */

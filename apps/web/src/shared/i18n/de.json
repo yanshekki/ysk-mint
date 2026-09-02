@@ -25,7 +25,8 @@
       "trades": "Abschlüsse",
       "defi": "Protokoll",
       "txs": "Aktivität",
-      "lend": "Kredit"
+      "lend": "Kredit",
+      "nft": "NFT"
     }
   },
   "nav": {
@@ -554,7 +555,25 @@
       "approve": "Freigabe",
       "call": "Aufruf",
       "fail": "Fehler"
-    }
+    },
+    "nftKicker": "Sammlung",
+    "nftTitle": "NFT",
+    "nftHint": "Nach Sammlung gruppiert. Bilder stammen vom öffentlichen Explorer. Kein Floor-Preis, keine USD-Schätzung.",
+    "nftSearch": "Sammlung, Token-ID oder Vertrag",
+    "nftLoading": "NFTs werden geladen…",
+    "nftFail": "NFTs konnten nicht geladen werden. Bitte erneut versuchen.",
+    "nftEmpty": "Keine NFTs für diesen Filter.",
+    "nftNoIndex": "NFTs sind auf dieser Chain nicht indexiert.",
+    "nftSets": "{{n}} Sammlungen · {{p}} Stück",
+    "nftPieces": "{{n}} Stk.",
+    "nft721": "ERC-721",
+    "nft1155": "ERC-1155",
+    "nftHasArt": "Mit Bild",
+    "nftNoArt": "Diese Sammlung hat keine Vorschaubilder.",
+    "nftOpen": "Explorer",
+    "nftRest": "{{n}} weitere nicht gelistet",
+    "nftExpand": "Alle öffnen",
+    "nftCollapse": "Alle schließen"
   },
   "token": {
     "missing": "Dieser Token-Link ist unvollständig.",
@@ -583,7 +602,7 @@
     "addrsWatchHint": "Öffentliche Salden jemand anders nachschlagen. Das heißt nicht, dass dir diese Wallets gehören.",
     "addrsCount": "{{n}} Adr.",
     "watchCount": "{{n}} / {{max}} Sets",
-    "addrPaste": "Wallet, ENS oder alice.near einfügen",
+    "addrPaste": "Wallet, ENS, alice.skr oder alice.near einfügen",
     "addrNameHit": "{{service}} · {{kind}} · {{addr}}",
     "addrNameBad": "Dieser Name ließ sich nicht auflösen.",
     "addrNameWait": "Name wird aufgelöst…",
@@ -598,7 +617,8 @@
       "starknet-id": "Starknet ID",
       "icns": "ICNS",
       "stellar-fed": "Federation",
-      "near": "NEAR"
+      "near": "NEAR",
+      "alldomains": "AllDomains"
     },
     "addrAdd": "Hinzufügen",
     "addrAddToSet": "Adresse hinzufügen",
@@ -709,7 +729,27 @@
     "reset": "Standards wiederherstellen",
     "resetHint": "Setzt Farben, Paarreihenfolge, Netzwerke, RPCs, Verbindungslimits und Anzeigeschalter zurück. Die Sprache bleibt.",
     "resetBtn": "Wiederherstellen",
-    "resetDone": "Wiederhergestellt"
+    "resetDone": "Wiederhergestellt",
+    "scanCore": "Kern",
+    "scanExtra": "Weitere",
+    "defi": "DeFi-Scans",
+    "defiHint": "Aus-Pakete fehlen in Beständen und unter „Mein Lending / Mein LP“. Markttabellen bleiben. Nur in diesem Browser.",
+    "defiKind": {
+      "lendCore": "Lending · Kern",
+      "lendExtra": "Lending · weitere",
+      "lpCore": "LP · Kern",
+      "lpExtra": "LP · weitere",
+      "stakeCore": "Staking · Kern",
+      "stakeExtra": "Staking · weitere"
+    },
+    "defiKindHint": {
+      "lendCore": "Aave, BENQI, Burrow, Kamino, Jupiter Lend, Navi, Suilend.",
+      "lendExtra": "Compound-Forks, Morpho, Euler, Fluid, Spark, weitere Aave-Forks, JustLend, Scallop, Echelon.",
+      "lpCore": "Uniswap-V3- und Pancake-V3-NFTs.",
+      "lpExtra": "V2-/Aerodrome-LP, Raydium/Meteora/Orca, Rhea, Minswap, BENQI-Chef-LP.",
+      "stakeCore": "Native Stake (ETH Beacon, SOL, NEAR, Hyperliquid…) und gelistete LSTs (Lido, kHYPE, sAVAX, stNEAR, mSOL…).",
+      "stakeExtra": "Avalanche P-Chain, Lido-Auszahlungsqueue, sAVAX-Unlocks."
+    }
   },
   "about": {
     "kicker": "Unternehmen",
@@ -962,6 +1002,23 @@
     "savaxCool": "Abkühlung bis {{cool}}, dann abholbar bis {{redeem}}",
     "savaxClaim": "Abholbar bis {{redeem}}",
     "savaxExpired": "Abholfenster geschlossen; erneut anfordern",
-    "lstSavax": "15 Tage Abkühlung, dann 2 Tage zum Abholen. Die erste Stake-Zeit steht nicht auf dieser Seite."
+    "lstSavax": "15 Tage Abkühlung, dann 2 Tage zum Abholen. Die erste Stake-Zeit steht nicht auf dieser Seite.",
+    "underlying": "≈ {{amount}} {{symbol}}",
+    "avaxP": "Avalanche P-Chain",
+    "avaxPNote": "Natives Validator- oder Delegator-Staking. Die P-avax-Adresse kommt aus C-Chain-Exporten.",
+    "avaxPUntil": "Gestaked bis {{when}}",
+    "avaxPReward": "Geschätzte Belohnungen",
+    "avaxPRewardNote": "Schätzung aus öffentlichen Protokolldaten, keine bestätigte Gutschrift.",
+    "ethBeacon": "Ethereum Native-Stake",
+    "ethBeaconNote": "Beacon-Validatorguthaben. Öffentliche Blockscout-Einzahlungen/Abhebungen und Consensus-HTTP. Bei Fehler auslassen, keine gefälschte 0.",
+    "ethBeaconExiting": "Beendet oder auszahlbar",
+    "ethBeaconN": "{{n}} Validatoren",
+    "hyperPerps": "Hyperliquid Perps",
+    "hyperPerpsNote": "Perp-Margin aus öffentlichem HyperCore-info-HTTP. Bei Fehler auslassen, keine gefälschte 0.",
+    "hyperPerpsN": "{{n}} Positionen",
+    "hyperVault": "Hyperliquid Vault",
+    "hyperVaultNote": "Vault-Equity aus öffentlichem HyperCore-info.",
+    "hyperVaultUntil": "Gesperrt bis {{when}}",
+    "hyperSub": "Hyperliquid · {{name}}"
   }
 }

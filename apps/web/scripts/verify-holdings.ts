@@ -11,12 +11,16 @@ import { fetchSolana } from "../src/lib/holdings/solana.ts";
 import { explorerUrl } from "../src/lib/evmDiscover.ts";
 import { fetchIndexedHoldings } from "../src/lib/evmIndex.ts";
 import { readCosmosStake } from "../src/lib/stake/cosmos.ts";
+import { readEthBeaconStake } from "../src/lib/stake/ethBeacon.ts";
+import { readHyperliquidDesk } from "../src/lib/stake/hyperliquid.ts";
 import { readSuiStake } from "../src/lib/stake/sui.ts";
 import { readTronStake, tronFrozenSun } from "../src/lib/stake/tron.ts";
 import { readNearStake } from "../src/lib/stake/near.ts";
 import { readSolStake } from "../src/lib/stake/sol.ts";
 import { koiosPost } from "../src/lib/koios.ts";
-import { rpcJsonRpc } from "../src/lib/rpcPool.ts";
+import { rpcJsonRpc, rpcResetSession } from "../src/lib/rpcPool.ts";
+import { useUserSettings } from "../src/lib/userSettings.ts";
+import { ROOT_ANS, ansRootPda } from "../src/lib/domainNames/alldomains.ts";
 
 const LCD: Record<number, { url: string; denom: string; symbol: string }> = {
   118: { url: "https://cosmos-rest.publicnode.com", denom: "uatom", symbol: "ATOM" },
@@ -27,6 +31,9 @@ const LCD: Record<number, { url: string; denom: string; symbol: string }> = {
 const WHALES = {
   xrpl: "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH",
   osmosis: "osmo1clpqr4nrk4khgkxj78fcwwh6dl3uw4epasmvnj",
+  ethStaker: "0x26e8Ce0D6C1424566fF8d584D1409b9fE651F27D",
+  vitalik: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+  an0n: "0x7bfee91193d9df2ac0bfe90191d40f23c773c060",
 };
 
 let fails = 0;
@@ -241,6 +248,18 @@ async function checkAda(addr: string) {
   } else pass("ada", { n: Array.isArray(utxos) ? utxos.length : 0, sum: sum.toString() });
 }
 
+async function checkEthBeacon() {
+  const desk = await readEthBeaconStake(WHALES.ethStaker).catch(() => []);
+  const raw = desk.reduce((s, l) => s + l.raw, 0n);
+  const min = 30n * 10n ** 18n;
+  if (raw < min) fail("eth beacon missing stake desk", { raw: raw.toString(), n: desk.length });
+  else pass("eth beacon staker", { eth: Number(raw) / 1e18, n: desk.length });
+  const none = await readEthBeaconStake(WHALES.vitalik).catch(() => []);
+  const noneRaw = none.reduce((s, l) => s + l.raw, 0n);
+  if (noneRaw > 0n) fail("eth beacon vitalik should be none", { raw: noneRaw.toString(), n: none.length });
+  else pass("eth beacon vitalik none", { n: none.length });
+}
+
 async function checkEvm(addr: string) {
   const a = addr.toLowerCase();
   const pn = (await rpc("https://ethereum-rpc.publicnode.com", "eth_getBalance", [a, "latest"])) as string | null;
@@ -261,6 +280,23 @@ async function checkEvm(addr: string) {
   const hay = JSON.stringify(ethJson ?? "").toLowerCase();
   if (hay.includes(PAXG) || hay.includes(USDY) || hay.includes("paxg") || hay.includes("usdy")) pass("eth rwa sample", {});
   else skip("eth rwa sample no PAXG/USDY");
+}
+
+async function checkNftCollections(addr: string) {
+  const json = await getJson(`https://eth.blockscout.com/api/v2/addresses/${addr}/nft/collections?type=ERC-721,ERC-1155`);
+  const items =
+    json && typeof json === "object" && Array.isArray((json as { items?: unknown[] }).items)
+      ? (json as { items: unknown[] }).items
+      : null;
+  if (!items) {
+    skip("nft collections shape");
+    return;
+  }
+  if (!items.length) {
+    fail("nft collections empty", { addr });
+    return;
+  }
+  pass("nft collections", { n: items.length });
 }
 
 const QQQB = "0x205812cdbed920aff76c6580abd681a46d11efc7";
@@ -325,6 +361,24 @@ async function run(name: string, fn: () => Promise<void>) {
 }
 
 async function main() {
+  const derived = await ansRootPda();
+  if (derived === ROOT_ANS) pass("alldomains ans root pda");
+  else fail("alldomains ans root pda", { derived: derived ?? "", expected: ROOT_ANS });
+
+  await run("arb rpc", async () => {
+    const a = (arg("evm") || WHALES.vitalik).toLowerCase();
+    const prev = useUserSettings.getState().rpcProvider;
+    useUserSettings.getState().patch({ rpcProvider: "oneRpc" });
+    rpcResetSession();
+    try {
+      const wei = await rpcJsonRpc<string>(42161, "eth_getBalance", [a, "latest"]);
+      pass("arb getBalance", { wei: BigInt(wei).toString() });
+    } finally {
+      useUserSettings.getState().patch({ rpcProvider: prev });
+      rpcResetSession();
+    }
+  });
+
   const evm = arg("evm");
   const near = arg("near");
   const ada = arg("ada");
@@ -337,6 +391,23 @@ async function main() {
   const xrp = arg("xrp");
   const apt = arg("apt");
 
+  await run("hyperliquid desk", async () => {
+    const desk = await readHyperliquidDesk(WHALES.an0n).catch(() => []);
+    const usd = desk.reduce((s, l) => s + (l.valueUsdc ?? 0), 0);
+    if (usd <= 0) fail("hyperliquid desk empty", { n: desk.length });
+    else pass("hyperliquid desk", { usd, n: desk.length });
+  });
+  await run("hyperevm khype", async () => {
+    const data = `0x70a08231${WHALES.an0n.slice(2).toLowerCase().padStart(64, "0")}`;
+    const raw = (await rpc("https://rpc.hyperliquid.xyz/evm", "eth_call", [
+      { to: "0xfD739d4e423301CE9385c1fb8850539D657C296D", data },
+      "latest",
+    ])) as string | null;
+    if (!raw || BigInt(raw) === 0n) fail("khype balance");
+    else pass("khype balance", { raw: BigInt(raw).toString() });
+  });
+  await run("nft collections", () => checkNftCollections(WHALES.vitalik));
+  await run("eth beacon", () => checkEthBeacon());
   await run("xrpl", () => checkXrpl(xrp || WHALES.xrpl, xrp ? "xrp" : "xrp whale"));
   if (atom) await run("atom", () => checkCosmos(118, atom, "atom"));
   else skip("atom no addr");

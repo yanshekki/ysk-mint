@@ -196,5 +196,7 @@ export function dexBrandHref(name: string, _chainId = 1): string | undefined {
   if (h.includes("bex")) return "https://bex.berachain.com/";
   if (h.includes("burrbear") || h.includes("burr bear")) return "https://www.burrbear.io/";
   if (h.includes("minswap")) return "https://app.minswap.org/liquidity";
+  if (h.includes("meteora")) return "https://app.meteora.ag/portfolio";
+  if (h.includes("rhea") || h.includes("ref")) return "https://app.rhea.finance/pools";
   return undefined;
 }

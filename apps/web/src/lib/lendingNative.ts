@@ -23,9 +23,13 @@ export async function readNativeLending(opts: {
   tron?: string;
   aptos?: string;
   quotes: Map<string, Quote>;
+  core?: boolean;
+  extra?: boolean;
 }): Promise<LendCard[]> {
-  const tag = [opts.sol, opts.sui, opts.tron, opts.aptos].filter(Boolean).join("|") || "none";
-  return accountCache("pos.lend", "native", tag, "bundle", () => readNativeLendingUncached(opts));
+  const core = opts.core !== false;
+  const extra = opts.extra !== false;
+  const tag = [opts.sol, opts.sui, opts.tron, opts.aptos, core ? "c" : "", extra ? "x" : ""].filter(Boolean).join("|") || "none";
+  return accountCache("pos.lend", "native", tag, "bundle", () => readNativeLendingUncached({ ...opts, core, extra }));
 }
 
 async function readNativeLendingUncached(opts: {
@@ -34,19 +38,24 @@ async function readNativeLendingUncached(opts: {
   tron?: string;
   aptos?: string;
   quotes: Map<string, Quote>;
+  core: boolean;
+  extra: boolean;
 }): Promise<LendCard[]> {
   const jobs: Array<Promise<LendCard | null>> = [];
-  if (opts.sol) {
+  if (opts.sol && opts.core) {
     jobs.push(readKamino(opts.sol, opts.quotes));
     jobs.push(readJupiterLend(opts.sol, opts.quotes));
   }
   if (opts.sui) {
-    jobs.push(readNavi(opts.sui));
-    jobs.push(readSuilend(opts.sui));
-    jobs.push(readScallop(opts.sui));
+    if (opts.core) {
+      jobs.push(readNavi(opts.sui));
+      jobs.push(readSuilend(opts.sui));
+    }
+    if (opts.extra) jobs.push(readScallop(opts.sui));
   }
-  if (opts.tron) jobs.push(readJustLend(opts.tron));
-  if (opts.aptos) jobs.push(readEchelon(opts.aptos));
+  if (opts.tron && opts.extra) jobs.push(readJustLend(opts.tron));
+  if (opts.aptos && opts.extra) jobs.push(readEchelon(opts.aptos));
+  if (!jobs.length) return [];
   const rows = await Promise.all(jobs);
   return rows.filter((c): c is LendCard => Boolean(c));
 }

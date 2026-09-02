@@ -5,8 +5,10 @@ import { LocaleLink as Link } from "../../app/LocaleLink.tsx";
 import { localePath } from "../../lib/locale.ts";
 import { AddrIdCard } from "../settings/AddrFields.tsx";
 import { PeekDialog } from "./PeekDialog.tsx";
+import { NftDesk } from "./NftDesk.tsx";
 import { TxDesk } from "./TxDesk.tsx";
 import { useAddressTxs } from "../../lib/useAddressTxs.ts";
+import { nftIndexed, useAddressNfts } from "../../lib/nfts.ts";
 import { txIndexed } from "../../lib/txIndex.ts";
 import { useActiveSnap, useAddressSets } from "../../lib/addressSets.ts";
 import { SHARE_SOFT, applyPeekHash, peekGoBack, shareUrl, usePeekBack } from "../../lib/shareSet.ts";
@@ -38,6 +40,7 @@ import { stakeFromPayment } from "../../lib/cardanoCip30.ts";
 import { resolvedContracts } from "../../lib/launchStack.ts";
 import { useWizard } from "../wizard/store.ts";
 import { useUserSettings } from "../../lib/userSettings.ts";
+import { isDefiEnabled } from "../../lib/defiScan.ts";
 import { accountCache } from "../../lib/defi/cache.ts";
 import { chainIcon } from "../../lib/chainIcon.ts";
 import { Badge } from "../../shared/ui/TokenRow.tsx";
@@ -67,10 +70,15 @@ import {
   readSolStake,
   readSuiStake,
   readTronStake,
+  readAvaxPStake,
+  readEthBeaconStake,
+  readHyperliquidDesk,
   stakeBadge,
   stakeSubtitle,
   type StakeLine,
 } from "../../lib/stakingPositions.ts";
+import { readAdaHoldingsLp, readEvmV2HoldingsLp, readNearHoldingsLp, readSolHoldingsLp } from "../../lib/holdingsLp.ts";
+import { fmtApy } from "../../lib/lendFormat.ts";
 
 const launchEvent = parseAbiItem(
   "event Launch(address indexed token, address indexed deployer, bytes32 indexed salt, string name, string symbol, uint8 supplyMode)",
@@ -161,7 +169,13 @@ function mergeLines(into: ProtocolLine[], extra: ProtocolLine[]): ProtocolLine[]
     }
     const raw = prev.raw + l.raw;
     const valueUsdc = prev.valueUsdc == null && l.valueUsdc == null ? null : (prev.valueUsdc ?? 0) + (l.valueUsdc ?? 0);
-    map.set(k, { ...prev, raw, amount: fmtLineAmt(raw, l.contract ?? prev.contract), valueUsdc });
+    map.set(k, {
+      ...prev,
+      raw,
+      amount: fmtLineAmt(raw, l.contract ?? prev.contract),
+      valueUsdc,
+      apyPct: prev.apyPct ?? l.apyPct,
+    });
   }
   return [...map.values()];
 }
@@ -444,7 +458,7 @@ export function MePage() {
   const [shared, setShared] = useState(false);
   const [shareNote, setShareNote] = useState("");
   const [peekOpen, setPeekOpen] = useState(false);
-  const [deskTab, setDeskTab] = useState<"holdings" | "txs">("holdings");
+  const [deskTab, setDeskTab] = useState<"holdings" | "nft" | "txs">("holdings");
   const peeking = snap.activeId === "peek";
   const peekCanBack = usePeekBack();
 
@@ -504,8 +518,17 @@ export function MePage() {
   const protoSlugParam = route.protocol;
   const hideZero = useUserSettings((s) => s.hideZero);
   const txs = useAddressTxs(deskTab === "txs" ? snap.addrs : []);
+  const nfts = useAddressNfts(evmAddrs, deskTab === "nft");
   const patchSettings = useUserSettings((s) => s.patch);
   const disabledChains = useUserSettings((s) => s.disabledChains);
+  const disabledDefi = useUserSettings((s) => s.disabledDefi);
+  const scanLendCore = isDefiEnabled("lendCore", disabledDefi);
+  const scanLendExtra = isDefiEnabled("lendExtra", disabledDefi);
+  const scanLpCore = isDefiEnabled("lpCore", disabledDefi);
+  const scanLpExtra = isDefiEnabled("lpExtra", disabledDefi);
+  const scanStakeCore = isDefiEnabled("stakeCore", disabledDefi);
+  const scanStakeExtra = isDefiEnabled("stakeExtra", disabledDefi);
+  const anyDefi = scanLendCore || scanLendExtra || scanLpCore || scanLpExtra || scanStakeCore || scanStakeExtra;
   const [launched, setLaunched] = useState<LaunchRow[]>([]);
   const [quotes, setQuotes] = useState<Map<string, Quote>>(new Map());
   const [aave, setAave] = useState<AaveCard[]>([]);
@@ -516,6 +539,7 @@ export function MePage() {
   const [aTokens, setATokens] = useState<Set<string>>(new Set());
   const [stakeExtra, setStakeExtra] = useState<StakeLine[]>([]);
   const [adaStakeLines, setAdaStakeLines] = useState<StakeLine[]>([]);
+  const [adaLp, setAdaLp] = useState<UniCard[]>([]);
 
   const anyWallet = snap.addrs.length > 0;
 
@@ -734,6 +758,7 @@ export function MePage() {
       setATokens(new Set());
       setStakeExtra([]);
       setAdaStakeLines([]);
+      setAdaLp([]);
       return;
     }
     let cancelled = false;
@@ -811,63 +836,75 @@ export function MePage() {
         ...(osmoAccs.length ? [100001] : []),
         ...(tiaAccs.length ? [100002] : []),
       ];
-      for (const id of defiIds) useLiveStatus.getState().start(`defi:${id}`, id, "defi", "wait");
+      if (anyDefi) for (const id of defiIds) useLiveStatus.getState().start(`defi:${id}`, id, "defi", "wait");
 
       const burrowAll: AaveCard[] = [];
       const benqiAll: AaveCard[] = [];
 
-      await Promise.all(
+      if (anyDefi) await Promise.all(
         [...new Set(defiIds)].map((id) =>
           trackLive(`defi:${id}`, id, "defi", async () => {
             if (id === 397) {
               for (const acc of nearAccs) {
-                const b = await readBurrow(acc).catch(() => null);
-                if (b) burrowAll.push(b);
-                extra.push(...(await readNearStake(acc).catch(() => [])));
+                if (scanLendCore) {
+                  const b = await readBurrow(acc).catch(() => null);
+                  if (b) burrowAll.push(b);
+                }
+                if (scanStakeCore) extra.push(...(await readNearStake(acc).catch(() => [])));
+                if (scanLpExtra) uniCards.push(...(await readNearHoldingsLp(acc).catch(() => [])));
               }
               return;
             }
             if (id === 101) {
               for (const acc of solAccs) {
-                extra.push(...(await readSolStake(acc, next.get("101:native")?.usdc).catch(() => [])));
-                const more = await readNativeLending({ sol: acc, quotes: next }).catch(() => []);
-                for (const card of more) {
-                  lendCards.push(card);
-                  for (const x of card.aTokens) tokens.add(x);
+                if (scanStakeCore) extra.push(...(await readSolStake(acc, next.get("101:native")?.usdc).catch(() => [])));
+                if (scanLpExtra) uniCards.push(...(await readSolHoldingsLp(acc).catch(() => [])));
+                if (scanLendCore || scanLendExtra) {
+                  const more = await readNativeLending({ sol: acc, quotes: next, core: scanLendCore, extra: scanLendExtra }).catch(() => []);
+                  for (const card of more) {
+                    lendCards.push(card);
+                    for (const x of card.aTokens) tokens.add(x);
+                  }
                 }
               }
               return;
             }
             if (id === 784) {
               for (const acc of suiAccs) {
-                extra.push(...(await readSuiStake(acc).catch(() => [])));
-                const more = await readNativeLending({ sui: acc, quotes: next }).catch(() => []);
-                for (const card of more) {
-                  lendCards.push(card);
-                  for (const x of card.aTokens) tokens.add(x);
+                if (scanStakeCore) extra.push(...(await readSuiStake(acc).catch(() => [])));
+                if (scanLendCore || scanLendExtra) {
+                  const more = await readNativeLending({ sui: acc, quotes: next, core: scanLendCore, extra: scanLendExtra }).catch(() => []);
+                  for (const card of more) {
+                    lendCards.push(card);
+                    for (const x of card.aTokens) tokens.add(x);
+                  }
                 }
               }
               return;
             }
             if (id === 728126428) {
               for (const acc of tronAccs) {
-                extra.push(...(await readTronStake(acc).catch(() => [])));
-                const more = await readNativeLending({ tron: acc, quotes: next }).catch(() => []);
-                for (const card of more) {
-                  lendCards.push(card);
-                  for (const x of card.aTokens) tokens.add(x);
+                if (scanStakeCore) extra.push(...(await readTronStake(acc).catch(() => [])));
+                if (scanLendCore || scanLendExtra) {
+                  const more = await readNativeLending({ tron: acc, quotes: next, core: scanLendCore, extra: scanLendExtra }).catch(() => []);
+                  for (const card of more) {
+                    lendCards.push(card);
+                    for (const x of card.aTokens) tokens.add(x);
+                  }
                 }
               }
               return;
             }
             if (id === 118 || id === 100001 || id === 100002) {
+              if (!scanStakeCore) return;
               const accs = id === 118 ? cosmosAccs : id === 100001 ? osmoAccs : tiaAccs;
               for (const acc of accs) extra.push(...(await readCosmosStake(id, acc).catch(() => [])));
               return;
             }
             if (id === 637) {
+              if (!scanLendCore && !scanLendExtra) return;
               for (const acc of aptosAccs) {
-                const more = await readNativeLending({ aptos: acc, quotes: next }).catch(() => []);
+                const more = await readNativeLending({ aptos: acc, quotes: next, core: scanLendCore, extra: scanLendExtra }).catch(() => []);
                 for (const card of more) {
                   lendCards.push(card);
                   for (const x of card.aTokens) tokens.add(x);
@@ -878,28 +915,46 @@ export function MePage() {
             const client = clients.get(id);
             if (!client || !evmAddrs.length) return;
             for (const address of evmAddrs) {
-              const a = await readAave(client, id, address);
-              if (a) {
-                aaveCards.push(a);
-                for (const x of a.aTokens) tokens.add(x);
+              if (scanLendCore) {
+                const a = await readAave(client, id, address);
+                if (a) {
+                  aaveCards.push(a);
+                  for (const x of a.aTokens) tokens.add(x);
+                }
               }
-              uniCards.push(...(await readUniV3(client, id, address)));
-              const more = await readExtraLending(client, id, address, next).catch(() => []);
-              for (const card of more) {
-                lendCards.push(card);
-                for (const x of card.aTokens) tokens.add(x);
+              if (scanLpCore) uniCards.push(...(await readUniV3(client, id, address)));
+              if (scanLpExtra) uniCards.push(...(await readEvmV2HoldingsLp(client, id, address, next).catch(() => [])));
+              if (scanLendExtra) {
+                const more = await readExtraLending(client, id, address, next).catch(() => []);
+                for (const card of more) {
+                  lendCards.push(card);
+                  for (const x of card.aTokens) tokens.add(x);
+                }
               }
-              extra.push(...(await readPinnedLst(client, id, address, next, unstakeLiquid).catch(() => [])));
-              if (id === 1) extra.push(...(await readLidoQueue(client, address, next.get(quoteKey(1, undefined, true))?.usdc ?? next.get("1:native")?.usdc).catch(() => [])));
+              if (scanStakeCore) extra.push(...(await readPinnedLst(client, id, address, next, unstakeLiquid).catch(() => [])));
+              if (scanStakeCore && id === 1) extra.push(...(await readEthBeaconStake(address, next.get(quoteKey(1, undefined, true))?.usdc ?? next.get("1:native")?.usdc).catch(() => [])));
+              if (scanStakeExtra && id === 1) extra.push(...(await readLidoQueue(client, address, next.get(quoteKey(1, undefined, true))?.usdc ?? next.get("1:native")?.usdc).catch(() => [])));
               if (id === 43114) {
-                extra.push(...(await readSavaxUnlocks(client, address, next.get("43114:native")?.usdc).catch(() => [])));
-                const b = await readBenqiMarkets(client, address, next).catch(() => null);
-                if (b) benqiAll.push(b);
+                if (scanStakeExtra) extra.push(...(await readSavaxUnlocks(client, address, next.get("43114:native")?.usdc).catch(() => [])));
+                if (scanStakeExtra) extra.push(...(await readAvaxPStake(address, next.get("43114:native")?.usdc).catch(() => [])));
+                if (scanLendCore || scanLpExtra) {
+                  const b = await readBenqiMarkets(client, address, next).catch(() => null);
+                  if (b) {
+                    const lines = b.lines.filter((l) => (l.side === "lp" ? scanLpExtra : scanLendCore));
+                    if (lines.length) benqiAll.push({ ...b, lines });
+                  }
+                }
               }
             }
           }).catch(() => undefined),
         ),
       );
+
+      if (scanStakeCore && evmAddrs.length && !disabledChains.includes(998)) {
+        for (const address of evmAddrs) {
+          extra.push(...(await readHyperliquidDesk(address).catch(() => [])));
+        }
+      }
 
       if (cancelled) return;
       setQuotes(next);
@@ -916,32 +971,45 @@ export function MePage() {
       useLiveStatus.getState().clear("quote:");
       useLiveStatus.getState().clear("defi:");
     };
-  }, [evmAddrs, anyWallet, holdingsKey, config, snap.byKind, unstakeLiquid]);
+  }, [evmAddrs, anyWallet, holdingsKey, config, snap.byKind, unstakeLiquid, anyDefi, scanLendCore, scanLendExtra, scanLpCore, scanLpExtra, scanStakeCore, scanStakeExtra, disabledChains]);
 
   useEffect(() => {
     if (!adaStake && !adaPays) {
       setAdaStakeLines([]);
+      setAdaLp([]);
+      return;
+    }
+    if (!scanStakeCore && !scanLpExtra) {
+      setAdaStakeLines([]);
+      setAdaLp([]);
       return;
     }
     let cancelled = false;
     void trackLive("defi:1815", 1815, "defi", async () => {
       const stakes = adaStake ? adaStake.split("|") : [];
       const pays = adaPays ? adaPays.split("|") : [];
-      const parts = await Promise.all(stakes.map((s) => readAdaStake(s, pays)));
-      if (!cancelled) setAdaStakeLines(parts.flat());
+      const parts = scanStakeCore ? await Promise.all(stakes.map((s) => readAdaStake(s, pays))) : [];
+      const lp = scanLpExtra ? await readAdaHoldingsLp(pays).catch(() => []) : [];
+      if (!cancelled) {
+        setAdaStakeLines(parts.flat());
+        setAdaLp(lp);
+      }
     }).catch(() => {
-      if (!cancelled) setAdaStakeLines([]);
+      if (!cancelled) {
+        setAdaStakeLines([]);
+        setAdaLp([]);
+      }
     });
     return () => {
       cancelled = true;
       useLiveStatus.getState().finish("defi:1815", true);
     };
-  }, [adaStake, adaPays]);
+  }, [adaStake, adaPays, scanStakeCore, scanLpExtra]);
 
   const walletRows = useMemo(() => {
     const rows = buckets.flatMap((g) =>
       g.rows.filter((r) => {
-        if (r.chainId != null && isLst(r.chainId, r.contract)) return false;
+        if (scanStakeCore && r.chainId != null && isLst(r.chainId, r.contract)) return false;
         if (r.contract && aTokens.has(r.contract.toLowerCase())) return false;
         if (r.contract && benqi.some((c) => c.aTokens.has(r.contract!.toLowerCase()))) return false;
         return true;
@@ -949,10 +1017,10 @@ export function MePage() {
     );
     const scoped = filter === "all" ? rows : rows.filter((r) => r.chainId === filter);
     return scoped.filter((r) => listedHolding(r, quotes.get(quoteKey(r.chainId ?? 0, r.contract, r.native)), hideZero));
-  }, [aTokens, benqi, buckets, filter, hideZero, quotes]);
+  }, [aTokens, benqi, buckets, filter, hideZero, quotes, scanStakeCore]);
 
   const stakeAll = useMemo(() => {
-    const lst = buckets.flatMap((g) => lstStakeLines(g.id, g.rows, quotes, t("me.unstakeLiquid")));
+    const lst = scanStakeCore ? buckets.flatMap((g) => lstStakeLines(g.id, g.rows, quotes, t("me.unstakeLiquid"))) : [];
     const merged = new Map<string, StakeLine>();
     for (const l of [...lst, ...stakeExtra, ...adaStakeLines]) {
       const k =
@@ -963,10 +1031,14 @@ export function MePage() {
         l.id.includes("pending")
           ? l.id
           : `${l.chainId}:${(l.contract || l.id).toLowerCase()}:${l.status}`;
-      if (!merged.has(k)) merged.set(k, l);
+      const prev = merged.get(k);
+      if (!prev) merged.set(k, l);
+      else if (!prev.underlyingAmount && l.underlyingAmount) {
+        merged.set(k, { ...prev, underlyingAmount: l.underlyingAmount, underlyingSymbol: l.underlyingSymbol });
+      }
     }
     return [...merged.values()];
-  }, [buckets, quotes, stakeExtra, adaStakeLines, t]);
+  }, [buckets, quotes, stakeExtra, adaStakeLines, t, scanStakeCore]);
   const stake = filter === "all" ? stakeAll : stakeAll.filter((l) => l.chainId === filter);
   const walletGet = useCallback(
     (r: HoldingRow, k: string) => {
@@ -984,6 +1056,7 @@ export function MePage() {
   const burrowCards = filter === "all" ? burrow : burrow.filter((c) => c.chainId === filter);
   const benqiCards = filter === "all" ? benqi : benqi.filter((c) => c.chainId === filter);
   const uniCards = filter === "all" ? uni : uni.filter((c) => c.chainId === filter);
+  const adaLpCards = filter === "all" ? adaLp : adaLp.filter((c) => c.chainId === filter);
   const extraLendCards = filter === "all" ? lendExtra : lendExtra.filter((c) => c.chainId === filter);
   const lendBrandsAll = useMemo(() => {
     const by = new Map<string, ProtoBrand>();
@@ -1006,11 +1079,14 @@ export function MePage() {
     for (const c of uni) {
       addBrand(by, c.protocol, c.chain, c.chainId, dexBrandHref(c.protocol, c.chainId), c.lines);
     }
+    for (const c of adaLp) {
+      addBrand(by, c.protocol, c.chain, c.chainId, dexBrandHref(c.protocol, c.chainId), c.lines);
+    }
     for (const c of benqi) {
       addBrand(by, t("me.benqi"), c.chain, c.chainId, lendAppHref("BENQI", c.chainId), c.lines.filter((l) => l.side === "lp"));
     }
     return sortBrands(by);
-  }, [uni, benqi, t]);
+  }, [uni, adaLp, benqi, t]);
   const stakeBrandsAll = useMemo(() => {
     const by = new Map<string, ProtoBrand>();
     for (const l of stakeAll) {
@@ -1042,6 +1118,7 @@ export function MePage() {
   for (const c of burrowCards) for (const l of c.lines) allValues.push(l.valueUsdc ?? null);
   for (const c of benqiCards) for (const l of c.lines) allValues.push(l.valueUsdc ?? null);
   for (const c of uniCards) for (const l of c.lines) allValues.push(l.valueUsdc ?? null);
+  for (const c of adaLpCards) for (const l of c.lines) allValues.push(l.valueUsdc ?? null);
   for (const c of extraLendCards) for (const l of c.lines) allValues.push(l.valueUsdc ?? null);
   for (const l of stake) {
     if (l.inWallet && !isLst(l.chainId, l.contract)) continue;
@@ -1055,14 +1132,14 @@ export function MePage() {
     const rows = id === "all" ? buckets.flatMap((g) => g.rows) : (buckets.find((g) => g.id === id)?.rows ?? []);
     const nWallet = rows.filter((r) => {
       if (r.raw <= 0n) return false;
-      if (r.chainId != null && isLst(r.chainId, r.contract)) return false;
+      if (scanStakeCore && r.chainId != null && isLst(r.chainId, r.contract)) return false;
       if (r.contract && aTokens.has(r.contract.toLowerCase())) return false;
       return listedHolding(r, quotes.get(quoteKey(r.chainId ?? 0, r.contract, r.native)), hideZero);
     }).length;
     const nAave = (id === "all" ? aave : aave.filter((c) => c.chainId === id)).reduce((n, c) => n + c.lines.length, 0);
     const nBurrow = (id === "all" ? burrow : burrow.filter((c) => c.chainId === id)).reduce((n, c) => n + c.lines.length, 0);
     const nBenqi = (id === "all" ? benqi : benqi.filter((c) => c.chainId === id)).reduce((n, c) => n + c.lines.length, 0);
-    const nUni = (id === "all" ? uni : uni.filter((c) => c.chainId === id)).reduce((n, c) => n + c.lines.length, 0);
+    const nUni = (id === "all" ? [...uni, ...adaLp] : [...uni, ...adaLp].filter((c) => c.chainId === id)).reduce((n, c) => n + c.lines.length, 0);
     const nLend = (id === "all" ? lendExtra : lendExtra.filter((c) => c.chainId === id)).reduce((n, c) => n + c.lines.length, 0);
     const nStake = id === "all" ? stakeAll.length : stakeAll.filter((l) => l.chainId === id).length;
     return nWallet + nAave + nBurrow + nBenqi + nUni + nLend + nStake;
@@ -1072,7 +1149,12 @@ export function MePage() {
     if (id !== "all" && txs.failedChains.has(id) && txCount(id) === 0) return "—";
     return String(txCount(id));
   };
-  const tabCount = (id: number | "all") => (deskTab === "txs" ? txCountLabel(id) : chipCount(id));
+  const nftCountLabel = (id: number | "all") => {
+    if (id !== "all" && nfts.failed.has(id) && nfts.pieceCount(id) === 0) return "—";
+    if (nfts.loading && (id === "all" ? !nfts.sets.length : nfts.pieceCount(id) === 0 && nftIndexed(id))) return "…";
+    return String(nfts.pieceCount(id));
+  };
+  const tabCount = (id: number | "all") => (deskTab === "txs" ? txCountLabel(id) : deskTab === "nft" ? nftCountLabel(id) : chipCount(id));
 
   return (
     <section className="workspace">
@@ -1203,6 +1285,17 @@ export function MePage() {
                 <button type="button" className={`me-chip ${deskTab === "holdings" ? "me-chip-on" : ""}`} onClick={() => setDeskTab("holdings")}>
                   {t("me.title")}
                 </button>
+                <button
+                  type="button"
+                  className={`me-chip ${deskTab === "nft" ? "me-chip-on" : ""}`}
+                  onClick={() => {
+                    setDeskTab("nft");
+                    if (filter !== "all" && !nftIndexed(filter)) setFilter("all");
+                  }}
+                >
+                  {t("me.nftTitle")}
+                  {deskTab === "nft" ? <span className="me-count">{nfts.loading && !nfts.sets.length ? "…" : nfts.pieceCount("all")}</span> : null}
+                </button>
                 <button type="button" className={`me-chip ${deskTab === "txs" ? "me-chip-on" : ""}`} onClick={() => setDeskTab("txs")}>
                   {t("me.txTitle")}
                   {deskTab === "txs" ? <span className="me-count">{txs.loading ? "…" : txs.rows.length}</span> : null}
@@ -1213,10 +1306,16 @@ export function MePage() {
                 <div className="me-chips">
                   <button type="button" className={`me-chip ${filter === "all" ? "me-chip-on" : ""}`} onClick={() => setFilter("all")}>
                     {t("me.all")}
-                    <span className="me-count">{deskTab === "txs" && txs.loading && !txs.rows.length ? "…" : tabCount("all")}</span>
+                    <span className="me-count">{(deskTab === "txs" && txs.loading && !txs.rows.length) || (deskTab === "nft" && nfts.loading && !nfts.sets.length) ? "…" : tabCount("all")}</span>
                   </button>
                   {buckets
-                    .filter((g) => (deskTab === "txs" ? txIndexed(g.id) || txCount(g.id) > 0 : !hideZero || chipCount(g.id) > 0))
+                    .filter((g) =>
+                      deskTab === "txs"
+                        ? txIndexed(g.id) || txCount(g.id) > 0
+                        : deskTab === "nft"
+                          ? nftIndexed(g.id) || nfts.pieceCount(g.id) > 0
+                          : !hideZero || chipCount(g.id) > 0,
+                    )
                     .map((g) => (
                       <button key={g.id} type="button" className={`me-chip ${filter === g.id ? "me-chip-on" : ""}`} onClick={() => setFilter(g.id)}>
                         <img src={g.icon} alt="" width={20} height={20} />
@@ -1247,6 +1346,13 @@ export function MePage() {
                   rows={txs.rows}
                   loading={txs.loading}
                   failed={filter === "all" ? txs.failed : txs.failedChains.has(filter)}
+                  chainFilter={filter}
+                />
+              ) : deskTab === "nft" ? (
+                <NftDesk
+                  sets={nfts.sets}
+                  loading={nfts.loading}
+                  failed={filter === "all" ? nfts.failed.size > 0 : nfts.failed.has(filter)}
                   chainFilter={filter}
                 />
               ) : protoKind ? (
@@ -1303,9 +1409,12 @@ export function MePage() {
                                 title={l.symbol}
                                 subtitle={
                                   protoKind === "lend"
-                                    ? l.side === "borrow"
-                                      ? t("me.borrowed")
-                                      : t("me.supplied")
+                                    ? [
+                                        l.side === "borrow" ? t("me.borrowed") : t("me.supplied"),
+                                        l.apyPct != null && Number.isFinite(l.apyPct) ? fmtApy(l.apyPct) : "",
+                                      ]
+                                        .filter(Boolean)
+                                        .join(" · ")
                                     : protoKind === "stake"
                                       ? stakeSubtitle(sl)
                                       : (l.extra ?? l.name)
@@ -1321,7 +1430,9 @@ export function MePage() {
                                         ? `https://nearblocks.io/address/${l.contract}`
                                         : l.chainId === 1815 && l.contract?.startsWith("pool")
                                           ? `https://cardanoscan.io/pool/${l.contract}`
-                                          : explorerFor(l.chainId, l.contract)
+                                          : l.contract?.startsWith("P-avax")
+                                            ? `https://subnets.avax.network/p-chain/address/${l.contract}`
+                                            : explorerFor(l.chainId, l.contract)
                                     : explorerFor(l.chainId, l.contract)
                                 }
                                 badge={protoKind === "stake" ? stakeBadge(sl) : undefined}

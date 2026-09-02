@@ -21,6 +21,30 @@ const SCAN_ALWAYS = new Set([
   "WETH",
   "STETH",
   "WSTETH",
+  "RETH",
+  "CBETH",
+  "WEETH",
+  "EETH",
+  "ETHX",
+  "OSETH",
+  "RSETH",
+  "EZETH",
+  "PUFETH",
+  "SWETH",
+  "ANKRETH",
+  "SFRXETH",
+  "METH",
+  "WBETH",
+  "OETH",
+  "RSWETH",
+  "KHYPE",
+  "KMHYPE",
+  "VKHYPE",
+  "BEHYPE",
+  "STHYPE",
+  "HIHYPE",
+  "WHYPE",
+  "STKAAVE",
   "USDC",
   "USDT",
   "DAI",
@@ -123,9 +147,9 @@ export function useEvmHoldings(address: Address | Address[] | undefined) {
               sum += value;
             }
             next[id] = sum;
-            useLiveStatus.getState().finish(`holdings:${id}`, true);
+            if (!cancelled) useLiveStatus.getState().finish(`holdings:${id}`, true);
           } catch {
-            useLiveStatus.getState().finish(`holdings:${id}`, false);
+            if (!cancelled) useLiveStatus.getState().finish(`holdings:${id}`, false);
           }
         }
       });
@@ -235,7 +259,7 @@ export function useEvmHoldings(address: Address | Address[] | undefined) {
       const workers = Array.from({ length: Math.min(3, disc.length) }, async () => {
         while (i < disc.length) {
           const d = disc[i++];
-          if (!d) break;
+          if (!d || d.nft) continue;
           let sum = 0n;
           let ok = false;
           for (const address of addrs) {
@@ -290,6 +314,7 @@ export function useEvmHoldings(address: Address | Address[] | undefined) {
       out.push(row(t, raw, connected));
     });
     for (const d of disc) {
+      if (d.nft) continue;
       const ck = `${d.chainId}:${d.address}`;
       if (seen.has(ck)) continue;
       seen.add(ck);

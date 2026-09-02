@@ -2,6 +2,7 @@ import { erc20Abi, formatUnits, type Address, type PublicClient } from "viem";
 import { accountCache } from "./defi/cache.ts";
 import { DEX, LST, type Addr } from "./defiAddresses.ts";
 import { quoteEvmToken, type Quote } from "./defiQuotes.ts";
+import { rayApy } from "./lendApy.ts";
 
 const poolAbi = [
   {
@@ -53,6 +54,26 @@ const dataAbi = [
       { name: "liquidityRate", type: "uint256" },
       { name: "stableRateLastUpdated", type: "uint40" },
       { name: "usageAsCollateralEnabled", type: "bool" },
+    ],
+  },
+  {
+    type: "function",
+    name: "getReserveData",
+    stateMutability: "view",
+    inputs: [{ name: "asset", type: "address" }],
+    outputs: [
+      { name: "unbacked", type: "uint256" },
+      { name: "accruedToTreasuryScaled", type: "uint256" },
+      { name: "totalAToken", type: "uint256" },
+      { name: "totalStableDebt", type: "uint256" },
+      { name: "totalVariableDebt", type: "uint256" },
+      { name: "liquidityRate", type: "uint256" },
+      { name: "variableBorrowRate", type: "uint256" },
+      { name: "stableBorrowRate", type: "uint256" },
+      { name: "averageStableBorrowRate", type: "uint256" },
+      { name: "liquidityIndex", type: "uint256" },
+      { name: "variableBorrowIndex", type: "uint256" },
+      { name: "lastUpdateTimestamp", type: "uint40" },
     ],
   },
   {
@@ -131,6 +152,8 @@ export type ProtocolLine = {
   extra?: string;
   quote?: Quote | null;
   valueUsdc?: number | null;
+  /** Current supply or borrow APY %, when the protocol view returns it. */
+  apyPct?: number | null;
 };
 
 export type AaveCard = {
@@ -247,29 +270,58 @@ export async function readAaveMarket(
       contracts: used.flatMap((u) => [
         { address: cfg.data, abi: dataAbi, functionName: "getUserReserveData" as const, args: [u.asset, user] },
         { address: cfg.data, abi: dataAbi, functionName: "getReserveTokensAddresses" as const, args: [u.asset] },
+        { address: cfg.data, abi: dataAbi, functionName: "getReserveData" as const, args: [u.asset] },
       ]),
       allowFailure: true,
     });
     const aTokens = new Set<string>();
     const lines: ProtocolLine[] = [];
     for (let i = 0; i < used.length; i++) {
-      const r = rows[i * 2];
-      const t = rows[i * 2 + 1];
+      const r = rows[i * 3];
+      const t = rows[i * 3 + 1];
+      const rd = rows[i * 3 + 2];
       if (r.status !== "success") continue;
       const row = r.result as unknown;
       let aBal = 0n;
       let stable = 0n;
       let variable = 0n;
+      let userLiq = 0n;
+      let userStableRate = 0n;
       if (Array.isArray(row)) {
         aBal = row[0] as bigint;
         stable = row[1] as bigint;
         variable = row[2] as bigint;
+        userStableRate = (row[5] as bigint) ?? 0n;
+        userLiq = (row[6] as bigint) ?? 0n;
       } else {
-        const o = row as { currentATokenBalance: bigint; currentStableDebt: bigint; currentVariableDebt: bigint };
+        const o = row as {
+          currentATokenBalance: bigint;
+          currentStableDebt: bigint;
+          currentVariableDebt: bigint;
+          stableBorrowRate?: bigint;
+          liquidityRate?: bigint;
+        };
         aBal = o.currentATokenBalance;
         stable = o.currentStableDebt;
         variable = o.currentVariableDebt;
+        userStableRate = o.stableBorrowRate ?? 0n;
+        userLiq = o.liquidityRate ?? 0n;
       }
+      let marketLiq = 0n;
+      let marketVar = 0n;
+      if (rd?.status === "success") {
+        const m = rd.result as unknown;
+        if (Array.isArray(m)) {
+          marketLiq = (m[5] as bigint) ?? 0n;
+          marketVar = (m[6] as bigint) ?? 0n;
+        } else {
+          const o = m as { liquidityRate?: bigint; variableBorrowRate?: bigint };
+          marketLiq = o.liquidityRate ?? 0n;
+          marketVar = o.variableBorrowRate ?? 0n;
+        }
+      }
+      const supplyApy = rayApy(userLiq || marketLiq);
+      const borrowApy = variable > 0n ? rayApy(marketVar) : stable > 0n ? rayApy(userStableRate) : null;
       if (t.status === "success") {
         const tok = t.result as unknown;
         const aTok = Array.isArray(tok) ? (tok[0] as Address) : (tok as { aTokenAddress: Address }).aTokenAddress;
@@ -294,6 +346,7 @@ export async function readAaveMarket(
           side: "supply",
           quote,
           valueUsdc: quote ? n * quote.usdc : null,
+          apyPct: supplyApy,
         });
       }
       if (debt > 0n) {
@@ -311,6 +364,7 @@ export async function readAaveMarket(
           side: "borrow",
           quote,
           valueUsdc: quote ? -(n * quote.usdc) : null,
+          apyPct: borrowApy,
         });
       }
     }

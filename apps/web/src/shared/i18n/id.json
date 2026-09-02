@@ -25,7 +25,8 @@
       "trades": "transaksi",
       "defi": "protokol",
       "txs": "aktivitas",
-      "lend": "pinjaman"
+      "lend": "pinjaman",
+      "nft": "NFT"
     }
   },
   "nav": {
@@ -554,7 +555,25 @@
       "approve": "Setujui",
       "call": "Panggil",
       "fail": "Gagal"
-    }
+    },
+    "nftKicker": "Koleksi",
+    "nftTitle": "NFT",
+    "nftHint": "Dikelompokkan per koleksi. Gambar dari explorer publik. Tanpa harga lantai dan tanpa taksiran USD.",
+    "nftSearch": "Koleksi, id token, atau kontrak",
+    "nftLoading": "Memuat NFT…",
+    "nftFail": "NFT tidak dapat dimuat. Coba lagi.",
+    "nftEmpty": "Tidak ada NFT untuk filter ini.",
+    "nftNoIndex": "NFT tidak diindeks di rantai ini.",
+    "nftSets": "{{n}} koleksi · {{p}} buah",
+    "nftPieces": "{{n}} bh",
+    "nft721": "ERC-721",
+    "nft1155": "ERC-1155",
+    "nftHasArt": "Ada gambar",
+    "nftNoArt": "Koleksi ini tidak punya pratinjau.",
+    "nftOpen": "Explorer",
+    "nftRest": "{{n}} lagi tidak ditampilkan",
+    "nftExpand": "Buka semua",
+    "nftCollapse": "Tutup semua"
   },
   "token": {
     "missing": "Tautan token ini tidak lengkap.",
@@ -583,7 +602,7 @@
     "addrsWatchHint": "Cari saldo publik orang lain. Ini tidak berarti Anda memiliki dompet itu.",
     "addrsCount": "{{n}} almt",
     "watchCount": "{{n}} / {{max}} set",
-    "addrPaste": "Tempel dompet, ENS, atau alice.near",
+    "addrPaste": "Tempel dompet, ENS, alice.skr, atau alice.near",
     "addrNameHit": "{{service}} · {{kind}} · {{addr}}",
     "addrNameBad": "Nama ini tidak terselesaikan.",
     "addrNameWait": "Menyelesaikan nama…",
@@ -598,7 +617,8 @@
       "starknet-id": "Starknet ID",
       "icns": "ICNS",
       "stellar-fed": "Federation",
-      "near": "NEAR"
+      "near": "NEAR",
+      "alldomains": "AllDomains"
     },
     "addrAdd": "Tambah",
     "addrAddToSet": "Tambah alamat",
@@ -709,7 +729,27 @@
     "reset": "Kembalikan bawaan",
     "resetHint": "Mengatur ulang warna, urutan pasangan, rantai, RPC, batas koneksi, dan sakelar tampilan. Bahasa tetap.",
     "resetBtn": "Kembalikan",
-    "resetDone": "Dikembalikan"
+    "resetDone": "Dikembalikan",
+    "scanCore": "Utama",
+    "scanExtra": "Lainnya",
+    "defi": "Pindai DeFi",
+    "defiHint": "Paket mati dihilangkan dari aset dan «pinjaman saya / LP saya». Tabel pasar tetap. Disimpan di peramban ini.",
+    "defiKind": {
+      "lendCore": "Pinjaman · utama",
+      "lendExtra": "Pinjaman · lainnya",
+      "lpCore": "LP · utama",
+      "lpExtra": "LP · lainnya",
+      "stakeCore": "Staking · utama",
+      "stakeExtra": "Staking · lainnya"
+    },
+    "defiKindHint": {
+      "lendCore": "Aave, BENQI, Burrow, Kamino, Jupiter Lend, Navi, Suilend.",
+      "lendExtra": "Fork Compound, Morpho, Euler, Fluid, Spark, fork Aave lain, JustLend, Scallop, Echelon.",
+      "lpCore": "NFT Uniswap V3 dan Pancake V3.",
+      "lpExtra": "LP V2/Aerodrome, Raydium/Meteora/Orca, Rhea, Minswap, LP chef BENQI.",
+      "stakeCore": "Stake native (ETH beacon, SOL, NEAR, Hyperliquid…) dan LST terdaftar (Lido, kHYPE, sAVAX, stNEAR, mSOL…).",
+      "stakeExtra": "P-Chain Avalanche, antrean tarik Lido, buka sAVAX."
+    }
   },
   "about": {
     "kicker": "Perusahaan",
@@ -962,6 +1002,23 @@
     "savaxCool": "Pendinginan hingga {{cool}}, lalu dapat diklaim hingga {{redeem}}",
     "savaxClaim": "Dapat diklaim hingga {{redeem}}",
     "savaxExpired": "Jendela klaim tertutup; ajukan lagi",
-    "lstSavax": "Pendinginan 15 hari, lalu 2 hari untuk klaim. Waktu stake pertama tidak ada di situs ini."
+    "lstSavax": "Pendinginan 15 hari, lalu 2 hari untuk klaim. Waktu stake pertama tidak ada di situs ini.",
+    "underlying": "≈ {{amount}} {{symbol}}",
+    "avaxP": "Avalanche P-Chain",
+    "avaxPNote": "Stake validator atau delegator native. Alamat P-avax diambil dari riwayat ekspor C-chain.",
+    "avaxPUntil": "Di-stake hingga {{when}}",
+    "avaxPReward": "Perkiraan imbalan",
+    "avaxPRewardNote": "Perkiraan dari data publik protokol, bukan kredit yang sudah masuk.",
+    "ethBeacon": "Stake native Ethereum",
+    "ethBeaconNote": "Saldo validator Beacon. Indeks deposit/penarikan Blockscout publik dan HTTP konsensus. Jika gagal, dilewati — bukan 0 palsu.",
+    "ethBeaconExiting": "Keluar atau dapat ditarik",
+    "ethBeaconN": "{{n}} validator",
+    "hyperPerps": "Perps Hyperliquid",
+    "hyperPerpsNote": "Margin perpetuals dari HTTP info publik HyperCore. Jika gagal, dilewati — bukan 0 palsu.",
+    "hyperPerpsN": "{{n}} posisi",
+    "hyperVault": "Vault Hyperliquid",
+    "hyperVaultNote": "Ekuitas vault dari info publik HyperCore.",
+    "hyperVaultUntil": "Terkunci sampai {{when}}",
+    "hyperSub": "Hyperliquid · {{name}}"
   }
 }

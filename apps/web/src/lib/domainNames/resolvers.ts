@@ -6,6 +6,7 @@ import { outboundFetch } from "../outbound.ts";
 import { jsonGet, stripTld } from "./http.ts";
 import { liveTransport } from "../rpc.ts";
 import { rpcJsonRpc } from "../rpcPool.ts";
+import { allDomainsResolver } from "./alldomains.ts";
 import type { DomainResolver } from "./types.ts";
 
 const eth = createPublicClient({
@@ -92,7 +93,7 @@ export const spaceIdResolver: DomainResolver = {
 export const snsResolver: DomainResolver = {
   id: "sns",
   kind: "solana",
-  tlds: [".sol"],
+  tlds: [".sol", ".sns"],
   async resolve(name) {
     const json = await jsonGet<{ result?: string; pubkey?: string } | string>(`https://sns-sdk-proxy.bonfida.org/resolve/${encodeURIComponent(name)}`);
     if (typeof json === "string" && json.length >= 32) return json;
@@ -104,10 +105,13 @@ export const snsResolver: DomainResolver = {
   async reverse(address) {
     const json = await jsonGet<{ result?: string; domain?: string }>(`https://sns-sdk-proxy.bonfida.org/primary-domain/${encodeURIComponent(address)}`);
     const n = json?.result || json?.domain;
-    if (n) return n.endsWith(".sol") ? n : `${n}.sol`;
+    if (n) {
+      if (/\.(sol|sns)$/i.test(n)) return n;
+      return `${n}.sol`;
+    }
     const bio = await web3bioNs(address);
     const id = bio?.identity;
-    return id && /\.sol$/i.test(id) ? id : null;
+    return id && /\.(sol|sns)$/i.test(id) ? id : null;
   },
 };
 
@@ -268,6 +272,7 @@ export function icnsKindForName(name: string): DomainResolver["kind"] {
 export const RESOLVERS: DomainResolver[] = [
   ensResolver,
   spaceIdResolver,
+  allDomainsResolver,
   snsResolver,
   adaHandleResolver,
   suinsResolver,

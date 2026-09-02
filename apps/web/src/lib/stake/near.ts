@@ -3,7 +3,7 @@ import { accountCache } from "../defi/cache.ts";
 import { nearView } from "../nearRpc.ts";
 import { quoteNearToken } from "../nearDex.ts";
 import { outboundFetch } from "../outbound.ts";
-import { fmtAmt, type StakeLine } from "./shared.ts";
+import { fmtAmt, fmtNum, type StakeLine } from "./shared.ts";
 import i18n from "../i18n.ts";
 
 const NEAR_POOL_SEEDS = [
@@ -143,6 +143,21 @@ async function readNearStakeWork(account: string): Promise<StakeLine[]> {
     if (raw < minNear) continue;
     const n = Number(formatUnits(raw, 24));
     const lq = await quoteNearToken(id, false);
+    let underlyingAmount: string | undefined;
+    try {
+      const price = await nearView<string>(id, "ft_price", {});
+      const per = Number(formatUnits(asU128(String(price).replace(/"/g, "")), 24));
+      if (Number.isFinite(per) && per > 0) {
+        const nearAmt = n * per;
+        if (Number.isFinite(nearAmt) && nearAmt > 0) underlyingAmount = fmtNum(nearAmt);
+      }
+    } catch {
+      /* quote-ratio fallback below */
+    }
+    if (!underlyingAmount && lq && q && q.usdc > 0) {
+      const eq = (n * lq.usdc) / q.usdc;
+      if (Number.isFinite(eq) && eq > 0) underlyingAmount = fmtNum(eq);
+    }
     out.push({
       id: `near-lst-${id}`,
       chainId: 397,
@@ -160,6 +175,8 @@ async function readNearStakeWork(account: string): Promise<StakeLine[]> {
       status: "liquid",
       inWallet: true,
       unstakeNote: liquidNote,
+      underlyingSymbol: underlyingAmount ? "NEAR" : undefined,
+      underlyingAmount,
     });
   }
   return out;

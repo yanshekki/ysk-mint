@@ -25,7 +25,8 @@
       "trades": "сделки",
       "defi": "протокол",
       "txs": "активность",
-      "lend": "кредитование"
+      "lend": "кредитование",
+      "nft": "NFT"
     }
   },
   "nav": {
@@ -554,7 +555,25 @@
       "approve": "Одобрение",
       "call": "Вызов",
       "fail": "Сбой"
-    }
+    },
+    "nftKicker": "Коллекция",
+    "nftTitle": "NFT",
+    "nftHint": "Сгруппировано по коллекциям. Изображения с публичного обозревателя. Без минимальной цены и без оценки в USD.",
+    "nftSearch": "Коллекция, id или контракт",
+    "nftLoading": "Загрузка NFT…",
+    "nftFail": "Не удалось загрузить NFT. Попробуйте ещё раз.",
+    "nftEmpty": "Нет NFT для этого фильтра.",
+    "nftNoIndex": "NFT не индексируются в этой сети.",
+    "nftSets": "{{n}} коллекций · {{p}} шт.",
+    "nftPieces": "{{n}} шт.",
+    "nft721": "ERC-721",
+    "nft1155": "ERC-1155",
+    "nftHasArt": "С изображением",
+    "nftNoArt": "У этой коллекции нет превью.",
+    "nftOpen": "Обозреватель",
+    "nftRest": "ещё {{n}} не показаны",
+    "nftExpand": "Развернуть все",
+    "nftCollapse": "Свернуть все"
   },
   "token": {
     "missing": "Ссылка на этот токен неполная.",
@@ -583,7 +602,7 @@
     "addrsWatchHint": "Смотрите чужие публичные балансы. Это не значит, что кошельки ваши.",
     "addrsCount": "{{n}} адр.",
     "watchCount": "{{n}} / {{max}} наборов",
-    "addrPaste": "Вставьте кошелёк, ENS или alice.near",
+    "addrPaste": "Вставьте кошелёк, ENS, alice.skr или alice.near",
     "addrNameHit": "{{service}} · {{kind}} · {{addr}}",
     "addrNameBad": "Это имя не разрешилось.",
     "addrNameWait": "Разрешаем имя…",
@@ -598,7 +617,8 @@
       "starknet-id": "Starknet ID",
       "icns": "ICNS",
       "stellar-fed": "Federation",
-      "near": "NEAR"
+      "near": "NEAR",
+      "alldomains": "AllDomains"
     },
     "addrAdd": "Добавить",
     "addrAddToSet": "Добавить адрес",
@@ -709,7 +729,27 @@
     "reset": "Вернуть значения по умолчанию",
     "resetHint": "Сбрасывает цвета, порядок пар, сети, RPC, лимиты соединений и переключатели отображения. Язык остаётся.",
     "resetBtn": "Вернуть",
-    "resetDone": "Возвращено"
+    "resetDone": "Возвращено",
+    "scanCore": "Основные",
+    "scanExtra": "Прочие",
+    "defi": "Сканы DeFi",
+    "defiHint": "Выключенные пакеты не попадают в активы и в «мои займы / мои LP». Таблицы рынков остаются. Только в этом браузере.",
+    "defiKind": {
+      "lendCore": "Займы · основные",
+      "lendExtra": "Займы · прочие",
+      "lpCore": "LP · основные",
+      "lpExtra": "LP · прочие",
+      "stakeCore": "Стейкинг · основной",
+      "stakeExtra": "Стейкинг · прочий"
+    },
+    "defiKindHint": {
+      "lendCore": "Aave, BENQI, Burrow, Kamino, Jupiter Lend, Navi, Suilend.",
+      "lendExtra": "Форки Compound, Morpho, Euler, Fluid, Spark, другие форки Aave, JustLend, Scallop, Echelon.",
+      "lpCore": "NFT Uniswap V3 и Pancake V3.",
+      "lpExtra": "LP V2/Aerodrome, Raydium/Meteora/Orca, Rhea, Minswap, chef LP BENQI.",
+      "stakeCore": "Нативный стейкинг (ETH beacon, SOL, NEAR, Hyperliquid…) и перечисленные LST (Lido, kHYPE, sAVAX, stNEAR, mSOL…).",
+      "stakeExtra": "P-Chain Avalanche, очередь вывода Lido, разблокировки sAVAX."
+    }
   },
   "about": {
     "kicker": "Компания",
@@ -962,6 +1002,23 @@
     "savaxCool": "Охлаждение до {{cool}}, затем к получению до {{redeem}}",
     "savaxClaim": "К получению до {{redeem}}",
     "savaxExpired": "Окно получения закрыто; запросите снова",
-    "lstSavax": "15 дней охлаждения, затем 2 дня на получение. Время первого стейка на этом сайте нет."
+    "lstSavax": "15 дней охлаждения, затем 2 дня на получение. Время первого стейка на этом сайте нет.",
+    "underlying": "≈ {{amount}} {{symbol}}",
+    "avaxP": "Avalanche P-Chain",
+    "avaxPNote": "Нативный стейк валидатора или делегатора. Адрес P-avax берётся из экспортов C-Chain.",
+    "avaxPUntil": "В стейке до {{when}}",
+    "avaxPReward": "Ожидаемые награды",
+    "avaxPRewardNote": "Оценка по открытым данным протокола, не подтверждённое зачисление.",
+    "ethBeacon": "Нативный стейкинг Ethereum",
+    "ethBeaconNote": "Балансы валидаторов Beacon. Публичный индекс депозитов/выводов Blockscout и HTTP консенсуса. При ошибке пропускаем, без ложного 0.",
+    "ethBeaconExiting": "Выход или можно вывести",
+    "ethBeaconN": "{{n}} валидаторов",
+    "hyperPerps": "Перпы Hyperliquid",
+    "hyperPerpsNote": "Маржа перпов из публичного HyperCore info HTTP. При ошибке пропускаем, без ложного 0.",
+    "hyperPerpsN": "{{n}} позиций",
+    "hyperVault": "Волт Hyperliquid",
+    "hyperVaultNote": "Доля волта из публичного HyperCore info.",
+    "hyperVaultUntil": "Заблокировано до {{when}}",
+    "hyperSub": "Hyperliquid · {{name}}"
   }
 }

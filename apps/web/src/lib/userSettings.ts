@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { GLOBAL_RPC_PROVIDERS, type RpcGlobalProvider } from "./rpcCatalog.ts";
+import { DEFI_SCAN_KINDS, type DefiScanKind } from "./defiScan.ts";
 
 export const BUY_GREEN = "#10b981";
 export const SELL_RED = "#ef4444";
@@ -18,6 +19,7 @@ export type UserSettings = {
   buyColor: string;
   sellColor: string;
   disabledChains: number[];
+  disabledDefi: DefiScanKind[];
   rpcByChain: Record<string, string>;
   rpcStrategy: RpcStrategy;
   rpcProvider: RpcGlobalProvider;
@@ -35,6 +37,7 @@ export const SETTINGS_DEFAULTS: UserSettings = {
   buyColor: BUY_GREEN,
   sellColor: SELL_RED,
   disabledChains: [],
+  disabledDefi: [],
   rpcByChain: {},
   rpcStrategy: "preferred",
   rpcProvider: "publicnode",
@@ -51,6 +54,7 @@ type Store = UserSettings & {
   patch: (next: Partial<UserSettings>) => void;
   reset: () => void;
   setChainEnabled: (chainId: number, on: boolean) => void;
+  setDefiEnabled: (kind: DefiScanKind, on: boolean) => void;
   setRpc: (chainId: number, url?: string) => void;
   setRpcPick: (chainId: number, pick?: string) => void;
 };
@@ -73,6 +77,7 @@ export const useUserSettings = create<Store>()(
         set({
           ...SETTINGS_DEFAULTS,
           disabledChains: [],
+          disabledDefi: [],
           rpcByChain: {},
           rpcPickByChain: {},
         });
@@ -83,6 +88,12 @@ export const useUserSettings = create<Store>()(
         const has = cur.includes(chainId);
         if (on && has) set({ disabledChains: cur.filter((id) => id !== chainId) });
         if (!on && !has) set({ disabledChains: [...cur, chainId] });
+      },
+      setDefiEnabled: (kind, on) => {
+        const cur = get().disabledDefi;
+        const has = cur.includes(kind);
+        if (on && has) set({ disabledDefi: cur.filter((k) => k !== kind) });
+        if (!on && !has) set({ disabledDefi: [...cur, kind] });
       },
       setRpc: (chainId, url) => {
         const cur = { ...(get().rpcByChain ?? {}) };
@@ -101,25 +112,23 @@ export const useUserSettings = create<Store>()(
     }),
     {
       name: "ysk-mint.settings",
-      version: 2,
+      version: 3,
       migrate: (persisted, version) => {
         const s = persisted as Partial<UserSettings>;
-        if (version < 2) {
-          return {
-            ...SETTINGS_DEFAULTS,
-            ...s,
-            rpcStrategy: "preferred",
-            rpcProvider: asRpcProvider(s.rpcProvider),
-            rpcPickByChain: {},
-          };
-        }
-        return {
+        const base = {
           ...SETTINGS_DEFAULTS,
           ...s,
           rpcStrategy: s.rpcStrategy === "random" ? "random" : "preferred",
           rpcProvider: asRpcProvider(s.rpcProvider),
           rpcPickByChain: s.rpcPickByChain ?? {},
+          disabledDefi: Array.isArray(s.disabledDefi)
+            ? s.disabledDefi.filter((k): k is DefiScanKind => (DEFI_SCAN_KINDS as readonly string[]).includes(k))
+            : [],
         };
+        if (version < 2) {
+          return { ...base, rpcStrategy: "preferred" as const, rpcPickByChain: {} };
+        }
+        return base;
       },
     },
   ),

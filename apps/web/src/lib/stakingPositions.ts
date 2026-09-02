@@ -11,3 +11,6 @@ export { stakeBadge, stakeSubtitle } from "./stake/shared.ts";
 export { readSolStake } from "./stake/sol.ts";
 export { readSavaxUnlocks } from "./stake/savax.ts";
 export { readBenqiMarkets } from "./stake/benqi.ts";
+export { readAvaxPStake } from "./stake/avaxP.ts";
+export { readEthBeaconStake } from "./stake/ethBeacon.ts";
+export { readHyperliquidDesk } from "./stake/hyperliquid.ts";

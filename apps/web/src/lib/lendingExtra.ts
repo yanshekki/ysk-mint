@@ -4,6 +4,7 @@ import { DEX } from "./defiAddresses.ts";
 import { quoteEvmToken, type Quote } from "./defiQuotes.ts";
 import { readAaveMarket, type AaveCard, type ProtocolLine } from "./defiPositions.ts";
 import { outboundFetch } from "./outbound.ts";
+import { cTokenApy } from "./lendApy.ts";
 
 export type LendCard = AaveCard & { protocol: string };
 
@@ -27,6 +28,10 @@ const cTokenAbi = [
     outputs: [{ type: "uint256" }, { type: "uint256" }, { type: "uint256" }, { type: "uint256" }],
   },
   { type: "function", name: "underlying", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
+  { type: "function", name: "supplyRatePerTimestamp", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "borrowRatePerTimestamp", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "supplyRatePerBlock", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "borrowRatePerBlock", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
 ] as const;
 
 const cometAbi = [
@@ -426,6 +431,7 @@ function pushLine(
   side: "supply" | "borrow",
   contract: string,
   quote: Quote | null,
+  apyPct?: number | null,
 ) {
   if (raw === 0n) return;
   const n = Number(formatUnits(raw, decimals));
@@ -443,6 +449,7 @@ function pushLine(
     side,
     quote,
     valueUsdc: side === "borrow" && value != null ? -value : value,
+    apyPct,
   });
 }
 
@@ -485,8 +492,15 @@ async function readComptroller(
             }
           }
           const quote = await lineQuote(client, quotes, chainId, (underlying ?? cToken) as Address, decimals, native);
-          pushLine(lines, chainId, cfg.name.toLowerCase(), symbol, und, decimals, "supply", underlying ?? cToken, quote);
-          pushLine(lines, chainId, cfg.name.toLowerCase(), symbol, borrow, decimals, "borrow", underlying ?? cToken, quote);
+          const [tsS, tsB, blkS, blkB] = await Promise.all([
+            client.readContract({ address: cToken, abi: cTokenAbi, functionName: "supplyRatePerTimestamp" }).catch(() => null),
+            client.readContract({ address: cToken, abi: cTokenAbi, functionName: "borrowRatePerTimestamp" }).catch(() => null),
+            client.readContract({ address: cToken, abi: cTokenAbi, functionName: "supplyRatePerBlock" }).catch(() => null),
+            client.readContract({ address: cToken, abi: cTokenAbi, functionName: "borrowRatePerBlock" }).catch(() => null),
+          ]);
+          const apy = cTokenApy(chainId, tsS, tsB, blkS, blkB);
+          pushLine(lines, chainId, cfg.name.toLowerCase(), symbol, und, decimals, "supply", underlying ?? cToken, quote, apy.supply);
+          pushLine(lines, chainId, cfg.name.toLowerCase(), symbol, borrow, decimals, "borrow", underlying ?? cToken, quote, apy.borrow);
         } catch {
           /* market miss */
         }

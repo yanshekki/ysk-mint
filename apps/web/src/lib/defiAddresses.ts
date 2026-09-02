@@ -358,6 +358,18 @@ export const LST: Record<number, Record<string, { symbol: string; name: string; 
     "0xae78736cd615f374d3085123a210448e74fc6393": { symbol: "rETH", name: "Rocket Pool ETH", decimals: 18, icon: "/tokens/eth.png" },
     "0xbe9895146f7af43049ca1c1ae358b0541ea49704": { symbol: "cbETH", name: "Coinbase ETH", decimals: 18, icon: "/tokens/eth.png" },
     "0xcd5fe23c85820f7b72d0926fc9b05b43e359b7ee": { symbol: "weETH", name: "ether.fi weETH", decimals: 18, icon: "/tokens/eth.png" },
+    "0x35fa164735182de50811e8e2e824cfb9b6118ac2": { symbol: "eETH", name: "ether.fi eETH", decimals: 18, icon: "/tokens/eth.png" },
+    "0xa35b1b31ce002fbf2058d22f30f95d405200a15b": { symbol: "ETHx", name: "Stader ETHx", decimals: 18, icon: "/tokens/eth.png" },
+    "0xf1c9acdc66974dfb6decb12aa385b9cd01190e38": { symbol: "osETH", name: "StakeWise osETH", decimals: 18, icon: "/tokens/eth.png" },
+    "0xa1290d69c65a6fe4df752f95823fae25cb99e5a7": { symbol: "rsETH", name: "Kelp rsETH", decimals: 18, icon: "/tokens/eth.png" },
+    "0xbf5495efe5db9ce00f80364c8b423567e58d2110": { symbol: "ezETH", name: "Renzo ezETH", decimals: 18, icon: "/tokens/eth.png" },
+    "0xd9a442856c234a39a81a089c06451ebaa4306a72": { symbol: "pufETH", name: "Puffer pufETH", decimals: 18, icon: "/tokens/eth.png" },
+    "0xf951e335afb289353dc249e82926178eac7ded78": { symbol: "swETH", name: "Swell swETH", decimals: 18, icon: "/tokens/eth.png" },
+    "0xe95a203b1a91a908f9b9ce46459d101078c2c3cb": { symbol: "ankrETH", name: "Ankr ETH", decimals: 18, icon: "/tokens/eth.png" },
+    "0xac3e018457b222d93114458476b63e01acd1485b": { symbol: "sfrxETH", name: "Staked frxETH", decimals: 18, icon: "/tokens/eth.png" },
+    "0xd5f7838f5c461feff7fe49ea5ebaf7728bb0adfa": { symbol: "mETH", name: "Mantle mETH", decimals: 18, icon: "/tokens/eth.png" },
+    "0xa2e3356610840701bdf5611a53974510ae27e2e1": { symbol: "wBETH", name: "Wrapped Beacon ETH", decimals: 18, icon: "/tokens/eth.png" },
+    "0x4da27a545c0c5b758a6ba100e3a049001de870f5": { symbol: "stkAAVE", name: "Aave Safety Module", decimals: 18, icon: "/tokens/eth.png" },
   },
   8453: {
     "0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22": { symbol: "cbETH", name: "Coinbase ETH", decimals: 18, icon: "/tokens/eth.png" },
@@ -383,6 +395,14 @@ export const LST: Record<number, Record<string, { symbol: string; name: string; 
     "0x5979d7b546e38e414f7e9822514be443a4800529": { symbol: "wstETH", name: "Wrapped stETH", decimals: 18, icon: "/tokens/eth.png" },
     "0xec70dcb4a1efa46b8f2d97c310c9c4790ba5ffa8": { symbol: "rETH", name: "Rocket Pool ETH", decimals: 18, icon: "/tokens/eth.png" },
     "0x35751007a407ca6feffe80b3cb397736d2cf4dbe": { symbol: "weETH", name: "ether.fi weETH", decimals: 18, icon: "/tokens/eth.png" },
+  },
+  999: {
+    "0xfd739d4e423301ce9385c1fb8850539d657c296d": { symbol: "kHYPE", name: "Kinetiq kHYPE", decimals: 18, icon: "/tokens/hype.png" },
+    "0x360c140e5344a1a0593d44b4ea6fc7c3daf0c473": { symbol: "kmHYPE", name: "Kinetiq kmHYPE", decimals: 18, icon: "/tokens/hype.png" },
+    "0x9ba2edc44e0a4632eb4723e81d4142353e1bb160": { symbol: "vkHYPE", name: "Kinetiq Earn vkHYPE", decimals: 18, icon: "/tokens/hype.png" },
+    "0xd8fc8f0b03eba61f64d08b0bef69d80916e5dda9": { symbol: "beHYPE", name: "Hyperbeat beHYPE", decimals: 18, icon: "/tokens/hype.png" },
+    "0xffaa4a3d97fe9107cef8a3f48c069f577ff76cc1": { symbol: "stHYPE", name: "stHYPE", decimals: 18, icon: "/tokens/hype.png" },
+    "0x4f322145abedb2b39f69e7d4531ab4b2e6483154": { symbol: "HiHYPE", name: "Hyperion HiHYPE", decimals: 18, icon: "/tokens/hype.png" },
   },
 };
 

@@ -5,6 +5,7 @@ import type { AaveCard, ProtocolLine } from "../defiPositions.ts";
 import { fmtAmt } from "./shared.ts";
 import { SAVAX } from "./savax.ts";
 import i18n from "../i18n.ts";
+import { cTokenApy } from "../lendApy.ts";
 
 const erc20Bal = [
   { type: "function", name: "balanceOf", stateMutability: "view", inputs: [{ type: "address" }], outputs: [{ type: "uint256" }] },
@@ -20,6 +21,8 @@ const qiSnapAbi = [
     outputs: [{ type: "uint256" }, { type: "uint256" }, { type: "uint256" }, { type: "uint256" }],
   },
   { type: "function", name: "symbol", stateMutability: "view", inputs: [], outputs: [{ type: "string" }] },
+  { type: "function", name: "supplyRatePerTimestamp", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "borrowRatePerTimestamp", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
 ] as const;
 
 const chefAbi = [
@@ -60,6 +63,11 @@ async function readBenqiMarketsWork(client: PublicClient, user: Address, quotes:
         const rate = snap[3];
         tokens.add(m.token.toLowerCase());
         const und = qiBal === 0n ? 0n : (qiBal * rate) / 10n ** 18n;
+        const [tsS, tsB] = await Promise.all([
+          client.readContract({ address: m.token, abi: qiSnapAbi, functionName: "supplyRatePerTimestamp" }).catch(() => null),
+          client.readContract({ address: m.token, abi: qiSnapAbi, functionName: "borrowRatePerTimestamp" }).catch(() => null),
+        ]);
+        const apy = cTokenApy(43114, tsS, tsB, null, null);
         const push = (raw: bigint, side: "supply" | "borrow") => {
           if (raw === 0n) return;
           const n = Number(formatUnits(raw, m.dec));
@@ -84,6 +92,7 @@ async function readBenqiMarketsWork(client: PublicClient, user: Address, quotes:
             side,
             quote: q ?? null,
             valueUsdc: q && Number.isFinite(n) ? n * q.usdc : null,
+            apyPct: side === "supply" ? apy.supply : apy.borrow,
           });
         };
         push(und, "supply");

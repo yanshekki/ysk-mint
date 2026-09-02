@@ -32,6 +32,7 @@ async function fetchHyperCore(user: string) {
   ]);
   const dec = new Map((meta.tokens ?? []).map((t) => [t.name, t.weiDecimals ?? t.szDecimals ?? 8]));
   for (const b of state.balances ?? []) {
+    if (!b.coin || b.coin === "POINTS") continue;
     const decimals = dec.get(b.coin) ?? 8;
     const n = Number(b.total);
     if (!Number.isFinite(n) || n <= 0) continue;

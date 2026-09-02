@@ -25,7 +25,8 @@
       "trades": "成交",
       "defi": "协议",
       "txs": "活动",
-      "lend": "借贷"
+      "lend": "借贷",
+      "nft": "NFT"
     }
   },
   "nav": {
@@ -554,7 +555,25 @@
       "approve": "授权",
       "call": "合约",
       "fail": "失败"
-    }
+    },
+    "nftKicker": "收藏",
+    "nftTitle": "NFT",
+    "nftHint": "按系列分组。图片来自公开浏览器，不是地板价，也不估美元。",
+    "nftSearch": "搜索系列、编号或合约",
+    "nftLoading": "正在读取 NFT…",
+    "nftFail": "无法读取 NFT，请稍后重试。",
+    "nftEmpty": "此筛选没有 NFT。",
+    "nftNoIndex": "此链没有 NFT 索引。",
+    "nftSets": "{{n}} 个系列 · {{p}} 件",
+    "nftPieces": "{{n}} 件",
+    "nft721": "ERC-721",
+    "nft1155": "ERC-1155",
+    "nftHasArt": "只显示有图",
+    "nftNoArt": "此系列未附图片。",
+    "nftOpen": "浏览器",
+    "nftRest": "还有 {{n}} 件未列出",
+    "nftExpand": "全部展开",
+    "nftCollapse": "全部收起"
   },
   "token": {
     "missing": "此代币链接不完整。",
@@ -583,7 +602,7 @@
     "addrsWatchHint": "用以查看他人的公开持仓。不代表你拥有这些钱包。",
     "addrsCount": "{{n}} 址",
     "watchCount": "{{n}}／{{max}} 组",
-    "addrPaste": "贴上钱包、ENS 或 alice.near",
+    "addrPaste": "贴上钱包、ENS、alice.skr 或 alice.near",
     "addrNameHit": "{{service}} · {{kind}} · {{addr}}",
     "addrNameBad": "此名称无法解析。",
     "addrNameWait": "正在解析名称…",
@@ -598,7 +617,8 @@
       "starknet-id": "Starknet ID",
       "icns": "ICNS",
       "stellar-fed": "Federation",
-      "near": "NEAR"
+      "near": "NEAR",
+      "alldomains": "AllDomains"
     },
     "addrAdd": "加入",
     "addrAddToSet": "加入地址",
@@ -709,7 +729,27 @@
     "reset": "还原默认",
     "resetHint": "颜色、左右、链、RPC、同时连接及显示开关还原。语言不变。",
     "resetBtn": "还原",
-    "resetDone": "已还原"
+    "resetDone": "已还原",
+    "scanCore": "主流",
+    "scanExtra": "非主流",
+    "defi": "DeFi 扫描",
+    "defiHint": "关闭的组不会出现在持仓，以及「我的借贷／我的 LP」。市场总表不受影响。只存于本浏览器。",
+    "defiKind": {
+      "lendCore": "借贷 · 主流",
+      "lendExtra": "借贷 · 非主流",
+      "lpCore": "流动仓 · 主流",
+      "lpExtra": "流动仓 · 非主流",
+      "stakeCore": "质押 · 主流",
+      "stakeExtra": "质押 · 非主流"
+    },
+    "defiKindHint": {
+      "lendCore": "Aave、BENQI、Burrow、Kamino、Jupiter Lend、Navi、Suilend。",
+      "lendExtra": "Compound 分叉、Morpho、Euler、Fluid、Spark、额外 Aave 分叉、JustLend、Scallop、Echelon。",
+      "lpCore": "Uniswap V3 及 Pancake V3 NFT。",
+      "lpExtra": "V2／Aerodrome LP、Raydium／Meteora／Orca、Rhea、Minswap、BENQI chef LP。",
+      "stakeCore": "原生质押（ETH Beacon、SOL、NEAR、Hyperliquid…）及已列 LST（Lido、kHYPE、sAVAX、stNEAR、mSOL…）。",
+      "stakeExtra": "Avalanche P 链、Lido 提款队列、sAVAX 解押申请。"
+    }
   },
   "about": {
     "kicker": "公司",
@@ -962,6 +1002,23 @@
     "savaxCool": "冷却至 {{cool}}，其后至 {{redeem}} 可领",
     "savaxClaim": "可领，窗口至 {{redeem}}",
     "savaxExpired": "领取窗口已过，须重新申请",
-    "lstSavax": "解押冷却 15 日，其后 2 日可领。首次质押时间不在本站。"
+    "lstSavax": "解押冷却 15 日，其后 2 日可领。首次质押时间不在本站。",
+    "underlying": "约 {{amount}} {{symbol}}",
+    "avaxP": "Avalanche 原生质押",
+    "avaxPNote": "P 链验证人或委托。P-avax 地址由 C 链汇出记录对应。",
+    "avaxPUntil": "质押至 {{when}}",
+    "avaxPReward": "预计奖励",
+    "avaxPRewardNote": "来自协议公开数据的预计奖励，并非已入账金额。",
+    "ethBeacon": "Ethereum 原生质押",
+    "ethBeaconNote": "Beacon 验证人余额。公开 Blockscout 存款／提款索引及共识层 HTTP；读取失败则跳过，不会显示假的 0。",
+    "ethBeaconExiting": "退出中或可提取",
+    "ethBeaconN": "{{n}} 名验证人",
+    "hyperPerps": "Hyperliquid 永续",
+    "hyperPerpsNote": "永续保证金取自公开 HyperCore info HTTP。读取失败则跳过，不会显示假的 0。",
+    "hyperPerpsN": "{{n}} 仓",
+    "hyperVault": "Hyperliquid 金库",
+    "hyperVaultNote": "金库权益取自公开 HyperCore info。",
+    "hyperVaultUntil": "锁定至 {{when}}",
+    "hyperSub": "Hyperliquid · {{name}}"
   }
 }

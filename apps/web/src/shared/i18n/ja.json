@@ -25,7 +25,8 @@
       "trades": "約定",
       "defi": "プロトコル",
       "txs": "アクティビティ",
-      "lend": "レンディング"
+      "lend": "レンディング",
+      "nft": "NFT"
     }
   },
   "nav": {
@@ -554,7 +555,25 @@
       "approve": "承認",
       "call": "コール",
       "fail": "失敗"
-    }
+    },
+    "nftKicker": "コレクション",
+    "nftTitle": "NFT",
+    "nftHint": "コレクションごとに表示します。画像は公開エクスプローラーから取得します。フロア価格やドル換算はありません。",
+    "nftSearch": "コレクション、トークンID、コントラクト",
+    "nftLoading": "NFTを読み込み中…",
+    "nftFail": "NFTを読み込めませんでした。再試行してください。",
+    "nftEmpty": "この条件に合う NFT はありません。",
+    "nftNoIndex": "このチェーンに NFT の索引はありません。",
+    "nftSets": "{{n}} コレクション · {{p}} 点",
+    "nftPieces": "{{n}} 点",
+    "nft721": "ERC-721",
+    "nft1155": "ERC-1155",
+    "nftHasArt": "画像あり",
+    "nftNoArt": "このコレクションにプレビュー画像はありません。",
+    "nftOpen": "エクスプローラー",
+    "nftRest": "ほか {{n}} 点は未表示",
+    "nftExpand": "すべて開く",
+    "nftCollapse": "すべて閉じる"
   },
   "token": {
     "missing": "このトークンのリンクは不完全です。",
@@ -583,7 +602,7 @@
     "addrsWatchHint": "他人の公開残高を照会します。そのウォレットを所有している意味ではありません。",
     "addrsCount": "{{n}} 件",
     "watchCount": "{{n}} / {{max}} セット",
-    "addrPaste": "ウォレット、ENS、または alice.near を貼る",
+    "addrPaste": "ウォレット、ENS、alice.skr、または alice.near を貼る",
     "addrNameHit": "{{service}} · {{kind}} · {{addr}}",
     "addrNameBad": "この名前は解決できませんでした。",
     "addrNameWait": "名前を解決中…",
@@ -598,7 +617,8 @@
       "starknet-id": "Starknet ID",
       "icns": "ICNS",
       "stellar-fed": "Federation",
-      "near": "NEAR"
+      "near": "NEAR",
+      "alldomains": "AllDomains"
     },
     "addrAdd": "追加",
     "addrAddToSet": "アドレスを追加",
@@ -709,7 +729,27 @@
     "reset": "初期設定に戻す",
     "resetHint": "色、ペア順、チェーン、RPC、接続上限、表示スイッチを戻します。言語はそのままです。",
     "resetBtn": "戻す",
-    "resetDone": "戻しました"
+    "resetDone": "戻しました",
+    "scanCore": "主要",
+    "scanExtra": "その他",
+    "defi": "DeFi スキャン",
+    "defiHint": "オフの組は保有と「マイ貸出／マイ LP」から外します。市場一覧はそのまま。このブラウザに保存。",
+    "defiKind": {
+      "lendCore": "貸出 · 主要",
+      "lendExtra": "貸出 · その他",
+      "lpCore": "LP · 主要",
+      "lpExtra": "LP · その他",
+      "stakeCore": "ステーキング · 主要",
+      "stakeExtra": "ステーキング · その他"
+    },
+    "defiKindHint": {
+      "lendCore": "Aave、BENQI、Burrow、Kamino、Jupiter Lend、Navi、Suilend。",
+      "lendExtra": "Compound フォーク、Morpho、Euler、Fluid、Spark、その他 Aave フォーク、JustLend、Scallop、Echelon。",
+      "lpCore": "Uniswap V3 と Pancake V3 NFT。",
+      "lpExtra": "V2／Aerodrome LP、Raydium／Meteora／Orca、Rhea、Minswap、BENQI chef LP。",
+      "stakeCore": "ネイティブステーク（ETH Beacon、SOL、NEAR、Hyperliquid…）と掲載 LST（Lido、kHYPE、sAVAX、stNEAR、mSOL…）。",
+      "stakeExtra": "Avalanche P-Chain、Lido 出金キュー、sAVAX アンロック。"
+    }
   },
   "about": {
     "kicker": "会社",
@@ -962,6 +1002,23 @@
     "savaxCool": "{{cool}} までクールダウン、その後 {{redeem}} まで受取可",
     "savaxClaim": "{{redeem}} まで受取可",
     "savaxExpired": "受取期間は終了。再度申請してください",
-    "lstSavax": "15 日のクールダウンのあと、2 日以内に受取。初回ステーク時刻はこのサイトにありません。"
+    "lstSavax": "15 日のクールダウンのあと、2 日以内に受取。初回ステーク時刻はこのサイトにありません。",
+    "underlying": "約 {{amount}} {{symbol}}",
+    "avaxP": "Avalanche P-Chain",
+    "avaxPNote": "Pチェーンのバリデータ／デリゲータ。P-avax は Cチェーンのエクスポート履歴から対応します。",
+    "avaxPUntil": "{{when}} までステーク",
+    "avaxPReward": "見込み報酬",
+    "avaxPRewardNote": "公開プロトコルデータの見込み報酬であり、確定入金ではありません。",
+    "ethBeacon": "Ethereum ネイティブステーキング",
+    "ethBeaconNote": "Beacon バリデータ残高。公開の Blockscout 入金／出金インデックスとコンセンサス HTTP。失敗時は省略し、偽の 0 は出しません。",
+    "ethBeaconExiting": "退出中または出金可能",
+    "ethBeaconN": "バリデータ {{n}}",
+    "hyperPerps": "Hyperliquid パープ",
+    "hyperPerpsNote": "公開 HyperCore info HTTP の証拠金。失敗時は省略し、偽の 0 は出しません。",
+    "hyperPerpsN": "{{n}} ポジション",
+    "hyperVault": "Hyperliquid ボルト",
+    "hyperVaultNote": "公開 HyperCore info のボルト持分。",
+    "hyperVaultUntil": "{{when}} までロック",
+    "hyperSub": "Hyperliquid · {{name}}"
   }
 }

@@ -12,6 +12,8 @@ import { pairId, canonAddr, type Addr } from "./pairKey.ts";
 import { orientPair } from "./pairOrient.ts";
 import { nearMyLp } from "./nearDex.ts";
 import { adaMyLp } from "./adaDex.ts";
+import { isDefiEnabled } from "./defiScan.ts";
+import { useUserSettings } from "./userSettings.ts";
 
 const ZERO = "0x0000000000000000000000000000000000000000";
 
@@ -163,9 +165,12 @@ export function useDexLp(
   const [loading, setLoading] = useState(false);
   const near = native?.near ?? "";
   const adaKey = (native?.cardanoUnits ?? []).join("|");
+  const disabledDefi = useUserSettings((s) => s.disabledDefi);
+  const lpCore = isDefiEnabled("lpCore", disabledDefi);
+  const lpExtra = isDefiEnabled("lpExtra", disabledDefi);
 
   useEffect(() => {
-    if (!address && !near && !adaKey) {
+    if ((!address && !near && !adaKey) || (!lpCore && !lpExtra)) {
       setRows([]);
       return;
     }
@@ -179,9 +184,9 @@ export function useDexLp(
           await trackLive(`lp:${chainId}`, chainId, "lp", async () => {
             const client = getPublicClient(config, { chainId });
             if (!client) return;
-            const hits = await accountCache("pos.lp", chainId, address, "dex", async () => [
-              ...(await v2Positions(client, chainId, address)),
-              ...(await v3Positions(client, chainId, address)),
+            const hits = await accountCache("pos.lp", chainId, address, `dex:${lpCore ? "3" : ""}${lpExtra ? "2" : ""}`, async () => [
+              ...(lpExtra ? await v2Positions(client, chainId, address) : []),
+              ...(lpCore ? await v3Positions(client, chainId, address) : []),
             ]);
             for (const h of hits) {
               const id = pairId(chainId, h.a, h.b);
@@ -217,12 +222,12 @@ export function useDexLp(
           }).catch(() => undefined);
         }
       }
-      if (near && (chainFilter === "all" || chainFilter === 397)) {
+      if (lpExtra && near && (chainFilter === "all" || chainFilter === 397)) {
         await trackLive("lp:397", 397, "lp", async () => {
           for (const h of await nearMyLp(near).catch(() => [])) acc.set(h.pairId, h);
         }).catch(() => undefined);
       }
-      if (adaKey && (chainFilter === "all" || chainFilter === 1815)) {
+      if (lpExtra && adaKey && (chainFilter === "all" || chainFilter === 1815)) {
         await trackLive("lp:1815", 1815, "lp", async () => {
           const units = adaKey.split("|").filter(Boolean);
           for (const h of await adaMyLp(units).catch(() => [])) {
@@ -251,7 +256,7 @@ export function useDexLp(
       cancelled = true;
       useLiveStatus.getState().clear("lp:");
     };
-  }, [address, chainFilter, config, near, adaKey]);
+  }, [address, chainFilter, config, near, adaKey, lpCore, lpExtra]);
 
   return { rows, loading };
 }

@@ -25,7 +25,8 @@
       "trades": "échanges",
       "defi": "protocole",
       "txs": "activité",
-      "lend": "prêts"
+      "lend": "prêts",
+      "nft": "NFT"
     }
   },
   "nav": {
@@ -554,7 +555,25 @@
       "approve": "Approuver",
       "call": "Appel",
       "fail": "Échec"
-    }
+    },
+    "nftKicker": "Collection",
+    "nftTitle": "NFT",
+    "nftHint": "Groupés par collection. Les images viennent de l’explorateur public. Pas de prix plancher ni d’estimation en USD.",
+    "nftSearch": "Collection, identifiant ou contrat",
+    "nftLoading": "Chargement des NFT…",
+    "nftFail": "Impossible de charger les NFT. Réessayez.",
+    "nftEmpty": "Aucun NFT pour ce filtre.",
+    "nftNoIndex": "Les NFT ne sont pas indexés sur cette chaîne.",
+    "nftSets": "{{n}} collections · {{p}} pièces",
+    "nftPieces": "{{n}} p.",
+    "nft721": "ERC-721",
+    "nft1155": "ERC-1155",
+    "nftHasArt": "Avec image",
+    "nftNoArt": "Cette collection n’a pas d’aperçu.",
+    "nftOpen": "Explorateur",
+    "nftRest": "{{n}} de plus non listés",
+    "nftExpand": "Tout ouvrir",
+    "nftCollapse": "Tout fermer"
   },
   "token": {
     "missing": "Ce lien de token est incomplet.",
@@ -583,7 +602,7 @@
     "addrsWatchHint": "Consultez les soldes publics de quelqu’un d’autre. Cela ne signifie pas que ces portefeuilles vous appartiennent.",
     "addrsCount": "{{n}} adr.",
     "watchCount": "{{n}} / {{max}} ensembles",
-    "addrPaste": "Collez un portefeuille, ENS ou alice.near",
+    "addrPaste": "Collez un portefeuille, ENS, alice.skr ou alice.near",
     "addrNameHit": "{{service}} · {{kind}} · {{addr}}",
     "addrNameBad": "Ce nom n’a pas été résolu.",
     "addrNameWait": "Résolution du nom…",
@@ -598,7 +617,8 @@
       "starknet-id": "Starknet ID",
       "icns": "ICNS",
       "stellar-fed": "Federation",
-      "near": "NEAR"
+      "near": "NEAR",
+      "alldomains": "AllDomains"
     },
     "addrAdd": "Ajouter",
     "addrAddToSet": "Ajouter une adresse",
@@ -709,7 +729,27 @@
     "reset": "Restaurer les défauts",
     "resetHint": "Réinitialise les couleurs, l’ordre des paires, les chaînes, les RPC, les limites de connexion et les bascules d’affichage. La langue reste.",
     "resetBtn": "Restaurer",
-    "resetDone": "Restauré"
+    "resetDone": "Restauré",
+    "scanCore": "Principaux",
+    "scanExtra": "Autres",
+    "defi": "Scans DeFi",
+    "defiHint": "Les packs coupés manquent dans les avoirs et « mes prêts / mes LP ». Les tableaux de marché restent. Stocké dans ce navigateur.",
+    "defiKind": {
+      "lendCore": "Prêt · principaux",
+      "lendExtra": "Prêt · autres",
+      "lpCore": "LP · principaux",
+      "lpExtra": "LP · autres",
+      "stakeCore": "Staking · principaux",
+      "stakeExtra": "Staking · autres"
+    },
+    "defiKindHint": {
+      "lendCore": "Aave, BENQI, Burrow, Kamino, Jupiter Lend, Navi, Suilend.",
+      "lendExtra": "Forks Compound, Morpho, Euler, Fluid, Spark, autres forks Aave, JustLend, Scallop, Echelon.",
+      "lpCore": "NFT Uniswap V3 et Pancake V3.",
+      "lpExtra": "LP V2/Aerodrome, Raydium/Meteora/Orca, Rhea, Minswap, LP chef BENQI.",
+      "stakeCore": "Stake natif (ETH beacon, SOL, NEAR, Hyperliquid…) et LST listés (Lido, kHYPE, sAVAX, stNEAR, mSOL…).",
+      "stakeExtra": "P-Chain Avalanche, file de retrait Lido, déblocages sAVAX."
+    }
   },
   "about": {
     "kicker": "Société",
@@ -962,6 +1002,23 @@
     "savaxCool": "Refroidissement jusqu’à {{cool}}, puis réclamable jusqu’à {{redeem}}",
     "savaxClaim": "Réclamable jusqu’à {{redeem}}",
     "savaxExpired": "Fenêtre de réclamation close ; redemandez",
-    "lstSavax": "Refroidissement de 15 jours, puis 2 jours pour réclamer. L’heure du premier stake n’est pas sur ce site."
+    "lstSavax": "Refroidissement de 15 jours, puis 2 jours pour réclamer. L’heure du premier stake n’est pas sur ce site.",
+    "underlying": "≈ {{amount}} {{symbol}}",
+    "avaxP": "Avalanche P-Chain",
+    "avaxPNote": "Stake natif validateur ou délégateur. L’adresse P-avax vient de l’historique d’export C-Chain.",
+    "avaxPUntil": "Staké jusqu’au {{when}}",
+    "avaxPReward": "Récompenses estimées",
+    "avaxPRewardNote": "Estimation issue des données publiques du protocole, pas un crédit confirmé.",
+    "ethBeacon": "Stake natif Ethereum",
+    "ethBeaconNote": "Soldes des validateurs Beacon. Dépôts/retraits Blockscout publics et HTTP de consensus. En cas d’échec, on omet — pas un 0 fictif.",
+    "ethBeaconExiting": "Sortie ou retirable",
+    "ethBeaconN": "{{n}} validateurs",
+    "hyperPerps": "Perps Hyperliquid",
+    "hyperPerpsNote": "Marge perpétuelle via l’HTTP info public HyperCore. En cas d’échec, on omet — pas un 0 fictif.",
+    "hyperPerpsN": "{{n}} positions",
+    "hyperVault": "Coffre Hyperliquid",
+    "hyperVaultNote": "Quote-part de coffre via l’info public HyperCore.",
+    "hyperVaultUntil": "Bloqué jusqu’au {{when}}",
+    "hyperSub": "Hyperliquid · {{name}}"
   }
 }

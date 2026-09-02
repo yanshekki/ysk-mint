@@ -25,7 +25,8 @@
       "trades": "trades",
       "defi": "protocol",
       "txs": "activity",
-      "lend": "lending"
+      "lend": "lending",
+      "nft": "NFT"
     }
   },
   "nav": {
@@ -554,7 +555,25 @@
       "approve": "Approve",
       "call": "Call",
       "fail": "Fail"
-    }
+    },
+    "nftKicker": "Collection",
+    "nftTitle": "NFT",
+    "nftHint": "Grouped by collection. Images come from the public explorer. There is no floor price and no USD estimate.",
+    "nftSearch": "Search collection, token id, or contract",
+    "nftLoading": "Loading NFTs…",
+    "nftFail": "Could not load NFTs. Try again.",
+    "nftEmpty": "No NFTs match this filter.",
+    "nftNoIndex": "NFTs are not indexed on this chain.",
+    "nftSets": "{{n}} collections · {{p}} pieces",
+    "nftPieces": "{{n}} pcs",
+    "nft721": "ERC-721",
+    "nft1155": "ERC-1155",
+    "nftHasArt": "With image",
+    "nftNoArt": "This collection has no preview images.",
+    "nftOpen": "Explorer",
+    "nftRest": "{{n}} more not listed",
+    "nftExpand": "Expand all",
+    "nftCollapse": "Collapse"
   },
   "token": {
     "missing": "This token link is incomplete.",
@@ -583,7 +602,7 @@
     "addrsWatchHint": "Look up someone else’s public balances. This does not mean you own those wallets.",
     "addrsCount": "{{n}} addr",
     "watchCount": "{{n}} / {{max}} sets",
-    "addrPaste": "Paste a wallet, ENS, or alice.near",
+    "addrPaste": "Paste a wallet, ENS, alice.skr, or alice.near",
     "addrNameHit": "{{service}} · {{kind}} · {{addr}}",
     "addrNameBad": "This name did not resolve.",
     "addrNameWait": "Resolving name…",
@@ -598,7 +617,8 @@
       "starknet-id": "Starknet ID",
       "icns": "ICNS",
       "stellar-fed": "Federation",
-      "near": "NEAR"
+      "near": "NEAR",
+      "alldomains": "AllDomains"
     },
     "addrAdd": "Add",
     "addrAddToSet": "Add address",
@@ -709,7 +729,27 @@
     "reset": "Restore defaults",
     "resetHint": "Resets colors, pair order, chains, RPCs, connection limits, and display toggles. Language stays.",
     "resetBtn": "Restore",
-    "resetDone": "Restored"
+    "resetDone": "Restored",
+    "scanCore": "Mainstream",
+    "scanExtra": "Long-tail",
+    "defi": "DeFi scans",
+    "defiHint": "Off packs are skipped on holdings and on “my lending / my LP”. Market tables stay. Stored in this browser.",
+    "defiKind": {
+      "lendCore": "Lending · mainstream",
+      "lendExtra": "Lending · long-tail",
+      "lpCore": "LP · mainstream",
+      "lpExtra": "LP · long-tail",
+      "stakeCore": "Staking · mainstream",
+      "stakeExtra": "Staking · long-tail"
+    },
+    "defiKindHint": {
+      "lendCore": "Aave, BENQI, Burrow, Kamino, Jupiter Lend, Navi, Suilend.",
+      "lendExtra": "Compound forks, Morpho, Euler, Fluid, Spark, extra Aave forks, JustLend, Scallop, Echelon.",
+      "lpCore": "Uniswap V3 and Pancake V3 NFTs.",
+      "lpExtra": "V2 / Aerodrome LP, Raydium / Meteora / Orca, Rhea, Minswap, BENQI chef LP.",
+      "stakeCore": "Native stake (ETH beacon, SOL, NEAR, Hyperliquid…) and listed LSTs (Lido, kHYPE, sAVAX, stNEAR, mSOL…).",
+      "stakeExtra": "Avalanche P-Chain, Lido withdrawal queue, sAVAX unlocks."
+    }
   },
   "about": {
     "kicker": "Company",
@@ -962,6 +1002,23 @@
     "savaxCool": "Cooldown until {{cool}}, then claimable until {{redeem}}",
     "savaxClaim": "Claimable until {{redeem}}",
     "savaxExpired": "Claim window closed; request again",
-    "lstSavax": "15-day cooldown, then 2 days to claim. First stake time is not on this site."
+    "lstSavax": "15-day cooldown, then 2 days to claim. First stake time is not on this site.",
+    "underlying": "≈ {{amount}} {{symbol}}",
+    "avaxP": "Avalanche P-Chain",
+    "avaxPNote": "Native validator or delegator stake. The P-avax address is taken from C-chain export history.",
+    "avaxPUntil": "Staked until {{when}}",
+    "avaxPReward": "Estimated rewards",
+    "avaxPRewardNote": "Estimated rewards from public protocol data, not a confirmed credit.",
+    "ethBeacon": "Ethereum native stake",
+    "ethBeaconNote": "Beacon validators. Public Blockscout deposits/withdrawals plus consensus HTTP. Skip if those reads fail — not a fake 0.",
+    "ethBeaconExiting": "Exiting or withdrawable",
+    "ethBeaconN": "{{n}} validators",
+    "hyperPerps": "Hyperliquid perps",
+    "hyperPerpsNote": "Perpetual margin from the public HyperCore info HTTP. Skip if that read fails — not a fake 0.",
+    "hyperPerpsN": "{{n}} positions",
+    "hyperVault": "Hyperliquid vault",
+    "hyperVaultNote": "Vault equity from public HyperCore info.",
+    "hyperVaultUntil": "Locked until {{when}}",
+    "hyperSub": "Hyperliquid · {{name}}"
   }
 }

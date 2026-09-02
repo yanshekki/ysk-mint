@@ -74,7 +74,7 @@ function parseTok(chainId: number, item: BsTok): DiscoveredErc20 | null {
   }
   if (raw <= 0n) return null;
   const decimals = Math.min(36, Math.max(0, Number(tok.decimals ?? 18) || 18));
-  const amt = Number(raw) / 10 ** decimals;
+  const amt = Number(raw) / 10 ** Math.max(decimals, 0);
   const px = tok.exchange_rate != null && tok.exchange_rate !== "" ? Number(tok.exchange_rate) : NaN;
   const usdHint = Number.isFinite(amt) && Number.isFinite(px) ? amt * px : null;
   return {
@@ -128,6 +128,7 @@ function keepDisc(d: DiscoveredErc20, catalog: Set<string>, keepUnpriced = false
   if (catalog.has(k)) return true;
   const amt = Number(d.raw) / 10 ** Math.max(d.decimals, 0);
   if (!Number.isFinite(amt) || amt <= 0) return false;
+  if (d.nft) return false;
   if (amt >= 1e10) return false;
   if (d.usdHint != null && Number.isFinite(d.usdHint) && d.usdHint >= 1 && d.usdHint <= 1_000_000) return true;
   if (keepUnpriced && (d.usdHint == null || d.usdHint === 0) && amt < 1e7) return true;

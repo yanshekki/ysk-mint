@@ -84,6 +84,8 @@ async function readSavaxUnlocksWork(client: PublicClient, user: Address, avaxUsd
         inWallet: false,
         stakedSince: utc(start),
         unstakeNote: note,
+        underlyingSymbol: "AVAX",
+        underlyingAmount: fmtAmt(avaxRaw || shares, 18),
       });
     });
     return out;

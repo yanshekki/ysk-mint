@@ -4,6 +4,7 @@ import { defineChain, type Chain } from "viem";
 import * as wagmiChains from "wagmi/chains";
 import { arbitrumSepolia, avalancheFuji, baseSepolia, bscTestnet, sepolia } from "wagmi/chains";
 import { liveTransport } from "./rpc.ts";
+import { rpcEndpoints } from "./rpcCatalog.ts";
 
 const projectId = import.meta.env.VITE_WC_PROJECT_ID || "ysk-mint-local";
 
@@ -14,14 +15,44 @@ for (const v of Object.values(wagmiChains)) {
   if (typeof c.id === "number") known[c.id] = c;
 }
 
+function chainHttp(c: ChainDefinition): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const url of [c.rpc, ...rpcEndpoints(c.chainId).map((e) => e.url)]) {
+    const key = url.replace(/\/+$/, "").toLowerCase();
+    if (!url || seen.has(key)) continue;
+    seen.add(key);
+    out.push(url);
+    if (out.length >= 4) break;
+  }
+  return out.length ? out : [c.rpc];
+}
+
 function toChain(c: ChainDefinition): Chain {
   const hit = known[c.chainId];
-  if (hit) return hit;
+  const http = chainHttp(c);
+  const native = {
+    name: c.nativeSymbol,
+    symbol: c.nativeSymbol,
+    decimals: (c.nativeSymbol === "USD" ? 6 : 18) as 6 | 18,
+  };
+  if (hit) {
+    return {
+      ...hit,
+      name: c.name,
+      nativeCurrency: { ...hit.nativeCurrency, ...native },
+      rpcUrls: { ...hit.rpcUrls, default: { http } },
+      blockExplorers: {
+        ...hit.blockExplorers,
+        default: { ...hit.blockExplorers?.default, name: c.short, url: c.explorer },
+      },
+    };
+  }
   return defineChain({
     id: c.chainId,
     name: c.name,
-    nativeCurrency: { name: c.nativeSymbol, symbol: c.nativeSymbol, decimals: c.nativeSymbol === "USD" ? 6 : 18 },
-    rpcUrls: { default: { http: [c.rpc] } },
+    nativeCurrency: native,
+    rpcUrls: { default: { http } },
     blockExplorers: { default: { name: c.short, url: c.explorer } },
   });
 }

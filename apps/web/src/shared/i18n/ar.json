@@ -25,7 +25,8 @@
       "trades": "صفقات",
       "defi": "بروتوكول",
       "txs": "نشاط",
-      "lend": "إقراض"
+      "lend": "إقراض",
+      "nft": "NFT"
     }
   },
   "nav": {
@@ -554,7 +555,25 @@
       "approve": "موافقة",
       "call": "استدعاء",
       "fail": "فشل"
-    }
+    },
+    "nftKicker": "مجموعة",
+    "nftTitle": "NFT",
+    "nftHint": "مجمّعة حسب المجموعة. الصور من المستكشف العلني. بلا سعر أرضي وبلا تقدير بالدولار.",
+    "nftSearch": "المجموعة أو المعرّف أو العقد",
+    "nftLoading": "جارٍ تحميل NFT…",
+    "nftFail": "تعذّر تحميل NFT. حاول مرة أخرى.",
+    "nftEmpty": "لا توجد NFT لهذا التصفية.",
+    "nftNoIndex": "لا فهرس لـ NFT على هذه السلسلة.",
+    "nftSets": "{{n}} مجموعات · {{p}} قطعة",
+    "nftPieces": "{{n}} قطعة",
+    "nft721": "ERC-721",
+    "nft1155": "ERC-1155",
+    "nftHasArt": "مع صورة",
+    "nftNoArt": "لا معاينات لهذه المجموعة.",
+    "nftOpen": "المستكشف",
+    "nftRest": "{{n}} أخرى غير مدرجة",
+    "nftExpand": "توسيع الكل",
+    "nftCollapse": "طي الكل"
   },
   "token": {
     "missing": "رابط هذا الرمز غير مكتمل.",
@@ -583,7 +602,7 @@
     "addrsWatchHint": "استعلم عن أرصدة عامة لغيرك. هذا لا يعني أنك تملك تلك المحافظ.",
     "addrsCount": "{{n}} عنوان",
     "watchCount": "{{n}} / {{max}} مجموعات",
-    "addrPaste": "الصق محفظة أو ENS أو alice.near",
+    "addrPaste": "الصق محفظة أو ENS أو alice.skr أو alice.near",
     "addrNameHit": "{{service}} · {{kind}} · {{addr}}",
     "addrNameBad": "لم يُحلّ هذا الاسم.",
     "addrNameWait": "جارٍ حل الاسم…",
@@ -598,7 +617,8 @@
       "starknet-id": "Starknet ID",
       "icns": "ICNS",
       "stellar-fed": "Federation",
-      "near": "NEAR"
+      "near": "NEAR",
+      "alldomains": "AllDomains"
     },
     "addrAdd": "إضافة",
     "addrAddToSet": "إضافة عنوان",
@@ -709,7 +729,27 @@
     "reset": "استعادة الافتراضي",
     "resetHint": "يعيد الألوان وترتيب الأزواج والسلاسل وRPC وحدود الاتصال ومفاتيح العرض. اللغة تبقى.",
     "resetBtn": "استعادة",
-    "resetDone": "استُعيد"
+    "resetDone": "استُعيد",
+    "scanCore": "الرئيسية",
+    "scanExtra": "الباقي",
+    "defi": "مسح DeFi",
+    "defiHint": "الحزم المتوقفة تُحذف من الحيازات ومن «إقراضي / مجمعاتي». جداول الأسواق تبقى. تُحفظ في هذا المتصفح.",
+    "defiKind": {
+      "lendCore": "إقراض · رئيسية",
+      "lendExtra": "إقراض · الباقي",
+      "lpCore": "LP · رئيسية",
+      "lpExtra": "LP · الباقي",
+      "stakeCore": "رهن · رئيسية",
+      "stakeExtra": "رهن · الباقي"
+    },
+    "defiKindHint": {
+      "lendCore": "Aave وBENQI وBurrow وKamino وJupiter Lend وNavi وSuilend.",
+      "lendExtra": "تفرعات Compound وMorpho وEuler وFluid وSpark وتفرعات Aave أخرى وJustLend وScallop وEchelon.",
+      "lpCore": "NFT لـ Uniswap V3 وPancake V3.",
+      "lpExtra": "LP من V2/Aerodrome وRaydium/Meteora/Orca وRhea وMinswap وchef BENQI.",
+      "stakeCore": "الرهن الأصلي (ETH beacon وSOL وNEAR وHyperliquid…) وLST المدرجة (Lido وkHYPE وsAVAX وstNEAR وmSOL…).",
+      "stakeExtra": "سلسلة P في Avalanche وطابور سحب Lido وفك sAVAX."
+    }
   },
   "about": {
     "kicker": "الشركة",
@@ -962,6 +1002,23 @@
     "savaxCool": "تبريد حتى {{cool}}، ثم قابل للمطالبة حتى {{redeem}}",
     "savaxClaim": "قابل للمطالبة حتى {{redeem}}",
     "savaxExpired": "أُغلق نافذة المطالبة؛ اطلب مجددًا",
-    "lstSavax": "تبريد 15 يومًا، ثم يومان للمطالبة. وقت أول رهن ليس على هذا الموقع."
+    "lstSavax": "تبريد 15 يومًا، ثم يومان للمطالبة. وقت أول رهن ليس على هذا الموقع.",
+    "underlying": "≈ {{amount}} {{symbol}}",
+    "avaxP": "Avalanche P-Chain",
+    "avaxPNote": "رهن أصلي لمُصدّق أو مُفوَّض. يُؤخذ عنوان P-avax من سجل تصدير سلسلة C.",
+    "avaxPUntil": "مرهون حتى {{when}}",
+    "avaxPReward": "مكافآت تقديرية",
+    "avaxPRewardNote": "تقدير من بيانات البروتوكول العلنية، وليست إضافة مؤكدة.",
+    "ethBeacon": "رهن إيثيريوم الأصلي",
+    "ethBeaconNote": "أرصدة مدققي Beacon. فهرس إيداع/سحب Blockscout العام وHTTP الإجماع. عند الفشل يُتخطى وليس صفرًا مزيفًا.",
+    "ethBeaconExiting": "قيد الخروج أو قابل للسحب",
+    "ethBeaconN": "{{n}} مدققًا",
+    "hyperPerps": "عقود Hyperliquid الأبدية",
+    "hyperPerpsNote": "هامش العقود من HTTP العام لـ HyperCore info. عند الفشل يُتخطى وليس صفرًا مزيفًا.",
+    "hyperPerpsN": "{{n}} مراكز",
+    "hyperVault": "خزينة Hyperliquid",
+    "hyperVaultNote": "حصة الخزينة من HyperCore info العام.",
+    "hyperVaultUntil": "مقفلة حتى {{when}}",
+    "hyperSub": "Hyperliquid · {{name}}"
   }
 }

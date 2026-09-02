@@ -11,6 +11,7 @@ import { useNativeWallets } from "./nativeWallets.ts";
 import type { Quote } from "./defiQuotes.ts";
 import { lendChainIds } from "./lendMarkets.ts";
 import { useUserSettings } from "./userSettings.ts";
+import { isDefiEnabled } from "./defiScan.ts";
 
 export type MyLendRow = ProtocolLine & { protocol: string; health: string };
 
@@ -27,6 +28,9 @@ export function useMyLending(chainFilter: number | "all") {
   const native = useNativeWallets();
   const config = useConfig();
   const disabled = useUserSettings((s) => s.disabledChains);
+  const disabledDefi = useUserSettings((s) => s.disabledDefi);
+  const lendCore = isDefiEnabled("lendCore", disabledDefi);
+  const lendExtra = isDefiEnabled("lendExtra", disabledDefi);
   const [rows, setRows] = useState<MyLendRow[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -38,7 +42,7 @@ export function useMyLending(chainFilter: number | "all") {
   const aptos = native.aptosAddress;
 
   useEffect(() => {
-    if (!evm && !near && !sol && !sui && !tron && !aptos) {
+    if ((!evm && !near && !sol && !sui && !tron && !aptos) || (!lendCore && !lendExtra)) {
       setRows([]);
       setLoading(false);
       return;
@@ -55,18 +59,22 @@ export function useMyLending(chainFilter: number | "all") {
             ids.map(async (id) => {
               const client = getPublicClient(config, { chainId: id });
               if (!client) return;
-              const a = await readAave(client, id, evm).catch(() => null);
-              if (a) cards.push({ ...a, protocol: "Aave" });
-              const extra = await readExtraLending(client, id, evm, quotes).catch(() => []);
-              cards.push(...extra);
-              if (id === 43114) {
+              if (lendCore) {
+                const a = await readAave(client, id, evm).catch(() => null);
+                if (a) cards.push({ ...a, protocol: "Aave" });
+              }
+              if (lendExtra) {
+                const extra = await readExtraLending(client, id, evm, quotes).catch(() => []);
+                cards.push(...extra);
+              }
+              if (id === 43114 && lendCore) {
                 const b = await readBenqiMarkets(client, evm, quotes).catch(() => null);
-                if (b) cards.push({ ...b, protocol: "BENQI" });
+                if (b) cards.push({ ...b, protocol: "BENQI", lines: b.lines.filter((l) => l.side !== "lp") });
               }
             }),
           );
         }
-        if (near && (chainFilter === "all" || chainFilter === 397)) {
+        if (lendCore && near && (chainFilter === "all" || chainFilter === 397)) {
           const b = await readBurrow(near).catch(() => null);
           if (b) cards.push({ ...b, protocol: "Burrow" });
         }
@@ -77,6 +85,8 @@ export function useMyLending(chainFilter: number | "all") {
             tron: chainFilter === "all" || chainFilter === 728126428 ? tron : undefined,
             aptos: chainFilter === "all" || chainFilter === 637 ? aptos : undefined,
             quotes,
+            core: lendCore,
+            extra: lendExtra,
           }).catch(() => []);
           cards.push(...more);
         }
@@ -91,7 +101,7 @@ export function useMyLending(chainFilter: number | "all") {
     return () => {
       cancelled = true;
     };
-  }, [evm, near, sol, sui, tron, aptos, chainFilter, config, disabled]);
+  }, [evm, near, sol, sui, tron, aptos, chainFilter, config, disabled, lendCore, lendExtra]);
 
   return { rows, loading };
 }

@@ -68,10 +68,24 @@ export function lendAppHref(protocol: string, chainId: number, token?: string): 
 
 export function stakeBrandName(opts: { symbol?: string; extra?: string; name?: string; chainId?: number; contract?: string }): string {
   const hay = `${opts.symbol ?? ""} ${opts.extra ?? ""} ${opts.name ?? ""} ${opts.contract ?? ""}`.toLowerCase();
+  if (hay.includes("beacon") || hay.includes("0x00000000219ab540356cbb839cbe05303d7705fa")) return "Ethereum";
+  if (hay.includes("khype") || hay.includes("kmhype") || hay.includes("vkhype") || hay.includes("kinetiq")) return "Kinetiq";
+  if (hay.includes("behype") || hay.includes("hyperbeat")) return "Hyperbeat";
+  if (hay.includes("hyperliquid") || hay.includes("hypercore") || opts.chainId === 998) return "Hyperliquid";
+  if (hay.includes("stkaave") || hay.includes("safety module")) return "Aave";
   if (hay.includes("steth") || hay.includes("wsteth") || hay.includes("lido")) return "Lido";
-  if (hay.includes("reth") || hay.includes("rocket")) return "Rocket Pool";
+  if (hay.includes("weeth") || hay.includes("ether.fi") || /\beeth\b/.test(hay)) return "ether.fi";
+  if (hay.includes("ankreth") || hay.includes("ankr eth")) return "Ankr";
+  if (hay.includes("rseth") || hay.includes("kelp")) return "Kelp";
+  if (hay.includes("ezeth") || hay.includes("renzo")) return "Renzo";
+  if (hay.includes("pufeth") || hay.includes("puffer")) return "Puffer";
+  if (hay.includes("rsweth") || hay.includes("sweth") || hay.includes("swell")) return "Swell";
+  if (hay.includes("ethx") || hay.includes("stader")) return "Stader";
+  if (hay.includes("oseth") || hay.includes("stakewise")) return "StakeWise";
+  if (hay.includes("sfrxeth") || hay.includes("frxeth")) return "Frax";
   if (hay.includes("cbeth")) return "Coinbase";
-  if (hay.includes("weeth") || hay.includes("ether.fi")) return "ether.fi";
+  if (/\breth\b/.test(hay) || hay.includes("rocket")) return "Rocket Pool";
+  if (hay.includes("p-avax") || hay.includes("p-chain") || hay.includes("avalanche p")) return "Avalanche";
   if (hay.includes("savax") || (hay.includes("benqi") && (opts.chainId ?? 0) === 43114)) return "BENQI";
   if (hay.includes("linear") || hay.includes("linear-protocol") || (opts.chainId === 397 && /\blst\b/i.test(opts.symbol ?? ""))) return "LiNEAR";
   if (hay.includes("stnear") || hay.includes("meta-pool") || hay.includes("meta pool")) return "Meta Pool";
@@ -86,10 +100,24 @@ export function stakeBrandName(opts: { symbol?: string; extra?: string; name?: s
 
 export function stakeAppHref(opts: { symbol?: string; extra?: string; name?: string; chainId?: number; contract?: string }): string | undefined {
   const hay = `${opts.symbol ?? ""} ${opts.extra ?? ""} ${opts.name ?? ""} ${opts.contract ?? ""}`.toLowerCase();
+  if (hay.includes("beacon") || hay.includes("0x00000000219ab540356cbb839cbe05303d7705fa")) return "https://launchpad.ethereum.org";
+  if (hay.includes("khype") || hay.includes("kmhype") || hay.includes("vkhype") || hay.includes("kinetiq")) return "https://kinetiq.xyz/stake";
+  if (hay.includes("behype") || hay.includes("hyperbeat")) return "https://hyperbeat.co/staking";
+  if (hay.includes("hyperliquid") || hay.includes("hypercore") || opts.chainId === 998) return "https://app.hyperliquid.xyz";
+  if (hay.includes("stkaave") || hay.includes("safety module")) return "https://app.aave.com/staking";
   if (hay.includes("steth") || hay.includes("wsteth") || hay.includes("lido")) return "https://stake.lido.fi/";
-  if (hay.includes("reth") || hay.includes("rocket")) return "https://stake.rocketpool.net/";
+  if (hay.includes("weeth") || hay.includes("ether.fi") || /\beeth\b/.test(hay)) return "https://app.ether.fi/";
+  if (hay.includes("ankreth") || hay.includes("ankr eth")) return "https://www.ankr.com/staking/stake/ethereum/";
+  if (hay.includes("rseth") || hay.includes("kelp")) return "https://kelpdao.xyz/";
+  if (hay.includes("ezeth") || hay.includes("renzo")) return "https://app.renzoprotocol.com/";
+  if (hay.includes("pufeth") || hay.includes("puffer")) return "https://app.puffer.fi/";
+  if (hay.includes("rsweth") || hay.includes("sweth") || hay.includes("swell")) return "https://app.swellnetwork.io/";
+  if (hay.includes("ethx") || hay.includes("stader")) return "https://www.staderlabs.com/";
+  if (hay.includes("oseth") || hay.includes("stakewise")) return "https://app.stakewise.io/";
+  if (hay.includes("sfrxeth") || hay.includes("frxeth")) return "https://app.frax.finance/staking/sfrxeth";
   if (hay.includes("cbeth")) return "https://www.coinbase.com/earn";
-  if (hay.includes("weeth") || hay.includes("ether.fi")) return "https://app.ether.fi/";
+  if (/\breth\b/.test(hay) || hay.includes("rocket")) return "https://stake.rocketpool.net/";
+  if (hay.includes("p-avax") || hay.includes("p-chain") || hay.includes("avalanche p")) return "https://wallet.avax.network/stake";
   if (hay.includes("savax") || hay.includes("benqi")) return "https://staking.benqi.fi/";
   if (hay.includes("linear") || hay.includes("linear-protocol") || (opts.chainId === 397 && /\blst\b/i.test(opts.symbol ?? ""))) return "https://app.linearprotocol.org/";
   if (hay.includes("stnear") || hay.includes("meta-pool") || hay.includes("meta pool")) return "https://app.metapool.app/";
