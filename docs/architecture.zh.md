@@ -31,7 +31,7 @@ Vite + React。路由可帶語言前綴。無前綴路徑為 zh-HK；`/zh-CN`、
 
 ### 靜態託管與快取
 
-SPA 以靜態檔上傳，Cloudflare DNS proxy 開啟。Vite 把 JS／CSS 編成 `/assets/` 帶 hash 的檔，edge 可存一年（`immutable`）。HTML（`index.html` 及預渲染法律頁）必須再驗證（`Cache-Control: no-cache`）。`/version.json` 為 `no-store`，Cloudflare 須 **Bypass cache**，否則新上傳看不見。Origin 片段：[deploy/origin-cache.conf](../deploy/origin-cache.conf)。Cache Rule：Bypass `/version.json`、`/koios*`、`*.html` 及 `/`；`/assets/*` Eligible 且 Edge TTL 一年。Origin 另外把 `/koios/` 反代到 Koios（`api.koios.rest`）：Koios 的 POST 回應沒有 `Access-Control-Allow-Origin`，瀏覽器不能直接讀 `api.koios.rest`。Cardano 持倉按 stake key 加總全部付款地址的 UTXO，而不是 ADA Handle 單一 `addr1`。不要用全站 Cache Everything。規則未生效前，每次上傳要 **Purge Everything**，否則 edge 仍是舊 HTML（因而仍是舊 hashed bundle）。頂欄字標 YSK Mint 在任何寬度都顯示。頁腳在手機、平板及桌面都顯示烘焙的 `v…` 及 Powered by；若 `/version.json` 的 `build` 不同，會提示重新整理。不加 service worker。
+SPA 以靜態檔上傳，Cloudflare DNS proxy 開啟。Vite 把 JS／CSS 編成 `/assets/` 帶 hash 的檔，edge 可存一年（`immutable`）。HTML（`index.html` 及預渲染法律頁）必須再驗證（`Cache-Control: no-cache`）。`/version.json` 為 `no-store`，Cloudflare 須 **Bypass cache**，否則新上傳看不見。正式建置可在設定 `VITE_GA_MEASUREMENT_ID`（或 `GA_MEASUREMENT_ID`）時注入該站分析標籤；預設樹及 CI 建置不含標籤，亦不得把即時編號寫入倉庫。Origin 片段：[deploy/origin-cache.conf](../deploy/origin-cache.conf)。Cache Rule：Bypass `/version.json`、`/koios*`、`*.html` 及 `/`；`/assets/*` Eligible 且 Edge TTL 一年。Origin 另外把 `/koios/` 反代到 Koios（`api.koios.rest`）：Koios 的 POST 回應沒有 `Access-Control-Allow-Origin`，瀏覽器不能直接讀 `api.koios.rest`。Cardano 持倉按 stake key 加總全部付款地址的 UTXO，而不是 ADA Handle 單一 `addr1`。不要用全站 Cache Everything。規則未生效前，每次上傳要 **Purge Everything**，否則 edge 仍是舊 HTML（因而仍是舊 hashed bundle）。頂欄字標 YSK Mint 在任何寬度都顯示。頁腳在手機、平板及桌面都顯示烘焙的 `v…` 及 Powered by；若 `/version.json` 的 `build` 不同，會提示重新整理。不加 service worker。
 
 ## 代幣部署
 
