@@ -872,6 +872,15 @@ select {
 .bot-powered:hover {
   color: var(--brand-blue);
 }
+.bot-github {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.bot-github:hover {
+  color: var(--brand-blue);
+}
 .bot-ver {
   color: var(--text-muted);
   font-size: 12px;

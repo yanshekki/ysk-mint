@@ -8,7 +8,7 @@ Live: [mint.ysk.hk](https://mint.ysk.hk). Source: [github.com/yanshekki/ysk-mint
 
 | | |
 |--|--|
-| **Version** | 1.4.0 |
+| **Version** | 1.4.1 |
 | **License** | MIT |
 | **Frontend** | Vite + React + TypeScript (static SPA) |
 | **Contracts** | Solidity 0.8.22, Foundry, OpenZeppelin 5.x |

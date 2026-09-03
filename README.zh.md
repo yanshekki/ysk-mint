@@ -8,7 +8,7 @@ YSK Mint 是瀏覽器應用，用於鏈上市場、持倉與發幣。並無 YSK 
 
 | | |
 |--|--|
-| **版本** | 1.4.0 |
+| **版本** | 1.4.1 |
 | **授權** | MIT |
 | **前端** | Vite + React + TypeScript（靜態 SPA） |
 | **合約** | Solidity 0.8.22、Foundry、OpenZeppelin 5.x |

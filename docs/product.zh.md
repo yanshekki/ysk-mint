@@ -97,7 +97,7 @@ NFT 分頁是系列畫廊，不是報價表。仍活的 Blockscout（ETH、OP、
 
 **靜態文稿。無須簽署。**
 
-頁腳：[關於](https://mint.ysk.hk/about)、[捐助](https://mint.ysk.hk/donate)、[使用條款](https://mint.ysk.hk/terms)、[免責聲明](https://mint.ysk.hk/disclaimer)。頂欄字標 **YSK Mint** 在手機、平板及桌面均顯示。底欄在任何寬度都顯示 **Powered by YSK Limited** 及烘焙的應用版本（`v…`）；若 `/version.json` 的 `build` 不同，會提示重新整理（不會自動 reload）。寬度 ≤1024px 時，法律連結放在「更多」；Powered by 與 `v…` 仍在 tab 上方。捐助為自願饋贈，不構成代幣或服務的買賣。地址與捐助頁相同：`yanshekki.eth`、`yanshekki.near`、`$yanshekki`。
+頁腳：[關於](https://mint.ysk.hk/about)、[捐助](https://mint.ysk.hk/donate)、[使用條款](https://mint.ysk.hk/terms)、[免責聲明](https://mint.ysk.hk/disclaimer)，以及 [GitHub](https://github.com/yanshekki/ysk-mint)。頂欄字標 **YSK Mint** 在手機、平板及桌面均顯示。底欄在任何寬度都顯示 **Powered by YSK Limited**、烘焙的應用版本（`v…`）及 GitHub；若 `/version.json` 的 `build` 不同，會提示重新整理（不會自動 reload）。寬度 ≤1024px 時，法律連結放在「更多」；Powered by、`v…` 與 GitHub 仍在 tab 上方。捐助為自願饋贈，不構成代幣或服務的買賣。地址與捐助頁相同：`yanshekki.eth`、`yanshekki.near`、`$yanshekki`。
 
 ## 語言與網址
 

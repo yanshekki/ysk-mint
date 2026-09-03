@@ -97,7 +97,7 @@ Language follows the URL. Switching language in Settings rewrites the path (`/` 
 
 **Static copy. No signature.**
 
-Footer: [About](https://mint.ysk.hk/about), [Donate](https://mint.ysk.hk/donate), [Terms of Use](https://mint.ysk.hk/terms), [Disclaimer](https://mint.ysk.hk/disclaimer). The header wordmark is **YSK Mint** on phone, tablet, and desktop. The bar shows **Powered by YSK Limited** and the baked app version (`v…`) at every width; if `/version.json` `build` differs, it offers a refresh (it does not auto-reload). On widths ≤1024px, legal links sit in More; Powered by and `v…` stay above the tab bar. Donate is a voluntary gift; it is not a sale of tokens or services. Addresses match the Donate page: `yanshekki.eth`, `yanshekki.near`, `$yanshekki`.
+Footer: [About](https://mint.ysk.hk/about), [Donate](https://mint.ysk.hk/donate), [Terms of Use](https://mint.ysk.hk/terms), [Disclaimer](https://mint.ysk.hk/disclaimer), and [GitHub](https://github.com/yanshekki/ysk-mint). The header wordmark is **YSK Mint** on phone, tablet, and desktop. The bar shows **Powered by YSK Limited**, the baked app version (`v…`), and GitHub at every width; if `/version.json` `build` differs, it offers a refresh (it does not auto-reload). On widths ≤1024px, legal links sit in More; Powered by, `v…`, and GitHub stay above the tab bar. Donate is a voluntary gift; it is not a sale of tokens or services. Addresses match the Donate page: `yanshekki.eth`, `yanshekki.near`, `$yanshekki`.
 
 ## Languages and URLs
 

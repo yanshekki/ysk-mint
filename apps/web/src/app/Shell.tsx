@@ -41,6 +41,8 @@ const LEGAL = [
   ["/disclaimer", "nav.disclaimer"],
 ] as const;
 
+const GITHUB = "https://github.com/yanshekki/ysk-mint";
+
 function navOn(path: string, href: string) {
   const rest = stripLocalePrefix(path);
   return rest === href || (href !== "/" && rest.startsWith(href));
@@ -212,6 +214,9 @@ export function Shell() {
                   {t(key)}
                 </LocaleLink>
               ))}
+              <a href={GITHUB} target="_blank" rel="noreferrer" onClick={() => setMoreOpen(false)}>
+                {t("nav.github")}
+              </a>
             </nav>
           </div>
         </>
@@ -222,6 +227,9 @@ export function Shell() {
             {t("app.poweredBy")}
           </LocaleLink>
           <FooterVersion />
+          <a className="bot-github" href={GITHUB} target="_blank" rel="noreferrer">
+            {t("nav.github")}
+          </a>
           <nav className="bot-legal" aria-label={t("nav.legal")}>
             {LEGAL.map(([href, key]) => (
               <LocaleLink key={href} to={href} className={navOn(loc.pathname, href) ? "on" : ""}>
