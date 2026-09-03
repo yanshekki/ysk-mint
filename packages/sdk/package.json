@@ -1,6 +1,6 @@
 {
   "name": "@ysk-mint/sdk",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "Enums, error codes, validation, and OFT helpers for YSK Mint.",
   "license": "MIT",
   "type": "module",

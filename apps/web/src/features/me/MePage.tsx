@@ -131,6 +131,7 @@ function valued(raw: bigint, decimals: number, q?: Quote | null) {
 }
 
 function unknownToken(r: HoldingRow) {
+  if (r.native) return false;
   return r.id.startsWith("disc-") || r.id.startsWith("ada-");
 }
 
