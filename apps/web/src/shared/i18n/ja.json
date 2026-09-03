@@ -728,7 +728,7 @@
     "cacheClearing": "消去中",
     "cacheCleared": "消去しました",
     "reset": "初期設定に戻す",
-    "resetHint": "色、ペア順、チェーン、RPC、接続上限、表示スイッチを戻します。言語はそのままです。",
+    "resetHint": "色、ペア順、チェーン（主流）、RPC、接続上限、表示スイッチを戻します。言語はそのままです。",
     "resetBtn": "戻す",
     "resetDone": "戻しました",
     "scanCore": "主要",

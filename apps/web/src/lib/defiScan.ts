@@ -36,6 +36,30 @@ export function isDefiEnabled(kind: DefiScanKind, disabled: readonly string[]) {
   return !disabled.includes(kind);
 }
 
+function sameNum(a: number[], b: number[]) {
+  if (a.length !== b.length) return false;
+  const s = new Set(b);
+  return a.every((id) => s.has(id));
+}
+
+export function chainPresetOf(disabled: readonly number[]): ScanPreset | null {
+  const main = new Set(scanMainnets().map((c) => c.chainId));
+  const d = disabled.filter((id) => main.has(id));
+  for (const p of ["core", "extra", "all", "none"] as const) {
+    if (sameNum(d, disabledForChainPreset(p))) return p;
+  }
+  return null;
+}
+
+export function defiPresetOf(disabled: readonly string[]): ScanPreset | null {
+  const d = disabled.filter((k) => (DEFI_SCAN_KINDS as readonly string[]).includes(k));
+  for (const p of ["core", "extra", "all", "none"] as const) {
+    const want = disabledForDefiPreset(p);
+    if (d.length === want.length && want.every((k) => d.includes(k))) return p;
+  }
+  return null;
+}
+
 export function isCoreChainId(chainId: number) {
   return scanCoreIds().has(chainId);
 }

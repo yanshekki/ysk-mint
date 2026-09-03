@@ -728,7 +728,7 @@
     "cacheClearing": "Borrando",
     "cacheCleared": "Borrado",
     "reset": "Restaurar valores",
-    "resetHint": "Restablece colores, orden de pares, cadenas, RPC, límites de conexión y conmutadores de pantalla. El idioma se mantiene.",
+    "resetHint": "Restablece colores, orden de pares, cadenas (principales), RPC, límites de conexión y conmutadores de pantalla. El idioma se mantiene.",
     "resetBtn": "Restaurar",
     "resetDone": "Restaurado",
     "scanCore": "Principales",

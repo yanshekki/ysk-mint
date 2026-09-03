@@ -728,7 +728,7 @@
     "cacheClearing": "Clearing",
     "cacheCleared": "Cleared",
     "reset": "Restore defaults",
-    "resetHint": "Resets colors, pair order, chains, RPCs, connection limits, and display toggles. Language stays.",
+    "resetHint": "Resets colors, pair order, chains (Mainstream), RPCs, connection limits, and display toggles. Language stays.",
     "resetBtn": "Restore",
     "resetDone": "Restored",
     "scanCore": "Mainstream",

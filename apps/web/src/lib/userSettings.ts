@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { GLOBAL_RPC_PROVIDERS, type RpcGlobalProvider } from "./rpcCatalog.ts";
-import { DEFI_SCAN_KINDS, type DefiScanKind } from "./defiScan.ts";
+import { DEFI_SCAN_KINDS, disabledForChainPreset, disabledForDefiPreset, type DefiScanKind } from "./defiScan.ts";
 
 export const BUY_GREEN = "#10b981";
 export const SELL_RED = "#ef4444";
@@ -36,8 +36,8 @@ export const SETTINGS_DEFAULTS: UserSettings = {
   quotePriority: "stable-gas",
   buyColor: BUY_GREEN,
   sellColor: SELL_RED,
-  disabledChains: [],
-  disabledDefi: [],
+  disabledChains: disabledForChainPreset("core"),
+  disabledDefi: disabledForDefiPreset("core"),
   rpcByChain: {},
   rpcStrategy: "preferred",
   rpcProvider: "publicnode",
@@ -76,8 +76,8 @@ export const useUserSettings = create<Store>()(
       reset: () => {
         set({
           ...SETTINGS_DEFAULTS,
-          disabledChains: [],
-          disabledDefi: [],
+          disabledChains: disabledForChainPreset("core"),
+          disabledDefi: disabledForDefiPreset("core"),
           rpcByChain: {},
           rpcPickByChain: {},
         });
@@ -112,21 +112,31 @@ export const useUserSettings = create<Store>()(
     }),
     {
       name: "ysk-mint.settings",
-      version: 3,
+      version: 4,
       migrate: (persisted, version) => {
         const s = persisted as Partial<UserSettings>;
+        const defi = Array.isArray(s.disabledDefi)
+          ? s.disabledDefi.filter((k): k is DefiScanKind => (DEFI_SCAN_KINDS as readonly string[]).includes(k))
+          : [];
+        const chains = Array.isArray(s.disabledChains) ? s.disabledChains : [];
         const base = {
           ...SETTINGS_DEFAULTS,
           ...s,
           rpcStrategy: s.rpcStrategy === "random" ? "random" : "preferred",
           rpcProvider: asRpcProvider(s.rpcProvider),
           rpcPickByChain: s.rpcPickByChain ?? {},
-          disabledDefi: Array.isArray(s.disabledDefi)
-            ? s.disabledDefi.filter((k): k is DefiScanKind => (DEFI_SCAN_KINDS as readonly string[]).includes(k))
-            : [],
+          disabledChains: chains,
+          disabledDefi: defi,
         };
         if (version < 2) {
           return { ...base, rpcStrategy: "preferred" as const, rpcPickByChain: {} };
+        }
+        if (version < 4) {
+          return {
+            ...base,
+            disabledChains: chains.length ? chains : disabledForChainPreset("core"),
+            disabledDefi: defi.length ? defi : disabledForDefiPreset("core"),
+          };
         }
         return base;
       },

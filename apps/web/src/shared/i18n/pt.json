@@ -728,7 +728,7 @@
     "cacheClearing": "Limpando",
     "cacheCleared": "Limpo",
     "reset": "Restaurar padrões",
-    "resetHint": "Restaura cores, ordem dos pares, redes, RPCs, limites de conexão e interruptores de exibição. O idioma permanece.",
+    "resetHint": "Restaura cores, ordem dos pares, redes (principais), RPCs, limites de conexão e interruptores de exibição. O idioma permanece.",
     "resetBtn": "Restaurar",
     "resetDone": "Restaurado",
     "scanCore": "Principais",

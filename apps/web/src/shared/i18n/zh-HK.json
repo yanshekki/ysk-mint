@@ -728,7 +728,7 @@
     "cacheClearing": "清除中",
     "cacheCleared": "已清除",
     "reset": "還原預設",
-    "resetHint": "顏色、左右、鏈、RPC、同時連線及顯示開關還原。語言不變。",
+    "resetHint": "顏色、左右、鏈（主流）、RPC、同時連線及顯示開關還原。語言不變。",
     "resetBtn": "還原",
     "resetDone": "已還原",
     "scanCore": "主流",

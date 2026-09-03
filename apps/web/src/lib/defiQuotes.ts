@@ -7,6 +7,7 @@ import type { Quote } from "./defi/types.ts";
 
 export type { Quote };
 export { priceFromSqrtPriceX96 };
+export { quoteHoldsForUnknown, DISC_MIN_DEPTH_USD, DISC_MAX_POOL_SHARE } from "./defi/quote.ts";
 
 export async function quoteEvmToken(
   client: PublicClient,

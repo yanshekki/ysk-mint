@@ -728,7 +728,7 @@
     "cacheClearing": "Menghapus",
     "cacheCleared": "Terhapus",
     "reset": "Kembalikan bawaan",
-    "resetHint": "Mengatur ulang warna, urutan pasangan, rantai, RPC, batas koneksi, dan sakelar tampilan. Bahasa tetap.",
+    "resetHint": "Mengatur ulang warna, urutan pasangan, rantai (utama), RPC, batas koneksi, dan sakelar tampilan. Bahasa tetap.",
     "resetBtn": "Kembalikan",
     "resetDone": "Dikembalikan",
     "scanCore": "Utama",

@@ -11,7 +11,15 @@ export const VENUES_CACHE = "venues5";
 const OUTLIER = 0.15;
 /** Illiquid v2 honeypots quote near $1 with a few dollars of USDT. Holdings must not use those. */
 export const MIN_QUOTE_DEPTH_USD = 1_000;
+/** Unknown explorer tokens: a thin WBNB/USDT pool still quotes. Airdrop bags that are most of that pool stay off the desk. */
+export const DISC_MIN_DEPTH_USD = 25_000;
+export const DISC_MAX_POOL_SHARE = 0.02;
 const HONEYPOT_DEPTH_USD = 50_000;
+
+export function quoteHoldsForUnknown(valueUsd: number, depthUsd: number | undefined): boolean {
+  if (!(valueUsd >= 0.01) || depthUsd == null || !(depthUsd >= DISC_MIN_DEPTH_USD)) return false;
+  return valueUsd <= depthUsd * DISC_MAX_POOL_SHARE;
+}
 const quotePolicy = { ...POLICIES.quote, keep: (q: Quote | null) => Boolean(q && q.usdc > 0 && ((q.depth ?? 0) >= MIN_QUOTE_DEPTH_USD || q.source === "stable")) };
 const wrapPolicy = { ...POLICIES.quote, keep: (n: number | null) => n != null && n > 0 };
 

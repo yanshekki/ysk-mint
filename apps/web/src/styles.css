@@ -3199,6 +3199,10 @@ button.set-item-btn:focus-visible {
 .set-chain-bar .set-note {
   flex: 1 1 220px;
 }
+.set-chain-bar .me-chips {
+  flex: 0 1 auto;
+  justify-content: flex-end;
+}
 .set-chain-list {
   max-height: min(520px, 58vh);
   overflow: auto;

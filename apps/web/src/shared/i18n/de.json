@@ -728,7 +728,7 @@
     "cacheClearing": "Wird gelöscht",
     "cacheCleared": "Gelöscht",
     "reset": "Standards wiederherstellen",
-    "resetHint": "Setzt Farben, Paarreihenfolge, Netzwerke, RPCs, Verbindungslimits und Anzeigeschalter zurück. Die Sprache bleibt.",
+    "resetHint": "Setzt Farben, Paarreihenfolge, Netzwerke (Mainstream), RPCs, Verbindungslimits und Anzeigeschalter zurück. Die Sprache bleibt.",
     "resetBtn": "Wiederherstellen",
     "resetDone": "Wiederhergestellt",
     "scanCore": "Kern",

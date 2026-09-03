@@ -48,7 +48,7 @@ import { ChipBusy } from "../../shared/ui/LiveDock.tsx";
 import { trackLive, useLiveStatus } from "../../lib/liveStatus.ts";
 import { TOKEN_CATALOG } from "../../lib/tokenRegistry.ts";
 import { DEX, isLst, SOL_NATIVE_MINT } from "../../lib/defiAddresses.ts";
-import { fmtUsdc, quoteKey, quoteSolMints, type Quote } from "../../lib/defiQuotes.ts";
+import { fmtUsdc, quoteHoldsForUnknown, quoteKey, quoteSolMints, type Quote } from "../../lib/defiQuotes.ts";
 import { oracleTokenUsdc } from "../../lib/oracle.ts";
 import { readAave, readUniV3, type AaveCard, type ProtocolLine, type UniCard } from "../../lib/defiPositions.ts";
 import { dexBrandHref } from "../../lib/dexApp.ts";
@@ -138,7 +138,8 @@ function listedHolding(r: HoldingRow, q: Quote | undefined, hideZero: boolean) {
   if (unknownToken(r)) {
     if (r.raw <= 0n || r.amount === "—") return false;
     const v = valued(r.raw, rowDecimals(r), q);
-    return v != null && v >= 0.01;
+    if (v == null) return false;
+    return quoteHoldsForUnknown(v, q?.depth);
   }
   if (!hideZero) return true;
   return r.raw > 0n && r.amount !== "—";

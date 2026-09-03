@@ -728,7 +728,7 @@
     "cacheClearing": "Effacement",
     "cacheCleared": "Effacé",
     "reset": "Restaurer les défauts",
-    "resetHint": "Réinitialise les couleurs, l’ordre des paires, les chaînes, les RPC, les limites de connexion et les bascules d’affichage. La langue reste.",
+    "resetHint": "Réinitialise les couleurs, l’ordre des paires, les chaînes (principales), les RPC, les limites de connexion et les bascules d’affichage. La langue reste.",
     "resetBtn": "Restaurer",
     "resetDone": "Restauré",
     "scanCore": "Principaux",

@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { CHAINS as CHAIN_MAP, featuredChains, testnetChains, type ChainDefinition } from "@ysk-mint/config";
 import {
   DEFI_SCAN_KINDS,
+  chainPresetOf,
+  defiPresetOf,
   disabledForChainPreset,
   disabledForDefiPreset,
   isCoreChainId,
@@ -24,23 +26,22 @@ function useRpcSession() {
   useEffect(() => subscribeRpcSession(() => setN((n) => n + 1)), []);
 }
 
-function ScanPresetBar({ hint, onPick }: { hint: string; onPick: (preset: ScanPreset) => void }) {
+function ScanPresetBar({ hint, active, onPick }: { hint: string; active: ScanPreset | null; onPick: (preset: ScanPreset) => void }) {
   const { t } = useTranslation();
+  const btn = (id: ScanPreset, label: string) => (
+    <button type="button" className={`me-chip ${active === id ? "me-chip-on" : ""}`} onClick={() => onPick(id)}>
+      {label}
+    </button>
+  );
   return (
     <div className="set-chain-bar">
       <p className="set-note">{hint}</p>
-      <button type="button" className="me-pool-btn me-pool-btn-explore" onClick={() => onPick("core")}>
-        {t("settings.scanCore")}
-      </button>
-      <button type="button" className="me-pool-btn me-pool-btn-explore" onClick={() => onPick("extra")}>
-        {t("settings.scanExtra")}
-      </button>
-      <button type="button" className="me-pool-btn me-pool-btn-explore" onClick={() => onPick("all")}>
-        {t("settings.allOn")}
-      </button>
-      <button type="button" className="me-pool-btn me-pool-btn-explore" onClick={() => onPick("none")}>
-        {t("settings.allOff")}
-      </button>
+      <div className="me-chips">
+        {btn("core", t("settings.scanCore"))}
+        {btn("extra", t("settings.scanExtra"))}
+        {btn("all", t("settings.allOn"))}
+        {btn("none", t("settings.allOff"))}
+      </div>
     </div>
   );
 }
@@ -84,7 +85,11 @@ function DefiScanCard() {
         <b>{t("settings.defi")}</b>
         <span className="me-count">{t("settings.chainsOn", { on: onCount, total: DEFI_SCAN_KINDS.length })}</span>
       </div>
-      <ScanPresetBar hint={t("settings.defiHint")} onPick={(preset) => patch({ disabledDefi: disabledForDefiPreset(preset) })} />
+      <ScanPresetBar
+        hint={t("settings.defiHint")}
+        active={defiPresetOf(disabledDefi)}
+        onPick={(preset) => patch({ disabledDefi: disabledForDefiPreset(preset) })}
+      />
       <p className="chain-group-title set-scan-group">{t("settings.scanCore")}</p>
       {core.map((kind) => (
         <SetToggle
@@ -198,7 +203,11 @@ export function RpcSettings() {
           />
           <span className="me-count">{t("settings.chainsOn", { on: onCount, total: CHAINS.length })}</span>
         </div>
-        <ScanPresetBar hint={t("settings.chainsHint")} onPick={(preset) => s.patch({ disabledChains: disabledForChainPreset(preset) })} />
+        <ScanPresetBar
+          hint={t("settings.chainsHint")}
+          active={chainPresetOf(s.disabledChains)}
+          onPick={(preset) => s.patch({ disabledChains: disabledForChainPreset(preset) })}
+        />
         {onCount === 0 ? <p className="me-card-empty">{t("settings.chainsNone")}</p> : null}
         {visibleChains.length === 0 ? (
           <p className="me-card-empty">{t("settings.chainEmpty")}</p>
