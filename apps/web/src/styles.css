@@ -1337,6 +1337,13 @@ button.oft-chain:disabled {
   text-align: right;
   flex-shrink: 0;
 }
+.me-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  gap: 10px;
+}
 .me-summary b {
   display: block;
   font-size: 22px;
@@ -1344,10 +1351,69 @@ button.oft-chain:disabled {
   letter-spacing: -0.03em;
   color: var(--text-main);
 }
-.me-summary span {
+.me-summary span,
+.me-summary-note {
   font-size: 13px;
   font-weight: 700;
   color: var(--text-muted);
+}
+.me-summary-note {
+  display: block;
+  margin-top: 2px;
+}
+.me-quote-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-sizing: border-box;
+  height: 32px;
+  padding: 0 12px 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-white);
+  color: var(--text-main);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.me-quote-btn:hover:not(:disabled) {
+  border-color: #3b82f6;
+  color: #3b82f6;
+  background: #eff6ff;
+}
+.me-quote-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.me-quote-btn:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+.me-quote-btn[aria-busy="true"],
+.me-quote-btn[aria-busy="true"]:disabled {
+  opacity: 1;
+  cursor: wait;
+  color: #3b82f6;
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+.me-quote-btn-ok,
+.me-quote-btn-ok:disabled {
+  color: #3b82f6;
+  border-color: #93c5fd;
+  background: #eff6ff;
+  opacity: 1;
+  cursor: default;
+}
+.me-quote-ico {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
 }
 .me-ids {
   display: grid;
@@ -2461,6 +2527,9 @@ button.me-token:focus-visible {
   .me-summary {
     text-align: left;
     width: 100%;
+  }
+  .me-summary-row {
+    justify-content: flex-start;
   }
   .lend-stats {
     width: 100%;
@@ -4390,6 +4459,10 @@ html[dir="rtl"] .donate-addr {
   }
   .me-nft-tile:hover {
     transform: none;
+  }
+  .me-quote-btn .live-spin {
+    animation: none;
+    border-right-color: var(--brand-blue);
   }
 }
 @media (max-width: 720px) {

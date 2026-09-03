@@ -5,6 +5,7 @@ import { LocaleLink as Link } from "../../app/LocaleLink.tsx";
 import { localePath } from "../../lib/locale.ts";
 import { AddrIdCard } from "../settings/AddrFields.tsx";
 import { PeekDialog } from "./PeekDialog.tsx";
+import { MeQuoteRefresh } from "./MeQuoteRefresh.tsx";
 import { NftDesk } from "./NftDesk.tsx";
 import { TxDesk } from "./TxDesk.tsx";
 import { useAddressTxs } from "../../lib/useAddressTxs.ts";
@@ -50,6 +51,7 @@ import { TOKEN_CATALOG } from "../../lib/tokenRegistry.ts";
 import { DEX, isLst, SOL_NATIVE_MINT } from "../../lib/defiAddresses.ts";
 import { fmtUsdc, quoteHoldsForUnknown, quoteKey, quoteSolMints, type Quote } from "../../lib/defiQuotes.ts";
 import { oracleTokenUsdc } from "../../lib/oracle.ts";
+import { invalidateHoldingsQuotes } from "../../lib/quoteRefresh.ts";
 import { readAave, readUniV3, type AaveCard, type ProtocolLine, type UniCard } from "../../lib/defiPositions.ts";
 import { dexBrandHref } from "../../lib/dexApp.ts";
 import { lendAppHref, stakeAppHref, stakeBrandName } from "../../lib/lendApp.ts";
@@ -533,6 +535,12 @@ export function MePage() {
   const anyDefi = scanLendCore || scanLendExtra || scanLpCore || scanLpExtra || scanStakeCore || scanStakeExtra;
   const [launched, setLaunched] = useState<LaunchRow[]>([]);
   const [quotes, setQuotes] = useState<Map<string, Quote>>(new Map());
+  const quotesRef = useRef(quotes);
+  quotesRef.current = quotes;
+  const [quoteEpoch, setQuoteEpoch] = useState(0);
+  const [quoteAt, setQuoteAt] = useState<number | null>(null);
+  const [quoteFailed, setQuoteFailed] = useState(false);
+  const [quoteArmed, setQuoteArmed] = useState(false);
   const [aave, setAave] = useState<AaveCard[]>([]);
   const [burrow, setBurrow] = useState<AaveCard[]>([]);
   const [benqi, setBenqi] = useState<AaveCard[]>([]);
@@ -761,6 +769,9 @@ export function MePage() {
       setStakeExtra([]);
       setAdaStakeLines([]);
       setAdaLp([]);
+      setQuoteAt(null);
+      setQuoteFailed(false);
+      setQuoteArmed(false);
       return;
     }
     let cancelled = false;
@@ -813,6 +824,14 @@ export function MePage() {
         }).catch(() => undefined);
       };
       await Promise.all(quoteIds.map(quoteChain));
+      if (cancelled) return;
+      if (next.size === 0 && quotesRef.current.size > 0) {
+        setQuoteFailed(true);
+      } else {
+        setQuotes(new Map(next));
+        setQuoteAt(Date.now());
+        setQuoteFailed(false);
+      }
 
       const extra: StakeLine[] = [];
       const aaveCards: AaveCard[] = [];
@@ -959,7 +978,6 @@ export function MePage() {
       }
 
       if (cancelled) return;
-      setQuotes(next);
       setAave(mergeAave(aaveCards));
       setBurrow(mergeAave(burrowAll));
       setBenqi(mergeAave(benqiAll));
@@ -967,13 +985,15 @@ export function MePage() {
       setUni(mergeUni(uniCards));
       setATokens(tokens);
       setStakeExtra(extra);
-    })();
+    })().finally(() => {
+      if (!cancelled) setQuoteArmed(false);
+    });
     return () => {
       cancelled = true;
       useLiveStatus.getState().clear("quote:");
       useLiveStatus.getState().clear("defi:");
     };
-  }, [evmAddrs, anyWallet, holdingsKey, config, snap.byKind, unstakeLiquid, anyDefi, scanLendCore, scanLendExtra, scanLpCore, scanLpExtra, scanStakeCore, scanStakeExtra, disabledChains]);
+  }, [evmAddrs, anyWallet, holdingsKey, config, snap.byKind, unstakeLiquid, anyDefi, scanLendCore, scanLendExtra, scanLpCore, scanLpExtra, scanStakeCore, scanStakeExtra, disabledChains, quoteEpoch]);
 
   useEffect(() => {
     if (!adaStake && !adaPays) {
@@ -997,16 +1017,13 @@ export function MePage() {
         setAdaLp(lp);
       }
     }).catch(() => {
-      if (!cancelled) {
-        setAdaStakeLines([]);
-        setAdaLp([]);
-      }
+      /* keep last Cardano stake/LP — a failed reread is not a zero */
     });
     return () => {
       cancelled = true;
       useLiveStatus.getState().finish("defi:1815", true);
     };
-  }, [adaStake, adaPays, scanStakeCore, scanLpExtra]);
+  }, [adaStake, adaPays, scanStakeCore, scanLpExtra, quoteEpoch]);
 
   const walletRows = useMemo(() => {
     const rows = buckets.flatMap((g) =>
@@ -1157,6 +1174,13 @@ export function MePage() {
     return String(nfts.pieceCount(id));
   };
   const tabCount = (id: number | "all") => (deskTab === "txs" ? txCountLabel(id) : deskTab === "nft" ? nftCountLabel(id) : chipCount(id));
+  const refreshQuotes = useCallback(() => {
+    if (!anyWallet || quoteArmed) return;
+    invalidateHoldingsQuotes();
+    setQuoteFailed(false);
+    setQuoteArmed(true);
+    setQuoteEpoch((n) => n + 1);
+  }, [anyWallet, quoteArmed]);
 
   return (
     <section className="workspace">
@@ -1169,10 +1193,14 @@ export function MePage() {
           </p>
         </div>
         {anyWallet ? (
-          <div className="me-summary">
-            <b>{t("me.about", { n: fmtUsdc(total) })}</b>
-            <span>{unquoted ? t("me.unquoted", { n: unquoted }) : t("me.dexNote")}</span>
-          </div>
+          <MeQuoteRefresh
+            total={quoteAt == null ? "—" : t("me.about", { n: fmtUsdc(total) })}
+            quoteAt={quoteAt}
+            failed={quoteFailed}
+            armed={quoteArmed}
+            note={unquoted ? t("me.unquoted", { n: unquoted }) : t("me.dexNote")}
+            onRefresh={refreshQuotes}
+          />
         ) : null}
       </div>
       <div className="workspace-scroll">

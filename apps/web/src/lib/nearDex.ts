@@ -336,6 +336,10 @@ export async function loadNearMarkets(): Promise<NativeMarket[]> {
 
 let wrapUsdJob: Promise<number | null> | null = null;
 
+export function resetNearWrapUsd() {
+  wrapUsdJob = null;
+}
+
 export async function nearWrapUsd(): Promise<number | null> {
   if (!wrapUsdJob) {
     wrapUsdJob = (async () => {

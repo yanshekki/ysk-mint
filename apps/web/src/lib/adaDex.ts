@@ -359,6 +359,10 @@ async function loadAdaMarketsFromEstimate(): Promise<NativeMarket[]> {
 
 let adaUsdJob: Promise<number | null> | null = null;
 
+export function resetAdaUsd() {
+  adaUsdJob = null;
+}
+
 export async function adaUsd(): Promise<number | null> {
   if (!adaUsdJob) {
     adaUsdJob = (async () => {
