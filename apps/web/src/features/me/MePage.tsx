@@ -1329,7 +1329,7 @@ export function MePage() {
             <>
               <div className="me-ids">
                 {snap.addrs.map((a) => (
-                  <AddrIdCard key={a.id} kind={a.kind} value={a.value} connected={a.source === "connected"} />
+                  <AddrIdCard key={a.id} kind={a.kind} value={a.value} label={a.label} connected={a.source === "connected"} />
                 ))}
               </div>
 

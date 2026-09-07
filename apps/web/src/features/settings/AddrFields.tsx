@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { KIND_ICON, confirmKind, detectAddrKind, shortAddr, type AddrKind } from "../../lib/addrKind.ts";
 import { type AddrErr, type SavedAddr } from "../../lib/addressSets.ts";
-import { domainNames, useDomainName, type DomainHit } from "../../lib/domainNames/index.ts";
+import { addrCardText, domainNames, useDomainName, type DomainHit } from "../../lib/domainNames/index.ts";
 
 export function AddrAddBar({
   onAdd,
@@ -181,20 +181,23 @@ export function AddrAddBar({
 export function AddrIdCard({
   kind,
   value,
+  label,
   connected,
 }: {
   kind: AddrKind;
   value: string;
+  label?: string;
   connected?: boolean;
 }) {
   const { t } = useTranslation();
-  const name = useDomainName(kind, value);
+  const reverse = useDomainName(kind, value);
+  const face = addrCardText(kind, value, reverse, label);
   return (
     <div className="me-id">
       <img src={KIND_ICON[kind]} alt="" width={28} height={28} />
       <div>
-        <b>{name || t(`settings.kind.${kind}`)}</b>
-        <span className="num">{shortAddr(kind, value)}</span>
+        <b className={face.sub ? undefined : "num"}>{face.title}</b>
+        {face.sub ? <span className="num">{face.sub}</span> : null}
       </div>
       {connected ? <span className="addr-pill">{t("me.connected")}</span> : null}
     </div>
@@ -211,15 +214,16 @@ export function AddrRow({
   onRemove?: () => void;
 }) {
   const { t } = useTranslation();
-  const name = useDomainName(addr.kind, addr.value);
+  const reverse = useDomainName(addr.kind, addr.value);
+  const face = addrCardText(addr.kind, addr.value, reverse, addr.label);
   return (
     <div className="me-token">
       <span className="holding-ico-wrap">
         <img src={KIND_ICON[addr.kind]} alt="" className="holding-ico" />
       </span>
       <div className="holding-meta">
-        <b>{name || t(`settings.kind.${addr.kind}`)}</b>
-        <span className="num">{shortAddr(addr.kind, addr.value)}</span>
+        <b className={face.sub ? undefined : "num"}>{face.title}</b>
+        {face.sub ? <span className="num">{face.sub}</span> : null}
       </div>
       {connected ? <span className="addr-pill">{t("settings.addrConnected")}</span> : null}
       {onRemove ? (

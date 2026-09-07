@@ -13,6 +13,8 @@ export type SavedAddr = {
   id: string;
   value: string;
   kind: AddrKind;
+  /** Domain / handle that resolved to `value`, if the user pasted a name. */
+  label?: string;
 };
 
 export type WatchSet = {
@@ -27,12 +29,12 @@ type State = {
   mine: SavedAddr[];
   watch: WatchSet[];
   activeId: "mine" | string;
-  addMine: (kind: AddrKind, value: string) => AddrErr | null;
+  addMine: (kind: AddrKind, value: string, label?: string) => AddrErr | null;
   removeMine: (id: string) => void;
   addWatch: (name: string) => string | null;
   renameWatch: (id: string, name: string) => void;
   removeWatch: (id: string) => void;
-  addWatchAddr: (setId: string, kind: AddrKind, value: string) => AddrErr | null;
+  addWatchAddr: (setId: string, kind: AddrKind, value: string, label?: string) => AddrErr | null;
   removeWatchAddr: (setId: string, addrId: string) => void;
   setActive: (id: "mine" | string) => void;
   importShared: (name: string, addrs: Array<{ kind: AddrKind; value: string }>) => string | null;
@@ -42,13 +44,14 @@ function nid() {
   return globalThis.crypto?.randomUUID?.() ?? `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-function pushAddr(list: SavedAddr[], kind: AddrKind, value: string): { list: SavedAddr[]; err: AddrErr | null } {
+function pushAddr(list: SavedAddr[], kind: AddrKind, value: string, label?: string): { list: SavedAddr[]; err: AddrErr | null } {
   const v = normalizeAddr(kind, value);
   if (!v) return { list, err: "invalid" };
   if (list.length >= MAX_ADDRS) return { list, err: "full" };
   const k = addrKey(kind, v);
   if (list.some((a) => addrKey(a.kind, a.value) === k)) return { list, err: "dup" };
-  return { list: [...list, { id: nid(), kind, value: v }], err: null };
+  const name = label?.trim();
+  return { list: [...list, { id: nid(), kind, value: v, ...(name ? { label: name } : {}) }], err: null };
 }
 
 export const useAddressSets = create<State>()(
@@ -57,8 +60,8 @@ export const useAddressSets = create<State>()(
       mine: [],
       watch: [],
       activeId: "mine",
-      addMine: (kind, value) => {
-        const { list, err } = pushAddr(get().mine, kind, value);
+      addMine: (kind, value, label) => {
+        const { list, err } = pushAddr(get().mine, kind, value, label);
         if (err) return err;
         set({ mine: list });
         return null;
@@ -82,12 +85,12 @@ export const useAddressSets = create<State>()(
         const activeId = get().activeId === id ? "mine" : get().activeId;
         set({ watch, activeId });
       },
-      addWatchAddr: (setId, kind, value) => {
+      addWatchAddr: (setId, kind, value, label) => {
         const cur = get().watch;
         const i = cur.findIndex((w) => w.id === setId);
         if (i < 0) return "invalid";
         const hit = cur[i]!;
-        const { list, err } = pushAddr(hit.addresses, kind, value);
+        const { list, err } = pushAddr(hit.addresses, kind, value, label);
         if (err) return err;
         const watch = cur.slice();
         watch[i] = { ...hit, addresses: list };
@@ -133,6 +136,7 @@ export type SnapAddr = {
   value: string;
   kind: AddrKind;
   source: "connected" | "manual";
+  label?: string;
   cardanoAddresses?: string[];
   cardanoStake?: string;
 };

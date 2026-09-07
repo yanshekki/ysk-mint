@@ -252,7 +252,7 @@ export function SettingsPage() {
                   </div>
                 ) : null}
                 {!connected.length && !book.mine.length ? <p className="me-card-empty">{t("settings.addrsMineEmpty")}</p> : null}
-                <AddrAddBar disabled={book.mine.length >= MAX_ADDRS} onAdd={(kind, value) => book.addMine(kind, value)} />
+                <AddrAddBar disabled={book.mine.length >= MAX_ADDRS} onAdd={(kind, value, label) => book.addMine(kind, value, label)} />
               </section>
               <section className="me-card">
                 <div className="me-card-head">
@@ -284,7 +284,7 @@ export function SettingsPage() {
                       onBind={(el) => {
                         watchAddRefs.current[set.id] = el;
                       }}
-                      onAdd={(kind, value) => book.addWatchAddr(set.id, kind, value)}
+                      onAdd={(kind, value, label) => book.addWatchAddr(set.id, kind, value, label)}
                     />
                     {set.addresses.length ? (
                       <div className="me-list">
