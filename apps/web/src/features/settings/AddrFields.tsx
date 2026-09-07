@@ -192,15 +192,27 @@ export function AddrIdCard({
   const { t } = useTranslation();
   const reverse = useDomainName(kind, value);
   const face = addrCardText(kind, value, reverse, label);
+  const [copied, setCopied] = useState(false);
   return (
-    <div className="me-id">
+    <button
+      type="button"
+      className={`me-id${copied ? " is-copied" : ""}`}
+      aria-label={t("me.copyAddr")}
+      title={t("me.copyAddr")}
+      onClick={() => {
+        void navigator.clipboard.writeText(value).then(() => {
+          setCopied(true);
+          window.setTimeout(() => setCopied(false), 1600);
+        }).catch(() => undefined);
+      }}
+    >
       <img src={KIND_ICON[kind]} alt="" width={28} height={28} />
       <div>
         <b className={face.sub ? undefined : "num"}>{face.title}</b>
-        {face.sub ? <span className="num">{face.sub}</span> : null}
+        {copied ? <span>{t("me.copied")}</span> : face.sub ? <span className="num">{face.sub}</span> : null}
       </div>
       {connected ? <span className="addr-pill">{t("me.connected")}</span> : null}
-    </div>
+    </button>
   );
 }
 

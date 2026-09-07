@@ -481,6 +481,7 @@
     "peekAdd": "追加",
     "peekGo": "表示",
     "copied": "コピーしました",
+    "copyAddr": "アドレスをコピー",
     "shareLong": "このリンクは {{n}} 文字です。一部のアプリは 2,000 文字で切れます。",
     "addToSet": "「{{name}}」にアドレスを追加",
     "setMine": "自分",

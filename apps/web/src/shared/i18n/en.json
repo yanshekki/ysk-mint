@@ -481,6 +481,7 @@
     "peekAdd": "Add",
     "peekGo": "View",
     "copied": "Copied",
+    "copyAddr": "Copy address",
     "shareLong": "This link is {{n}} characters. Some apps cap messages at 2,000 and may cut it off.",
     "addToSet": "Add an address to “{{name}}”",
     "setMine": "Mine",

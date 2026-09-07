@@ -1425,10 +1425,27 @@ button.oft-chain:disabled {
   grid-template-columns: 28px minmax(0, 1fr) auto;
   gap: 10px;
   align-items: center;
+  width: 100%;
+  margin: 0;
   padding: 12px 14px;
   border: 1px solid var(--border-color);
   border-radius: 14px;
   background: var(--bg-white);
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+button.me-id:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+button.me-id:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+button.me-id.is-copied {
+  border-color: #93c5fd;
 }
 .me-id img {
   width: 28px;

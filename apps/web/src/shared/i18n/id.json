@@ -481,6 +481,7 @@
     "peekAdd": "Tambah",
     "peekGo": "Lihat",
     "copied": "Tersalin",
+    "copyAddr": "Salin alamat",
     "shareLong": "Tautan ini {{n}} karakter. Beberapa aplikasi memotong pesan di 2.000.",
     "addToSet": "Tambah alamat ke “{{name}}”",
     "setMine": "Saya",

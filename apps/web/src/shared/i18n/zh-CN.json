@@ -481,6 +481,7 @@
     "peekAdd": "加入",
     "peekGo": "查看",
     "copied": "已复制",
+    "copyAddr": "复制地址",
     "shareLong": "此链接有 {{n}} 字。部分应用讯息上限为 2,000 字，或会被截断。",
     "addToSet": "加入地址到「{{name}}」",
     "setMine": "我的",
