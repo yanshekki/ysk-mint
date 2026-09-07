@@ -1029,6 +1029,11 @@
     "hyperVault": "Волт Hyperliquid",
     "hyperVaultNote": "Доля волта из публичного HyperCore info.",
     "hyperVaultUntil": "Заблокировано до {{when}}",
-    "hyperSub": "Hyperliquid · {{name}}"
+    "hyperSub": "Hyperliquid · {{name}}",
+    "skr": "Стейк SKR",
+    "skrNote": "Стейк у guardian Solana Mobile. Снятие запускает паузу 48 часов. Сбой чтения пропускается, не поддельный 0.",
+    "skrGuardian": "Solana Mobile",
+    "skrUnstaking": "Пауза до {{when}}",
+    "skrClaim": "Пауза окончена — выведите в приложении стейкинга Solana Mobile"
   }
 }

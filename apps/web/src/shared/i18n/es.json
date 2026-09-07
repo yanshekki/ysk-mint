@@ -1029,6 +1029,11 @@
     "hyperVault": "Bóveda Hyperliquid",
     "hyperVaultNote": "Participación de bóveda del info público de HyperCore.",
     "hyperVaultUntil": "Bloqueado hasta {{when}}",
-    "hyperSub": "Hyperliquid · {{name}}"
+    "hyperSub": "Hyperliquid · {{name}}",
+    "skr": "Stake SKR",
+    "skrNote": "Stake al guardian de Solana Mobile. Al deshacer empieza 48 h de espera. Si falla la lectura se omite, no un 0 falso.",
+    "skrGuardian": "Solana Mobile",
+    "skrUnstaking": "Espera hasta {{when}}",
+    "skrClaim": "Espera lista — retire en la app de staking de Solana Mobile"
   }
 }

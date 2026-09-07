@@ -1029,6 +1029,11 @@
     "hyperVault": "Hyperliquid ボルト",
     "hyperVaultNote": "公開 HyperCore info のボルト持分。",
     "hyperVaultUntil": "{{when}} までロック",
-    "hyperSub": "Hyperliquid · {{name}}"
+    "hyperSub": "Hyperliquid · {{name}}",
+    "skr": "SKR ステーク",
+    "skrNote": "Solana Mobile ガーディアンへの委任。解除後は約 48 時間のクールダウン。読み取り失敗は省略し、偽の 0 は出しません。",
+    "skrGuardian": "Solana Mobile",
+    "skrUnstaking": "{{when}} までクールダウン",
+    "skrClaim": "クールダウン完了 — Solana Mobile のステーキング画面で引出"
   }
 }

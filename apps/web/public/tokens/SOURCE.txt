@@ -1,3 +1,6 @@
+skr.png is a 64×64 copy of the Solana Mobile staking site favicon
+(https://stake.solanamobile.com/favicon.ico), not a CMC asset.
+
 Token icons copied from CoinMarketCap public 64×64 CDN
 (https://s2.coinmarketcap.com/static/img/coins/64x64/{id}.png)
 into this folder so the SPA does not hotlink at runtime.

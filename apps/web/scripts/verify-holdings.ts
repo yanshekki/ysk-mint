@@ -17,6 +17,7 @@ import { readSuiStake } from "../src/lib/stake/sui.ts";
 import { readTronStake, tronFrozenSun } from "../src/lib/stake/tron.ts";
 import { readNearStake } from "../src/lib/stake/near.ts";
 import { readSolStake } from "../src/lib/stake/sol.ts";
+import { readSkrStake } from "../src/lib/stake/skr.ts";
 import { koiosPost } from "../src/lib/koios.ts";
 import { rpcJsonRpc, rpcResetSession } from "../src/lib/rpcPool.ts";
 import { useUserSettings } from "../src/lib/userSettings.ts";
@@ -209,6 +210,9 @@ async function checkSol(addr: string) {
   else pass("sol native", { lamports: app.lamports, mints: app.byMint.size });
   const desk = await readSolStake(addr).catch(() => []);
   pass("sol stake rows", { n: desk.length });
+  const skr = await readSkrStake(addr).catch(() => []);
+  const skrRaw = skr.reduce((n, l) => n + l.raw, 0n);
+  pass("skr stake rows", { n: skr.length, raw: skrRaw.toString() });
 }
 
 async function checkNear(addr: string) {

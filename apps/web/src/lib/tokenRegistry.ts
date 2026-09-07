@@ -107,6 +107,7 @@ const AUTO_NATIVES: TokenRecord[] = featuredChains()
   );
 
 const EXTRA: TokenRecord[] = [
+  { id: "sol-skr", vm: "solana", chainId: 101, symbol: "SKR", name: "Solana Mobile SKR", decimals: 6, address: "SKRbvo6Gf7GondiT3BbTfuRDPqLWei4j2Qy2NPGZhW3", icon: I("skr") },
   { id: "hype-whype", vm: "evm", chainId: 999, symbol: "WHYPE", name: "Wrapped HYPE", decimals: 18, address: "0x5555555555555555555555555555555555555555", icon: I("hype") },
   { id: "hype-usdc", vm: "evm", chainId: 999, symbol: "USDC", name: "USD Coin", decimals: 6, address: "0xb88339CB7199b77E23DB6E890353E22632Ba630f", icon: I("usdc") },
   { id: "hype-khype", vm: "evm", chainId: 999, symbol: "kHYPE", name: "Kinetiq kHYPE", decimals: 18, address: "0xfD739d4e423301CE9385c1fb8850539D657C296D", icon: I("hype") },

@@ -1029,6 +1029,11 @@
     "hyperVault": "Hyperliquid Vault",
     "hyperVaultNote": "Vault-Equity aus öffentlichem HyperCore-info.",
     "hyperVaultUntil": "Gesperrt bis {{when}}",
-    "hyperSub": "Hyperliquid · {{name}}"
+    "hyperSub": "Hyperliquid · {{name}}",
+    "skr": "SKR-Stake",
+    "skrNote": "Solana-Mobile-Guardian-Stake. Unstake startet 48 Stunden Abkühlung. Fehlschlag auslassen — keine gefälschte 0.",
+    "skrGuardian": "Solana Mobile",
+    "skrUnstaking": "Abkühlung bis {{when}}",
+    "skrClaim": "Abkühlung vorbei — in der Solana-Mobile-Staking-App abheben"
   }
 }

@@ -1029,6 +1029,11 @@
     "hyperVault": "Coffre Hyperliquid",
     "hyperVaultNote": "Quote-part de coffre via l’info public HyperCore.",
     "hyperVaultUntil": "Bloqué jusqu’au {{when}}",
-    "hyperSub": "Hyperliquid · {{name}}"
+    "hyperSub": "Hyperliquid · {{name}}",
+    "skr": "Mise SKR",
+    "skrNote": "Délégation au guardian Solana Mobile. Le désengagement lance 48 h de délai. Échec de lecture omis — pas de 0 factice.",
+    "skrGuardian": "Solana Mobile",
+    "skrUnstaking": "Délai jusqu’à {{when}}",
+    "skrClaim": "Délai terminé — retirer dans l’app de staking Solana Mobile"
   }
 }

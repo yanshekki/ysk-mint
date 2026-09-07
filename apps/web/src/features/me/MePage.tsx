@@ -70,6 +70,8 @@ import {
   readPinnedLst,
   readSavaxUnlocks,
   readSolStake,
+  readSkrStake,
+  SKR_MINT,
   readSuiStake,
   readTronStake,
   readAvaxPStake,
@@ -318,11 +320,38 @@ function protoSlug(name: string) {
 }
 
 function chainValue(c: ProtoChain) {
-  return c.lines.reduce((n, l) => n + (l.valueUsdc ?? 0), 0);
+  let sum = 0;
+  let any = false;
+  for (const l of c.lines) {
+    if (l.valueUsdc == null) continue;
+    any = true;
+    sum += l.valueUsdc;
+  }
+  return any ? sum : null;
 }
 
 function brandValue(b: ProtoBrand) {
-  return b.chains.reduce((n, c) => n + chainValue(c), 0);
+  let sum = 0;
+  let any = false;
+  for (const c of b.chains) {
+    const v = chainValue(c);
+    if (v == null) continue;
+    any = true;
+    sum += v;
+  }
+  return any ? sum : null;
+}
+
+function brandsUsd(list: ProtoBrand[]) {
+  let sum = 0;
+  let any = false;
+  for (const b of list) {
+    const v = brandValue(b);
+    if (v == null) continue;
+    any = true;
+    sum += v;
+  }
+  return any ? sum : null;
 }
 
 function addBrand(
@@ -351,8 +380,8 @@ function addBrand(
 
 function sortBrands(by: Map<string, ProtoBrand>) {
   const out = [...by.values()];
-  for (const b of out) b.chains.sort((a, c) => chainValue(c) - chainValue(a));
-  out.sort((a, b) => brandValue(b) - brandValue(a));
+  for (const b of out) b.chains.sort((a, c) => (chainValue(c) ?? -1) - (chainValue(a) ?? -1));
+  out.sort((a, b) => (brandValue(b) ?? -1) - (brandValue(a) ?? -1));
   return out;
 }
 
@@ -804,6 +833,7 @@ export function MePage() {
         await trackLive(`quote:${id}`, id, "quote", async () => {
           if (id === 101) {
             const solMints = rows.map((r) => (r.native ? SOL_NATIVE_MINT : r.contract || ""));
+            if (!solMints.includes(SKR_MINT)) solMints.push(SKR_MINT);
             const jup = await quoteSolMints(solMints);
             for (const [mint, q] of jup) next.set(`101:${mint === SOL_NATIVE_MINT ? "native" : mint.toLowerCase()}`, q);
             return;
@@ -879,6 +909,7 @@ export function MePage() {
             if (id === 101) {
               for (const acc of solAccs) {
                 if (scanStakeCore) extra.push(...(await readSolStake(acc, next.get("101:native")?.usdc).catch(() => [])));
+                if (scanStakeCore) extra.push(...(await readSkrStake(acc).catch(() => [])));
                 if (scanLpExtra) uniCards.push(...(await readSolHoldingsLp(acc).catch(() => [])));
                 if (scanLendCore || scanLendExtra) {
                   const more = await readNativeLending({ sol: acc, quotes: next, core: scanLendCore, extra: scanLendExtra }).catch(() => []);
@@ -1516,7 +1547,7 @@ export function MePage() {
                 <section className="me-card">
                   <div className="me-card-head">
                     <b>{t("me.catLend")}</b>
-                    <span className="me-count">{fmtUsdc(lendBrands.reduce((n, b) => n + brandValue(b), 0))}</span>
+                    <span className="me-count">{fmtUsdc(brandsUsd(lendBrands))}</span>
                   </div>
                   <div className="me-list">
                     {lendBrands.map((b) => (
@@ -1530,7 +1561,7 @@ export function MePage() {
                 <section className="me-card">
                   <div className="me-card-head">
                     <b>{t("me.catLp")}</b>
-                    <span className="me-count">{fmtUsdc(lpBrands.reduce((n, b) => n + brandValue(b), 0))}</span>
+                    <span className="me-count">{fmtUsdc(brandsUsd(lpBrands))}</span>
                   </div>
                   <div className="me-list">
                     {lpBrands.map((b) => (
@@ -1544,7 +1575,7 @@ export function MePage() {
                 <section className="me-card">
                   <div className="me-card-head">
                     <b>{t("me.catStake")}</b>
-                    <span className="me-count">{fmtUsdc(stakeBrands.reduce((n, b) => n + brandValue(b), 0))}</span>
+                    <span className="me-count">{fmtUsdc(brandsUsd(stakeBrands))}</span>
                   </div>
                   <div className="me-list">
                     {stakeBrands.map((b) => (

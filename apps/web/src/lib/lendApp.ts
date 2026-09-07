@@ -92,6 +92,7 @@ export function stakeBrandName(opts: { symbol?: string; extra?: string; name?: s
   if (hay.includes("msol") || hay.includes("marinade")) return "Marinade";
   if (hay.includes("jitosol") || hay.includes("jito")) return "Jito";
   if (hay.includes("bsol") || hay.includes("blaze")) return "Blaze";
+  if (opts.symbol === "SKR" || opts.contract === "SKRbvo6Gf7GondiT3BbTfuRDPqLWei4j2Qy2NPGZhW3" || hay.includes("solana mobile")) return "Solana Mobile";
   if (opts.chainId === 397) return "NEAR";
   if (opts.chainId === 1815) return "Cardano";
   if (opts.chainId === 101) return "Solana";
@@ -124,6 +125,7 @@ export function stakeAppHref(opts: { symbol?: string; extra?: string; name?: str
   if (hay.includes("msol") || hay.includes("marinade")) return "https://marinade.finance/app/staking";
   if (hay.includes("jitosol") || hay.includes("jito")) return "https://www.jito.network/staking/";
   if (hay.includes("bsol") || hay.includes("blaze")) return "https://stake.solblaze.org/";
+  if (opts.symbol === "SKR" || opts.contract === "SKRbvo6Gf7GondiT3BbTfuRDPqLWei4j2Qy2NPGZhW3" || hay.includes("solana mobile")) return "https://stake.solanamobile.com/";
   if (opts.chainId === 397 && opts.contract) return `https://nearblocks.io/address/${opts.contract}`;
   if (opts.chainId === 1815 && opts.contract?.startsWith("pool")) return `https://cardanoscan.io/pool/${opts.contract}`;
   if (opts.chainId === 101 && opts.contract) return `https://solscan.io/account/${opts.contract}`;

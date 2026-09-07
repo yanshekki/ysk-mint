@@ -1029,6 +1029,11 @@
     "hyperVault": "خزينة Hyperliquid",
     "hyperVaultNote": "حصة الخزينة من HyperCore info العام.",
     "hyperVaultUntil": "مقفلة حتى {{when}}",
-    "hyperSub": "Hyperliquid · {{name}}"
+    "hyperSub": "Hyperliquid · {{name}}",
+    "skr": "رهن SKR",
+    "skrNote": "رهن لدى وصي Solana Mobile. إلغاء الرهن يبدأ انتظار 48 ساعة. فشل القراءة يُتخطى وليس صفراً مزيفة.",
+    "skrGuardian": "Solana Mobile",
+    "skrUnstaking": "انتظار حتى {{when}}",
+    "skrClaim": "انتهى الانتظار — اسحب من تطبيق رهن Solana Mobile"
   }
 }

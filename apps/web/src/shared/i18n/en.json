@@ -1029,6 +1029,11 @@
     "hyperVault": "Hyperliquid vault",
     "hyperVaultNote": "Vault equity from public HyperCore info.",
     "hyperVaultUntil": "Locked until {{when}}",
-    "hyperSub": "Hyperliquid · {{name}}"
+    "hyperSub": "Hyperliquid · {{name}}",
+    "skr": "SKR stake",
+    "skrNote": "Solana Mobile guardian stake. Unstake starts a 48-hour cooldown. Skip if the program read fails — not a fake 0.",
+    "skrGuardian": "Solana Mobile",
+    "skrUnstaking": "Cooldown until {{when}}",
+    "skrClaim": "Cooldown done — withdraw in the Solana Mobile staking app"
   }
 }

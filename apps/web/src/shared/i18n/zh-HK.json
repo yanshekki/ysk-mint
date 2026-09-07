@@ -1029,6 +1029,11 @@
     "hyperVault": "Hyperliquid 金庫",
     "hyperVaultNote": "金庫權益取自公開 HyperCore info。",
     "hyperVaultUntil": "鎖定至 {{when}}",
-    "hyperSub": "Hyperliquid · {{name}}"
+    "hyperSub": "Hyperliquid · {{name}}",
+    "skr": "SKR 質押",
+    "skrNote": "Solana Mobile Guardian 質押。取消質押後須冷卻約 48 小時。讀取失敗則略過，不會畫假的 0。",
+    "skrGuardian": "Solana Mobile",
+    "skrUnstaking": "冷卻至 {{when}}",
+    "skrClaim": "冷卻已完——請在 Solana Mobile 質押頁提取"
   }
 }

@@ -9,6 +9,7 @@ export { readTronStake } from "./stake/tron.ts";
 export { readCosmosStake } from "./stake/cosmos.ts";
 export { stakeBadge, stakeSubtitle } from "./stake/shared.ts";
 export { readSolStake } from "./stake/sol.ts";
+export { readSkrStake, SKR_MINT } from "./stake/skr.ts";
 export { readSavaxUnlocks } from "./stake/savax.ts";
 export { readBenqiMarkets } from "./stake/benqi.ts";
 export { readAvaxPStake } from "./stake/avaxP.ts";

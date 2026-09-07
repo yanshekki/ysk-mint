@@ -1029,6 +1029,11 @@
     "hyperVault": "Vault Hyperliquid",
     "hyperVaultNote": "Ekuitas vault dari info publik HyperCore.",
     "hyperVaultUntil": "Terkunci sampai {{when}}",
-    "hyperSub": "Hyperliquid · {{name}}"
+    "hyperSub": "Hyperliquid · {{name}}",
+    "skr": "Stake SKR",
+    "skrNote": "Stake ke guardian Solana Mobile. Unstake memulai jeda 48 jam. Jika baca gagal, dilewati — bukan 0 palsu.",
+    "skrGuardian": "Solana Mobile",
+    "skrUnstaking": "Jeda hingga {{when}}",
+    "skrClaim": "Jeda selesai — tarik di aplikasi staking Solana Mobile"
   }
 }
