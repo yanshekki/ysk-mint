@@ -213,6 +213,11 @@ async function checkSol(addr: string) {
   const skr = await readSkrStake(addr).catch(() => []);
   const skrRaw = skr.reduce((n, l) => n + l.raw, 0n);
   pass("skr stake rows", { n: skr.length, raw: skrRaw.toString() });
+  if (skrRaw > 0n) {
+    const q = skr.find((l) => l.quote && l.quote.usdc > 0)?.quote?.usdc;
+    if (!(q && q > 0)) fail("skr quote", { n: skr.length, quote: skr[0]?.quote ?? null });
+    else pass("skr quote", { usdc: q, value: skr.find((l) => l.valueUsdc != null)?.valueUsdc ?? null });
+  }
 }
 
 async function checkNear(addr: string) {

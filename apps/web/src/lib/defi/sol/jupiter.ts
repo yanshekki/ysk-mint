@@ -5,16 +5,38 @@ import type { DefiProtocol, Quote } from "../types.ts";
 
 const jupPolicy = { ...POLICIES.quote, keep: (q: Quote | null) => Boolean(q && q.usdc > 0) };
 
+function jupQuote(mint: string, row: unknown): Quote | null {
+  if (!mint || !row || typeof row !== "object" || Array.isArray(row)) return null;
+  const rec = row as { usdPrice?: unknown; price?: unknown; liquidity?: unknown };
+  const n = Number(rec.usdPrice ?? rec.price);
+  if (!(Number.isFinite(n) && n > 0)) return null;
+  const depth = Number(rec.liquidity);
+  const q: Quote = { usdc: n, source: "jup" };
+  if (Number.isFinite(depth) && depth > 0) q.depth = depth;
+  return q;
+}
+
 async function fetchJupChunk(ids: string[]): Promise<Map<string, Quote>> {
   const out = new Map<string, Quote>();
   if (!ids.length) return out;
   try {
-    const res = await outboundFetch(`https://lite-api.jup.ag/price/v2?ids=${ids.join(",")}`);
+    const res = await outboundFetch(`https://lite-api.jup.ag/price/v3?ids=${ids.join(",")}`);
     if (!res.ok) return out;
-    const json = (await res.json()) as { data?: Record<string, { price?: string | number } | null> };
-    for (const [mint, row] of Object.entries(json.data ?? {})) {
-      const n = Number(row?.price);
-      if (Number.isFinite(n) && n > 0) out.set(mint, { usdc: n, source: "jup" });
+    const json = (await res.json()) as unknown;
+    if (!json || typeof json !== "object" || Array.isArray(json)) return out;
+    const body = json as Record<string, unknown>;
+    const rows =
+      body.data && typeof body.data === "object" && !Array.isArray(body.data)
+        ? (body.data as Record<string, unknown>)
+        : body;
+    const byMint = new Map<string, Quote>();
+    for (const [mint, row] of Object.entries(rows)) {
+      const q = jupQuote(mint, row);
+      if (q) byMint.set(mint, q);
+    }
+    for (const mint of ids) {
+      const q = byMint.get(mint) ?? [...byMint.entries()].find(([k]) => k.toLowerCase() === mint.toLowerCase())?.[1];
+      if (q) out.set(mint, q);
     }
   } catch {
     /* chunk miss */
