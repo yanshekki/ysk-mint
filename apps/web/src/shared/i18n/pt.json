@@ -46,7 +46,8 @@
     "terms": "Termos de uso",
     "disclaimer": "Aviso legal",
     "github": "GitHub",
-    "more": "Mais"
+    "more": "Mais",
+    "scale": "Escala"
   },
   "lp": {
     "kicker": "Na blockchain",
@@ -943,6 +944,43 @@
       ]
     }
   },
+  "scale": {
+    "kicker": "On-chain",
+    "hint": "Se A atingisse a capitalização circulante de B, quanto custaria uma unidade de A? Os números vêm da oferta circulante pública. É aritmética, não uma cotação negociável.",
+    "pickA": "Ativo A",
+    "pickB": "Ativo B",
+    "pickHint": "Escolha um ativo.",
+    "swap": "Trocar A e B",
+    "search": "Buscar ticker, nome ou contrato",
+    "noMatch": "Nada no catálogo.",
+    "presets": "Exemplos",
+    "mode": "Base da capitalização",
+    "circMode": "Circulante",
+    "fdvMode": "Totalmente diluída",
+    "price": "Preço unitário",
+    "cap": "Cap. circulante",
+    "fdv": "Cap. diluída",
+    "thin": "A liquidez é fina — trate o número como esboço.",
+    "implied": "Preço unitário implícito",
+    "impliedNote": "Se {{a}} tivesse a cap. de {{b}}",
+    "multiple": "Múltiplo",
+    "shareOf": "{{n}}% de B",
+    "empty": "Escolha A e B para calcular.",
+    "copy": "Copiar ligação",
+    "copied": "Copiado",
+    "bagLabel": "Se você tivesse esta quantidade de {{symbol}}",
+    "bagHint": "Quantidade",
+    "bagValue": "Valor estimado",
+    "ladder": "{{a}} noutras caps",
+    "sourceNote": "Caps circulantes de páginas públicas de tokens, não uma cotação negociável.",
+    "sourceNative": "Moedas nativas usam um feed de cap. circulante — a cap. do wrapper não é a cadeia.",
+    "sourceToken": "Tokens do catálogo usam a página pública on-chain.",
+    "quoteFailNote": "As caps não atualizaram. Mantêm-se as cifras anteriores.",
+    "refreshAria": "Atualizar caps circulantes",
+    "statCapA": "Cap. A",
+    "statCapB": "Cap. B",
+    "quoteBusyNote": "A obter caps circulantes"
+  },
   "seo": {
     "homeTitle": "Mercados · YSK Mint",
     "homeDesc": "Pools DEX ao vivo. Preço e profundidade vêm das reservas na blockchain. Não precisa de carteira para navegar.",
@@ -980,7 +1018,11 @@
     "disclaimerDesc": "Leia este aviso antes de usar o YSK Mint. Ao usar o app, você aceita estas condições e os Termos de uso.",
     "faqMintQ": "O que é o YSK Mint?",
     "faqWhoQ": "Quem opera o YSK Mint?",
-    "faqContactQ": "Como posso contatar a YSK Limited?"
+    "faqContactQ": "Como posso contatar a YSK Limited?",
+    "scaleTitle": "Escala · YSK Mint",
+    "scaleDesc": "Se A atingisse a capitalização circulante de B, quanto custaria uma unidade de A? Oferta circulante pública. Aritmética, não uma cotação.",
+    "scalePairTitle": "{{a}} com a cap. de {{b}} · YSK Mint",
+    "scalePairDesc": "Preço unitário implícito de {{a}} se tivesse a cap. circulante de {{b}} ({{c}}). Não é uma cotação negociável."
   },
   "stake": {
     "claimable": "Resgatável",

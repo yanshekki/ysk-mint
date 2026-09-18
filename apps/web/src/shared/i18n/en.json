@@ -46,7 +46,8 @@
     "terms": "Terms of Use",
     "disclaimer": "Disclaimer",
     "github": "GitHub",
-    "more": "More"
+    "more": "More",
+    "scale": "Scale"
   },
   "lp": {
     "kicker": "On-chain",
@@ -943,6 +944,43 @@
       ]
     }
   },
+  "scale": {
+    "kicker": "On-chain",
+    "hint": "If A reached B’s circulating market cap, what would one unit of A cost? Caps come from public circulating supply. This is arithmetic, not a tradeable quote.",
+    "pickA": "Asset A",
+    "pickB": "Asset B",
+    "pickHint": "Pick an asset.",
+    "swap": "Swap A and B",
+    "search": "Search ticker, name, or contract",
+    "noMatch": "No match in the catalog.",
+    "presets": "Examples",
+    "mode": "Market-cap basis",
+    "circMode": "Circulating",
+    "fdvMode": "Fully diluted",
+    "price": "Unit price",
+    "cap": "Circulating cap",
+    "fdv": "Fully diluted cap",
+    "thin": "Pool is thin — treat the figure as a sketch.",
+    "implied": "Implied unit price",
+    "impliedNote": "If {{a}} had {{b}}’s cap",
+    "multiple": "Multiple",
+    "shareOf": "{{n}}% of B",
+    "empty": "Pick A and B to run the numbers.",
+    "copy": "Copy link",
+    "copied": "Copied",
+    "bagLabel": "If you held this much {{symbol}}",
+    "bagHint": "Amount",
+    "bagValue": "Estimated value",
+    "ladder": "{{a}} at other caps",
+    "sourceNote": "Circulating caps from public token pages, not a tradeable quote.",
+    "sourceNative": "Native coins use a public circulating-cap feed — wrapped pool caps are not the chain.",
+    "sourceToken": "Catalog tokens use the public on-chain token page.",
+    "quoteFailNote": "Caps did not update. Last figures still shown.",
+    "refreshAria": "Refresh circulating caps",
+    "statCapA": "Cap A",
+    "statCapB": "Cap B",
+    "quoteBusyNote": "Fetching circulating caps"
+  },
   "seo": {
     "homeTitle": "Markets · YSK Mint",
     "homeDesc": "Live DEX pools. Price and depth come from on-chain reserves. No wallet required to browse.",
@@ -980,7 +1018,11 @@
     "disclaimerDesc": "Please read this notice before you use YSK Mint. By using the app you accept these terms and the Terms of Use.",
     "faqMintQ": "What is YSK Mint?",
     "faqWhoQ": "Who operates YSK Mint?",
-    "faqContactQ": "How can I contact YSK Limited?"
+    "faqContactQ": "How can I contact YSK Limited?",
+    "scaleTitle": "Scale · YSK Mint",
+    "scaleDesc": "If A reached B’s circulating market cap, what would one unit of A cost? Public circulating supply. Arithmetic, not a tradeable quote.",
+    "scalePairTitle": "{{a}} at {{b}}’s cap · YSK Mint",
+    "scalePairDesc": "Implied unit price of {{a}} if it had {{b}} ({{c}}) circulating market cap. Public circulating supply, not a tradeable quote."
   },
   "stake": {
     "claimable": "Claimable",

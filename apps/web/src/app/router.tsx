@@ -38,6 +38,27 @@ function appChildren(): RouteObject[] {
       },
     },
     {
+      path: "scale/:a/:b",
+      lazy: async () => {
+        const { ScalePage } = await import("../features/scale/ScalePage.tsx");
+        return { Component: ScalePage };
+      },
+    },
+    {
+      path: "scale/:a",
+      lazy: async () => {
+        const { ScalePage } = await import("../features/scale/ScalePage.tsx");
+        return { Component: ScalePage };
+      },
+    },
+    {
+      path: "scale",
+      lazy: async () => {
+        const { ScalePage } = await import("../features/scale/ScalePage.tsx");
+        return { Component: ScalePage };
+      },
+    },
+    {
       path: "create",
       lazy: async () => {
         const { CreatePage } = await import("../features/wizard/CreatePage.tsx");

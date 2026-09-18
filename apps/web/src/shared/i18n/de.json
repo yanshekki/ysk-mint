@@ -46,7 +46,8 @@
     "terms": "Nutzungsbedingungen",
     "disclaimer": "Haftungsausschluss",
     "github": "GitHub",
-    "more": "Mehr"
+    "more": "Mehr",
+    "scale": "Maßstab"
   },
   "lp": {
     "kicker": "On-Chain",
@@ -943,6 +944,43 @@
       ]
     }
   },
+  "scale": {
+    "kicker": "On-chain",
+    "hint": "Wenn A die zirkulierende Marktkapitalisierung von B erreichte, was kostete eine Einheit A? Zahlen aus dem öffentlichen Umlauf. Das ist Arithmetik, kein handelbares Quote.",
+    "pickA": "Asset A",
+    "pickB": "Asset B",
+    "pickHint": "Asset wählen.",
+    "swap": "A und B tauschen",
+    "search": "Ticker, Name oder Vertrag suchen",
+    "noMatch": "Kein Treffer im Katalog.",
+    "presets": "Beispiele",
+    "mode": "Marktkapitalisierungsbasis",
+    "circMode": "Zirkulierend",
+    "fdvMode": "Voll verwässert",
+    "price": "Stückpreis",
+    "cap": "Zirk. Marktkap.",
+    "fdv": "Verwässerte Kap.",
+    "thin": "Der Pool ist dünn — Zahl nur als Skizze.",
+    "implied": "Implizierter Stückpreis",
+    "impliedNote": "Hätte {{a}} die Kap. von {{b}}",
+    "multiple": "Vielfaches",
+    "shareOf": "{{n}} % von B",
+    "empty": "A und B wählen, dann rechnen.",
+    "copy": "Link kopieren",
+    "copied": "Kopiert",
+    "bagLabel": "Wenn Sie so viel {{symbol}} hielten",
+    "bagHint": "Menge",
+    "bagValue": "Schätzwert",
+    "ladder": "{{a}} bei anderen Kap.",
+    "sourceNote": "Zirkulierende Caps von öffentlichen Token-Seiten, kein handelbares Quote.",
+    "sourceNative": "Native Coins nutzen einen zirkulierenden-Cap-Feed — die Wrapper-Cap ist nicht die Kette.",
+    "sourceToken": "Katalog-Token nutzen die öffentliche On-Chain-Token-Seite.",
+    "quoteFailNote": "Caps nicht aktualisiert. Letzte Zahlen bleiben.",
+    "refreshAria": "Zirkulierende Caps neu laden",
+    "statCapA": "Cap. A",
+    "statCapB": "Cap. B",
+    "quoteBusyNote": "Lade zirkulierende Caps"
+  },
   "seo": {
     "homeTitle": "Märkte · YSK Mint",
     "homeDesc": "Live-DEX-Pools. Preis und Tiefe kommen aus On-Chain-Reserven. Zum Durchstöbern brauchst du keine Wallet.",
@@ -980,7 +1018,11 @@
     "disclaimerDesc": "Bitte lesen Sie diesen Hinweis, bevor Sie YSK Mint nutzen. Mit der Nutzung der App akzeptieren Sie diese Bedingungen und die Nutzungsbedingungen.",
     "faqMintQ": "Was ist YSK Mint?",
     "faqWhoQ": "Wer betreibt YSK Mint?",
-    "faqContactQ": "Wie erreiche ich YSK Limited?"
+    "faqContactQ": "Wie erreiche ich YSK Limited?",
+    "scaleTitle": "Maßstab · YSK Mint",
+    "scaleDesc": "Wenn A die zirkulierende Marktkapitalisierung von B erreichte, was kostete eine Einheit A? Öffentlicher Umlauf. Arithmetik, kein handelbares Quote.",
+    "scalePairTitle": "{{a}} bei {{b}}-Kap. · YSK Mint",
+    "scalePairDesc": "Implizierter Stückpreis von {{a}}, hätte es die zirkulierende Kap. von {{b}} ({{c}}). Kein handelbares Quote."
   },
   "stake": {
     "claimable": "Abholbar",

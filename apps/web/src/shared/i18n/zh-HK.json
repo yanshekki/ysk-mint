@@ -46,7 +46,8 @@
     "terms": "使用條款",
     "disclaimer": "免責聲明",
     "github": "GitHub",
-    "more": "更多"
+    "more": "更多",
+    "scale": "量級"
   },
   "lp": {
     "kicker": "鏈上",
@@ -943,6 +944,43 @@
       ]
     }
   },
+  "scale": {
+    "kicker": "鏈上",
+    "hint": "若 A 去到 B 的流通市值，一枚 A 值幾多？市值取自公開流通量。此為算術，不是可成交的報價。",
+    "pickA": "資產 A",
+    "pickB": "資產 B",
+    "pickHint": "請選擇資產。",
+    "swap": "對調 A 與 B",
+    "search": "搜尋代號、名稱或合約",
+    "noMatch": "目錄沒有相符項目。",
+    "presets": "例子",
+    "mode": "市值口徑",
+    "circMode": "流通市值",
+    "fdvMode": "完全稀釋",
+    "price": "單位價",
+    "cap": "流通市值",
+    "fdv": "完全稀釋市值",
+    "thin": "池子偏淺，數字只供參考。",
+    "implied": "隱含單位價",
+    "impliedNote": "若 {{a}} 有 {{b}} 的市值",
+    "multiple": "倍數",
+    "shareOf": "佔 B 的 {{n}}%",
+    "empty": "選好 A 與 B 即可計算。",
+    "copy": "複製連結",
+    "copied": "已複製",
+    "bagLabel": "若持有這麼多 {{symbol}}",
+    "bagHint": "數量",
+    "bagValue": "估價",
+    "ladder": "{{a}} 對其他市值",
+    "sourceNote": "流通市值來自公開代幣頁，不是可成交報價。",
+    "sourceNative": "原生幣用公開流通市值饋源——包裝池市值不是整條鏈。",
+    "sourceToken": "目錄代幣用公開鏈上代幣頁。",
+    "quoteFailNote": "市值未能更新，仍顯示上次數字。",
+    "refreshAria": "重取流通市值",
+    "statCapA": "A 市值",
+    "statCapB": "B 市值",
+    "quoteBusyNote": "正在取流通市值"
+  },
   "seo": {
     "homeTitle": "市場 · YSK Mint",
     "homeDesc": "各鏈去中心化交易所的流動池。報價與深度取自鏈上儲備，無須連接錢包即可查看。",
@@ -980,7 +1018,11 @@
     "disclaimerDesc": "使用 YSK Mint 前請閱讀本聲明。使用即表示你接受本聲明及《使用條款》。",
     "faqMintQ": "YSK Mint 是甚麼？",
     "faqWhoQ": "誰營運 YSK Mint？",
-    "faqContactQ": "如何聯絡 YSK Limited？"
+    "faqContactQ": "如何聯絡 YSK Limited？",
+    "scaleTitle": "量級 · YSK Mint",
+    "scaleDesc": "若 A 去到 B 的流通市值，一枚 A 值幾多？取自公開流通量。算術，不是可成交報價。",
+    "scalePairTitle": "{{a}} 有 {{b}} 的市值 · YSK Mint",
+    "scalePairDesc": "若 {{a}} 有 {{b}}（{{c}}）的流通市值，隱含單位價。取自公開流通量，不是可成交報價。"
   },
   "stake": {
     "claimable": "可領",

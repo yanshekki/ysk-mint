@@ -22,6 +22,12 @@ YSK launch-pool rows (when a factory is configured) appear alongside third-party
 
 `/stocks` lists DEX pools for tokenized US stocks and US ETFs already in the baked catalog (xStock, Ondo, bStocks, Republic pre-IPO, Coinbase B20 on Base, and Backed bTokens on Avalanche). These are on-chain wrappers, not listed shares. The table is the same shape as Markets: pair, chain, USD quote, Depth USD. Only chains that hold those wrappers are listed and scanned (ETH, OP, Base, Arb, BNB, SOL, TON, AVAX, HyperEVM, Mantle, Ink, X Layer where catalogued). Open the pair page to use the venue’s DEX. Treasuries, gold, credit RWAs, and non-US names stay off this desk.
 
+## Scale
+
+**Read public circulating caps. No wallet required.**
+
+`/scale` asks: if A reached B’s circulating market cap, what would one unit of A cost? `implied = cap(B) / circulating(A)`. Shareable URLs look like `/scale/eth/btc`. The Share control matches Holdings (`navigator.share`, else copy). Native coins (BTC, ETH, SOL, …) read CoinGecko’s public circulating-cap feed so a wrapped mint is not mistaken for the chain. Catalog tokens (SKR, LSTs, tokenized stock wrappers) read the public GeckoTerminal token page (the same host as pair OHLCV). Caps sit in a ~10 minute catalog cache with no polling; tap Refresh beside the implied price to drop that cache. A missing cap is “—”, never a fake 0. Circulating and fully-diluted modes are labelled separately. This is arithmetic, not a quote you can trade, and not listed-share market data.
+
 ## Trading pairs
 
 **Read on-chain. Swap on the venue’s site.**

@@ -14,6 +14,7 @@ import i18n from "../lib/i18n.ts";
 const NAV = [
   ["/", "nav.lp"],
   ["/stocks", "nav.stocks"],
+  ["/scale", "nav.scale"],
   ["/lend", "nav.lend"],
   ["/create", "nav.create"],
   ["/transfer", "nav.transfer"],
@@ -29,6 +30,7 @@ const TAB_NAV = [
 ] as const;
 
 const MORE_LINKS = [
+  ["/scale", "nav.scale"],
   ["/create", "nav.create"],
   ["/transfer", "nav.transfer"],
   ["/settings", "nav.settings"],

@@ -4,6 +4,7 @@ import { stripLocalePrefix } from "./locale.ts";
 export type SeoPage =
   | "home"
   | "stocks"
+  | "scale"
   | "lend"
   | "lendAsset"
   | "create"
@@ -53,6 +54,7 @@ export function matchSeoPage(pathname: string): { page: SeoPage; noindex: boolea
   const p = stripLocalePrefix(pathname);
   if (p === "/") return { page: "home", noindex: false };
   if (p === "/stocks") return { page: "stocks", noindex: false };
+  if (p === "/scale" || p.startsWith("/scale/")) return { page: "scale", noindex: false };
   if (p === "/lend") return { page: "lend", noindex: false };
   if (p.startsWith("/lend/")) return { page: "lendAsset", noindex: false };
   if (p === "/create") return { page: "create", noindex: false };

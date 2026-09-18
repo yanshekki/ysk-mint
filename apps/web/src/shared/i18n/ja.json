@@ -46,7 +46,8 @@
     "terms": "利用規約",
     "disclaimer": "免責事項",
     "github": "GitHub",
-    "more": "その他"
+    "more": "その他",
+    "scale": "規模"
   },
   "lp": {
     "kicker": "オンチェーン",
@@ -943,6 +944,43 @@
       ]
     }
   },
+  "scale": {
+    "kicker": "オンチェーン",
+    "hint": "A が B の流通時価総額になったら、A の 1 単位はいくらか。数値は公開流通量から。計算であり、約定可能な気配ではない。",
+    "pickA": "資産 A",
+    "pickB": "資産 B",
+    "pickHint": "資産を選んでください。",
+    "swap": "A と B を入れ替え",
+    "search": "ティッカー・名称・契約を検索",
+    "noMatch": "カタログに一致がありません。",
+    "presets": "例",
+    "mode": "時価総額の口径",
+    "circMode": "流通",
+    "fdvMode": "完全希薄化",
+    "price": "単価",
+    "cap": "流通時価総額",
+    "fdv": "完全希薄化時価総額",
+    "thin": "プールが薄いので、数字は目安です。",
+    "implied": "含み単価",
+    "impliedNote": "{{a}} が {{b}} の時価総額なら",
+    "multiple": "倍率",
+    "shareOf": "B の {{n}}%",
+    "empty": "A と B を選ぶと計算します。",
+    "copy": "リンクをコピー",
+    "copied": "コピー済み",
+    "bagLabel": "この数量の {{symbol}} を持っていたら",
+    "bagHint": "数量",
+    "bagValue": "試算額",
+    "ladder": "他の時価総額での {{a}}",
+    "sourceNote": "流通時価総額は公開トークン頁から。約定可能な気配ではない。",
+    "sourceNative": "ネイティブ通貨は公開の流通時価総額。ラップ池の時価総額はチェーン全体ではない。",
+    "sourceToken": "カタログトークンは公開オンチェーンのトークン頁。",
+    "quoteFailNote": "時価総額を更新できず、前回の数字を表示。",
+    "refreshAria": "流通時価総額を再取得",
+    "statCapA": "A の時価総額",
+    "statCapB": "B の時価総額",
+    "quoteBusyNote": "流通時価総額を取得中"
+  },
   "seo": {
     "homeTitle": "市場 · YSK Mint",
     "homeDesc": "ライブ DEX プール。価格と深さはオンチェーン準備金から取得します。閲覧にウォレットは不要です。",
@@ -980,7 +1018,11 @@
     "disclaimerDesc": "YSK Mint を使う前にこの告知を読んでください。アプリを使うことで、本内容と利用規約に同意します。",
     "faqMintQ": "YSK Mint とは何ですか？",
     "faqWhoQ": "YSK Mint を運営しているのは誰ですか？",
-    "faqContactQ": "YSK Limited への連絡方法は？"
+    "faqContactQ": "YSK Limited への連絡方法は？",
+    "scaleTitle": "規模 · YSK Mint",
+    "scaleDesc": "A が B の流通時価総額になったら、A の 1 単位はいくらか。公開流通量からの計算であり、約定可能な気配ではない。",
+    "scalePairTitle": "{{a}} が {{b}} の時価総額なら · YSK Mint",
+    "scalePairDesc": "{{a}} が {{b}}（{{c}}）の流通時価総額を持った場合の含み単価。約定可能な気配ではない。"
   },
   "stake": {
     "claimable": "受取可",

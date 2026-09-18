@@ -22,6 +22,12 @@
 
 `/stocks` 列出烘焙目錄中已有的代幣化美股及美股 ETF 流動池（xStock、Ondo、bStocks、Republic 上市前包裝、Base 上的 Coinbase B20、Avalanche 的 Backed bToken）。此為鏈上包裝，並非上市股票。表格與市場相同：交易對、鏈、美元報價、深度 USD。只列出並掃描持有該等包裝的鏈（目錄所及的 ETH、OP、Base、Arb、BNB、SOL、TON、AVAX、HyperEVM、Mantle、Ink、X Layer）。打開交易對頁即可到場地的去中心化交易所。國債、黃金、信貸 RWA 及非美名稱不在此桌。
 
+## 量級
+
+**讀取公開流通市值。無須連接錢包。**
+
+`/scale` 問：若 A 去到 B 的流通市值，一枚 A 值幾多？`隱含價 = B 市值 ÷ A 流通量`。可分享網址如 `/scale/eth/btc`。分享掣與持倉相同（有系統分享則用，否則複製）。原生幣（BTC、ETH、SOL 等）讀 CoinGecko 公開流通市值饋源，以免把包裝 mint 當成整條鏈。目錄代幣（SKR、LST、代幣化股票包裝）讀公開 GeckoTerminal 代幣頁（與交易對 OHLCV 同一主機）。市值快取約 10 分鐘、無輪詢；可按隱含價旁「重取報價」清快取。缺市值顯示「—」，絕不畫假的 0。流通與完全稀釋分開標示。此為算術，不是可成交報價，亦非上市股票行情。
+
 ## 交易對
 
 **讀取鏈上。兌換請到場地網站。**

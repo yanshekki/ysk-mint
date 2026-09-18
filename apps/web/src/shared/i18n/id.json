@@ -46,7 +46,8 @@
     "terms": "Ketentuan Penggunaan",
     "disclaimer": "Penafian",
     "github": "GitHub",
-    "more": "Lainnya"
+    "more": "Lainnya",
+    "scale": "Skala"
   },
   "lp": {
     "kicker": "Di rantai",
@@ -943,6 +944,43 @@
       ]
     }
   },
+  "scale": {
+    "kicker": "On-chain",
+    "hint": "Jika A mencapai kapitalisasi beredar B, berapa harga satu unit A? Angka dari pasokan beredar publik. Ini aritmetika, bukan kuotasi yang bisa ditukar.",
+    "pickA": "Aset A",
+    "pickB": "Aset B",
+    "pickHint": "Pilih aset.",
+    "swap": "Tukar A dan B",
+    "search": "Cari ticker, nama, atau kontrak",
+    "noMatch": "Tidak ada di katalog.",
+    "presets": "Contoh",
+    "mode": "Dasar kapitalisasi",
+    "circMode": "Beredar",
+    "fdvMode": "Terdilusi penuh",
+    "price": "Harga unit",
+    "cap": "Kap. beredar",
+    "fdv": "Kap. terdilusi",
+    "thin": "Likuiditas tipis — anggap angka ini sketsa.",
+    "implied": "Harga unit tersirat",
+    "impliedNote": "Jika {{a}} punya kap. {{b}}",
+    "multiple": "Kelipatan",
+    "shareOf": "{{n}}% dari B",
+    "empty": "Pilih A dan B untuk menghitung.",
+    "copy": "Salin tautan",
+    "copied": "Disalin",
+    "bagLabel": "Jika Anda memegang sebanyak ini {{symbol}}",
+    "bagHint": "Jumlah",
+    "bagValue": "Nilai perkiraan",
+    "ladder": "{{a}} pada kap lain",
+    "sourceNote": "Kap. beredar dari halaman token publik, bukan kuotasi yang bisa ditukar.",
+    "sourceNative": "Koin native memakai umpan kap. beredar — kap. wrapper bukan jaringannya.",
+    "sourceToken": "Token katalog memakai halaman token on-chain publik.",
+    "quoteFailNote": "Kap. tidak terbarui. Angka terakhir tetap ditampilkan.",
+    "refreshAria": "Muat ulang kap. beredar",
+    "statCapA": "Kap. A",
+    "statCapB": "Kap. B",
+    "quoteBusyNote": "Mengambil kap. beredar"
+  },
   "seo": {
     "homeTitle": "Pasar · YSK Mint",
     "homeDesc": "Kolam DEX langsung. Harga dan kedalaman berasal dari cadangan di rantai. Dompet tidak wajib untuk menelusuri.",
@@ -980,7 +1018,11 @@
     "disclaimerDesc": "Harap baca pemberitahuan ini sebelum memakai YSK Mint. Dengan memakai aplikasi, Anda menerima ketentuan ini dan Ketentuan Penggunaan.",
     "faqMintQ": "Apa itu YSK Mint?",
     "faqWhoQ": "Siapa yang mengoperasikan YSK Mint?",
-    "faqContactQ": "Bagaimana cara menghubungi YSK Limited?"
+    "faqContactQ": "Bagaimana cara menghubungi YSK Limited?",
+    "scaleTitle": "Skala · YSK Mint",
+    "scaleDesc": "Jika A mencapai kapitalisasi beredar B, berapa harga satu unit A? Pasokan beredar publik. Aritmetika, bukan kuotasi.",
+    "scalePairTitle": "{{a}} pada kap. {{b}} · YSK Mint",
+    "scalePairDesc": "Harga unit tersirat {{a}} jika punya kap. beredar {{b}} ({{c}}). Bukan kuotasi yang bisa ditukar."
   },
   "stake": {
     "claimable": "Dapat diklaim",

@@ -14,6 +14,7 @@ Unprefixed paths are Hong Kong written Chinese (zh-HK). Simplified Chinese is /z
 
 - / — DEX markets
 - /stocks — tokenized US stocks and ETFs (read-only DEX wrappers, not listed shares)
+- /scale — if A reached B’s circulating market cap, what would one unit of A cost (public circulating supply; arithmetic, not a tradeable quote)
 - /lend — lending markets (read-only)
 - /create — token launch guide
 - /transfer — OFT bridge

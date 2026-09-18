@@ -46,7 +46,8 @@
     "terms": "Conditions d’utilisation",
     "disclaimer": "Avertissement",
     "github": "GitHub",
-    "more": "Plus"
+    "more": "Plus",
+    "scale": "Échelle"
   },
   "lp": {
     "kicker": "Sur la chaîne",
@@ -943,6 +944,43 @@
       ]
     }
   },
+  "scale": {
+    "kicker": "On-chain",
+    "hint": "Si A atteignait la capitalisation circulante de B, combien coûterait une unité de A ? Les chiffres viennent de l’offre circulante publique. C’est de l’arithmétique, pas un cours négociable.",
+    "pickA": "Actif A",
+    "pickB": "Actif B",
+    "pickHint": "Choisissez un actif.",
+    "swap": "Inverser A et B",
+    "search": "Ticker, nom ou contrat",
+    "noMatch": "Aucun résultat dans le catalogue.",
+    "presets": "Exemples",
+    "mode": "Base de capitalisation",
+    "circMode": "Circulante",
+    "fdvMode": "Entièrement diluée",
+    "price": "Prix unitaire",
+    "cap": "Cap. circulante",
+    "fdv": "Cap. diluée",
+    "thin": "Le bassin est mince — voyez le chiffre comme une esquisse.",
+    "implied": "Prix unitaire implicite",
+    "impliedNote": "Si {{a}} avait la cap. de {{b}}",
+    "multiple": "Multiple",
+    "shareOf": "{{n}} % de B",
+    "empty": "Choisissez A et B pour calculer.",
+    "copy": "Copier le lien",
+    "copied": "Copié",
+    "bagLabel": "Si vous déteniez autant de {{symbol}}",
+    "bagHint": "Quantité",
+    "bagValue": "Valeur estimée",
+    "ladder": "{{a}} face aux autres caps",
+    "sourceNote": "Caps circulantes depuis les pages publiques de tokens, pas un cours négociable.",
+    "sourceNative": "Les natifs utilisent un flux de cap. circulante — la cap. du wrapper n’est pas la chaîne.",
+    "sourceToken": "Les tokens du catalogue utilisent la page on-chain publique.",
+    "quoteFailNote": "Les caps n’ont pas été mises à jour. Les chiffres précédents restent.",
+    "refreshAria": "Actualiser les caps circulantes",
+    "statCapA": "Cap. A",
+    "statCapB": "Cap. B",
+    "quoteBusyNote": "Lecture des caps circulantes"
+  },
   "seo": {
     "homeTitle": "Marchés · YSK Mint",
     "homeDesc": "Pools DEX en direct. Le prix et la profondeur viennent des réserves sur la chaîne. Aucun portefeuille n’est requis pour parcourir.",
@@ -980,7 +1018,11 @@
     "disclaimerDesc": "Veuillez lire cet avis avant d’utiliser YSK Mint. En utilisant l’app, vous acceptez ces conditions et les Conditions d’utilisation.",
     "faqMintQ": "Qu’est-ce que YSK Mint ?",
     "faqWhoQ": "Qui exploite YSK Mint ?",
-    "faqContactQ": "Comment contacter YSK Limited ?"
+    "faqContactQ": "Comment contacter YSK Limited ?",
+    "scaleTitle": "Échelle · YSK Mint",
+    "scaleDesc": "Si A atteignait la capitalisation circulante de B, combien coûterait une unité de A ? Offre circulante publique. Arithmétique, pas un cours négociable.",
+    "scalePairTitle": "{{a}} à la cap. de {{b}} · YSK Mint",
+    "scalePairDesc": "Prix unitaire implicite de {{a}} si elle avait la cap. circulante de {{b}} ({{c}}). Pas un cours négociable."
   },
   "stake": {
     "claimable": "Réclamable",
