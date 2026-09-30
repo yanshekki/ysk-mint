@@ -4,6 +4,7 @@ import { solByMint, tokensFor } from "../tokenRegistry.ts";
 import { outboundFetch } from "../outbound.ts";
 import { rpcJsonRpc } from "../rpcPool.ts";
 import { syncLiveFlag, useLiveStatus } from "../liveStatus.ts";
+import { useHoldingsRefreshEpoch } from "../quoteRefresh.ts";
 import { addrList, fmt, row, sortHoldings, type HoldingRow } from "./shared.ts";
 
 const TOKEN_PROGRAM = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
@@ -68,6 +69,7 @@ export function useSolanaHoldings(address: string | string[]) {
   const accKey = Array.isArray(address) ? address.join("|") : address;
   const addrs = useMemo(() => addrList(address), [accKey]);
   const connected = addrs.length > 0;
+  const refresh = useHoldingsRefreshEpoch();
 
   useEffect(() => {
     if (!addrs.length) {
@@ -127,7 +129,7 @@ export function useSolanaHoldings(address: string | string[]) {
     return () => {
       cancelled = true;
     };
-  }, [accKey, addrs, catalog]);
+  }, [accKey, addrs, catalog, refresh]);
 
   const funded = rows.filter((r) => r.raw > 0n).length;
   useEffect(() => {

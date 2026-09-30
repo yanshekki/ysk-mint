@@ -59,6 +59,7 @@ async function readTronStakeWork(addr: string): Promise<StakeLine[]> {
       icon: "/tokens/trx.png",
       amount: fmtAmt(raw, 6),
       raw,
+      decimals: 6,
       side: "stake",
       extra: "Stake 2.0",
       quote: null,

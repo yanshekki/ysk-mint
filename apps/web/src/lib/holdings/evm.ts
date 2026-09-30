@@ -8,6 +8,7 @@ import { useUserSettings } from "../userSettings.ts";
 import { TOKEN_CATALOG, tokensFor, type TokenRecord } from "../tokenRegistry.ts";
 import { discoverEvmTokens, explorerChains, type DiscoveredErc20 } from "../evmDiscover.ts";
 import { syncLiveFlag, useLiveStatus } from "../liveStatus.ts";
+import { useHoldingsRefreshEpoch } from "../quoteRefresh.ts";
 import { addrList, row, sortHoldings, type HoldingRow } from "./shared.ts";
 
 const EVM_HOLD_IDS = featuredChains()
@@ -97,6 +98,7 @@ export function useEvmHoldings(address: Address | Address[] | undefined) {
   const connected = addrs.length > 0;
   const single = addrs.length === 1 ? addrs[0] : undefined;
   const config = useConfig();
+  const refresh = useHoldingsRefreshEpoch();
   const [nativeByChain, setNativeByChain] = useState<Record<number, bigint>>({});
   const [ercById, setErcById] = useState<Record<string, bigint>>({});
   const [nativeLoading, setNativeLoading] = useState(false);
@@ -162,10 +164,11 @@ export function useEvmHoldings(address: Address | Address[] | undefined) {
     return () => {
       cancelled = true;
     };
-  }, [addrKey, addrs, config, off]);
+  }, [addrKey, addrs, config, off, refresh]);
 
   const erc = useReadContracts({
     contracts,
+    scopeKey: `hold-${refresh}`,
     query: { enabled: Boolean(single) && contracts.length > 0, ...BALANCE_QUERY },
     allowFailure: true,
   });
@@ -215,7 +218,7 @@ export function useEvmHoldings(address: Address | Address[] | undefined) {
     return () => {
       cancelled = true;
     };
-  }, [addrKey, addrs, config, scanErc20s, single]);
+  }, [addrKey, addrs, config, scanErc20s, single, refresh]);
 
   useEffect(() => {
     if (!addrs.length) {
@@ -245,7 +248,7 @@ export function useEvmHoldings(address: Address | Address[] | undefined) {
     return () => {
       cancelled = true;
     };
-  }, [addrKey, addrs, catalogKeys, off]);
+  }, [addrKey, addrs, catalogKeys, off, refresh]);
 
   useEffect(() => {
     if (!disc.length || !addrs.length) {
@@ -290,7 +293,7 @@ export function useEvmHoldings(address: Address | Address[] | undefined) {
     return () => {
       cancelled = true;
     };
-  }, [addrs, config, disc]);
+  }, [addrs, config, disc, refresh]);
 
   const rows = useMemo(() => {
     const out: HoldingRow[] = [];

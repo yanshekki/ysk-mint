@@ -112,6 +112,7 @@ async function readSkrStakeWork(pubkey: string): Promise<StakeLine[]> {
       icon: "/tokens/skr.png",
       amount: fmtAmt(raw, SKR_DECIMALS),
       raw,
+      decimals: SKR_DECIMALS,
       contract: SKR_MINT,
       side: "stake",
       extra: i18n.t("stake.skrGuardian"),

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useHoldingsRefreshEpoch } from "../quoteRefresh.ts";
 import { featuredChains } from "@ysk-mint/config";
 import { formatUnits } from "viem";
 import { syncLiveFlag, useLiveStatus } from "../liveStatus.ts";
@@ -103,6 +104,7 @@ export function useJsonHoldings(
 ) {
   const [rows, setRows] = useState<HoldingRow[]>(() => catalog.map((t) => row(t, null, false)));
   const [loading, setLoading] = useState(false);
+  const refresh = useHoldingsRefreshEpoch();
   useEffect(() => {
     if (!connected) {
       setRows(catalog.map((t) => row(t, null, false)));
@@ -145,7 +147,7 @@ export function useJsonHoldings(
     return () => {
       cancelled = true;
     };
-  }, [catalog, chainId, connected, load]);
+  }, [catalog, chainId, connected, load, refresh]);
   useEffect(() => {
     syncLiveFlag(`holdings:${chainId}`, chainId, "holdings", connected && loading);
     return () => useLiveStatus.getState().finish(`holdings:${chainId}`, true);

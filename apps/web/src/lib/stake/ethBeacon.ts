@@ -233,6 +233,7 @@ async function readEthBeaconStakeWork(evm: string, ethUsd?: number | null): Prom
       icon: "/tokens/eth.png",
       amount: fmtAmt(raw, 18),
       raw,
+      decimals: 18,
       contract: `beacon:${user}`,
       side: "stake",
       extra: i18n.t("stake.ethBeaconN", { n }),

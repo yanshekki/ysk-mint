@@ -75,6 +75,7 @@ async function readSavaxUnlocksWork(client: PublicClient, user: Address, avaxUsd
         icon: "/tokens/avax.png",
         amount: fmtAmt(shares, 18),
         raw: shares,
+        decimals: 18,
         contract: SAVAX,
         side: "stake",
         extra: `#${i}`,

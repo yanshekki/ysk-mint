@@ -51,6 +51,7 @@ async function readLidoQueueWork(client: PublicClient, user: Address, ethUsd?: n
         icon: "/tokens/eth.png",
         amount: fmtAmt(s.amountOfStETH, 18),
         raw: s.amountOfStETH,
+        decimals: 18,
         contract: LIDO_WQ,
         side: "stake",
         extra: `#${ids[i].toString()}`,

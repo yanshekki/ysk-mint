@@ -5,6 +5,7 @@ import { koiosPost } from "../koios.ts";
 import { cardanoByUnit, tokensFor, type TokenRecord } from "../tokenRegistry.ts";
 import { outboundFetch } from "../outbound.ts";
 import { syncLiveFlag, useLiveStatus } from "../liveStatus.ts";
+import { useHoldingsRefreshEpoch } from "../quoteRefresh.ts";
 import { addrList, fmt, hexAscii, row, sortHoldings, type HoldingRow } from "./shared.ts";
 
 type CardanoAsset = {
@@ -291,6 +292,7 @@ export function useCardanoHoldings(
   const payKey = (extras?.addresses ?? []).filter(Boolean).join("|");
   const addrKey = [list.join("|"), stake, extras?.sync ?? 0, payKey].join("|");
   const connected = list.length > 0;
+  const refresh = useHoldingsRefreshEpoch();
 
   useEffect(() => subscribeCip(() => setCipTick(cipEpochNow())), []);
 
@@ -345,7 +347,7 @@ export function useCardanoHoldings(
     return () => {
       cancelled = true;
     };
-  }, [addrKey, catalog, cipTick, list, stake]);
+  }, [addrKey, catalog, cipTick, list, stake, refresh]);
 
   const funded = rows.filter((r) => r.raw > 0n).length;
   useEffect(() => {

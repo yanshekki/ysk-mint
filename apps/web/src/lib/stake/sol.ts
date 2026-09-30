@@ -58,6 +58,7 @@ async function readSolStakeWork(pubkey: string, solUsd?: number | null): Promise
       icon: "/tokens/sol.png",
       amount: fmtAmt(lamports, 9),
       raw: lamports,
+      decimals: 9,
       contract: pk,
       side: "stake",
       extra: del?.voter ? String(del.voter).slice(0, 8) : pk.slice(0, 8),

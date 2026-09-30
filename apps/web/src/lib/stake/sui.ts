@@ -59,6 +59,7 @@ async function readSuiStakeWork(addr: string): Promise<StakeLine[]> {
         icon: "/tokens/sui.png",
         amount: fmtAmt(raw, 9),
         raw,
+        decimals: 9,
         contract: validator || undefined,
         side: "stake",
         extra: validator ? validator.slice(0, 10) : undefined,

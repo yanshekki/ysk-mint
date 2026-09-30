@@ -147,6 +147,7 @@ export type ProtocolLine = {
   icon: string;
   amount: string;
   raw: bigint;
+  decimals?: number;
   contract?: string;
   side?: "supply" | "borrow" | "lp" | "stake";
   extra?: string;
@@ -342,6 +343,7 @@ export async function readAaveMarket(
           icon: "/tokens/eth.png",
           amount: fmtAmt(aBal, info.decimals),
           raw: aBal,
+          decimals: info.decimals,
           contract: used[i].asset,
           side: "supply",
           quote,
@@ -360,6 +362,7 @@ export async function readAaveMarket(
           icon: "/tokens/eth.png",
           amount: fmtAmt(debt, info.decimals),
           raw: debt,
+          decimals: info.decimals,
           contract: used[i].asset,
           side: "borrow",
           quote,

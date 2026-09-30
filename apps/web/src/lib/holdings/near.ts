@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { nearRpc } from "../nearRpc.ts";
 import { tokensFor, type TokenRecord } from "../tokenRegistry.ts";
 import { syncLiveFlag, useLiveStatus } from "../liveStatus.ts";
+import { useHoldingsRefreshEpoch } from "../quoteRefresh.ts";
 import { addrList, row, sortHoldings } from "./shared.ts";
 
 async function nearBalances(account: string, catalog: TokenRecord[]): Promise<Record<string, bigint>> {
@@ -40,6 +41,7 @@ export function useNearHoldings(account: string | string[]) {
   const accKey = Array.isArray(account) ? account.join("|") : account;
   const accounts = useMemo(() => addrList(account), [accKey]);
   const connected = accounts.length > 0;
+  const refresh = useHoldingsRefreshEpoch();
 
   useEffect(() => {
     if (!accounts.length) {
@@ -73,7 +75,7 @@ export function useNearHoldings(account: string | string[]) {
     return () => {
       cancelled = true;
     };
-  }, [accKey, accounts, catalog]);
+  }, [accKey, accounts, catalog, refresh]);
 
   useEffect(() => {
     syncLiveFlag("holdings:397", 397, "holdings", connected && loading);

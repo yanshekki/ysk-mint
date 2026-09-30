@@ -59,29 +59,31 @@ export function MeQuoteRefresh({
   onRefresh: () => void;
 }) {
   const { t } = useTranslation();
-  const jobsBusy = useLiveStatus((s) => s.jobs.some((j) => (j.kind === "quote" || j.kind === "defi") && j.phase !== "fail"));
+  const jobsBusy = useLiveStatus((s) =>
+    s.jobs.some((j) => (j.kind === "quote" || j.kind === "defi" || j.kind === "holdings") && j.phase !== "fail"),
+  );
   const waitingFirst = quoteAt == null && !failed;
   const busy = armed || jobsBusy || waitingFirst;
   const [flash, setFlash] = useState(false);
   const [cool, setCool] = useState(false);
   const [now, setNow] = useState(() => Date.now());
-  const prevArmed = useRef(false);
+  const prevBusy = useRef(false);
 
   useEffect(() => {
-    if (prevArmed.current && !armed && !failed) {
+    if (prevBusy.current && !busy && !failed) {
       setFlash(true);
       setCool(true);
       const a = window.setTimeout(() => setFlash(false), FLASH_MS);
       const b = window.setTimeout(() => setCool(false), COOL_MS);
-      prevArmed.current = armed;
+      prevBusy.current = busy;
       return () => {
         window.clearTimeout(a);
         window.clearTimeout(b);
       };
     }
-    prevArmed.current = armed;
+    prevBusy.current = busy;
     return undefined;
-  }, [armed, failed]);
+  }, [busy, failed]);
 
   useEffect(() => {
     if (!quoteAt && !cool) return undefined;

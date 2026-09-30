@@ -47,11 +47,11 @@ import { chainIcon } from "../../lib/chainIcon.ts";
 import { Badge } from "../../shared/ui/TokenRow.tsx";
 import { ChipBusy } from "../../shared/ui/LiveDock.tsx";
 import { trackLive, useLiveStatus } from "../../lib/liveStatus.ts";
-import { TOKEN_CATALOG } from "../../lib/tokenRegistry.ts";
+import { TOKEN_CATALOG, catalogToken, nativeDecimals } from "../../lib/tokenRegistry.ts";
 import { DEX, isLst, SOL_NATIVE_MINT } from "../../lib/defiAddresses.ts";
 import { fmtUsdc, quoteHoldsForUnknown, quoteKey, quoteSolMints, type Quote } from "../../lib/defiQuotes.ts";
 import { oracleTokenUsdc } from "../../lib/oracle.ts";
-import { invalidateHoldingsQuotes } from "../../lib/quoteRefresh.ts";
+import { invalidateHoldingsRefresh } from "../../lib/quoteRefresh.ts";
 import { readAave, readUniV3, type AaveCard, type ProtocolLine, type UniCard } from "../../lib/defiPositions.ts";
 import { dexBrandHref } from "../../lib/dexApp.ts";
 import { lendAppHref, stakeAppHref, stakeBrandName } from "../../lib/lendApp.ts";
@@ -151,12 +151,23 @@ function listedHolding(r: HoldingRow, q: Quote | undefined, hideZero: boolean) {
 }
 
 function lineKey(l: ProtocolLine) {
-  return `${l.chainId}:${(l.contract ?? l.id).toLowerCase()}:${l.side ?? ""}:${l.symbol}`;
+  const status = "status" in l ? String((l as StakeLine).status ?? "") : "";
+  return `${l.chainId}:${(l.contract ?? l.id).toLowerCase()}:${l.side ?? ""}:${l.symbol}:${status}`;
 }
 
-function fmtLineAmt(raw: bigint, contract?: string) {
-  const dec =
-    TOKEN_CATALOG.find((t) => t.address && contract && t.address.toLowerCase() === contract.toLowerCase())?.decimals ?? 18;
+function lineDecimals(l: ProtocolLine) {
+  if (typeof l.decimals === "number" && l.decimals >= 0) return l.decimals;
+  if (l.contract) {
+    const hit = catalogToken(l.chainId, l.contract);
+    if (hit) return hit.decimals;
+  }
+  const chain = chainOf(l.chainId);
+  if (chain) return nativeDecimals(chain.vm, chain.nativeSymbol);
+  return 18;
+}
+
+function fmtLineAmt(raw: bigint, line: ProtocolLine) {
+  const dec = lineDecimals(line);
   const n = Number(formatUnits(raw, dec));
   if (!Number.isFinite(n)) return formatUnits(raw, dec);
   if (n >= 1000) return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -175,13 +186,15 @@ function mergeLines(into: ProtocolLine[], extra: ProtocolLine[]): ProtocolLine[]
     }
     const raw = prev.raw + l.raw;
     const valueUsdc = prev.valueUsdc == null && l.valueUsdc == null ? null : (prev.valueUsdc ?? 0) + (l.valueUsdc ?? 0);
-    map.set(k, {
+    const next: ProtocolLine = {
       ...prev,
       raw,
-      amount: fmtLineAmt(raw, l.contract ?? prev.contract),
+      decimals: prev.decimals ?? l.decimals,
       valueUsdc,
       apyPct: prev.apyPct ?? l.apyPct,
-    });
+    };
+    next.amount = fmtLineAmt(raw, next);
+    map.set(k, next);
   }
   return [...map.values()];
 }
@@ -1207,7 +1220,7 @@ export function MePage() {
   const tabCount = (id: number | "all") => (deskTab === "txs" ? txCountLabel(id) : deskTab === "nft" ? nftCountLabel(id) : chipCount(id));
   const refreshQuotes = useCallback(() => {
     if (!anyWallet || quoteArmed) return;
-    invalidateHoldingsQuotes();
+    invalidateHoldingsRefresh();
     setQuoteFailed(false);
     setQuoteArmed(true);
     setQuoteEpoch((n) => n + 1);

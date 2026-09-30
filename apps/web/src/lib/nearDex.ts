@@ -492,6 +492,7 @@ export async function readBurrow(account: string) {
       icon: string;
       amount: string;
       raw: bigint;
+      decimals?: number;
       contract?: string;
       side: "supply" | "borrow";
       quote: Quote | null;
@@ -515,6 +516,7 @@ export async function readBurrow(account: string) {
           icon: meta.icon,
           amount: n.toLocaleString(undefined, { maximumFractionDigits: n >= 1 ? 4 : 6 }),
           raw,
+          decimals: meta.decimals,
           contract: id,
           side,
           quote: q,

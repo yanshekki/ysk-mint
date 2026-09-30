@@ -62,6 +62,7 @@ async function readCosmosStakeWork(chainId: number, addr: string): Promise<Stake
       icon: meta.icon,
       amount: fmtAmt(raw, 6),
       raw,
+      decimals: 6,
       contract: validator || undefined,
       side: "stake",
       extra: validator ? validator.slice(0, 16) : undefined,

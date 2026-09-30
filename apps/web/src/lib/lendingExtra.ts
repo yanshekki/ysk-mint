@@ -445,6 +445,7 @@ function pushLine(
     icon: "/tokens/eth.png",
     amount: fmtAmt(raw, decimals),
     raw,
+    decimals,
     contract,
     side,
     quote,

@@ -16,6 +16,8 @@ import { readHyperliquidDesk } from "../src/lib/stake/hyperliquid.ts";
 import { readSuiStake } from "../src/lib/stake/sui.ts";
 import { readTronStake, tronFrozenSun } from "../src/lib/stake/tron.ts";
 import { readNearStake } from "../src/lib/stake/near.ts";
+import { TOKEN_CATALOG } from "../src/lib/tokenRegistry.ts";
+import { nearView } from "../src/lib/nearRpc.ts";
 import { readSolStake } from "../src/lib/stake/sol.ts";
 import { readSkrStake } from "../src/lib/stake/skr.ts";
 import { koiosPost } from "../src/lib/koios.ts";
@@ -231,6 +233,27 @@ async function checkNear(addr: string) {
   else pass("near native", { amount: amt });
   const desk = await readNearStake(addr).catch(() => []);
   pass("near stake rows", { n: desk.length });
+  const keys = new Set<string>();
+  for (const l of desk) {
+    const n = Number(String(l.amount).replace(/,/g, ""));
+    if (l.symbol === "NEAR" && Number.isFinite(n) && n >= 1e8) fail("near stake amount looks like yocto", { amount: l.amount, contract: l.contract, status: l.status });
+    if (l.decimals != null && l.decimals !== 24) fail("near stake decimals", { decimals: l.decimals, id: l.id });
+    const k = `${l.chainId}:${(l.contract ?? l.id).toLowerCase()}:${l.side ?? ""}:${l.symbol}:${l.status ?? ""}`;
+    if (keys.has(k)) fail("near stake merge key collision", { key: k, id: l.id });
+    keys.add(k);
+  }
+  const shore = TOKEN_CATALOG.find((t) => t.address === "shore-4lzt.launch.shoremarkets.near");
+  if (!shore || shore.decimals !== 18 || shore.symbol !== "SHORE") fail("shore catalog", { shore: shore ?? null });
+  else pass("shore catalog", { decimals: shore.decimals, symbol: shore.symbol });
+  try {
+    const raw = await nearView<string>("shore-4lzt.launch.shoremarkets.near", "ft_balance_of", { account_id: addr });
+    const bal = BigInt(String(raw).replace(/"/g, "") || "0");
+    const n = Number(bal) / 10 ** 18;
+    if (bal > 0n && !(n > 0 && n < 1e12)) fail("shore balance scale", { raw: bal.toString(), n });
+    else pass("shore balance", { raw: bal.toString(), n });
+  } catch (err) {
+    skip(`shore balance ${err instanceof Error ? err.message : String(err)}`);
+  }
 }
 
 async function checkAda(addr: string) {
