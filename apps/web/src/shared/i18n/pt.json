@@ -1077,6 +1077,13 @@
     "skrNote": "Stake no guardian Solana Mobile. Ao desfazer começa 48 h de espera. Falha de leitura omite-se — não um 0 falso.",
     "skrGuardian": "Solana Mobile",
     "skrUnstaking": "Espera até {{when}}",
-    "skrClaim": "Espera concluída — retire na app de staking Solana Mobile"
+    "skrClaim": "Espera concluída — retire na app de staking Solana Mobile",
+    "frozen": "Congelado",
+    "nightFrozen": "NIGHT congelado",
+    "nightRedeemable": "NIGHT resgatável",
+    "nightUnfrozen": "Descongelado",
+    "nightThawAt": "Descongela {{when}}",
+    "nightRedeem": "Resgatar no portal NIGHT",
+    "nightNote": "Glacier Drop"
   }
 }

@@ -1077,6 +1077,13 @@
     "skrNote": "Solana-Mobile-Guardian-Stake. Unstake startet 48 Stunden Abkühlung. Fehlschlag auslassen — keine gefälschte 0.",
     "skrGuardian": "Solana Mobile",
     "skrUnstaking": "Abkühlung bis {{when}}",
-    "skrClaim": "Abkühlung vorbei — in der Solana-Mobile-Staking-App abheben"
+    "skrClaim": "Abkühlung vorbei — in der Solana-Mobile-Staking-App abheben",
+    "frozen": "Eingefroren",
+    "nightFrozen": "Eingefrorenes NIGHT",
+    "nightRedeemable": "Einlösbares NIGHT",
+    "nightUnfrozen": "Aufgetaut",
+    "nightThawAt": "Taut {{when}}",
+    "nightRedeem": "Im NIGHT-Portal einlösen",
+    "nightNote": "Glacier Drop"
   }
 }

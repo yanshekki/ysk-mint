@@ -3,6 +3,7 @@ export { SOL_LST } from "./stake/shared.ts";
 export { lstStakeLines, readPinnedLst } from "./stake/lst.ts";
 export { readLidoQueue } from "./stake/lido.ts";
 export { readAdaStake } from "./stake/ada.ts";
+export { readNightThaw, NIGHT_UNIT } from "./stake/night.ts";
 export { readNearStake } from "./stake/near.ts";
 export { readSuiStake } from "./stake/sui.ts";
 export { readTronStake } from "./stake/tron.ts";

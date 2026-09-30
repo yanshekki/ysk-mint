@@ -42,6 +42,12 @@ export const N_USDC: NearTok = {
 export const N_REF: NearTok = { address: "token.v2.ref-finance.near", symbol: "REF", decimals: 18, icon: I("near") };
 export const N_STNEAR: NearTok = { address: "meta-pool.near", symbol: "stNEAR", decimals: 24, icon: I("near") };
 export const N_LINEAR: NearTok = { address: "linear-protocol.near", symbol: "LINEAR", decimals: 24, icon: I("near") };
+export const N_SHORE: NearTok = {
+  address: "shore-4lzt.launch.shoremarkets.near",
+  symbol: "SHORE",
+  decimals: 18,
+  icon: I("shore"),
+};
 export const N_USDCE: NearTok = {
   address: "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.factory.bridge.near",
   symbol: "USDC.e",
@@ -88,6 +94,65 @@ export type RefTopPool = {
   pool_kind?: string;
 };
 
+type RefTokenPrice = { price?: string; symbol?: string; decimal?: number };
+
+const REF_PRICE_URLS = ["https://api.ref.finance/list-token-price", "https://api.rhea.finance/list-token-price"];
+
+export async function fetchRefTokenPrices(): Promise<Record<string, RefTokenPrice>> {
+  const rows = await cacheGet(
+    {
+      key: cacheKey("http.ref", 397, "list-token-price"),
+      policy: { ...POLICIES.quote, keep: (v: Record<string, RefTokenPrice> | null) => Boolean(v && Object.keys(v).length) },
+    },
+    async () => {
+      for (const url of REF_PRICE_URLS) {
+        try {
+          const res = await outboundFetch(url);
+          if (!res.ok) continue;
+          const data = (await res.json()) as Record<string, RefTokenPrice>;
+          if (data && typeof data === "object" && !Array.isArray(data) && Object.keys(data).length) {
+            const out: Record<string, RefTokenPrice> = {};
+            for (const [k, v] of Object.entries(data)) out[k.toLowerCase()] = v;
+            return out;
+          }
+        } catch {
+          /* next host */
+        }
+      }
+      return null;
+    },
+  );
+  return rows ?? {};
+}
+
+function depthUsdFromRefPool(id: string, p: RefTopPool, wrapUsd: number | null): number {
+  const ids = (p.token_account_ids ?? []).map((x) => x.toLowerCase());
+  const amts = p.amounts ?? [];
+  if (ids.length !== 2) return 0;
+  const i = ids.indexOf(id);
+  if (i < 0) return 0;
+  const other = ids[1 - i] ?? "";
+  const otherAmt = human(amts[1 - i] ?? "0", nearDecimals(other));
+  if (!(otherAmt > 0)) return 0;
+  if (isNearStable(other)) return otherAmt * 2;
+  if (other === N_WRAP.address && wrapUsd && wrapUsd > 0) return otherAmt * wrapUsd * 2;
+  return 0;
+}
+
+async function refTokenDepthUsd(id: string): Promise<number | undefined> {
+  try {
+    const [pools, wrapUsd] = await Promise.all([fetchRefTopPools(), nearWrapUsd()]);
+    let best = 0;
+    for (const p of pools) {
+      const usd = depthUsdFromRefPool(id, p, wrapUsd);
+      if (usd > best) best = usd;
+    }
+    return best > 0 ? best : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function fetchRefTopPools(): Promise<RefTopPool[]> {
   const rows = await cacheGet(
     {
@@ -126,7 +191,7 @@ function human(raw: string, decimals: number) {
 }
 
 export function nearToken(id: string): NearTok | undefined {
-  const all = [N_WRAP, N_USDT, N_USDC, N_USDCE, N_USDTE, N_DAIE, N_REF, N_STNEAR, N_LINEAR];
+  const all = [N_WRAP, N_USDT, N_USDC, N_USDCE, N_USDTE, N_DAIE, N_REF, N_STNEAR, N_LINEAR, N_SHORE];
   return all.find((t) => t.address.toLowerCase() === id.toLowerCase());
 }
 
@@ -383,6 +448,12 @@ export async function quoteNearToken(token?: string, native?: boolean): Promise<
   if ((id === N_LINEAR.address || id === N_STNEAR.address) && wrap) {
     const rate = id === N_LINEAR.address ? await linearPerNear() : await stNearPerNear();
     if (rate) return { usdc: rate * wrap, source: "ref" };
+  }
+  const row = (await fetchRefTokenPrices())[id];
+  const px = Number(row?.price);
+  if (Number.isFinite(px) && px > 0) {
+    const depth = await refTokenDepthUsd(id);
+    return { usdc: px, source: "ref", ...(depth ? { depth } : {}) };
   }
   return wrap && id === N_WRAP.address ? { usdc: wrap, source: "ref" } : null;
 }

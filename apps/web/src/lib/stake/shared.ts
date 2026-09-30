@@ -2,7 +2,7 @@ import { formatUnits } from "viem";
 import type { ProtocolLine } from "../defiPositions.ts";
 import i18n from "../i18n.ts";
 
-export type StakeStatus = "liquid" | "active" | "unstaking" | "claimable";
+export type StakeStatus = "liquid" | "active" | "unstaking" | "claimable" | "frozen";
 
 export type StakeLine = ProtocolLine & {
   status: StakeStatus;
@@ -104,6 +104,7 @@ export function stakeSubtitle(l: StakeLine) {
 export function stakeBadge(l: StakeLine) {
   if (l.status === "claimable") return i18n.t("stake.claimable");
   if (l.status === "unstaking") return i18n.t("stake.unstaking");
+  if (l.status === "frozen") return i18n.t("stake.frozen");
   if (l.status === "active") return i18n.t("stake.active");
   return i18n.t("stake.liquid");
 }

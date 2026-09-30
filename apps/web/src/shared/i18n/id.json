@@ -1077,6 +1077,13 @@
     "skrNote": "Stake ke guardian Solana Mobile. Unstake memulai jeda 48 jam. Jika baca gagal, dilewati — bukan 0 palsu.",
     "skrGuardian": "Solana Mobile",
     "skrUnstaking": "Jeda hingga {{when}}",
-    "skrClaim": "Jeda selesai — tarik di aplikasi staking Solana Mobile"
+    "skrClaim": "Jeda selesai — tarik di aplikasi staking Solana Mobile",
+    "frozen": "Beku",
+    "nightFrozen": "NIGHT beku",
+    "nightRedeemable": "NIGHT dapat ditebus",
+    "nightUnfrozen": "Tidak beku",
+    "nightThawAt": "Mencair {{when}}",
+    "nightRedeem": "Tebus di portal NIGHT",
+    "nightNote": "Glacier Drop"
   }
 }

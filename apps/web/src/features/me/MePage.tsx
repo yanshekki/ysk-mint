@@ -63,6 +63,8 @@ import { readBurrow } from "../../lib/nearDex.ts";
 import {
   lstStakeLines,
   readAdaStake,
+  readNightThaw,
+  NIGHT_UNIT,
   readBenqiMarkets,
   readCosmosStake,
   readLidoQueue,
@@ -1055,9 +1057,10 @@ export function MePage() {
       const stakes = adaStake ? adaStake.split("|") : [];
       const pays = adaPays ? adaPays.split("|") : [];
       const parts = scanStakeCore ? await Promise.all(stakes.map((s) => readAdaStake(s, pays))) : [];
+      const night = scanStakeCore ? await readNightThaw(stakes, pays).catch(() => []) : [];
       const lp = scanLpExtra ? await readAdaHoldingsLp(pays).catch(() => []) : [];
       if (!cancelled) {
-        setAdaStakeLines(parts.flat());
+        setAdaStakeLines([...parts.flat(), ...night]);
         setAdaLp(lp);
       }
     }).catch(() => {
@@ -1091,7 +1094,8 @@ export function MePage() {
         l.id.includes("unstk") ||
         l.id.includes("lido-q") ||
         l.id.includes("rew") ||
-        l.id.includes("pending")
+        l.id.includes("pending") ||
+        l.id.includes("night-thaw")
           ? l.id
           : `${l.chainId}:${(l.contract || l.id).toLowerCase()}:${l.status}`;
       const prev = merged.get(k);
@@ -1502,6 +1506,8 @@ export function MePage() {
                                       ? `https://solscan.io/account/${l.contract}`
                                       : l.chainId === 397
                                         ? `https://nearblocks.io/address/${l.contract}`
+                                        : l.id.startsWith("night-thaw")
+                                          ? "https://redeem.midnight.gd/"
                                         : l.chainId === 1815 && l.contract?.startsWith("pool")
                                           ? `https://cardanoscan.io/pool/${l.contract}`
                                           : l.contract?.startsWith("P-avax")
@@ -1537,13 +1543,21 @@ export function MePage() {
                       const v = valued(r.raw, rowDecimals(r), q);
                       const loading = buckets.find((g) => g.id === r.chainId)?.loading;
                       const quoting = liveJobs.some((j) => j.chainId === r.chainId && j.kind === "quote" && j.phase !== "fail");
+                      const nightSplit =
+                        (r.contract || "").toLowerCase() === NIGHT_UNIT &&
+                        stakeAll.some((l) => l.id.startsWith("night-thaw"));
+                      const subtitle = r.native
+                        ? r.name || t("wallet.nativeCoin")
+                        : nightSplit
+                          ? `${r.name} · ${t("stake.nightUnfrozen")}`
+                          : `${r.name}${r.contract ? ` · ${short(r.contract)}` : ""}`;
                       return (
                         <Line
                           key={r.id}
                           icon={r.icon}
                           tag={r.chainTag}
                           title={r.symbol}
-                          subtitle={r.native ? r.name || t("wallet.nativeCoin") : `${r.name}${r.contract ? ` · ${short(r.contract)}` : ""}`}
+                          subtitle={subtitle}
                           amount={loading ? "…" : r.amount}
                           price={q ? fmtUsdc(q.usdc) : quoting ? "…" : "—"}
                           value={v == null ? (quoting ? "…" : "—") : fmtUsdc(v)}

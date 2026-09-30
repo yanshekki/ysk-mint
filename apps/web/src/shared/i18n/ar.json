@@ -1077,6 +1077,13 @@
     "skrNote": "رهن لدى وصي Solana Mobile. إلغاء الرهن يبدأ انتظار 48 ساعة. فشل القراءة يُتخطى وليس صفراً مزيفة.",
     "skrGuardian": "Solana Mobile",
     "skrUnstaking": "انتظار حتى {{when}}",
-    "skrClaim": "انتهى الانتظار — اسحب من تطبيق رهن Solana Mobile"
+    "skrClaim": "انتهى الانتظار — اسحب من تطبيق رهن Solana Mobile",
+    "frozen": "مجمّد",
+    "nightFrozen": "NIGHT مجمّد",
+    "nightRedeemable": "NIGHT قابل للاسترداد",
+    "nightUnfrozen": "غير مجمّد",
+    "nightThawAt": "يُذاب {{when}}",
+    "nightRedeem": "استرداد عبر بوابة NIGHT",
+    "nightNote": "Glacier Drop"
   }
 }

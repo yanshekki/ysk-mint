@@ -18,7 +18,9 @@ import { readTronStake, tronFrozenSun } from "../src/lib/stake/tron.ts";
 import { readNearStake } from "../src/lib/stake/near.ts";
 import { TOKEN_CATALOG } from "../src/lib/tokenRegistry.ts";
 import { nearView } from "../src/lib/nearRpc.ts";
+import { quoteNearToken } from "../src/lib/nearDex.ts";
 import { readSolStake } from "../src/lib/stake/sol.ts";
+import { readNightThaw } from "../src/lib/stake/night.ts";
 import { readSkrStake } from "../src/lib/stake/skr.ts";
 import { koiosPost } from "../src/lib/koios.ts";
 import { rpcJsonRpc, rpcResetSession } from "../src/lib/rpcPool.ts";
@@ -231,6 +233,25 @@ async function checkNear(addr: string) {
   const amt = json?.result?.amount;
   if (!amt) skip("near view_account");
   else pass("near native", { amount: amt });
+  const shore = TOKEN_CATALOG.find((t) => t.address === "shore-4lzt.launch.shoremarkets.near");
+  if (!shore || shore.decimals !== 18 || shore.symbol !== "SHORE" || shore.icon !== "/tokens/shore.png") fail("shore catalog", { shore: shore ?? null });
+  else pass("shore catalog", { decimals: shore.decimals, symbol: shore.symbol, icon: shore.icon });
+  try {
+    const q = await quoteNearToken("shore-4lzt.launch.shoremarkets.near", false);
+    if (!(q && q.usdc > 0)) fail("shore rhea quote", { quote: q });
+    else pass("shore rhea quote", { usdc: q.usdc, depth: q.depth ?? null, source: q.source });
+  } catch (err) {
+    fail("shore rhea quote", { err: err instanceof Error ? err.message : String(err) });
+  }
+  try {
+    const raw = await nearView<string>("shore-4lzt.launch.shoremarkets.near", "ft_balance_of", { account_id: addr });
+    const bal = BigInt(String(raw).replace(/"/g, "") || "0");
+    const n = Number(bal) / 10 ** 18;
+    if (bal > 0n && !(n > 0 && n < 1e12)) fail("shore balance scale", { raw: bal.toString(), n });
+    else pass("shore balance", { raw: bal.toString(), n });
+  } catch (err) {
+    skip(`shore balance ${err instanceof Error ? err.message : String(err)}`);
+  }
   const desk = await readNearStake(addr).catch(() => []);
   pass("near stake rows", { n: desk.length });
   const keys = new Set<string>();
@@ -241,18 +262,6 @@ async function checkNear(addr: string) {
     const k = `${l.chainId}:${(l.contract ?? l.id).toLowerCase()}:${l.side ?? ""}:${l.symbol}:${l.status ?? ""}`;
     if (keys.has(k)) fail("near stake merge key collision", { key: k, id: l.id });
     keys.add(k);
-  }
-  const shore = TOKEN_CATALOG.find((t) => t.address === "shore-4lzt.launch.shoremarkets.near");
-  if (!shore || shore.decimals !== 18 || shore.symbol !== "SHORE") fail("shore catalog", { shore: shore ?? null });
-  else pass("shore catalog", { decimals: shore.decimals, symbol: shore.symbol });
-  try {
-    const raw = await nearView<string>("shore-4lzt.launch.shoremarkets.near", "ft_balance_of", { account_id: addr });
-    const bal = BigInt(String(raw).replace(/"/g, "") || "0");
-    const n = Number(bal) / 10 ** 18;
-    if (bal > 0n && !(n > 0 && n < 1e12)) fail("shore balance scale", { raw: bal.toString(), n });
-    else pass("shore balance", { raw: bal.toString(), n });
-  } catch (err) {
-    skip(`shore balance ${err instanceof Error ? err.message : String(err)}`);
   }
 }
 
@@ -278,6 +287,14 @@ async function checkAda(addr: string) {
     if (ratio > 1.05) fail("ada utxo vs account_info", { utxos: sum.toString(), info: listed.toString(), n: Array.isArray(utxos) ? utxos.length : 0 });
     else pass("ada utxos", { n: Array.isArray(utxos) ? utxos.length : 0, ada: Number(sum) / 1e6 });
   } else pass("ada", { n: Array.isArray(utxos) ? utxos.length : 0, sum: sum.toString() });
+  try {
+    const night = await readNightThaw([stake], []);
+    const frozen = night.filter((l) => l.status === "frozen").reduce((s, l) => s + l.raw, 0n);
+    const claim = night.filter((l) => l.status === "claimable").reduce((s, l) => s + l.raw, 0n);
+    pass("night thaw", { n: night.length, frozen: frozen.toString(), redeemable: claim.toString() });
+  } catch (err) {
+    fail("night thaw", { err: err instanceof Error ? err.message : String(err) });
+  }
 }
 
 async function checkEthBeacon() {

@@ -27,6 +27,7 @@ export function invalidateHoldingsQuotes() {
   cacheInvalidate("v1:quote");
   cacheInvalidate("v1:http.jup");
   cacheInvalidate("v1:http.minswap");
+  cacheInvalidate("v1:http.ref");
   resetAdaUsd();
   resetNearWrapUsd();
 }

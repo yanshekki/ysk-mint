@@ -1077,6 +1077,13 @@
     "skrNote": "Стейк у guardian Solana Mobile. Снятие запускает паузу 48 часов. Сбой чтения пропускается, не поддельный 0.",
     "skrGuardian": "Solana Mobile",
     "skrUnstaking": "Пауза до {{when}}",
-    "skrClaim": "Пауза окончена — выведите в приложении стейкинга Solana Mobile"
+    "skrClaim": "Пауза окончена — выведите в приложении стейкинга Solana Mobile",
+    "frozen": "Заморожено",
+    "nightFrozen": "Замороженный NIGHT",
+    "nightRedeemable": "NIGHT к выводу",
+    "nightUnfrozen": "Разморожено",
+    "nightThawAt": "Оттает {{when}}",
+    "nightRedeem": "Вывести на портале NIGHT",
+    "nightNote": "Glacier Drop"
   }
 }

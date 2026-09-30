@@ -1077,6 +1077,13 @@
     "skrNote": "Solana Mobile Guardian 质押。取消质押后须冷却约 48 小时。读取失败则略过，不会画假的 0。",
     "skrGuardian": "Solana Mobile",
     "skrUnstaking": "冷却至 {{when}}",
-    "skrClaim": "冷却已完——请在 Solana Mobile 质押页提取"
+    "skrClaim": "冷却已完——请在 Solana Mobile 质押页提取",
+    "frozen": "冻结",
+    "nightFrozen": "冻结 NIGHT",
+    "nightRedeemable": "可赎回 NIGHT",
+    "nightUnfrozen": "未冻结",
+    "nightThawAt": "{{when}} 解冻",
+    "nightRedeem": "到 NIGHT 门户赎回",
+    "nightNote": "Glacier Drop"
   }
 }

@@ -9,6 +9,56 @@ import { appRelease } from "./scripts/app-version.mjs";
 
 const release = appRelease();
 
+const TGE_ORIGIN = "https://mainnet.prod.gd.midnighttge.io";
+const TGE_UA =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36";
+
+function tgeProxy() {
+  const handler = (
+    req: { url?: string },
+    res: { statusCode: number; setHeader: (k: string, v: string) => void; end: (b?: Buffer | string) => void },
+  ) => {
+    const raw = req.url ?? "/";
+    const path = raw.split("?")[0] || "/";
+    const qs = raw.includes("?") ? raw.slice(raw.indexOf("?")) : "";
+    const up = `${TGE_ORIGIN}${path}${qs}`;
+    void (async () => {
+      try {
+        const hit = await fetch(up, {
+          headers: {
+            accept: "application/json",
+            origin: "https://redeem.midnight.gd",
+            referer: "https://redeem.midnight.gd/",
+            "user-agent": TGE_UA,
+          },
+        });
+        const buf = Buffer.from(await hit.arrayBuffer());
+        res.statusCode = hit.status;
+        res.setHeader("content-type", hit.headers.get("content-type") || "application/json");
+        res.setHeader("cache-control", "no-store");
+        res.end(buf);
+      } catch (err) {
+        res.statusCode = 502;
+        res.setHeader("content-type", "text/plain; charset=utf-8");
+        res.end(err instanceof Error ? err.message : "tge proxy");
+      }
+    })();
+  };
+  return {
+    name: "tge-proxy",
+    configureServer(server: ViteDevServer) {
+      return () => {
+        server.middlewares.stack.unshift({ route: "/tge", handle: handler });
+      };
+    },
+    configurePreviewServer(server: PreviewServer) {
+      return () => {
+        server.middlewares.stack.unshift({ route: "/tge", handle: handler });
+      };
+    },
+  };
+}
+
 /** Optional. Set at build time only — never commit a live measurement id. */
 function analyticsTag() {
   return {
@@ -82,6 +132,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     analyticsTag(),
+    tgeProxy(),
     servePrerendered(),
   ],
   resolve: {

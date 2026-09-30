@@ -1077,6 +1077,13 @@
     "skrNote": "Solana Mobile ガーディアンへの委任。解除後は約 48 時間のクールダウン。読み取り失敗は省略し、偽の 0 は出しません。",
     "skrGuardian": "Solana Mobile",
     "skrUnstaking": "{{when}} までクールダウン",
-    "skrClaim": "クールダウン完了 — Solana Mobile のステーキング画面で引出"
+    "skrClaim": "クールダウン完了 — Solana Mobile のステーキング画面で引出",
+    "frozen": "凍結",
+    "nightFrozen": "凍結 NIGHT",
+    "nightRedeemable": "償還可能な NIGHT",
+    "nightUnfrozen": "未凍結",
+    "nightThawAt": "{{when}} に解凍",
+    "nightRedeem": "NIGHT ポータルで償還",
+    "nightNote": "Glacier Drop"
   }
 }

@@ -1077,6 +1077,13 @@
     "skrNote": "Solana Mobile guardian stake. Unstake starts a 48-hour cooldown. Skip if the program read fails — not a fake 0.",
     "skrGuardian": "Solana Mobile",
     "skrUnstaking": "Cooldown until {{when}}",
-    "skrClaim": "Cooldown done — withdraw in the Solana Mobile staking app"
+    "skrClaim": "Cooldown done — withdraw in the Solana Mobile staking app",
+    "frozen": "Frozen",
+    "nightFrozen": "Frozen NIGHT",
+    "nightRedeemable": "Redeemable NIGHT",
+    "nightUnfrozen": "Unfrozen",
+    "nightThawAt": "Thaws {{when}}",
+    "nightRedeem": "Redeem at the NIGHT portal",
+    "nightNote": "Glacier Drop"
   }
 }

@@ -94,6 +94,7 @@ export function stakeBrandName(opts: { symbol?: string; extra?: string; name?: s
   if (hay.includes("bsol") || hay.includes("blaze")) return "Blaze";
   if (opts.symbol === "SKR" || opts.contract === "SKRbvo6Gf7GondiT3BbTfuRDPqLWei4j2Qy2NPGZhW3" || hay.includes("solana mobile")) return "Solana Mobile";
   if (opts.chainId === 397) return "NEAR";
+  if (opts.chainId === 1815 && /\bnight\b/i.test(hay)) return "Midnight";
   if (opts.chainId === 1815) return "Cardano";
   if (opts.chainId === 101) return "Solana";
   return opts.extra?.split(" ")[0] || opts.name || "Stake";
@@ -127,6 +128,7 @@ export function stakeAppHref(opts: { symbol?: string; extra?: string; name?: str
   if (hay.includes("bsol") || hay.includes("blaze")) return "https://stake.solblaze.org/";
   if (opts.symbol === "SKR" || opts.contract === "SKRbvo6Gf7GondiT3BbTfuRDPqLWei4j2Qy2NPGZhW3" || hay.includes("solana mobile")) return "https://stake.solanamobile.com/";
   if (opts.chainId === 397 && opts.contract) return `https://nearblocks.io/address/${opts.contract}`;
+  if (opts.chainId === 1815 && /\bnight\b/i.test(hay)) return "https://redeem.midnight.gd/";
   if (opts.chainId === 1815 && opts.contract?.startsWith("pool")) return `https://cardanoscan.io/pool/${opts.contract}`;
   if (opts.chainId === 101 && opts.contract) return `https://solscan.io/account/${opts.contract}`;
   return undefined;

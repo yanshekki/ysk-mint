@@ -1077,6 +1077,13 @@
     "skrNote": "Délégation au guardian Solana Mobile. Le désengagement lance 48 h de délai. Échec de lecture omis — pas de 0 factice.",
     "skrGuardian": "Solana Mobile",
     "skrUnstaking": "Délai jusqu’à {{when}}",
-    "skrClaim": "Délai terminé — retirer dans l’app de staking Solana Mobile"
+    "skrClaim": "Délai terminé — retirer dans l’app de staking Solana Mobile",
+    "frozen": "Gelé",
+    "nightFrozen": "NIGHT gelé",
+    "nightRedeemable": "NIGHT à retirer",
+    "nightUnfrozen": "Dégelé",
+    "nightThawAt": "Dégel {{when}}",
+    "nightRedeem": "Retirer sur le portail NIGHT",
+    "nightNote": "Glacier Drop"
   }
 }
