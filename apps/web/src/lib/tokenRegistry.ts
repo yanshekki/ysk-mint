@@ -108,6 +108,8 @@ const AUTO_NATIVES: TokenRecord[] = featuredChains()
 
 const EXTRA: TokenRecord[] = [
   { id: "sol-skr", vm: "solana", chainId: 101, symbol: "SKR", name: "Solana Mobile SKR", decimals: 6, address: "SKRbvo6Gf7GondiT3BbTfuRDPqLWei4j2Qy2NPGZhW3", icon: I("skr") },
+  { id: "sol-usdc", vm: "solana", chainId: 101, symbol: "USDC", name: "USD Coin", decimals: 6, address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", icon: I("usdc") },
+  { id: "sol-usdt", vm: "solana", chainId: 101, symbol: "USDT", name: "Tether", decimals: 6, address: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", icon: I("usdt") },
   { id: "cardano-night", vm: "cardano", chainId: 1815, symbol: "NIGHT", name: "Midnight", decimals: 6, address: "0691b2fecca1ac4f53cb6dfb00b7013e561d1f34403b957cbb5af1fa4e49474854", icon: I("night") },
   { id: "near-shore", vm: "near", chainId: 397, symbol: "SHORE", name: "Shore", decimals: 18, address: "shore-4lzt.launch.shoremarkets.near", icon: I("shore") },
   { id: "hype-whype", vm: "evm", chainId: 999, symbol: "WHYPE", name: "Wrapped HYPE", decimals: 18, address: "0x5555555555555555555555555555555555555555", icon: I("hype") },

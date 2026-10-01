@@ -26,6 +26,7 @@ import { koiosPost } from "../src/lib/koios.ts";
 import { rpcJsonRpc, rpcResetSession } from "../src/lib/rpcPool.ts";
 import { useUserSettings } from "../src/lib/userSettings.ts";
 import { ROOT_ANS, ansRootPda } from "../src/lib/domainNames/alldomains.ts";
+import { findAta, TOKEN_PROGRAM } from "../src/lib/solanaPda.ts";
 
 const LCD: Record<number, { url: string; denom: string; symbol: string }> = {
   118: { url: "https://cosmos-rest.publicnode.com", denom: "uatom", symbol: "ATOM" },
@@ -207,11 +208,40 @@ async function checkAptos(addr: string) {
   }
 }
 
+const SOL_USDC = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+const SOL_USDT = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB";
+
+async function solMintRaw(url: string, addr: string, mint: string) {
+  const result = (await rpc(url, "getTokenAccountsByOwner", [addr, { mint }, { encoding: "jsonParsed" }])) as {
+    value?: Array<{ account?: { data?: { parsed?: { info?: { tokenAmount?: { amount?: string } } } } } }>;
+  } | null;
+  if (!result || !Array.isArray(result.value)) return null;
+  let raw = 0n;
+  for (const v of result.value) {
+    try {
+      raw += BigInt(v.account?.data?.parsed?.info?.tokenAmount?.amount ?? "0");
+    } catch {
+      /* skip */
+    }
+  }
+  return raw;
+}
+
 async function checkSol(addr: string) {
   const app = await fetchSolana(addr);
   const alt = (await rpc("https://solana-rpc.publicnode.com", "getBalance", [addr])) as { value?: number } | null;
   if (alt && typeof alt.value === "number" && alt.value !== app.lamports) fail("sol native mismatch", { app: app.lamports, alt: alt.value });
   else pass("sol native", { lamports: app.lamports, mints: app.byMint.size });
+  for (const [sym, mint] of [
+    ["USDC", SOL_USDC],
+    ["USDT", SOL_USDT],
+  ] as const) {
+    const want = await solMintRaw("https://api.mainnet-beta.solana.com", addr, mint);
+    const got = app.byMint.get(mint)?.raw ?? 0n;
+    if (want == null) skip(`sol ${sym} rpc`);
+    else if (want > 0n && got === 0n) fail(`sol missing ${sym}`, { want: want.toString() });
+    else pass(`sol ${sym}`, { app: got.toString(), rpc: want.toString() });
+  }
   const desk = await readSolStake(addr).catch(() => []);
   pass("sol stake rows", { n: desk.length });
   const skr = await readSkrStake(addr).catch(() => []);
@@ -413,6 +443,16 @@ async function main() {
   const derived = await ansRootPda();
   if (derived === ROOT_ANS) pass("alldomains ans root pda");
   else fail("alldomains ans root pda", { derived: derived ?? "", expected: ROOT_ANS });
+
+  const solUsdc = TOKEN_CATALOG.find((t) => t.chainId === 101 && t.address === SOL_USDC);
+  const solUsdt = TOKEN_CATALOG.find((t) => t.chainId === 101 && t.address === SOL_USDT);
+  if (!solUsdc || solUsdc.symbol !== "USDC" || solUsdc.decimals !== 6) fail("sol usdc catalog", { solUsdc: solUsdc ?? null });
+  else pass("sol usdc catalog", { decimals: solUsdc.decimals });
+  if (!solUsdt || solUsdt.symbol !== "USDT" || solUsdt.decimals !== 6) fail("sol usdt catalog", { solUsdt: solUsdt ?? null });
+  else pass("sol usdt catalog", { decimals: solUsdt.decimals });
+  const ata = await findAta("5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9", SOL_USDC, TOKEN_PROGRAM);
+  if (ata !== "FzbcyEZ9m8xjtergWgWDq7mfPoHEbboBF791B6cTpzbq") fail("sol usdc ata pda", { ata: ata ?? "" });
+  else pass("sol usdc ata pda");
 
   await run("arb rpc", async () => {
     const a = (arg("evm") || WHALES.vitalik).toLowerCase();

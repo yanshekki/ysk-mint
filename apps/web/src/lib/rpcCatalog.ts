@@ -173,6 +173,7 @@ const NATIVE_EXTRA: Record<number, RpcEndpoint[]> = {
   118: [ep("publicnode", "https://cosmos-rest.publicnode.com")],
   100001: [ep("publicnode", "https://osmosis-rest.publicnode.com")],
   100002: [ep("publicnode", "https://celestia-rest.publicnode.com")],
+  101: [ep("leorpc", "https://solana.leorpc.com/?api_key=FREE")],
 };
 
 export function normUrl(url: string) {

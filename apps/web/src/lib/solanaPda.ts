@@ -160,3 +160,16 @@ export async function sha256Utf8(s: string): Promise<Uint8Array> {
 }
 
 export const ZERO_32 = new Uint8Array(32);
+
+export const TOKEN_PROGRAM = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
+export const TOKEN_2022_PROGRAM = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb";
+export const ASSOCIATED_TOKEN_PROGRAM = "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
+
+/** Associated token account PDA: seeds [owner, tokenProgram, mint]. */
+export async function findAta(owner: string, mint: string, tokenProgram = TOKEN_PROGRAM): Promise<string | null> {
+  const ownerB = decodeB58(owner);
+  const mintB = decodeB58(mint);
+  const progB = decodeB58(tokenProgram);
+  if (!ownerB || ownerB.length !== 32 || !mintB || mintB.length !== 32 || !progB || progB.length !== 32) return null;
+  return findPda(ASSOCIATED_TOKEN_PROGRAM, [ownerB, progB, mintB]);
+}
