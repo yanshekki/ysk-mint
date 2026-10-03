@@ -545,6 +545,64 @@ export async function nearMyLp(account: string): Promise<NearLpHit[]> {
 
 type BurrowAsset = { token_id?: string; balance?: string; shares?: string };
 
+/** Burrow stores balances at ft_decimals + config.extra_decimals (stables extra 12 → 18). */
+async function burrowExtraDecimals(): Promise<Map<string, number>> {
+  const rec = await cacheGet(
+    {
+      key: cacheKey("meta.burrow-extra", 397),
+      policy: {
+        ...POLICIES.meta,
+        keep: (m: Record<string, number>) => Object.keys(m).length > 0,
+      },
+    },
+    async () => {
+      const out: Record<string, number> = {};
+      let from = 0;
+      for (let i = 0; i < 8; i++) {
+        const page = await nearView<unknown>(BURROW, "get_assets_paged", { from_index: from, limit: 50 });
+        const rows = Array.isArray(page) ? page : [];
+        if (!rows.length) break;
+        for (const item of rows) {
+          let tid = "";
+          let extra = 0;
+          if (Array.isArray(item) && item.length >= 2) {
+            tid = String(item[0] ?? "");
+            const body = item[1] as { token_id?: string; config?: { extra_decimals?: number } } | undefined;
+            extra = Number(body?.config?.extra_decimals ?? 0);
+            if (!tid) tid = String(body?.token_id ?? "");
+          } else if (item && typeof item === "object") {
+            const o = item as { token_id?: string; config?: { extra_decimals?: number } };
+            tid = String(o.token_id ?? "");
+            extra = Number(o.config?.extra_decimals ?? 0);
+          }
+          if (!tid) continue;
+          out[tid] = Number.isFinite(extra) && extra >= 0 && extra <= 24 ? extra : 0;
+        }
+        from += rows.length;
+        if (rows.length < 50) break;
+      }
+      if (!Object.keys(out).length) throw new Error("burrow extras");
+      return out;
+    },
+  );
+  return new Map(Object.entries(rec));
+}
+
+async function burrowScale(tokenId: string, extras: Map<string, number>): Promise<{ meta: NearTok; decimals: number }> {
+  const meta = await nearFtMeta(tokenId);
+  let extra = extras.get(tokenId) ?? extras.get(tokenId.toLowerCase());
+  if (extra == null) {
+    try {
+      const a = await nearView<{ config?: { extra_decimals?: number } }>(BURROW, "get_asset", { token_id: tokenId });
+      extra = Number(a?.config?.extra_decimals ?? 0);
+    } catch {
+      extra = 0;
+    }
+  }
+  if (!Number.isFinite(extra) || extra < 0) extra = 0;
+  return { meta, decimals: meta.decimals + extra };
+}
+
 export async function readBurrow(account: string) {
   try {
     const row = await nearView<{
@@ -553,7 +611,7 @@ export async function readBurrow(account: string) {
       borrowed?: BurrowAsset[];
     } | null>(BURROW, "get_account", { account_id: account });
     if (!row) return null;
-    const wrap = await nearWrapUsd();
+    const [wrap, extras] = await Promise.all([nearWrapUsd(), burrowExtraDecimals()]);
     const lines: Array<{
       id: string;
       chainId: number;
@@ -575,8 +633,8 @@ export async function readBurrow(account: string) {
         if (!id) continue;
         const raw = BigInt(a.balance || "0");
         if (raw === 0n) continue;
-        const meta = tokenMeta(id);
-        const n = human(raw.toString(), meta.decimals);
+        const { meta, decimals } = await burrowScale(id, extras);
+        const n = human(raw.toString(), decimals);
         const q = await quoteNearToken(id, false);
         lines.push({
           id: `burrow-${side}-${id}`,
@@ -587,7 +645,7 @@ export async function readBurrow(account: string) {
           icon: meta.icon,
           amount: n.toLocaleString(undefined, { maximumFractionDigits: n >= 1 ? 4 : 6 }),
           raw,
-          decimals: meta.decimals,
+          decimals,
           contract: id,
           side,
           quote: q,

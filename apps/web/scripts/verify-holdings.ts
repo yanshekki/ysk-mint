@@ -18,7 +18,7 @@ import { readTronStake, tronFrozenSun } from "../src/lib/stake/tron.ts";
 import { readNearStake } from "../src/lib/stake/near.ts";
 import { TOKEN_CATALOG } from "../src/lib/tokenRegistry.ts";
 import { nearView } from "../src/lib/nearRpc.ts";
-import { quoteNearToken } from "../src/lib/nearDex.ts";
+import { BURROW, N_USDC, N_WRAP, quoteNearToken, readBurrow } from "../src/lib/nearDex.ts";
 import { readSolStake } from "../src/lib/stake/sol.ts";
 import { readNightThaw } from "../src/lib/stake/night.ts";
 import { readSkrStake } from "../src/lib/stake/skr.ts";
@@ -292,6 +292,37 @@ async function checkNear(addr: string) {
     const k = `${l.chainId}:${(l.contract ?? l.id).toLowerCase()}:${l.side ?? ""}:${l.symbol}:${l.status ?? ""}`;
     if (keys.has(k)) fail("near stake merge key collision", { key: k, id: l.id });
     keys.add(k);
+  }
+  try {
+    const asset = await nearView<{ config?: { extra_decimals?: number } }>(BURROW, "get_asset", { token_id: N_USDC.address });
+    const extra = Number(asset?.config?.extra_decimals);
+    if (extra !== 12) fail("burrow usdc extra_decimals", { extra });
+    else pass("burrow usdc extra_decimals", { extra });
+  } catch (err) {
+    fail("burrow get_asset usdc", { err: err instanceof Error ? err.message : String(err) });
+  }
+  const burrow = await readBurrow(addr).catch(() => null);
+  if (!burrow?.lines.length) {
+    skip("burrow empty");
+    return;
+  }
+  pass("burrow lines", { n: burrow.lines.length, symbols: burrow.lines.map((l) => `${l.side}:${l.symbol}`) });
+  for (const l of burrow.lines) {
+    const n = Number(String(l.amount).replace(/,/g, ""));
+    const stable = /^(USDC|USDT)(\.E)?$/i.test(l.symbol);
+    if (stable && Number.isFinite(n) && n >= 1e8) fail("burrow stable missing extra_decimals", { symbol: l.symbol, amount: l.amount, decimals: l.decimals ?? null });
+    if (stable && l.contract === N_USDC.address && l.decimals !== 18) fail("burrow usdc scale decimals", { decimals: l.decimals ?? null, amount: l.amount });
+    if (l.contract === N_WRAP.address && Number.isFinite(n) && n >= 1e8) fail("burrow wrap looks like yocto", { amount: l.amount, decimals: l.decimals ?? null });
+  }
+  if (addr === "my6bom.tg") {
+    const usdc = burrow.lines.find((l) => l.contract === N_USDC.address);
+    const wrap = burrow.lines.find((l) => l.contract === N_WRAP.address);
+    const usdcN = Number(String(usdc?.amount ?? "").replace(/,/g, ""));
+    const wrapN = Number(String(wrap?.amount ?? "").replace(/,/g, ""));
+    if (!(usdcN > 0.01 && usdcN < 1)) fail("burrow my6bom usdc amount", { amount: usdc?.amount ?? null, decimals: usdc?.decimals ?? null });
+    else pass("burrow my6bom usdc", { amount: usdc?.amount, value: usdc?.valueUsdc ?? null });
+    if (!(wrapN > 1e-6 && wrapN < 1e-3)) fail("burrow my6bom wrap amount", { amount: wrap?.amount ?? null });
+    else pass("burrow my6bom wrap", { amount: wrap?.amount, value: wrap?.valueUsdc ?? null });
   }
 }
 
